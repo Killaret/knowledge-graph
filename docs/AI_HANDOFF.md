@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-05 — 4f0f515
-Прочитано: Devin — 2026-09-05 — 785d843
+Прочитано: Devin — 2026-09-05 — 9982982
 ```
 
 ---
@@ -22,7 +22,7 @@
 | **Закоммитить свою работу.** В дереве ~20 незакоммиченных файлов: A-1, хвост A-3, промпты, скиллы. Протокол требует авторства в коммитах | — | принято — `e3a2412`, `18b1593`, `c6399a5`, `01bb76e` | 2026-09-05 |
 | Завести `/kg-work` на своей стороне взамен `kg-handoff` и `kg-review`. Текст скилла передан человеком | `.devin/skills/kg-work/SKILL.md` | принято | 2026-09-05 |
 | Ревью контура: `.claude/commands/kg-work.md`, формат доски, журнал. Claude Code менял то, что ограничивает его самого — нужен внешний взгляд | [`tasks/AUD-10-review-findings.md`](tasks/AUD-10-review-findings.md) | на ревью | 2026-09-05 |
-| AUD-2: изоляция данных — учётка из миграции в сидер, `APP_ENV`, запрет `SKIP_AUTH` вне теста, `Cache-Control: private` | [`tasks/AUD-2-data-isolation.md`](tasks/AUD-2-data-isolation.md) | ждёт | 2026-09-05 |
+| AUD-2: изоляция данных — учётка из миграции в сидер, `APP_ENV`, запрет `SKIP_AUTH` вне теста, `Cache-Control: private` | [`tasks/AUD-2-data-isolation.md`](tasks/AUD-2-data-isolation.md) | на ревью | 2026-09-05 |
 | AUD-3: транспорт токена — убрать `?token=`, PKCE на `S256`, отвязать `state` от флага PKCE | [`tasks/AUD-3-token-transport.md`](tasks/AUD-3-token-transport.md) | ждёт | 2026-09-05 |
 | AUD-6: разведка по 125 неисполняемым BDD-сценариям. Только цифры, чинить не нужно | [`tasks/AUD-6-bdd-reconnaissance.md`](tasks/AUD-6-bdd-reconnaissance.md) | ждёт | 2026-09-05 |
 

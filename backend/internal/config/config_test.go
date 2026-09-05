@@ -4,6 +4,9 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -580,6 +583,47 @@ func TestMustJSON(t *testing.T) {
 	jsonStr := mustJSON(data)
 	if jsonStr != `{"key":"value"}` {
 		t.Errorf("unexpected json: %s", jsonStr)
+	}
+}
+
+func TestSkipAuthRequiresTestEnv(t *testing.T) {
+	// Set required variables for config.Load
+	t.Setenv("DATABASE_URL", "postgres://test@localhost/test")
+	t.Setenv("JWT_SECRET", "test-jwt-secret")
+
+	tests := []struct {
+		name     string
+		appEnv   string
+		skipAuth string
+		wantErr  bool
+	}{
+		{"skip auth in dev", "development", "true", true},
+		{"skip auth in production", "production", "true", true},
+		{"skip auth in test", "test", "true", false},
+		{"no skip auth in dev", "development", "false", false},
+		{"empty env defaults to development", "", "false", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("APP_ENV", tt.appEnv)
+			t.Setenv("SKIP_AUTH", tt.skipAuth)
+
+			cfg, err := Load()
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "SKIP_AUTH")
+				assert.Contains(t, err.Error(), "APP_ENV")
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, cfg)
+				if tt.appEnv == "" {
+					assert.Equal(t, "development", cfg.AppEnv)
+				} else {
+					assert.Equal(t, tt.appEnv, cfg.AppEnv)
+				}
+			}
+		})
 	}
 }
 

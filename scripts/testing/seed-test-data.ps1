@@ -80,6 +80,28 @@ catch {
 $report.durations.cleanSeconds = [math]::Round(((Get-Date) - $cleanStart).TotalSeconds, 2)
 
 # ---------------------------------------------------------------------------
+# 1.5. Seed the fixed test user (UUID all-zeros) for SKIP_AUTH mode.
+#      This is the only place the test user is created; the migration that
+#      used to insert it has been replaced by migration 029.
+# ---------------------------------------------------------------------------
+$seedStart = Get-Date
+Write-Host "Seeding fixed test user..." -ForegroundColor Cyan
+
+try {
+    $seedOutput = docker exec -e APP_ENV=test -e SEED_TEST_USER_PASSWORD=$($testUser.password) kg-test-backend ./test-seed 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw $seedOutput
+    }
+    Write-Host "Test user seeded." -ForegroundColor Green
+}
+catch {
+    Add-ReportError -Context "seed-test-user" -Message "Failed to seed test user: $_"
+    exit 1
+}
+
+$report.durations.seedTestUserSeconds = [math]::Round(((Get-Date) - $seedStart).TotalSeconds, 2)
+
+# ---------------------------------------------------------------------------
 # 1.5. Flush Redis cache so the graph-service does not serve a stale layout
 #      from a previous test run.
 # ---------------------------------------------------------------------------

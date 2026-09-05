@@ -615,10 +615,18 @@ Only database URL and optional overrides:
 DATABASE_URL=postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
 
 # Optional overrides (rest is in knowledge-graph.config.json)
+APP_ENV=development
 SERVER_PORT=8080
 REDIS_URL=redis:6379
 NLP_SERVICE_URL=http://nlp:5000
 ```
+
+## Application Environment
+
+| Variable | Description | Default | Allowed values |
+|----------|-------------|---------|----------------|
+| `APP_ENV` | Runtime environment mode | `development` | `development`, `test`, `production` |
+| `SEED_TEST_USER_PASSWORD` | Plain-text password used to create the fixed `testuser` account (UUID all-zeros) when `APP_ENV=test`. Never use in production. | - | any strong string |
 
 ## Full Environment Variable Reference
 
@@ -1009,44 +1017,35 @@ docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis
 
 ---
 
-## Personal Environment Authentication
+## Test-Stack Authentication
 
 ### Overview
 
-The personal environment (\docker-compose.personal.yml\) is designed for local development without authentication.
+The isolated test environment (`docker-compose.test.yml`) is the only place where unauthenticated mode is allowed, and only when `APP_ENV=test`.
 
 ### Configuration
 
-**Environment Variable (.env):**
-\\\ash
-SKIP_AUTH=true  # Disables authentication for personal environment
-\\\
+**Environment Variables (.env):**
+```bash
+APP_ENV=test
+SKIP_AUTH=true
+SEED_TEST_USER_PASSWORD=TestPassword123!  # Used to create the test user
+```
 
 **Behavior:**
-- All requests are allowed without authentication
-- Notes are created with \creator_id = 00000000-0000-0000-0000-000000000000\ (test user)
-- Test user is created by migration \ 19_add_test_user.up.sql\
-
-### Authentication Fix (2026-06-15)
-
-**Issues Fixed:**
-1. Corrected \main.go\ to use \DefaultSkipAuthConfig\ instead of manual configuration
-2. Changed default user ID from \ 0000000-0000-0000-0000-000000000001\ to \ 0000000-0000-0000-0000-000000000000\ (matches migration)
-3. Fixed \pikey.go\ admin UUID to match migration
-
-**Current Status:**
-- ✅ \id_creator\ is properly assigned: \ 0000000-0000-0000-0000-000000000000\
-- ✅ All notes have proper owner (test user)
-- ✅ Consistent with migration 019
+- All requests are allowed without authentication only when `APP_ENV=test` and `SKIP_AUTH=true`.
+- Notes are created with `creator_id = 00000000-0000-0000-0000-000000000000` (test user).
+- The test user is created by `backend/cmd/seed/main.go` (binary `./test-seed` in the server image), not by a migration.
+- The server refuses to start if `SKIP_AUTH=true` and `APP_ENV` is not `test`.
 
 ### Differences Between Environments
 
-| Environment | Authentication | creator_id | Purpose |
-|-------------|----------------|------------|---------|
-| **Dev** | Enabled | Real user ID | Development with auth |
-| **Personal** | Disabled (SKIP_AUTH=true) | Test user ID (all zeros) | Local testing without auth |
+| Environment | `APP_ENV` | Authentication | creator_id | Purpose |
+|-------------|-----------|----------------|------------|---------|
+| **Dev** | `development` | Enabled | Real user ID | Development with auth |
+| **Personal** | `development` | Enabled | Real user ID | Personal local data |
+| **Test** | `test` | Disabled (`SKIP_AUTH=true`) | Test user ID (all zeros) | Isolated E2E/BDD testing |
 
 ### Security Note
 
-This is intentional for local development. For production or shared environments, authentication should always be enabled.
-
+`SKIP_AUTH=true` is only allowed with `APP_ENV=test`. For production, shared, or personal environments, real authentication must remain enabled.

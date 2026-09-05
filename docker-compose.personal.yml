@@ -110,6 +110,7 @@ services:
       REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
       REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: http://nlp-personal:5000
+      APP_ENV: development
       SKIP_AUTH: ${SKIP_AUTH:-false}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:18080,http://localhost:18081,http://localhost:18082,http://localhost:18084,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:5173,http://127.0.0.1:18080,http://127.0.0.1:18081,http://127.0.0.1:18082,http://127.0.0.1:18084}
       BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
@@ -144,6 +145,7 @@ services:
       REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
       REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: http://nlp-personal:5000
+      APP_ENV: development
       SKIP_AUTH: ${SKIP_AUTH:-false}
       BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
     depends_on:
@@ -172,6 +174,7 @@ services:
       REDIS_URL: ${PERSONAL_REDIS_URL:-redis_personal:6379}
       REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: http://nlp-personal:5000
+      APP_ENV: development
       SKIP_AUTH: ${SKIP_AUTH:-false}
       RECOMMENDATION_TOP_N: ${RECOMMENDATION_TOP_N:-50}
       RECOMMENDATION_TASK_DELAY_SECONDS: ${RECOMMENDATION_TASK_DELAY_SECONDS:-5}

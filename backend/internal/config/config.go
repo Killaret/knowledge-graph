@@ -15,6 +15,7 @@ import (
 // JSONConfig represents the structure of knowledge-graph.config.json
 type JSONConfig struct {
 	Backend struct {
+		AppEnv string `json:"app_env"`
 		Server struct {
 			RateLimit struct {
 				Enabled       bool           `json:"enabled"`
@@ -128,6 +129,9 @@ type JSONConfig struct {
 }
 
 type Config struct {
+	// App environment (development, test, production)
+	AppEnv string
+
 	// Server
 	ServerPort                   string
 	ServerRateLimitEnabled       bool
@@ -364,11 +368,17 @@ func mustJSON(value any) string {
 	return string(raw)
 }
 
+func (c *Config) IsTest() bool       { return c.AppEnv == "test" }
+func (c *Config) IsProduction() bool { return c.AppEnv == "production" }
+
 func Load() (*Config, error) {
 	// Load JSON config as source of default values
 	jsonCfg := loadJSONConfig()
 
 	cfg := &Config{
+		// App environment (env > JSON > development)
+		AppEnv: getEnv("APP_ENV", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.AppEnv }, "development")),
+
 		// Server
 		ServerPort:                   getEnv("SERVER_PORT", "8080"),
 		ServerRateLimitEnabled:       getBoolEnv("SERVER_RATE_LIMIT_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Server.RateLimit.Enabled }, true)),
@@ -516,6 +526,10 @@ func Load() (*Config, error) {
 
 	if cfg.JWTSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET must be set via environment variable or configuration")
+	}
+
+	if cfg.SkipAuth && !cfg.IsTest() {
+		return nil, fmt.Errorf("SKIP_AUTH=true is only allowed when APP_ENV=test; current APP_ENV=%s", cfg.AppEnv)
 	}
 
 	return cfg, nil

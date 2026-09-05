@@ -24,6 +24,22 @@ import (
 	"knowledge-graph/internal/interfaces/api/taghandler"
 )
 
+// cacheControlMiddleware sets private, per-user cache headers and declares
+// that the response varies on the Authorization header and cookies.
+// Public shared caching is not used for any API response because endpoints
+// such as /graph/all return different content for different users.
+func cacheControlMiddleware(maxAge int) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		value := "private, max-age=0"
+		if maxAge > 0 {
+			value = fmt.Sprintf("private, max-age=%d", maxAge)
+		}
+		c.Writer.Header().Set("Cache-Control", value)
+		c.Writer.Header().Add("Vary", "Authorization, Cookie")
+		c.Next()
+	}
+}
+
 // setupRouter configures the Gin router with all routes and middleware
 func setupRouter(
 	noteHandler *notehandler.Handler,
@@ -73,14 +89,6 @@ func setupRouter(
 	if cfg.ServerRateLimitEnabled {
 		rateWindow := time.Duration(cfg.ServerRateLimitWindowSeconds) * time.Second
 		r.Use(middleware.RateLimitMiddleware(cfg.ServerRateLimitRequests, rateWindow))
-	}
-
-	// Cache control middleware for static data endpoints
-	cacheControlMiddleware := func(maxAge int) gin.HandlerFunc {
-		return func(c *gin.Context) {
-			c.Writer.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", maxAge))
-			c.Next()
-		}
 	}
 
 	// Swagger UI

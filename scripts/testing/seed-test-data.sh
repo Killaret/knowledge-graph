@@ -76,6 +76,26 @@ CLEAN_END=$(date +%s)
 REPORT=$(echo "$REPORT" | jq --arg v "$((CLEAN_END - CLEAN_START))" '.durations.cleanSeconds = ($v | tonumber)')
 
 # ---------------------------------------------------------------------------
+# 1.5. Seed the fixed test user (UUID all-zeros) for SKIP_AUTH mode.
+#      This is the only place the test user is created; the migration that
+#      used to insert it has been replaced by migration 029.
+# ---------------------------------------------------------------------------
+SEED_START=$(date +%s)
+echo "Seeding fixed test user..."
+
+SEED_PASSWORD="${SEED_TEST_USER_PASSWORD:-TestPassword123!}"
+if ! docker exec -e APP_ENV=test -e SEED_TEST_USER_PASSWORD="$SEED_PASSWORD" kg-test-backend ./test-seed >/dev/null 2>&1; then
+    add_error "seed-test-user" "Failed to seed test user. Make sure the test backend is running."
+    echo "$REPORT" | jq . > "$REPORT_PATH"
+    exit 1
+fi
+
+echo "Test user seeded."
+
+SEED_END=$(date +%s)
+REPORT=$(echo "$REPORT" | jq --arg v "$((SEED_END - SEED_START))" '.durations.seedTestUserSeconds = ($v | tonumber)')
+
+# ---------------------------------------------------------------------------
 # 2. Register / login test user
 # ---------------------------------------------------------------------------
 AUTH_START=$(date +%s)

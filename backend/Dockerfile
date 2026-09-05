@@ -8,6 +8,7 @@ RUN go run github.com/swaggo/swag/cmd/swag init -g cmd/server/main.go
 RUN go build -ldflags="-s -w" -o /app/server ./cmd/server
 RUN go build -ldflags="-s -w" -o /app/worker ./cmd/worker
 RUN go build -ldflags="-s -w" -o /app/seed ./scripts/seed.go
+RUN go build -ldflags="-s -w" -o /app/test-seed ./cmd/seed
 RUN go build -ldflags="-s -w" -o /app/cli ./cmd/cli
 
 FROM alpine:latest AS base
@@ -16,6 +17,7 @@ WORKDIR /root/
 
 FROM base AS server
 COPY --from=builder /app/server .
+COPY --from=builder /app/test-seed .
 COPY --from=builder /app/backend/migrations ./migrations
 COPY --from=builder /app/backend/openAPI.yaml ./openAPI.yaml
 COPY --from=builder /app/backend/docs ./docs

@@ -1,5 +1,6 @@
 {
   "backend": {
+    "app_env": "development",
     "server": {
       "rate_limit": {
         "enabled": false,

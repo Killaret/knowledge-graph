@@ -1,0 +1,3 @@
+-- Migration 029 (down): No-op
+-- The test user is not recreated on rollback; it is the seeder's responsibility
+-- to create test data when needed.
