@@ -29,7 +29,7 @@ const featureRoot = join(__dirname, 'frontend', 'tests', 'features');
 
 ## Что выяснено в коде
 
-**1. Два набора шагов, не один.** Активный набор — `frontend/tests/features/step_definitions/` (`auth.steps.ts`, `common.steps.ts`, `graph_interaction.steps.ts`, `graph_3d_loading.steps.ts`) плюс `support/world.ts` и `support/hooks.ts`. Осиротевший — `tests/features/step_definitions/` (6 файлов) и `tests/steps/` (2 файла) со своими `support/`.
+**1. Два набора шагов, не один.** Активный набор — `frontend/tests/features/step_definitions/` (`auth.steps.ts`, `common.steps.ts`, `graph_interaction.steps.ts`, `graph_3d_loading.steps.ts`) плюс `support/world.ts` и `support/hooks.ts`. Осиротевший — `tests/features/step_definitions/` (7 файлов) и `tests/steps/` (2 файла) со своими `support/`.
 
 Наборы почти наверняка конфликтуют: Cucumber падает на дублирующемся определении шага. Простое объединение путей в одном конфиге, скорее всего, не запустится вовсе — это первое, что нужно выяснить.
 
