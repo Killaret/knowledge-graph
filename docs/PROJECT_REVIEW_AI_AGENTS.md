@@ -588,3 +588,33 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - [`.windsurfrules`](../.windsurfrules)
 - [`docs/AGENTS.md`](AGENTS.md)
 - [`docs/AGENTS_EN.md`](AGENTS_EN.md)
+
+## 17. A-1: детерминированная 3D-визуализация и связанный публичный сидер (2026-09-06)
+
+**Что сделано.**
+
+- В `Graph3DViewer.svelte` убран `in:fade` для loading-оверлея в режиме стабильного рендера — `data-test-stable=true` теперь означает, что оверлей уже не виден.
+- В `Graph3DScene.svelte` и `engine.ts` стабильный режим (`stableRender=true`) заставляет движок синхронно сходить и отрисовать ровно один кадр до `finishLoading()`.
+- `OrbitControls.enableDamping` отключается при `disableAnimation`.
+- `Math.random` сидируется во визуальном тесте и в `addInitScript`, чтобы звёздное поле и раскладка не менялись между прогонами.
+- Визуальный тест `frontend/tests/visual/visual-regression.spec.ts` переводит курсор в центр сцены (`scene.hover()`) и отключает Argos-ский `disableHover`, чтобы движение мыши в `(0, 0)` не открывало панели и не сбивало стабилизацию скриншота.
+- Сидер `scripts/testing/seed-test-data.ps1`/`seed-test-data.sh` публикует 20% заметок и создаёт связи преимущественно внутри пула публичных заметок, чтобы публичный граф содержал связанные компоненты.
+
+**Результаты верификации.**
+
+- `npm run test:unit`: 107 файлов, 987 тестов — зелёные.
+- `npm run check`: 0 ошибок, 0 предупреждений.
+- `npm run lint`: 0 новых замечаний (3 pre-existing warning).
+- Все 13 визуальных тестов Playwright (`--project=visual`) прошли.
+- 3D-тест отработал дважды с идентичным снимком (`3d-baseline.png`).
+- Временное изменение `birth.density_final` с 0.0006 на 0.02 дало снимок, отличающийся на 13.58% пикселей (`3d-fog-dense.png`), что доказывает чувствительность эталона к графическим параметрам.
+- Сидер на тест-стенде: 100 notes, 20 public, 60 links, 100 embeddings, 100 keyword-processed; graph-service: 100 nodes, 60 links.
+
+**Артефакты.**
+
+- Базовый и «туманный» снимки: [`docs/assets/a1-3d-visual-regression/`](../assets/a1-3d-visual-regression/)
+- Скрипт сравнения: удалён после использования.
+
+**Осталось.**
+
+- Повторная верификация Claude Code на живом стенде и пересборка официальных baseline Argos (`ARGOS_REFERENCE_BRANCH=main`).

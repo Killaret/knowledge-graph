@@ -20,9 +20,17 @@ const VIEWPORTS = [
 
 test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
   test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.addInitScript(() => {
       // Enable auth bypass for isolated visual tests
       (window as any).__SKIP_AUTH__ = true;
+
+      // Disable cockpit panel slide/resize animations so the 3D scene element
+      // is stable before the element-screenshot in argosScreenshot.
+      localStorage.setItem(
+        "cockpit-settings",
+        JSON.stringify({ reducedMotion: true })
+      );
 
       // Seeded Math.random for deterministic canvas / d3-force / particle output
       let seed = 12345;
@@ -141,16 +149,17 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
   test("3D Graph - renders 3D view", async ({ page }) => {
     await page.goto("/graph/3d" + STABLE_RENDER);
 
-    // The outer wrapper mounts before the scene is ready, so the test waits
-    // for the scene container's own readiness flag instead of its visibility.
+    // The outer wrapper mounts before the scene is ready, and the loading
+    // overlay must be fully gone before the viewer marks itself stable.
+    const viewer = page.locator('[data-testid="graph-3d-viewer"]');
     const scene = page.locator('[data-testid="graph-3d-scene"]');
     const errorOverlay = page.locator('[data-testid="graph-3d-error"]');
 
     await expect(scene, "3D scene container should mount").toBeVisible({ timeout: 15000 });
     try {
       await expect(
-        scene,
-        "3D scene should reach data-test-stable after the first render"
+        viewer,
+        "3D viewer should reach data-test-stable after the scene is rendered and the overlay is hidden"
       ).toHaveAttribute("data-test-stable", "true", { timeout: 20000 });
     } catch (e) {
       if ((await errorOverlay.count()) > 0) {
@@ -163,9 +172,13 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     // A WebGL error overlay must never produce a passing screenshot.
     await expect(errorOverlay, "graph-3d-error overlay must not be present").toHaveCount(0);
 
-    // Screenshot the scene element only: fullPage would include overlays and
-    // page chrome that do not belong to the WebGL canvas being verified.
-    await argosScreenshot(page, "3d-graph-view", { element: scene });
+    // Keep the pointer inside the 3D canvas and disable Argos's own hover
+    // reset to (0, 0). The cockpit panel handles react to mouse enter/leave,
+    // and moving the cursor over an edge handle makes the frame insets change
+    // while the screenshot is taken, which causes Playwright's "element not
+    // stable" timeout on the WebGL element.
+    await scene.hover();
+    await argosScreenshot(page, "3d-graph-view", { element: scene, disableHover: false });
   });
 
   test("Home responsive viewports", async ({ page }) => {

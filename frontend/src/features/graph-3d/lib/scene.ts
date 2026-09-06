@@ -53,7 +53,7 @@ export function createScene(container: HTMLElement, config: Graph3DConfig): Scen
   container.appendChild(labelDom);
 
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
+  controls.enableDamping = !config.disableAnimation;
   controls.dampingFactor = 0.05;
   controls.autoRotate = config.autoRotate;
   controls.autoRotateSpeed = config.autoRotate ? 0.8 : 0;

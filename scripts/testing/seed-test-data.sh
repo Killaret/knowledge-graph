@@ -240,6 +240,16 @@ fi
 # 5. Create links
 # ---------------------------------------------------------------------------
 LINKS_START=$(date +%s)
+
+# Prefer links between public notes so the anonymous/public graph view has
+# connected components to render. Fall back to the full pool only when there
+# are fewer than two public notes.
+if [ "$PUBLIC_COUNT" -ge 2 ]; then
+    PUBLIC_NOTE_IDS=("${NOTE_IDS[@]:0:$PUBLIC_COUNT}")
+else
+    PUBLIC_NOTE_IDS=("${NOTE_IDS[@]}")
+fi
+
 echo "Creating $LINK_COUNT test links..."
 
 LINK_IDS=()
@@ -250,20 +260,20 @@ MAX_ATTEMPTS=$((LINK_COUNT * 5))
 while [ ${#LINK_IDS[@]} -lt $LINK_COUNT ] && [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
     ATTEMPTS=$((ATTEMPTS + 1))
 
-    if [ ${#NOTE_IDS[@]} -lt 2 ]; then
+    if [ ${#PUBLIC_NOTE_IDS[@]} -lt 2 ]; then
         add_error "create-link" "Not enough notes to create links."
         break
     fi
 
-    SOURCE_INDEX=$((RANDOM % ${#NOTE_IDS[@]}))
-    TARGET_INDEX=$((RANDOM % ${#NOTE_IDS[@]}))
+    SOURCE_INDEX=$((RANDOM % ${#PUBLIC_NOTE_IDS[@]}))
+    TARGET_INDEX=$((RANDOM % ${#PUBLIC_NOTE_IDS[@]}))
 
     if [ "$SOURCE_INDEX" -eq "$TARGET_INDEX" ]; then
         continue
     fi
 
-    SOURCE_ID=${NOTE_IDS[$SOURCE_INDEX]}
-    TARGET_ID=${NOTE_IDS[$TARGET_INDEX]}
+    SOURCE_ID=${PUBLIC_NOTE_IDS[$SOURCE_INDEX]}
+    TARGET_ID=${PUBLIC_NOTE_IDS[$TARGET_INDEX]}
 
     if echo "$CREATED_PAIRS" | jq -e --arg k "$SOURCE_ID-$TARGET_ID" 'has($k)' >/dev/null 2>&1; then
         continue

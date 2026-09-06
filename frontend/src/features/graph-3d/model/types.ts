@@ -41,6 +41,8 @@ export interface Graph3DConfig {
   disableAnimation: boolean;
   defaultFogPreset: FogPresetName;
   fog_presets?: Partial<Record<FogPresetName, FogPreset>>;
+  /** Optional seed for deterministic rendering in stable/test mode. */
+  seed?: number;
 }
 
 export const DEFAULT_GRAPH3D_CONFIG: Graph3DConfig = {
@@ -55,6 +57,7 @@ export const DEFAULT_GRAPH3D_CONFIG: Graph3DConfig = {
   autoRotate: false,
   disableAnimation: false,
   defaultFogPreset: "birth",
+  seed: undefined,
 };
 
 export type { GraphNode, GraphLink };

@@ -19,6 +19,15 @@ import type {
 } from "../model/types";
 import { DEFAULT_GRAPH3D_CONFIG, type FogPresetName } from "../model/types";
 
+function mulberry32(seed: number): () => number {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 export class Graph3DEngine {
   private container: HTMLElement;
   private callbacks: Graph3DCallbacks;
@@ -38,6 +47,7 @@ export class Graph3DEngine {
   private fogInitial: number;
   private fogFinal: number;
   private lastFrameTime = 0;
+  private rng: (() => number) | null = null;
   private readonly frameInterval = 33; // ~30 fps
   private monitor = createPerformanceMonitor();
   private performanceConfig = graphPerformanceConfig;
@@ -61,7 +71,12 @@ export class Graph3DEngine {
       ...partialConfig,
     };
 
-    this.sceneBundle = createScene(container, this.config);
+    if (this.config.seed != null) {
+      this.rng = mulberry32(this.config.seed);
+    }
+
+    const createSceneFn = (): ReturnType<typeof createScene> => createScene(container, this.config);
+    this.sceneBundle = this.rng ? this.withSeededRng(createSceneFn) : createSceneFn();
     this.nodeManager = new NodeManager(this.sceneBundle.scene, this.config);
     this.linkManager = new LinkManager(this.sceneBundle.scene, this.config);
     this.labelManager = new LabelManager(this.sceneBundle.scene, this.config);
@@ -91,7 +106,7 @@ export class Graph3DEngine {
     // corrupting the original graph data (which is shared with the 2D canvas).
     this.simLinks = validLinks.map((l) => ({ ...l }));
 
-    try {
+    const initScene = () => {
       this.sim = createGraphSimulation(this.simNodes, this.simLinks);
       // Converge the force layout synchronously before the first frame so the
       // 3D scene becomes interactive immediately instead of waiting for the
@@ -139,6 +154,14 @@ export class Graph3DEngine {
         this.finishLoading();
       } else {
         this.startLoop();
+      }
+    };
+
+    try {
+      if (this.rng) {
+        this.withSeededRng(initScene);
+      } else {
+        initScene();
       }
     } catch (e) {
       this.callbacks.onError?.("Failed to initialize 3D graph simulation");
@@ -204,6 +227,16 @@ export class Graph3DEngine {
     }
 
     this.rafId = requestAnimationFrame(() => this.frame());
+  }
+
+  private withSeededRng<T>(fn: () => T): T {
+    const original = Math.random;
+    Math.random = this.rng!;
+    try {
+      return fn();
+    } finally {
+      Math.random = original;
+    }
   }
 
   private renderOnce() {

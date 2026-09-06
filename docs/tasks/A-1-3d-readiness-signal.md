@@ -143,6 +143,27 @@ const isTest = typeof process !== "undefined" && process.env?.VITEST === "true";
 
 **3. Сообщение о таймауте не различает две причины.** Если сидирование не сработало и данных нет, маршрут покажет ветку «нет данных», контейнер сцены не смонтируется, и тест упадёт с текстом «3D scene container should mount». Формально верно, но диагноз уводит в сторону от настоящей причины. Полезно отдельно проверять наличие блока «нет данных» и сообщать именно о нём.
 
+## Дополнение: доработка нестабильности скриншота (2026-09-06)
+
+**Реализовано.**
+
+- В `Graph3DViewer.svelte` оверлей загрузки больше не использует `in:fade` при `stableRender=true`, поэтому `data-test-stable="true"` означает, что оверлей уже не виден, а не начинает исчезать.
+- `Graph3DScene.svelte` выставляет `data-test-stable` через `onReady`, но сцена не сигналит готовность, пока `Graph3DViewer` не снял loading-оверлей.
+- `scene.ts`: `OrbitControls.enableDamping = !config.disableAnimation`, чтобы стабильный рендер не имел инерции.
+- Визуальный тект `frontend/tests/visual/visual-regression.spec.ts`: перед `argosScreenshot(page, "3d-graph-view", { element: scene })` вызывается `await scene.hover()`; `argosScreenshot` передаётся `disableHover: false`, чтобы Argos не сбрасывал курсор в `(0, 0)` и не открывал панели кокпита, из-за которых Playwright видел нестабильный bounding box.
+- В `beforeEach` сидается `Math.random` и выставляется `localStorage["cockpit-settings"] = { reducedMotion: true }`, а также `page.emulateMedia({ reducedMotion: "reduce" })`, чтобы исключить CSS-анимации/переходы.
+- Сидер `scripts/testing/seed-test-data.ps1` и `.sh` публикует 20% заметок и создаёт связи внутри пула публичных, чтобы публичный граф имел связанные компоненты.
+
+**Результаты.**
+
+- `npm run test:unit` — 107 файлов, 987 тестов зелёных.
+- `npm run check` — 0 ошибок, 0 предупреждений.
+- `npm run lint` — 0 новых замечаний.
+- Все 13 визуальных тестов (`--project=visual`) зелёные, 3D-тест стабилен.
+- Два последовательных прогона дают идентичный снимок (`docs/assets/a1-3d-visual-regression/3d-baseline.png`).
+- Временное изменение `birth.density_final` 0.0006 → 0.02 даёт снимок, отличающийся на 13.58% пикселей (`docs/assets/a1-3d-visual-regression/3d-fog-dense.png`).
+- Сидер на тест-стенде: 100 notes, 20 public, 60 links, graph-service: 100 nodes, 60 links.
+
 ## Что осталось для закрытия задачи
 
-Критерии 2 и 3 постановки — доведение контейнера до `data-test-stable="true"` на изолированном тест-стеке и два снимка до и после изменения плотности тумана. Это работа Claude Code, она в инбоксе. До неё задача остаётся открытой: главный критерий постановки — что снимок вообще меняется при изменении графики — ещё не подтверждён на живом окружении.
+Критерии 2 и 3 постановки подтверждены Devin на тест-стенде. Задача остаётся **на ревью** — Claude Code должен повторить верификацию, пересобрать официальный baseline Argos и перевести `ARGOS_REFERENCE_BRANCH` на `main`.

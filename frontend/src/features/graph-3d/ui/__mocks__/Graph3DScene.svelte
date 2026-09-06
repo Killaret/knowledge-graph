@@ -7,6 +7,7 @@
     links?: GraphLink[];
     centerNodeId?: string | null;
     selectedNodeId?: string | null;
+    stableRender?: boolean;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
     onNodeDoubleClick?: (node: { id: string; title: string; type?: string }) => void;
     onReady?: () => void;
@@ -14,18 +15,15 @@
     onError?: (message: string) => void;
   }
 
-  const { onReady }: Props = $props();
-
-  let sceneStable = $state(false);
+  const { onReady, onLoadingChange }: Props = $props();
 
   onMount(() => {
-    sceneStable = true;
     onReady?.();
+    onLoadingChange?.(false);
   });
 </script>
 
 <div
   data-testid="graph-3d-scene"
   class="graph-3d-container"
-  data-test-stable={sceneStable ? "true" : "false"}
 ></div>

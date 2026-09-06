@@ -127,6 +127,14 @@ None yet.
 
 ---
 
+## Verification
+
+- **Case:** A-1 / 3D visual regression sensitivity
+- **What:** Verified that the 3D visual test now produces a stable, deterministic element screenshot and that changing the fog `density_final` produces a visibly different image.
+- **Expected:** Two consecutive runs with the same config produce identical 1280×720 crops; raising `birth.density_final` from 0.0006 to 0.02 produces a clearly different frame.
+- **Actual:** Baseline and second-run crops are 1240×680 and pixel-identical across runs. The dense-fog crop differs by 114 528 / 843 200 pixels (13.58 %). Differences are concentrated in the background fog and label dimming; node positions remain identical.
+- **Screenshot / Logs:** `docs/assets/a1-3d-visual-regression/3d-baseline.png`, `docs/assets/a1-3d-visual-regression/3d-fog-dense.png`, `frontend/test-results/visual-visual-regression-V-df9ff--3D-Graph---renders-3D-view-visual/argos/visual/3d-graph-view.png`; `npm run test:unit` 987/987; `npm run check` clean.
+
 ## How to add a finding
 
 Create a new bullet under the right section with:

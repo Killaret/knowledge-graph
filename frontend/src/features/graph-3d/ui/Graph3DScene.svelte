@@ -9,6 +9,8 @@
     links: GraphLink[];
     centerNodeId?: string | null;
     selectedNodeId?: string | null;
+    /** Whether to disable animation and use a seeded, deterministic render. */
+    stableRender?: boolean;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
     onNodeDoubleClick?: (node: { id: string; title: string; type?: string }) => void;
     onReady?: () => void;
@@ -21,6 +23,7 @@
     links,
     centerNodeId,
     selectedNodeId,
+    stableRender: stableRenderProp,
     onNodeClick,
     onNodeDoubleClick,
     onReady,
@@ -33,11 +36,11 @@
 
   // Vitest still relies on the env flag; Playwright runs in a real browser
   // where `process` does not exist, so the URL parameter is used instead.
-  const stableRender =
-    (typeof process !== "undefined" && process.env?.VITEST === "true") ||
-    (browser && new URL(window.location.href).searchParams.get("stableRender") === "true");
-
-  let sceneStable = $state(false);
+  const stableRender = $derived(
+    stableRenderProp ??
+      ((typeof process !== "undefined" && process.env?.VITEST === "true") ||
+        (browser && new URL(window.location.href).searchParams.get("stableRender") === "true"))
+  );
 
   onMount(() => {
     if (!browser || !container) return;
@@ -46,7 +49,6 @@
       onNodeClick,
       onNodeDoubleClick,
       onReady: () => {
-        sceneStable = true;
         onReady?.();
       },
       onLoadingChange,
@@ -56,6 +58,7 @@
     try {
       engine = new Graph3DEngine(container, callbacks, {
         disableAnimation: stableRender,
+        seed: stableRender ? 12345 : undefined,
       });
       engine.setData(nodes, links);
       if (centerNodeId) engine.centerOnNode(centerNodeId);
@@ -122,7 +125,6 @@
   bind:this={container}
   class="graph-3d-container"
   data-testid="graph-3d-scene"
-  data-test-stable={sceneStable ? "true" : "false"}
   role="img"
   aria-label="3D graph"
 ></div>

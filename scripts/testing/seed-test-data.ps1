@@ -290,6 +290,11 @@ else {
 # 5. Create links
 # ---------------------------------------------------------------------------
 $linksStart = Get-Date
+# Prefer links between public notes so the anonymous/public graph view has
+# connected components to render. Fall back to the full pool only when there
+# are fewer than two public notes.
+$publicLinkPool = if ($publicCount -ge 2) { $noteIds[0..($publicCount - 1)] } else { $noteIds }
+
 Write-Host "Creating $LinkCount test links..." -ForegroundColor Yellow
 
 $linkIds = [System.Collections.ArrayList]::new()
@@ -300,20 +305,20 @@ $maxAttempts = $LinkCount * 5
 while ($linkIds.Count -lt $LinkCount -and $attempts -lt $maxAttempts) {
     $attempts++
 
-    if ($noteIds.Count -lt 2) {
+    if ($publicLinkPool.Count -lt 2) {
         Add-ReportError -Context "create-link" -Message "Not enough notes to create links."
         break
     }
 
-    $sourceIndex = Get-Random -Minimum 0 -Maximum $noteIds.Count
-    $targetIndex = Get-Random -Minimum 0 -Maximum $noteIds.Count
+    $sourceIndex = Get-Random -Minimum 0 -Maximum $publicLinkPool.Count
+    $targetIndex = Get-Random -Minimum 0 -Maximum $publicLinkPool.Count
 
     if ($sourceIndex -eq $targetIndex) {
         continue
     }
 
-    $sourceId = $noteIds[$sourceIndex]
-    $targetId = $noteIds[$targetIndex]
+    $sourceId = $publicLinkPool[$sourceIndex]
+    $targetId = $publicLinkPool[$targetIndex]
     $pairKey = "$sourceId-$targetId"
 
     if ($createdPairs.Contains($pairKey)) {

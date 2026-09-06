@@ -28,6 +28,7 @@
     links: GraphLink[];
     centerNodeId?: string | null;
     selectedNodeId?: string | null;
+    stableRender?: boolean;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
     onNodeDoubleClick?: (node: { id: string; title: string; type?: string }) => void;
     onReady?: () => void;
@@ -37,9 +38,14 @@
 
   let isLoading = $state(true);
   let error = $state<string | null>(null);
+  let sceneReady = $state(false);
+  let stableRender = $state(false);
+
+  const isStable = $derived(sceneReady && !isLoading && !error);
 
   onMount(async () => {
     if (!browser) return;
+    stableRender = new URL(window.location.href).searchParams.get("stableRender") === "true";
     if (!isWebGLAvailable()) {
       error = t("graph3d.errorLoad");
       isLoading = false;
@@ -59,19 +65,28 @@
 
   function handleReady() {
     isLoading = false;
+    sceneReady = true;
   }
 
   function handleLoadingChange(loading: boolean) {
     isLoading = loading;
+    if (loading) {
+      sceneReady = false;
+    }
   }
 
   function handleError(message: string) {
     error = message;
     isLoading = false;
+    sceneReady = false;
   }
 </script>
 
-<div class="graph-3d-viewer" data-testid="graph-3d-viewer">
+<div
+  class="graph-3d-viewer"
+  data-testid="graph-3d-viewer"
+  data-test-stable={isStable ? "true" : "false"}
+>
   {#if error}
     <div class="error-overlay" data-testid="graph-3d-error">
       <div class="error-content">
@@ -80,7 +95,11 @@
       </div>
     </div>
   {:else if isLoading}
-    <div class="loading-overlay" transition:fade={{ duration: 400 }} data-testid="graph-3d-loading">
+    <div
+      class="loading-overlay"
+      in:fade={{ duration: stableRender ? 0 : 400 }}
+      data-testid="graph-3d-loading"
+    >
       <div class="spinner"></div>
       <p class="loading-title">{t("graph3d.loadingTitle")}</p>
       <p class="loading-subtitle">{t("graph3d.loadingSubtitle")}</p>
@@ -93,6 +112,7 @@
       {links}
       {centerNodeId}
       {selectedNodeId}
+      {stableRender}
       {onNodeClick}
       {onNodeDoubleClick}
       onReady={handleReady}
