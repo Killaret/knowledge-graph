@@ -30,7 +30,7 @@ Knowledge Graph is a note-management system with graph relationships and NLP-pow
 - Agent handoff: `docs/AI_HANDOFF.md`
 - Agent protocol: `docs/AI_AGENT_PROTOCOL.md`
 - Current audit: `docs/AI_PROCESS_AUDIT.md`
-- Roadmap: `ROADMAP.md`, `ROADMAP.ru.md`
+- Roadmap: `ROADMAP.md`; детальные планы: `docs/BACKLOG.md`
 
 ## Devin Workflow
 

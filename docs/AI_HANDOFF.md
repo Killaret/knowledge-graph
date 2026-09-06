@@ -46,6 +46,7 @@
 | Постановка P11-2, журнал проектирования кластеризации, спека `architecture/clustering.md` переведена в отложенные с причиной | [`tasks/P11-1-clustering-design-notes.md`](tasks/P11-1-clustering-design-notes.md) | принято | 2026-09-06 |
 | Верификация P11-2: кросс-языковая близость с числами, отсутствие смеси векторов двух моделей | [`tasks/P11-2-multilingual-embeddings.md`](tasks/P11-2-multilingual-embeddings.md) | ждёт реализации | 2026-09-06 |
 | Постановки P11-3 (нормализация ключевых слов) и P11-4 (кластеризация) | [`tasks/P11-1-clustering-design-notes.md`](tasks/P11-1-clustering-design-notes.md) | ждёт | 2026-09-06 |
+| Витрина документации: живой `CHANGELOG`, роадмап сжат до страницы, планы вынесены в `BACKLOG.md`, гипотезы в `IDEAS.md`, заведён указатель `docs/README.md`, `ROADMAP.ru.md` и `IDEAS_EN.md` удалены как дубликаты | [`README.md`](../README.md), [`../ROADMAP.md`](../ROADMAP.md) | **на ревью** | 2026-09-06 |
 | Верификация AUD-2, два раунда | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | принято | 2026-09-06 |
 | Два замечания Devin по контуру закрыты: методология ревью возвращена в `/kg-work`, атрибуция в журнале исправлена | [`tasks/AUD-10-review-findings.md`](tasks/AUD-10-review-findings.md) | принято | 2026-09-05 |
 | Верификация AUD-3 | [`tasks/AUD-3-token-transport.md`](tasks/AUD-3-token-transport.md) | принято — проверено мутацией | 2026-09-06 |

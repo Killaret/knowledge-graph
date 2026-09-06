@@ -1,5 +1,12 @@
 # Architecture Roadmap: SaaS Migration
 
+> **Archived, April 2026.** Kept for the architectural reasoning, not as a plan of record.
+> Its phase numbers do not match the current roadmap: Phase 6 (hierarchical keyword clustering)
+> was deferred — see [`architecture/clustering.md`](architecture/clustering.md) for why — and
+> clustering is now approached differently, per
+> [`tasks/P11-1-clustering-design-notes.md`](tasks/P11-1-clustering-design-notes.md).
+> Current direction: [`../ROADMAP.md`](../ROADMAP.md). Detailed plans: [`BACKLOG.md`](BACKLOG.md).
+
 ## Executive Summary
 
 This roadmap defines the phased migration from single-user MVP to **multi-tenant SaaS architecture**. Each phase delivers incremental value while maintaining system stability.

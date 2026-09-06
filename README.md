@@ -198,8 +198,13 @@ knowledge-graph/
 
 ## 📚 Documentation
 
+Полный указатель по каталогу — [docs/README.md](docs/README.md).
+
 ### Core Documentation
-- [🎯 Roadmap](ROADMAP.md) — план развития продукта
+- [🎯 Roadmap](ROADMAP.md) — куда идёт проект
+- [📋 Backlog](docs/BACKLOG.md) — детальные планы по каждому пункту роадмапа
+- [💡 Ideas](docs/IDEAS.md) — гипотезы, ещё не ставшие планами
+- [📜 Changelog](CHANGELOG.md) — что уже выпущено
 - [📐 Architecture](docs/architecture/README.md) — C4 модель, UML, ADR
 - [🚀 Deployment](docs/DEPLOYMENT_EN.md) — руководство по развертыванию
 - [⚙️ Configuration](docs/CONFIGURATION_EN.md) — настройка системы
@@ -209,7 +214,9 @@ knowledge-graph/
 - [🔐 Authentication](backend/internal/auth/README.md) — система авторизации
 - [🎯 Achievements](backend/internal/application/achievement/) — геймификация
 - [💾 Backup](docs/BACKUP.md) — резервное копирование
-- [🔍 NLP Integration](docs/RECOMMENDATION_ARCHITECTURE.md) — рекомендации\n- [📱 Frontend Features](docs/FRONTEND_FEATURES.md) — double-tap zoom, responsive design\n- [🧪 Visual Regression Testing](docs/ARGOS.md) — Argos visual testing
+- [🔍 NLP Integration](docs/RECOMMENDATION_ARCHITECTURE.md) — рекомендации
+- [📱 Frontend Features](docs/FRONTEND_FEATURES.md) — double-tap zoom, responsive design
+- [🧪 Visual Regression Testing](docs/ARGOS.md) — Argos visual testing
 
 ### Developer Guides
 - [🤖 AI Agents](docs/AGENTS.md) — использование AI агентов

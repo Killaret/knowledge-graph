@@ -116,7 +116,7 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
 - [`.windsurfrules`](../../.windsurfrules), если изменились конвенции.
 - [`docs/PROJECT_REVIEW_AI_AGENTS.md`](../../docs/PROJECT_REVIEW_AI_AGENTS.md) — AI knowledge transfer и текущее состояние.
 - Соответствующие подсистемные документы: `docs/TESTING.md`, `docs/REGRESSION_TEST_PLAN.md`, `docs/BACKUP.md` и т.д.
-- [`ROADMAP.md`](../../ROADMAP.md) / [`ROADMAP.ru.md`](../../ROADMAP.ru.md) — если изменился scope.
+- [`ROADMAP.md`](../../ROADMAP.md) и [`docs/BACKLOG.md`](../../docs/BACKLOG.md) — если изменился scope.
 - [`knowledge-graph.config.json`](../../knowledge-graph.config.json) — для новых опций конфигурации.
 - [`docs/CONFIGURATION_EN.md`](../../docs/CONFIGURATION_EN.md) — для env-переменных и конфиг reference.
 

@@ -9,7 +9,7 @@ Use this prompt at the start of a strategic chat — for architecture alternativ
 Before answering, read:
 
 1. [`.windsurfrules`](../../.windsurfrules) — normative rules (architecture, security, testing, language, Docker, data preservation).
-2. [`ROADMAP.md`](../../ROADMAP.md) and [`ROADMAP.ru.md`](../../ROADMAP.ru.md) — current scope, priorities, and backlog.
+2. [`ROADMAP.md`](../../ROADMAP.md) — direction; [`docs/BACKLOG.md`](../../docs/BACKLOG.md) — detailed plans.
 3. [`docs/PROJECT_REVIEW_AI_AGENTS.md`](../../docs/PROJECT_REVIEW_AI_AGENTS.md) — current state, recent fixes, known risks.
 4. [`docs/ARCHITECTURE_SUMMARY.md`](../../docs/ARCHITECTURE_SUMMARY.md) — high-level design.
 5. For the topic in question, also read the relevant subsystem doc in `docs/` (e.g., `TESTING.md`, `BACKUP.md`, `REGRESSION_TEST_PLAN.md`).

@@ -114,7 +114,7 @@ After any change to behavior, configuration, architecture, Docker stack, or envi
 - [`.windsurfrules`](../../.windsurfrules) if conventions change.
 - [`docs/PROJECT_REVIEW_AI_AGENTS.md`](../../docs/PROJECT_REVIEW_AI_AGENTS.md) for AI knowledge transfer and current state.
 - Relevant subsystem docs: `docs/TESTING.md`, `docs/REGRESSION_TEST_PLAN.md`, `docs/BACKUP.md`, etc.
-- [`ROADMAP.md`](../../ROADMAP.md) / [`ROADMAP.ru.md`](../../ROADMAP.ru.md) if scope changes.
+- [`ROADMAP.md`](../../ROADMAP.md) and [`docs/BACKLOG.md`](../../docs/BACKLOG.md) if scope changes.
 - [`knowledge-graph.config.json`](../../knowledge-graph.config.json) for new configuration options.
 - [`docs/CONFIGURATION_EN.md`](../../docs/CONFIGURATION_EN.md) for environment variables and config reference.
 

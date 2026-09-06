@@ -108,7 +108,7 @@
 
 ##  Ссылки на документацию
 
-- **ROADMAP:** `ROADMAP.ru.md` — основная дорожная карта
+- **ROADMAP:** `ROADMAP.md` — направление; `docs/BACKLOG.md` — детальные планы
 - **LINK_TYPES:** `docs/LINK_TYPES.md` — документация типов связей
 - **AUTO_LINK_CREATION:** `docs/AUTO_LINK_CREATION_PLAN.md` — план автоматического создания связей
 - **NOTE_ERROR_CORRECTION:** `docs/NOTE_ERROR_CORRECTION_PLAN.md` — план исправления ошибок
