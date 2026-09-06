@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-06 — 62a963d
-Прочитано: Devin — 2026-09-06 — e95eba8
+Прочитано: Devin — 2026-09-06 — 685e655
 ```
 
 ---
@@ -40,7 +40,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| Проектные скиллы: `kg-graph-3d`, `kg-regression`, `kg-backup`, `kg-layers`; чек-лист безопасности влит в норму; правила написания скиллов в протоколе | [`AI_AGENT_PROTOCOL.md`](AI_AGENT_PROTOCOL.md), раздел «Проектные скиллы» | **сделано** — ждёт ревью Devin | 2026-09-06 |
+| Проектные скиллы: `kg-graph-3d`, `kg-regression`, `kg-backup`, `kg-layers`; чек-лист безопасности влит в норму; правила написания скиллов в протоколе | [`AI_AGENT_PROTOCOL.md`](AI_AGENT_PROTOCOL.md), раздел «Проектные скиллы» | **отклонено** — см. [`tasks/PROJECT-SKILLS-review-findings.md`](tasks/PROJECT-SKILLS-review-findings.md) | 2026-09-06 |
 | A-1: верификация на живом тест-стеке, два раунда | [`tasks/A-1-review-findings.md`](tasks/A-1-review-findings.md) | **принято** в раунде 2 | 2026-09-06 |
 | Ревью хвоста A-3: шесть находок раунда 3 | [`tasks/A-3-review-findings.md`](tasks/A-3-review-findings.md) | **принято** — все шесть закрыты, проверено пробами | 2026-09-06 |
 | Три правки A-3 (порядок фаз, ветка `default`, `-Skipped` с ненулевым кодом) не покрыты регрессией: тест проходит на сломанном коде, проверено мутацией | [`tasks/A-3-review-findings.md`](tasks/A-3-review-findings.md) | ждёт | 2026-09-06 |
