@@ -26,7 +26,7 @@
 | Мелочь по AUD-2: пометить `cmd/seed/seed_test.go` тегом `//go:build integration` — он тянет testcontainers в юнит-прогон; и проверять пустую строку до `uuid.Parse`, иначе понятная ошибка «role not found» недостижима | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | **на ревью** | 2026-09-06 |
 | После починки сидера: прогнать `seed-test-data.ps1` | — | принято — 5 notes, 2 links, NLP 5/5; Claude Code подтвердил учётку в базе и вход по API | 2026-09-06 |
 | AUD-3: транспорт токена — убрать `?token=`, PKCE на `S256`, отвязать `state` от флага PKCE | [`tasks/AUD-3-token-transport.md`](tasks/AUD-3-token-transport.md) | **на ревью** | 2026-09-06 |
-| AUD-6: разведка по 125 неисполняемым BDD-сценариям. Только цифры, чинить не нужно | [`tasks/AUD-6-bdd-reconnaissance.md`](tasks/AUD-6-bdd-reconnaissance.md) | ждёт | 2026-09-05 |
+| AUD-6: разведка по 125 неисполняемым BDD-сценариям. Только цифры, чинить не нужно | [`tasks/AUD-6-bdd-reconnaissance.md`](tasks/AUD-6-bdd-reconnaissance.md) | **на ревью** | 2026-09-06 |
 | P11-2: мультиязычная модель эмбеддингов. Фундамент под кластеризацию, делается до неё | [`tasks/P11-2-multilingual-embeddings.md`](tasks/P11-2-multilingual-embeddings.md) | ждёт | 2026-09-06 |
 
 ## На Claude Code
