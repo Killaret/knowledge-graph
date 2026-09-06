@@ -64,3 +64,4 @@
 | 2026-09-06 | Devin | A-3 хвост раунда 3: шесть находок | принято | `18b1593` |
 | 2026-09-06 | Claude Code | Ревью хвоста A-3, мутация показала непокрытую правку | принято | этот коммит |
 || 2026-09-06 | Devin | Ревью проектных скиллов: четыре новых скилла, чек-лист безопасности, правила написания — оформлено, якоря на месте, ссылочная проверка прошла | отклонено | `e95eba8`, [`tasks/PROJECT-SKILLS-review-findings.md`](tasks/PROJECT-SKILLS-review-findings.md) |
+||| 2026-09-06 | Devin | Setup авторизации для визуального проекта: `tests/setup/auth.setup.ts`, `visual-real-auth` в `playwright.config.ts`, условный `__SKIP_AUTH__` в `visual-regression.spec.ts` | на ревью у Claude Code | этот коммит |

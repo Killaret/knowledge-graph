@@ -67,8 +67,13 @@ export default defineConfig({
   projects: [
     // Setup project for auth bypass (used by skip-auth projects)
     {
-      name: "setup",
-      testMatch: "**/setup/*.setup.ts",
+      name: "setup-skip",
+      testMatch: "**/setup/skip-auth.setup.ts",
+    },
+    // Setup project for real auth (used by real-auth projects)
+    {
+      name: "setup-auth",
+      testMatch: "**/setup/auth.setup.ts",
     },
     // SKIP_AUTH mode project: skip-auth tests only, excludes real-auth tests
     {
@@ -80,7 +85,7 @@ export default defineConfig({
         },
       },
       grepInvert: /@3d|@visual|@auth-real|@manual|@canvas/,
-      dependencies: ["setup"],
+      dependencies: ["setup-skip"],
     },
     // Real auth project: only @auth-real tests (requires backend SKIP_AUTH=false)
     {
@@ -103,7 +108,20 @@ export default defineConfig({
         },
       },
       grep: /@visual/,
-      dependencies: ["setup"],
+      dependencies: ["setup-skip"],
+    },
+    // Visual regression with real auth (authorized baseline)
+    {
+      name: "visual-real-auth",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "tests/setup/.auth/testuser.json",
+        launchOptions: {
+          args: ["--disable-web-security"],
+        },
+      },
+      grep: /@visual/,
+      dependencies: ["setup-auth"],
     },
   ],
   // Auto-start dev server for tests - enable with PLAYWRIGHT_DEV_SERVER=true

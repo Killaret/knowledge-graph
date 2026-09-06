@@ -6,6 +6,7 @@ build/
 .svelte2tsx-language-server-files/
 playwright-report/
 test-results/screenshots/
+tests/setup/.auth/
 
 # --- Test Results & Coverage ---
 cucumber-report.html

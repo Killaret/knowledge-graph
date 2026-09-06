@@ -19,12 +19,9 @@ const VIEWPORTS = [
 ];
 
 test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.addInitScript(() => {
-      // Enable auth bypass for isolated visual tests
-      (window as any).__SKIP_AUTH__ = true;
-
       // Disable cockpit panel slide/resize animations so the 3D scene element
       // is stable before the element-screenshot in argosScreenshot.
       localStorage.setItem(
@@ -40,6 +37,14 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
         return seed / m;
       };
     });
+
+    // The public baseline still uses SKIP_AUTH injection; the authorized
+    // baseline relies on the persisted storageState from tests/setup/auth.setup.ts.
+    if (testInfo.project.name !== "visual-real-auth") {
+      await page.addInitScript(() => {
+        (window as any).__SKIP_AUTH__ = true;
+      });
+    }
   });
 
   async function waitForApp(page: Page) {

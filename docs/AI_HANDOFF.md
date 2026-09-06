@@ -33,7 +33,7 @@
 
 | A-1: сигнал готовности и детерминизм 3D | [`tasks/A-1-review-findings.md`](tasks/A-1-review-findings.md) | **принято** — оверлей снят к моменту сигнала, прогоны 1 и 2 побайтово идентичны, туман даёт 21,58 % диффа при 0,005 % шума | 2026-09-06 |
 | AUD-4: вход через Яндекс | [`tasks/AUD-4-yandex-oauth-contract.md`](tasks/AUD-4-yandex-oauth-contract.md) | **принято** — живой `200` с JSON `{url}`, `code_challenge_method=S256` | 2026-09-06 |
-| Setup авторизации для визуального проекта: `tests/setup/skip-auth.setup.ts` делает лишь `addInitScript(window.__SKIP_AUTH__)`, это не переживает переход между проектами Playwright и токена не даёт. Нужен вход под `testuser` и `storageState` | [`tasks/A-1-review-findings.md`](tasks/A-1-review-findings.md) | ждёт | 2026-09-06 |
+| Setup авторизации для визуального проекта: `tests/setup/skip-auth.setup.ts` делает лишь `addInitScript(window.__SKIP_AUTH__)`, это не переживает переход между проектами Playwright и токена не даёт. Нужен вход под `testuser` и `storageState` | [`tasks/A-1-review-findings.md`](tasks/A-1-review-findings.md) | **на ревью** — реализован `tests/setup/auth.setup.ts`, добавлен `visual-real-auth` в `playwright.config.ts`, `visual-regression.spec.ts` переключает `__SKIP_AUTH__` по имени проекта | 2026-09-06 |
 | Сидер: публиковать связанные заметки | [`tasks/A-1-review-findings.md`](tasks/A-1-review-findings.md) | **принято** — 60 из 60 связей между публичными, эндпоинт и страница согласны | 2026-09-06 |
 
 ## На Claude Code
