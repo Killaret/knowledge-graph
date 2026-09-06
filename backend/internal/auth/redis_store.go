@@ -176,6 +176,28 @@ func (s *RedisTokenStore) GetPKCE(ctx context.Context, state string) (*PKCE, err
 	}, nil
 }
 
+// StoreState stores an OAuth state parameter for CSRF protection.
+func (s *RedisTokenStore) StoreState(ctx context.Context, state string, ttl time.Duration) error {
+	key := s.key("state:" + state)
+	return s.client.Set(ctx, key, state, ttl).Err()
+}
+
+// GetState retrieves and deletes the stored state. It returns an error when the
+// state is missing or expired.
+func (s *RedisTokenStore) GetState(ctx context.Context, state string) (string, error) {
+	key := s.key("state:" + state)
+
+	val, err := s.client.GetDel(ctx, key).Result()
+	if err == redis.Nil {
+		return "", fmt.Errorf("state not found")
+	}
+	if err != nil {
+		return "", err
+	}
+
+	return val, nil
+}
+
 // CachePermission caches user permissions in Redis
 func (s *RedisTokenStore) CachePermission(ctx context.Context, userID, resource, action string, allowed bool, ttl time.Duration) error {
 	key := s.key(fmt.Sprintf("perm:%s:%s:%s", userID, resource, action))

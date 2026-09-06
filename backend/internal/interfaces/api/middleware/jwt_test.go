@@ -1,9 +1,11 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"knowledge-graph/internal/auth"
 
@@ -30,12 +32,14 @@ func TestExtractToken(t *testing.T) {
 	config := &JWTConfig{
 		HeaderName:  "Authorization",
 		TokenLookup: "header",
+		CookieName:  "access_token",
 	}
 
 	tests := []struct {
 		name      string
 		setupReq  func(*http.Request)
 		wantToken string
+		wantErr   bool
 	}{
 		{
 			name: "valid bearer token",
@@ -43,25 +47,45 @@ func TestExtractToken(t *testing.T) {
 				req.Header.Set("Authorization", "Bearer test-token")
 			},
 			wantToken: "test-token",
+			wantErr:   false,
 		},
 		{
 			name: "token without bearer prefix",
 			setupReq: func(req *http.Request) {
 				req.Header.Set("Authorization", "test-token")
 			},
-			wantToken: "test-token",
+			wantToken: "",
+			wantErr:   true,
+		},
+		{
+			name: "empty bearer token",
+			setupReq: func(req *http.Request) {
+				req.Header.Set("Authorization", "Bearer ")
+			},
+			wantToken: "",
+			wantErr:   true,
 		},
 		{
 			name: "token from query parameter",
 			setupReq: func(req *http.Request) {
 				req.URL.RawQuery = "token=query-token"
 			},
-			wantToken: "query-token",
+			wantToken: "",
+			wantErr:   true,
+		},
+		{
+			name: "token from cookie",
+			setupReq: func(req *http.Request) {
+				req.AddCookie(&http.Cookie{Name: "access_token", Value: "cookie-token"})
+			},
+			wantToken: "cookie-token",
+			wantErr:   false,
 		},
 		{
 			name:      "no token",
 			setupReq:  func(req *http.Request) {},
 			wantToken: "",
+			wantErr:   true,
 		},
 	}
 
@@ -71,9 +95,10 @@ func TestExtractToken(t *testing.T) {
 			tt.setupReq(req)
 
 			c := &gin.Context{Request: req}
-			token, _ := extractToken(c, config)
+			token, err := extractToken(c, config)
 
 			assert.Equal(t, tt.wantToken, token)
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -265,7 +290,7 @@ func TestJWTAuth(t *testing.T) {
 				token, _ := jwtManager.GenerateTokenPair(testID, "testuser", "user")
 				req.Header.Set("Authorization", token.AccessToken)
 			},
-			wantStatus: http.StatusOK,
+			wantStatus: http.StatusUnauthorized,
 		},
 		{
 			name: "token from query parameter",
@@ -275,7 +300,7 @@ func TestJWTAuth(t *testing.T) {
 				token, _ := jwtManager.GenerateTokenPair(testID, "testuser", "user")
 				req.URL.RawQuery = "token=" + token.AccessToken
 			},
-			wantStatus: http.StatusOK,
+			wantStatus: http.StatusUnauthorized,
 		},
 	}
 
@@ -495,7 +520,7 @@ func TestJWTAuthCustomHeaderName(t *testing.T) {
 	testID := uuid.New()
 	token, _ := jwtManager.GenerateTokenPair(testID, "testuser", "user")
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.Header.Set("X-Custom-Auth", token.AccessToken)
+	req.Header.Set("X-Custom-Auth", "Bearer "+token.AccessToken)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -561,26 +586,31 @@ func TestExtractTokenBearerCaseInsensitive(t *testing.T) {
 		name       string
 		authHeader string
 		wantToken  string
+		wantErr    bool
 	}{
 		{
 			name:       "Bearer lowercase",
 			authHeader: "bearer token123",
 			wantToken:  "token123",
+			wantErr:    false,
 		},
 		{
 			name:       "Bearer uppercase",
 			authHeader: "BEARER token123",
 			wantToken:  "token123",
+			wantErr:    false,
 		},
 		{
 			name:       "Bearer mixed case",
 			authHeader: "BeArEr token123",
 			wantToken:  "token123",
+			wantErr:    false,
 		},
 		{
 			name:       "no Bearer prefix",
 			authHeader: "token123",
-			wantToken:  "token123",
+			wantToken:  "",
+			wantErr:    true,
 		},
 	}
 
@@ -590,9 +620,10 @@ func TestExtractTokenBearerCaseInsensitive(t *testing.T) {
 			req.Header.Set("Authorization", tt.authHeader)
 
 			c := &gin.Context{Request: req}
-			token, _ := extractToken(c, config)
+			token, err := extractToken(c, config)
 
 			assert.Equal(t, tt.wantToken, token)
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -622,7 +653,8 @@ func TestJWTAuthTokenLookupQuery(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	// Query token transport has been removed.
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
 func TestJWTAuthTokenLookupMixed(t *testing.T) {
@@ -651,8 +683,8 @@ func TestJWTAuthTokenLookupMixed(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	// Should work since extractToken tries query parameter
-	assert.Equal(t, http.StatusOK, w.Code)
+	// Query token transport has been removed.
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
 func TestJWTAuthMissingToken(t *testing.T) {
@@ -762,4 +794,78 @@ func TestJWTAuthSwaggerWildcard(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+// panicTokenStore fails any call to IsTokenBlacklisted, proving that a missing
+// token does not reach the store.
+type panicTokenStore struct{}
+
+func (p *panicTokenStore) BlacklistToken(ctx context.Context, token string, ttl time.Duration) error {
+	return nil
+}
+func (p *panicTokenStore) IsTokenBlacklisted(ctx context.Context, token string) (bool, error) {
+	panic("IsTokenBlacklisted should not be called when token is missing")
+}
+func (p *panicTokenStore) StoreRefreshToken(ctx context.Context, userID string, token string, expiresAt time.Time) error {
+	return nil
+}
+func (p *panicTokenStore) ValidateRefreshToken(ctx context.Context, token string) (string, error) {
+	return "", nil
+}
+func (p *panicTokenStore) RevokeRefreshToken(ctx context.Context, token string, ttl time.Duration) error {
+	return nil
+}
+func (p *panicTokenStore) StorePasswordResetToken(ctx context.Context, userID string, token string, ttl time.Duration) error {
+	return nil
+}
+func (p *panicTokenStore) ValidatePasswordResetToken(ctx context.Context, token string) (string, error) {
+	return "", nil
+}
+func (p *panicTokenStore) DeletePasswordResetToken(ctx context.Context, token string) error {
+	return nil
+}
+func (p *panicTokenStore) StorePKCE(ctx context.Context, state string, pkce *auth.PKCE, ttl time.Duration) error {
+	return nil
+}
+func (p *panicTokenStore) GetPKCE(ctx context.Context, state string) (*auth.PKCE, error) {
+	return nil, nil
+}
+func (p *panicTokenStore) StoreState(ctx context.Context, state string, ttl time.Duration) error {
+	return nil
+}
+func (p *panicTokenStore) GetState(ctx context.Context, state string) (string, error) { return "", nil }
+func (p *panicTokenStore) CachePermission(ctx context.Context, userID, resource, action string, allowed bool, ttl time.Duration) error {
+	return nil
+}
+func (p *panicTokenStore) CheckCachedPermission(ctx context.Context, userID, resource, action string) (bool, bool, error) {
+	return false, false, nil
+}
+func (p *panicTokenStore) InvalidatePermissionCache(ctx context.Context, userID string) error {
+	return nil
+}
+
+func TestJWTAuthNoTokenSkipsBlacklist(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := &JWTConfig{
+		JWTManager:  jwtManager,
+		TokenStore:  &panicTokenStore{},
+		SkipPaths:   []string{},
+		HeaderName:  "Authorization",
+		TokenLookup: "header",
+	}
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }

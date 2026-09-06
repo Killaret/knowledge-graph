@@ -608,13 +608,17 @@ func (h *Handler) YandexLogin(c *gin.Context) {
 		return
 	}
 
-	// Generate state and PKCE if enabled
+	// Generate state and PKCE if enabled. State is always stored and verified
+	// independently of PKCE so that disabling PKCE does not silently remove
+	// CSRF protection.
 	state, _ := authpkg.GenerateRandomToken(32)
+	if h.tokenStore != nil {
+		_ = h.tokenStore.StoreState(c.Request.Context(), state, 10*time.Minute)
+	}
 
-	var codeChallenge string
+	var pkce *authpkg.PKCE
 	if h.cfg.PKCEEnabled {
-		pkce, _ := authpkg.GeneratePKCE(h.cfg.PKCECodeChallengeLength)
-		codeChallenge = pkce.CodeChallenge
+		pkce, _ = authpkg.GeneratePKCE(h.cfg.PKCECodeChallengeLength)
 		// Store PKCE data in Redis
 		if h.tokenStore != nil {
 			_ = h.tokenStore.StorePKCE(c.Request.Context(), state, pkce, 10*time.Minute)
@@ -630,9 +634,9 @@ func (h *Handler) YandexLogin(c *gin.Context) {
 		"scope":         []string{"login:email login:info"},
 	}
 
-	if h.cfg.PKCEEnabled && codeChallenge != "" {
-		params.Set("code_challenge", codeChallenge)
-		params.Set("code_challenge_method", "plain")
+	if h.cfg.PKCEEnabled && pkce != nil {
+		params.Set("code_challenge", pkce.CodeChallenge)
+		params.Set("code_challenge_method", pkce.CodeChallengeMethod)
 	}
 
 	redirectURL := authURL + "?" + params.Encode()
@@ -649,7 +653,17 @@ func (h *Handler) YandexCallback(c *gin.Context) {
 		return
 	}
 
-	// Verify state and get PKCE verifier if enabled
+	// Verify state first, independent of PKCE, to keep CSRF protection on
+	// when PKCE is disabled.
+	if h.tokenStore != nil {
+		_, err := h.tokenStore.GetState(c.Request.Context(), state)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid state"})
+			return
+		}
+	}
+
+	// Get PKCE verifier if enabled
 	var codeVerifier string
 	if h.cfg.PKCEEnabled && h.tokenStore != nil {
 		pkce, err := h.tokenStore.GetPKCE(c.Request.Context(), state)

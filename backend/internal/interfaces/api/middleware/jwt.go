@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -117,17 +118,20 @@ func JWTAuth(config *JWTConfig) gin.HandlerFunc {
 	}
 }
 
-// extractToken extracts JWT token from request
+// extractToken extracts JWT token from request. It only accepts the Bearer
+// Authorization header or the configured HttpOnly cookie. Raw headers and query
+// parameters are rejected to prevent tokens from leaking into logs, browser
+// history, and Referer headers.
 func extractToken(c *gin.Context, config *JWTConfig) (string, error) {
 	// Try header first
 	authHeader := c.GetHeader(config.HeaderName)
 	if authHeader != "" {
 		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+		if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") && parts[1] != "" {
 			return parts[1], nil
 		}
-		// If no Bearer prefix, assume it's the token itself
-		return authHeader, nil
+		// A non-Bearer header is not a valid token transport.
+		return "", errors.New("missing or malformed token")
 	}
 
 	// Try HttpOnly cookie
@@ -137,13 +141,7 @@ func extractToken(c *gin.Context, config *JWTConfig) (string, error) {
 		}
 	}
 
-	// Try query parameter
-	token := c.Query("token")
-	if token != "" {
-		return token, nil
-	}
-
-	return "", nil
+	return "", errors.New("missing or malformed token")
 }
 
 // GetUserID extracts user ID from context

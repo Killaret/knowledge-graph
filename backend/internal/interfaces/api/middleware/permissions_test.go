@@ -89,6 +89,15 @@ func (m *mockTokenStore) GetPKCE(ctx context.Context, state string) (*authpkg.PK
 	return args.Get(0).(*authpkg.PKCE), args.Error(1)
 }
 
+func (m *mockTokenStore) StoreState(ctx context.Context, state string, ttl time.Duration) error {
+	return m.Called(ctx, state, ttl).Error(0)
+}
+
+func (m *mockTokenStore) GetState(ctx context.Context, state string) (string, error) {
+	args := m.Called(ctx, state)
+	return args.String(0), args.Error(1)
+}
+
 func (m *mockTokenStore) CachePermission(ctx context.Context, userID, resource, action string, allowed bool, ttl time.Duration) error {
 	return m.Called(ctx, userID, resource, action, allowed, ttl).Error(0)
 }

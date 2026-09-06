@@ -20,6 +20,8 @@ type TokenStore interface {
 	DeletePasswordResetToken(ctx context.Context, token string) error
 	StorePKCE(ctx context.Context, state string, pkce *PKCE, ttl time.Duration) error
 	GetPKCE(ctx context.Context, state string) (*PKCE, error)
+	StoreState(ctx context.Context, state string, ttl time.Duration) error
+	GetState(ctx context.Context, state string) (string, error)
 	CachePermission(ctx context.Context, userID, resource, action string, allowed bool, ttl time.Duration) error
 	CheckCachedPermission(ctx context.Context, userID, resource, action string) (bool, bool, error)
 	InvalidatePermissionCache(ctx context.Context, userID string) error

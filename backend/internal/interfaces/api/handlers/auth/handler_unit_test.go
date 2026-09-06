@@ -10,6 +10,8 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -130,6 +132,15 @@ func (m *mockTokenStore) GetPKCE(ctx context.Context, state string) (*authpkg.PK
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*authpkg.PKCE), args.Error(1)
+}
+
+func (m *mockTokenStore) StoreState(ctx context.Context, state string, ttl time.Duration) error {
+	return m.Called(ctx, state, ttl).Error(0)
+}
+
+func (m *mockTokenStore) GetState(ctx context.Context, state string) (string, error) {
+	args := m.Called(ctx, state)
+	return args.String(0), args.Error(1)
 }
 
 func (m *mockTokenStore) CachePermission(ctx context.Context, userID, resource, action string, allowed bool, ttl time.Duration) error {
@@ -255,6 +266,7 @@ func TestYandexCallback_NewUser(t *testing.T) {
 	userRepo.On("FindByLogin", mock.Anything, "yandexuser").Return(nil, nil)
 	userRepo.On("Create", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
 	refreshRepo.On("Create", mock.Anything, mock.AnythingOfType("*auth.RefreshToken")).Return(nil)
+	tokenStore.On("GetState", mock.Anything, "state").Return("state", nil)
 	tokenStore.On("StoreRefreshToken", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("time.Time")).Return(nil)
 
 	w := httptest.NewRecorder()
@@ -288,6 +300,7 @@ func TestYandexCallback_ExistingUser(t *testing.T) {
 
 	userRepo.On("FindByEmail", mock.Anything, "oauth@example.com").Return(u, nil)
 	refreshRepo.On("Create", mock.Anything, mock.AnythingOfType("*auth.RefreshToken")).Return(nil)
+	tokenStore.On("GetState", mock.Anything, "state").Return("state", nil)
 	tokenStore.On("StoreRefreshToken", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("time.Time")).Return(nil)
 
 	w := httptest.NewRecorder()
@@ -896,4 +909,133 @@ func TestResetPassword(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "failed to update password")
 	})
+}
+
+func TestYandexLogin_S256(t *testing.T) {
+	h, _, _, tokenStore, _ := setupUnitHandler(t)
+	h.cfg.PKCEEnabled = true
+
+	tokenStore.On("StoreState", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
+	tokenStore.On("StorePKCE", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.AnythingOfType("time.Duration")).Return(nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/auth/yandex/login", nil)
+	c.Request.Host = "example.com"
+	h.YandexLogin(c)
+
+	assert.Equal(t, http.StatusFound, w.Code)
+
+	location := w.Header().Get("Location")
+	require.True(t, strings.HasPrefix(location, "https://oauth.yandex.com/authorize"))
+
+	parsed, err := url.Parse(location)
+	require.NoError(t, err)
+
+	q := parsed.Query()
+	assert.NotEmpty(t, q.Get("state"))
+	assert.Equal(t, "S256", q.Get("code_challenge_method"))
+	assert.NotEmpty(t, q.Get("code_challenge"))
+}
+
+func TestYandexCallback_PKCEEnabled_InvalidState(t *testing.T) {
+	h, _, _, tokenStore, _ := setupUnitHandler(t)
+	h.cfg.PKCEEnabled = true
+	h.SetOAuthProvider(&mockOAuthProvider{})
+
+	tokenStore.On("GetState", mock.Anything, "bad-state").Return("", errors.New("state not found"))
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/auth/yandex/callback?code=code&state=bad-state", nil)
+	c.Request.Host = "example.com"
+	h.YandexCallback(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "invalid state")
+}
+
+func TestYandexCallback_PKCEEnabled_ValidState(t *testing.T) {
+	h, userRepo, refreshRepo, tokenStore, _ := setupUnitHandler(t)
+	h.cfg.PKCEEnabled = true
+	h.SetOAuthProvider(&mockOAuthProvider{})
+	provider := h.oauthProvider.(*mockOAuthProvider)
+
+	verifier := "test-verifier"
+	pkce := &authpkg.PKCE{
+		CodeChallenge:       "challenge",
+		CodeChallengeMethod: "S256",
+		CodeVerifier:        verifier,
+	}
+
+	provider.On("Exchange", mock.Anything, "code", verifier).Return("access-token", nil)
+	provider.On("UserInfo", mock.Anything, "access-token").Return(&authpkg.OAuthUserInfo{
+		ID:    "yandex-3",
+		Login: "pkceuser",
+		Email: "pkce@example.com",
+	}, nil)
+
+	userRepo.On("FindByEmail", mock.Anything, "pkce@example.com").Return(nil, nil)
+	userRepo.On("FindByLogin", mock.Anything, "pkceuser").Return(nil, nil)
+	userRepo.On("Create", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
+	refreshRepo.On("Create", mock.Anything, mock.AnythingOfType("*auth.RefreshToken")).Return(nil)
+	tokenStore.On("GetState", mock.Anything, "state").Return("state", nil)
+	tokenStore.On("GetPKCE", mock.Anything, "state").Return(pkce, nil)
+	tokenStore.On("StoreRefreshToken", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("time.Time")).Return(nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/auth/yandex/callback?code=code&state=state", nil)
+	c.Request.Host = "example.com"
+	h.YandexCallback(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "authenticated via Yandex")
+}
+
+func TestYandexCallback_PKCEDisabled_InvalidState(t *testing.T) {
+	h, _, _, tokenStore, _ := setupUnitHandler(t)
+	h.cfg.PKCEEnabled = false
+	h.SetOAuthProvider(&mockOAuthProvider{})
+
+	tokenStore.On("GetState", mock.Anything, "bad-state").Return("", errors.New("state not found"))
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/auth/yandex/callback?code=code&state=bad-state", nil)
+	c.Request.Host = "example.com"
+	h.YandexCallback(c)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "invalid state")
+}
+
+func TestYandexCallback_PKCEDisabled_ValidState(t *testing.T) {
+	h, userRepo, refreshRepo, tokenStore, _ := setupUnitHandler(t)
+	h.cfg.PKCEEnabled = false
+	h.SetOAuthProvider(&mockOAuthProvider{})
+	provider := h.oauthProvider.(*mockOAuthProvider)
+
+	provider.On("Exchange", mock.Anything, "code", "").Return("access-token", nil)
+	provider.On("UserInfo", mock.Anything, "access-token").Return(&authpkg.OAuthUserInfo{
+		ID:    "yandex-4",
+		Login: "nokceuser",
+		Email: "nokce@example.com",
+	}, nil)
+
+	userRepo.On("FindByEmail", mock.Anything, "nokce@example.com").Return(nil, nil)
+	userRepo.On("FindByLogin", mock.Anything, "nokceuser").Return(nil, nil)
+	userRepo.On("Create", mock.Anything, mock.AnythingOfType("*user.User")).Return(nil)
+	refreshRepo.On("Create", mock.Anything, mock.AnythingOfType("*auth.RefreshToken")).Return(nil)
+	tokenStore.On("GetState", mock.Anything, "state").Return("state", nil)
+	tokenStore.On("StoreRefreshToken", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("time.Time")).Return(nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/auth/yandex/callback?code=code&state=state", nil)
+	c.Request.Host = "example.com"
+	h.YandexCallback(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "authenticated via Yandex")
 }
