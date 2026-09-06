@@ -618,3 +618,32 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 **Осталось.**
 
 - Повторная верификация Claude Code на живом стенде и пересборка официальных baseline Argos (`ARGOS_REFERENCE_BRANCH=main`).
+
+## 18. AUD-4: контракт входа через Яндекс (2026-09-06)
+
+**Что сделано.**
+
+- В `backend/cmd/server/router.go` инициация OAuth перемещена с `/api/v1/auth/yandex` на `/api/v1/auth/yandex/login`; старый путь удалён.
+- В `backend/internal/interfaces/api/handlers/auth/handler.go` `YandexLogin` теперь возвращает `200` с JSON `{"url": "<authorization URL>"}` вместо HTTP-редиректа.
+- `backend/internal/interfaces/api/middleware/jwt.go` уже содержал `/api/v1/auth/yandex/login` в `SkipPaths` — проверено, дублирующих записей нет.
+- `backend/openAPI.yaml` обновлён: путь `/api/v1/auth/yandex/login`, ответ `200` с телом `{ url: string }`, плюс `501` при отсутствии настройки; блок `302` удалён.
+- `frontend/src/shared/api/auth.ts` не требовал изменений — клиент уже звал `/auth/yandex/login` и ожидал JSON.
+- `YandexLoginButton.svelte` использует `window.location.href = result.url`, то есть переход происходит в браузере, а не через `fetch`.
+- `README.md` очищен от пометки «OAuth2 через Яндекс сейчас не работает».
+- `docs/CONFIGURATION_EN.md` дополнен разделом **Authentication** с JSON `backend.auth` и таблицей переменных окружения, включая `YANDEX_CLIENT_ID` и `YANDEX_CLIENT_SECRET`.
+- В `docker-compose.yml`, `docker-compose.personal.yml` и `docker-compose.test.yml` переменные `YANDEX_CLIENT_ID` и `YANDEX_CLIENT_SECRET` теперь прокидываются в backend-сервисы из окружения или `.env`.
+- Юнит-тест `TestYandexLogin_S256` обновлён: проверяет статус `200`, парсит JSON, разбирает URL и верифицирует параметры `client_id`, `response_type`, `state`, `code_challenge` и `code_challenge_method`. Добавлен `TestYandexLogin_NotConfigured` для случая без `YandexClientID`.
+
+**Результаты верификации.**
+
+- `go test ./...` — зелёное.
+- `go vet ./...` — чисто.
+- `npm run test:unit` — 107 файлов, 987 тестов зелёных.
+- `npm run check` — 0 ошибок, 0 предупреждений.
+- `npm run lint` — 0 новых замечаний (3 pre-existing warning).
+- Живой тест-стенд: `GET http://127.0.0.1:18083/api/v1/auth/yandex/login` до правки возвращал `404`, после — `200` с URL `https://oauth.yandex.com/authorize?client_id=test-yandex-client-id&code_challenge=...&code_challenge_method=S256&response_type=code&scope=login%3Aemail+login%3Ainfo&state=...`.
+- Старый путь `/api/v1/auth/yandex` теперь возвращает `401` (маршрут удалён, запрос падает на JWT middleware).
+
+**Осталось.**
+
+- Повторная проверка Claude Code на живом тест-стеке и, при необходимости, реальным `YANDEX_CLIENT_ID`/`YANDEX_CLIENT_SECRET` (callback остаётся вне зоны задачи).

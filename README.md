@@ -26,7 +26,7 @@
 - 🎨 **Celestial Types** — звёзды, планеты, кометы, галактики для разных типов контента
 - 🔍 **Semantic Search** — полнотекстовый поиск с pgvector
 - 📝 **Draft System** — автосохранение черновиков в MongoDB
-- 🔒 **Authentication** — JWT, API keys (OAuth2 через Яндекс сейчас не работает, см. `docs/EXTERNAL_AUDIT_2026-09.md`, находка F-1)
+- 🔒 **Authentication** — JWT, API keys, OAuth2 (Yandex)
 - 🎯 **Achievements** — геймификация с системой достижений
 - 🌐 **Multi-language** — поддержка русского и английского
 - 💾 **Cloud Backup** — резервное копирование на Яндекс.Диск
@@ -132,7 +132,7 @@ cd nlp-service && uvicorn app.main:app --reload
 - **Framework:** Gin + GORM
 - **Database:** PostgreSQL 16 + pgvector
 - **Cache/Queue:** Redis 7 + asynq
-- **Auth:** JWT, API Keys. OAuth2 (Yandex) реализован, но не работает — расхождение маршрута между фронтендом, роутером и middleware (находка F-1)
+- **Auth:** JWT, API Keys, OAuth2 (Yandex)
 - **Graph Service:** gRPC (microservice)
 - **Nginx:** Reverse proxy & API gateway
 

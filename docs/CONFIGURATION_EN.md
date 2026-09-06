@@ -1017,6 +1017,65 @@ docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis
 
 ---
 
+## Authentication
+
+### JSON Configuration (`backend.auth`)
+
+```json
+{
+  "backend": {
+    "auth": {
+      "jwt_secret": "",
+      "jwt_access_ttl_seconds": 900,
+      "jwt_refresh_ttl_seconds": 604800,
+      "argon2_time": 3,
+      "argon2_memory": 65536,
+      "argon2_threads": 4,
+      "api_key_enabled": true,
+      "static_api_key": "",
+      "skip_auth": false,
+      "yandex_client_id": "",
+      "yandex_client_secret": "",
+      "pkce_enabled": true,
+      "pkce_code_challenge_length": 128,
+      "smtp_host": "",
+      "smtp_port": 587,
+      "smtp_user": "",
+      "smtp_password": "",
+      "smtp_from": "noreply@example.com",
+      "password_reset_ttl_seconds": 900,
+      "password_policy_min_length": 10,
+      "password_policy_require_upper": true,
+      "password_policy_require_lower": true,
+      "password_policy_require_digit": true,
+      "password_policy_require_special": true
+    }
+  }
+}
+```
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `JWT_SECRET` | Secret for signing JWT tokens (**must be changed in production**) | - |
+| `JWT_ACCESS_TTL_SECONDS` | Access token TTL | `900` (15 min) |
+| `JWT_REFRESH_TTL_SECONDS` | Refresh token TTL | `604800` (7 days) |
+| `SKIP_AUTH` | Disable authentication (only for development/test) | `false` |
+| `API_KEY_ENABLED` | Enable API key authentication | `true` |
+| `STATIC_API_KEY` | Static API key (generated if empty) | - |
+| `YANDEX_CLIENT_ID` | Yandex OAuth client ID | - |
+| `YANDEX_CLIENT_SECRET` | Yandex OAuth client secret | - |
+| `PKCE_ENABLED` | Enable PKCE for Yandex OAuth | `true` |
+| `SMTP_HOST` | SMTP server for password reset | - |
+| `SMTP_PORT` | SMTP port | `587` |
+| `SMTP_USER` | SMTP username | - |
+| `SMTP_PASSWORD` | SMTP password | - |
+
+> Never commit secrets to the repository. Use environment variables or a `.env` file excluded by `.gitignore`.
+
+---
+
 ## Test-Stack Authentication
 
 ### Overview

@@ -114,7 +114,7 @@ func setupRouter(
 		v1.POST("/auth/refresh", writeLimiter, authHandler.Refresh)
 		v1.POST("/auth/forgot-password", writeLimiter, authHandler.ForgotPassword)
 		v1.POST("/auth/reset-password", writeLimiter, authHandler.ResetPassword)
-		v1.GET("/auth/yandex", authHandler.YandexLogin)
+		v1.GET("/auth/yandex/login", authHandler.YandexLogin)
 		v1.GET("/auth/yandex/callback", authHandler.YandexCallback)
 
 		// User routes

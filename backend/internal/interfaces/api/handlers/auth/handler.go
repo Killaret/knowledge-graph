@@ -640,7 +640,7 @@ func (h *Handler) YandexLogin(c *gin.Context) {
 	}
 
 	redirectURL := authURL + "?" + params.Encode()
-	c.Redirect(http.StatusFound, redirectURL)
+	c.JSON(http.StatusOK, gin.H{"url": redirectURL})
 }
 
 // YandexCallback handles Yandex OAuth callback

@@ -924,18 +924,38 @@ func TestYandexLogin_S256(t *testing.T) {
 	c.Request.Host = "example.com"
 	h.YandexLogin(c)
 
-	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
-	location := w.Header().Get("Location")
-	require.True(t, strings.HasPrefix(location, "https://oauth.yandex.com/authorize"))
+	var body struct {
+		URL string `json:"url"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
 
-	parsed, err := url.Parse(location)
+	require.True(t, strings.HasPrefix(body.URL, "https://oauth.yandex.com/authorize"))
+
+	parsed, err := url.Parse(body.URL)
 	require.NoError(t, err)
 
 	q := parsed.Query()
 	assert.NotEmpty(t, q.Get("state"))
 	assert.Equal(t, "S256", q.Get("code_challenge_method"))
 	assert.NotEmpty(t, q.Get("code_challenge"))
+	assert.Equal(t, "client-id", q.Get("client_id"))
+	assert.Equal(t, "code", q.Get("response_type"))
+}
+
+func TestYandexLogin_NotConfigured(t *testing.T) {
+	h, _, _, _, _ := setupUnitHandler(t)
+	h.cfg.YandexClientID = ""
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/auth/yandex/login", nil)
+	c.Request.Host = "example.com"
+	h.YandexLogin(c)
+
+	assert.Equal(t, http.StatusNotImplemented, w.Code)
+	assert.Contains(t, w.Body.String(), "Yandex OAuth not configured")
 }
 
 func TestYandexCallback_PKCEEnabled_InvalidState(t *testing.T) {

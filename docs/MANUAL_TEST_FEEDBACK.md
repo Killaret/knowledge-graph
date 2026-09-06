@@ -135,6 +135,16 @@ None yet.
 - **Actual:** Baseline and second-run crops are 1240×680 and pixel-identical across runs. The dense-fog crop differs by 114 528 / 843 200 pixels (13.58 %). Differences are concentrated in the background fog and label dimming; node positions remain identical.
 - **Screenshot / Logs:** `docs/assets/a1-3d-visual-regression/3d-baseline.png`, `docs/assets/a1-3d-visual-regression/3d-fog-dense.png`, `frontend/test-results/visual-visual-regression-V-df9ff--3D-Graph---renders-3D-view-visual/argos/visual/3d-graph-view.png`; `npm run test:unit` 987/987; `npm run check` clean.
 
+---
+
+## Verification
+
+- **Case:** AUD-4 / Yandex OAuth login route contract
+- **What:** Verified that `/api/v1/auth/yandex/login` returns JSON `{"url": "..."}` with all required OAuth parameters, that the old `/api/v1/auth/yandex` path is no longer registered, and that `YANDEX_CLIENT_ID` is wired through to the test backend container.
+- **Expected:** Old path (`/api/v1/auth/yandex`) returns an error or 404/401; new path returns `200` with a URL pointing to `https://oauth.yandex.com/authorize` and containing `client_id`, `response_type=code`, `state`, `scope`, `code_challenge` and `code_challenge_method=S256`.
+- **Actual:** Before fix: `GET /api/v1/auth/yandex/login` returned `404 Not Found`; `GET /api/v1/auth/yandex` returned `501 Not Implemented` (no client id configured). After fix and rebuild with `YANDEX_CLIENT_ID=test-yandex-client-id`: `GET /api/v1/auth/yandex/login` returns `200 OK` and JSON `{"url":"https://oauth.yandex.com/authorize?client_id=test-yandex-client-id&code_challenge=...&code_challenge_method=S256&response_type=code&scope=login%3Aemail+login%3Ainfo&state=..."}`. `GET /api/v1/auth/yandex` returns `401` (route removed, falls through to JWT middleware).
+- **Screenshot / Logs:** `curl -s -D - http://127.0.0.1:18083/api/v1/auth/yandex/login` (before: `404`, after: `200`); `go test ./...` green; `go vet ./...` clean; `npm run test:unit` 987/987; `npm run check` 0 errors; `npm run lint` no new warnings.
+
 ## How to add a finding
 
 Create a new bullet under the right section with:

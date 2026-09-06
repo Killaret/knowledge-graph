@@ -216,13 +216,26 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/v1/auth/yandex:
+  /api/v1/auth/yandex/login:
     get:
       summary: Start Yandex OAuth login
       tags: [Auth]
       responses:
-        '302':
-          description: Redirect to Yandex OAuth
+        '200':
+          description: Yandex OAuth authorization URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        '501':
+          description: Yandex OAuth not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/auth/yandex/callback:
     get:
