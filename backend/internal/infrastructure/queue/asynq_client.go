@@ -84,14 +84,24 @@ func (c *AsynqClient) EnqueueExtractKeywords(ctx context.Context, noteID string,
 	return err
 }
 
+// EnqueueComputeEmbedding schedules embedding computation for a note.
 func (c *AsynqClient) EnqueueComputeEmbedding(ctx context.Context, noteID string) error {
-	log.Printf("EnqueueComputeEmbedding called for note %s", noteID)
+	return c.EnqueueComputeEmbeddingDelayed(ctx, noteID, 0)
+}
+
+// EnqueueComputeEmbeddingDelayed schedules embedding computation with a delay.
+func (c *AsynqClient) EnqueueComputeEmbeddingDelayed(ctx context.Context, noteID string, delay time.Duration) error {
+	log.Printf("EnqueueComputeEmbedding called for note %s (delay=%v)", noteID, delay)
 	payload, err := json.Marshal(ComputeEmbeddingTaskPayload{NoteID: noteID})
 	if err != nil {
 		log.Printf("Marshal error: %v", err)
 		return err
 	}
-	task := asynq.NewTask(TypeComputeEmbedding, payload)
+	var opts []asynq.Option
+	if delay > 0 {
+		opts = append(opts, asynq.ProcessIn(delay))
+	}
+	task := asynq.NewTask(TypeComputeEmbedding, payload, opts...)
 	info, err := c.client.EnqueueContext(ctx, task)
 	if err != nil {
 		log.Printf("Enqueue error: %v", err)

@@ -86,7 +86,7 @@ func main() {
 	// Репозитории
 	noteRepo := postgres.NewNoteRepository(database, cacheClient)
 	keywordRepo := postgres.NewKeywordRepository(database)
-	embeddingRepo := postgres.NewEmbeddingRepository(database)
+	embeddingRepo := postgres.NewEmbeddingRepository(database, cfg.NLPModelName)
 	recRepo := postgres.NewRecommendationRepository(database)
 
 	// URL Python-сервиса (внутри Docker – nlp:5000, локально – localhost:5000)

@@ -64,7 +64,8 @@
 
 - **Python 3.11**, **FastAPI**.
 - **sentence-transformers**, **transformers**, **torch**, **yake**, **nltk**.
-- Модель `all-MiniLM-L6-v2`.
+- Модель по умолчанию — `paraphrase-multilingual-MiniLM-L12-v2` (384-мерный, единое пространство для русского и английского).
+- `NLP_MODEL_NAME` — единая переменная окружения для сервисов: `nlp-service` предзагружает её на стадии сборки, `backend` и `graph-service` фильтруют векторы по ней.
 - `HF_HUB_OFFLINE=1` — offline-first режим (dev/personal); в тестовом стеке `HF_HUB_OFFLINE=0`, чтобы можно было докачать модель при пустом host-cache (`nlp-service/Dockerfile`, `docker-compose.test.yml`).
 
 ### Инфраструктура

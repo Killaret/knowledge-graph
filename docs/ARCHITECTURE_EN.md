@@ -508,7 +508,7 @@ EmbedResponse:         {embedding: float[]}
 | `extract_keywords()` | YAKE | Keyword extraction (RU/EN) |
 | `embedding_model.encode()` | sentence-transformers | Text vectorization |
 
-**Model:** `all-MiniLM-L6-v2` (384 dimensions)
+**Model:** `paraphrase-multilingual-MiniLM-L12-v2` (384 dimensions) via `NLP_MODEL_NAME`
 
 #### 3.4 Tests (`tests/`)
 

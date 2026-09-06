@@ -190,7 +190,7 @@ func run(
 
 	noteRepo := postgres.NewNoteRepository(database, cacheClient)
 	linkRepo := postgres.NewLinkRepository(database)
-	embeddingRepo := postgres.NewEmbeddingRepository(database)
+	embeddingRepo := postgres.NewEmbeddingRepository(database, cfg.NLPModelName)
 
 	// Draft service and handler (only if MongoDB is available)
 	var draftHandler *drafthandler.Handler

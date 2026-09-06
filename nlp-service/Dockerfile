@@ -28,11 +28,17 @@ RUN pip install --no-cache-dir transformers tqdm scikit-learn scipy sentencepiec
 ENV HF_HUB_DISABLE_TELEMETRY=1
 ENV HF_HUB_ENABLE_HF_TRANSFER=0
 
+# Build-time embedding model selection.
+# When the test stack or a rebuild passes a different model via build args,
+# the image will preload that one instead.
+ARG NLP_MODEL_NAME=all-MiniLM-L6-v2
+ENV NLP_MODEL_NAME=${NLP_MODEL_NAME}
+
 # Download NLTK data during build
 RUN python -c "import nltk; nltk.download('punkt', download_dir='/root/nltk_data'); nltk.download('stopwords', download_dir='/root/nltk_data')"
 
 # Pre-download embedding model so the service can start offline (HF_HUB_OFFLINE=1)
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${NLP_MODEL_NAME}')"
 
 COPY . .
 

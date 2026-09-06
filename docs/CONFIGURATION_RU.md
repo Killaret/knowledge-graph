@@ -596,7 +596,7 @@ score = α × explicit_score + β × semantic_score
 ```json
 {
   "nlp": {
-    "model_name": "all-MiniLM-L6-V2",
+    "model_name": "paraphrase-multilingual-MiniLM-L12-v2",
     "max_text_length": 10000,
     "hf_home": "/root/.cache/huggingface",
     "hf_hub_disable_telemetry": true,
@@ -609,7 +609,7 @@ score = α × explicit_score + β × semantic_score
 
 | Переменная | Описание | Умолчание |
 |-----------|----------|-----------|
-| `NLP_MODEL_NAME` | Название модели HuggingFace | `all-MiniLM-L6-V2` |
+| `NLP_MODEL_NAME` | Название модели HuggingFace | `paraphrase-multilingual-MiniLM-L12-v2` |
 | `NLP_MAX_TEXT_LENGTH` | Максимальная длина текста для обработки | `10000` |
 | `HF_HOME` | Путь к локальному кешу HuggingFace | `/root/.cache/huggingface` |
 | `HF_HUB_OFFLINE` | Работа в оффлайн-режиме (без интернета) | `true` |

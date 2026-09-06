@@ -153,6 +153,7 @@ type Config struct {
 
 	// NLP
 	NLPServiceURL string
+	NLPModelName  string
 
 	// Search
 	SearchFulltextLanguages []string
@@ -398,6 +399,7 @@ func Load() (*Config, error) {
 		RedisFlushOnStartup: getBoolEnv("REDIS_FLUSH_ON_STARTUP", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Redis.FlushOnStartup }, false)),
 		EventChannel:        getEnv("EVENT_CHANNEL", "graph:events"),
 		NLPServiceURL:       getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
+		NLPModelName:        getEnv("NLP_MODEL_NAME", "all-MiniLM-L6-v2"),
 
 		// Search
 		SearchFulltextLanguages: getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Search.FulltextLanguages }, []string{"russian", "simple"}),

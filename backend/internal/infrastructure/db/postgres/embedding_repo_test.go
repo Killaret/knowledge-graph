@@ -23,7 +23,7 @@ func TestEmbeddingRepository_UpsertAndFind(t *testing.T) {
 		t.Fatalf("failed to migrate models: %v", err)
 	}
 
-	repo := NewEmbeddingRepository(db)
+	repo := NewEmbeddingRepository(db, "all-MiniLM-L6-v2")
 
 	// Создаем заметку сначала (для foreign key)
 	noteRepo := NewNoteRepository(db, nil)
@@ -68,7 +68,7 @@ func TestEmbeddingRepository_UpsertUpdate(t *testing.T) {
 		t.Fatalf("failed to migrate models: %v", err)
 	}
 
-	repo := NewEmbeddingRepository(db)
+	repo := NewEmbeddingRepository(db, "all-MiniLM-L6-v2")
 
 	// Создаем заметку
 	noteRepo := NewNoteRepository(db, nil)
@@ -109,5 +109,83 @@ func TestEmbeddingRepository_UpsertUpdate(t *testing.T) {
 	db.Model(&NoteEmbeddingModel{}).Where("note_id = ?", n.ID()).Count(&count)
 	if count != 1 {
 		t.Errorf("expected 1 embedding after update, got %d", count)
+	}
+
+	// After an Upsert the model_name column matches the repo's configured model
+	var modelName string
+	db.Model(&NoteEmbeddingModel{}).Where("note_id = ?", n.ID()).Select("model_name").Scan(&modelName)
+	if modelName != "all-MiniLM-L6-v2" {
+		t.Errorf("expected model_name to be 'all-MiniLM-L6-v2', got %q", modelName)
+	}
+}
+
+func TestEmbeddingRepository_ModelFiltering(t *testing.T) {
+	db, cleanup := testutil.SetupTestVectorDB(t)
+	defer cleanup()
+
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate models: %v", err)
+	}
+
+	currentRepo := NewEmbeddingRepository(db, "paraphrase-multilingual-MiniLM-L12-v2")
+	oldRepo := NewEmbeddingRepository(db, "all-MiniLM-L6-v2")
+	noteRepo := NewNoteRepository(db, nil)
+	ctx := context.Background()
+
+	createNote := func(title string) *note.Note {
+		titleV, _ := note.NewTitle(title)
+		content, _ := note.NewContent("content")
+		metadata, _ := note.NewMetadata(nil)
+		n := note.NewNote(titleV, content, "star", metadata)
+		if err := noteRepo.Save(ctx, n); err != nil {
+			t.Fatalf("Save note failed: %v", err)
+		}
+		return n
+	}
+
+	// Two notes with vectors from the current (multilingual) model.
+	n1 := createNote("Note one")
+	n2 := createNote("Note two")
+	vec := func() pgvector.Vector {
+		v := make([]float32, 384)
+		for i := range v {
+			v[i] = float32(i) / 100.0
+		}
+		return pgvector.NewVector(v)
+	}
+	if err := currentRepo.Upsert(ctx, n1.ID(), vec()); err != nil {
+		t.Fatalf("Upsert n1 current failed: %v", err)
+	}
+	if err := currentRepo.Upsert(ctx, n2.ID(), vec()); err != nil {
+		t.Fatalf("Upsert n2 current failed: %v", err)
+	}
+
+	// A third note still has the old English-only vector.
+	// This models a partially migrated state.
+	n3 := createNote("Old model note")
+	if err := oldRepo.Upsert(ctx, n3.ID(), vec()); err != nil {
+		t.Fatalf("Upsert n3 old failed: %v", err)
+	}
+
+	// Similar-note search for the current model must not mix in the old vector.
+	similar, err := currentRepo.FindSimilarNotes(ctx, n1.ID(), 10)
+	if err != nil {
+		t.Fatalf("FindSimilarNotes failed: %v", err)
+	}
+	if len(similar) != 1 {
+		t.Errorf("expected 1 current-model similar note, got %d", len(similar))
+	}
+	if len(similar) > 0 && similar[0].NoteID != n2.ID() {
+		t.Errorf("expected n2 as the only similar note, got %v", similar[0].NoteID)
+	}
+
+	// Missing model query should flag the note that only has the old vector.
+	missing, err := currentRepo.FindNoteIDsMissingModel(ctx)
+	if err != nil {
+		t.Fatalf("FindNoteIDsMissingModel failed: %v", err)
+	}
+	if len(missing) != 1 || missing[0] != n3.ID() {
+		t.Errorf("expected [%v] missing for current model, got %v", n3.ID(), missing)
 	}
 }

@@ -29,7 +29,7 @@
 | После починки сидера: прогнать `seed-test-data.ps1` | — | принято — 5 notes, 2 links, NLP 5/5; Claude Code подтвердил учётку в базе и вход по API | 2026-09-06 |
 | AUD-3: транспорт токена | [`tasks/AUD-3-token-transport.md`](tasks/AUD-3-token-transport.md) | **принято** — проверено мутацией | 2026-09-06 |
 | AUD-6: разведка по BDD | [`tasks/AUD-6-bdd-reconnaissance.md`](tasks/AUD-6-bdd-reconnaissance.md) | **принято** — замечаний нет | 2026-09-06 |
-| P11-2: мультиязычная модель эмбеддингов. Фундамент под кластеризацию, делается до неё | [`tasks/P11-2-multilingual-embeddings.md`](tasks/P11-2-multilingual-embeddings.md) | ждёт | 2026-09-06 |
+| P11-2: мультиязычная модель эмбеддингов. Фундамент под кластеризацию, делается до неё | [`tasks/P11-2-multilingual-embeddings.md`](tasks/P11-2-multilingual-embeddings.md) | **готово к ревью** — Devin внёс реализацию: миграция `note_embeddings.model_name`, фильтры в `EmbeddingRepository` и `graph-service`, `NLP_MODEL_NAME` в окружении, CLI пересчёта | 2026-09-06 |
 
 | A-1: сигнал готовности и детерминизм 3D | [`tasks/A-1-review-findings.md`](tasks/A-1-review-findings.md) | **принято** — оверлей снят к моменту сигнала, прогоны 1 и 2 побайтово идентичны, туман даёт 21,58 % диффа при 0,005 % шума | 2026-09-06 |
 | AUD-4: вход через Яндекс | [`tasks/AUD-4-yandex-oauth-contract.md`](tasks/AUD-4-yandex-oauth-contract.md) | **принято** — живой `200` с JSON `{url}`, `code_challenge_method=S256` | 2026-09-06 |

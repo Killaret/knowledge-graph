@@ -156,6 +156,22 @@ None yet.
   - `frontend/tests/setup/.auth/testuser.json` was created and used by the `visual-real-auth` project.
 - **Screenshot / Logs:** Playwright `line` reporter output for `setup-auth` and `visual-real-auth` projects.
 
+## Verification
+
+### P11-2 — multilingual embeddings (pre-review)
+
+- **Scope:** schema migration `030_add_embedding_model_name`, model-filtered `EmbeddingRepository` and graph-service `GetEmbeddings`, `NLP_MODEL_NAME` wiring, `embed-recompute` CLI.
+- **Date:** 2026-09-06
+- **Agent:** Devin
+- **Environment:** local Go build; integration test container (`testcontainers-go` + Postgres 16 + pgvector).
+- **Tests executed:**
+  - `cd backend && go build ./...` → `exit 0`
+  - `cd backend && go test ./...` → `ok` (all packages)
+  - `cd backend && go test -tags=integration ./internal/infrastructure/db/postgres -run=TestEmbeddingRepository_ModelFiltering` → `ok`
+  - `cd services/graph-service && go build ./...` → `exit 0`
+  - `cd services/graph-service && go test ./...` → `ok` (all packages)
+- **Findings:** None; the model-filtering integration test confirms that `FindSimilarNotes` only compares vectors with the same `model_name` and `FindNoteIDsMissingModel` correctly flags notes that still carry the old model vector.
+
 ## How to add a finding
 
 Create a new bullet under the right section with:

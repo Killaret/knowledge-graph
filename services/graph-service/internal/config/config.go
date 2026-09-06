@@ -75,6 +75,9 @@ type Config struct {
 	JWTSecret         string
 	InternalAuthToken string
 	SkipAuth          bool
+
+	// NLP
+	NLPModelName string
 }
 
 // ── Load ───────────────────────────────────────────────────────────
@@ -118,6 +121,9 @@ func Load() (*Config, error) {
 		JWTSecret:         getEnv("JWT_SECRET", ""),
 		InternalAuthToken: getEnv("GRAPH_SERVICE_INTERNAL_TOKEN", ""),
 		SkipAuth:          getBoolEnv("SKIP_AUTH", false),
+
+		// NLP (env only)
+		NLPModelName: getEnv("NLP_MODEL_NAME", "all-MiniLM-L6-v2"),
 	}
 
 	return cfg, nil

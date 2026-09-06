@@ -67,11 +67,18 @@ type PostgresClient interface {
 }
 
 type postgresClient struct {
-	pool *pgxpool.Pool
+	pool      *pgxpool.Pool
+	modelName string
 }
 
-func NewPostgresClient(pool *pgxpool.Pool) PostgresClient {
-	return &postgresClient{pool: pool}
+// NewPostgresClient creates a PostgreSQL client for the graph service.
+// modelName is the embedding model used to filter vectors, avoiding mixed
+// incompatible vector spaces.
+func NewPostgresClient(pool *pgxpool.Pool, modelName string) PostgresClient {
+	if modelName == "" {
+		modelName = "all-MiniLM-L6-v2"
+	}
+	return &postgresClient{pool: pool, modelName: modelName}
 }
 
 func (c *postgresClient) GetNotes(ctx context.Context, filter NotesFilter) ([]*Note, []*Link, error) {
@@ -237,8 +244,8 @@ func (c *postgresClient) GetEmbeddings(ctx context.Context, noteIDs []string) (m
 		return make(map[string][]float32), nil
 	}
 
-	query := `SELECT note_id, embedding::text, updated_at FROM note_embeddings WHERE note_id = ANY($1)`
-	rows, err := c.pool.Query(ctx, query, noteIDs)
+	query := `SELECT note_id, embedding::text, updated_at FROM note_embeddings WHERE note_id = ANY($1) AND model_name = $2`
+	rows, err := c.pool.Query(ctx, query, noteIDs, c.modelName)
 	if err != nil {
 		return nil, err
 	}

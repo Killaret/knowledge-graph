@@ -16,7 +16,7 @@ func TestNewPostgresClient(t *testing.T) {
 
 	// For now, just test that nil is handled gracefully
 	var pool *pgxpool.Pool
-	client := NewPostgresClient(pool)
+	client := NewPostgresClient(pool, "all-MiniLM-L6-v2")
 	assert.NotNil(t, client)
 }
 

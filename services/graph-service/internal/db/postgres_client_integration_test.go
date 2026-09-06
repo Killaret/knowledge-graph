@@ -103,7 +103,7 @@ func TestPostgresClient_Integration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create client
-	client := NewPostgresClient(pool)
+	client := NewPostgresClient(pool, "all-MiniLM-L6-v2")
 
 	t.Run("GetNotes_All", func(t *testing.T) {
 		notes, links, err := client.GetNotes(ctx, NotesFilter{})

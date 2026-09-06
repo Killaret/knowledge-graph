@@ -71,7 +71,7 @@ func main() {
 		}
 	}()
 
-	pgClient := db.NewPostgresClient(pgPool)
+	pgClient := db.NewPostgresClient(pgPool, cfg.NLPModelName)
 	cacheClient := cache.NewRedisCacheWithConfig(redisClient, cfg)
 	service := api.NewGraphService(pgClient, cacheClient, cfg.FullLimit, cfg.DefaultDepth, cfg.StreamChunkSize)
 

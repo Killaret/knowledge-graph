@@ -50,7 +50,7 @@ NLP service works on CPU, but GPU significantly accelerates embedding generation
 
 - **Minimum**: CPU-only (slow for large texts)
 - **Recommended**: NVIDIA GPU with CUDA 11.8+
-- **Models**: all-MiniLM-L6-v2 (384 dim), uses ~500MB VRAM
+- **Models**: `paraphrase-multilingual-MiniLM-L12-v2` (384 dim), configurable via `NLP_MODEL_NAME`, uses ~500MB VRAM
 
 ---
 
@@ -397,8 +397,8 @@ services:
       context: ./nlp-service
       dockerfile: Dockerfile
     environment:
-      - MODEL_NAME=all-MiniLM-L6-v2
-      - CACHE_DIR=/app/cache
+      - NLP_MODEL_NAME=${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
+      - HF_HOME=/root/.cache/huggingface
     volumes:
       - nlp_cache:/app/cache
     deploy:

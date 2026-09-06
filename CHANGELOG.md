@@ -9,6 +9,10 @@ This file covers July 2026 onward. Earlier history lives in the git log.
 
 ### Added
 
+- Multilingual embedding foundation: `model_name` column in `note_embeddings`, model-filtered reads in
+  `EmbeddingRepository` and graph-service, and `backend/cmd/embed-recompute` CLI for migrating all notes.
+  The default target model is `paraphrase-multilingual-MiniLM-L12-v2` with a single `NLP_MODEL_NAME`
+  environment variable across `nlp-service`, `backend` and `graph-service`.
 - Agent working protocol, shared handoff board and transition log, so work passes between
   contributors through the repository instead of chat.
 - `LICENSE` (MIT). The README had advertised MIT for months without the file, which legally
