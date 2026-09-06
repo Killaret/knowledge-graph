@@ -1,10 +1,11 @@
 #!/bin/bash
 # Docker Cleanup Script for Knowledge Graph (Linux/macOS)
 # Removes dangling images, stopped containers, unused networks, and build cache
-# Usage: bash cleanup-docker.sh [-f|--full] [-o|--optimize-docker]
+# Usage: bash cleanup-docker.sh [-f|--full] [--remove-volumes] [-o|--optimize-docker]
 
 FULL_CLEANUP=false
 OPTIMIZE_DOCKER=false
+REMOVE_VOLUMES=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -17,12 +18,17 @@ while [[ $# -gt 0 ]]; do
             OPTIMIZE_DOCKER=true
             shift
             ;;
+        --remove-volumes)
+            REMOVE_VOLUMES=true
+            shift
+            ;;
         -h|--help)
             echo "Usage: bash cleanup-docker.sh [OPTIONS]"
             echo ""
             echo "Options:"
             echo "  -f, --full              Full system cleanup (aggressive, removes all dangling)"
             echo "  -o, --optimize-docker   Optimize Docker disk space"
+            echo "      --remove-volumes    Remove only anonymous dangling volumes"
             echo "  -h, --help              Show this help message"
             exit 0
             ;;
@@ -109,20 +115,40 @@ else
     print_status "Failed to clear build cache" "WARNING"
 fi
 
-# 6. Remove unused volumes
+# 6. Volumes are preserved by default. They are only removed with --remove-volumes,
+# and even then only anonymous dangling volumes are eligible.
 echo ""
-echo "6️⃣  Removing unused volumes..."
-if docker volume prune -f >/dev/null 2>&1; then
-    print_status "Unused volumes removed" "SUCCESS"
+echo "6️⃣  Volume cleanup..."
+if [ "$REMOVE_VOLUMES" != true ]; then
+    print_status "Volume cleanup skipped (default safe mode)" "INFO"
 else
-    print_status "Failed to remove volumes" "WARNING"
+    removed_volumes=0
+    while IFS= read -r volume; do
+        case "$volume" in
+            *personal*)
+                continue
+                ;;
+        esac
+        if ! printf '%s' "$volume" | grep -Eq '^[0-9a-f]{64}$'; then
+            continue
+        fi
+        if docker volume inspect "$volume" --format '{{index .Labels "com.knowledgegraph.protected"}}' 2>/dev/null | grep -q '^true$'; then
+            continue
+        fi
+        if docker volume rm "$volume" >/dev/null 2>&1; then
+            removed_volumes=$((removed_volumes + 1))
+        fi
+    done <<EOF
+$(docker volume ls --filter dangling=true --format '{{.Name}}' 2>/dev/null)
+EOF
+    print_status "Removed $removed_volumes anonymous dangling volumes" "SUCCESS"
 fi
 
-# 7. Full cleanup (optional)
+# 7. Full cleanup (optional; volumes are still not removed)
 if [ "$FULL_CLEANUP" = true ]; then
     echo ""
-    echo "7️⃣  Full cleanup mode (removing ALL unused images)..."
-    if docker system prune -af --volumes >/dev/null 2>&1; then
+    echo "7️⃣  Full cleanup mode (removing ALL unused images, not volumes)..."
+    if docker system prune -af >/dev/null 2>&1; then
         print_status "Full system cleanup completed" "SUCCESS"
     else
         print_status "Full cleanup completed with warnings" "WARNING"
@@ -167,30 +193,8 @@ echo "✅ Cleanup completed!"
 echo "$(date '+%H:%M:%S') Done."
 echo ""
 echo "ℹ️  Usage:"
-echo "  bash cleanup-docker.sh              # Basic cleanup"
-echo "  bash cleanup-docker.sh --full       # Full system cleanup (aggressive)"
-echo "  bash cleanup-docker.sh --optimize   # Include Docker disk optimization"
-echo "  bash cleanup-docker.sh -f -o        # Full cleanup + disk optimization"
-
-# Get protected volumes
-PROTECTED_VOLUMES=$(docker volume ls --filter "label=com.knowledgegraph.protected=true" --format "{{.Name}}")
-
-if [ -n "$PROTECTED_VOLUMES" ]; then
-    echo "🔒 Protected volumes (will NOT be removed):"
-    echo "$PROTECTED_VOLUMES"
-else
-    echo "ℹ️  No protected volumes found"
-fi
-
-# Remove unused volumes (excluding protected ones)
-echo "Removing unused volumes (excluding protected)..."
-if [ -n "$PROTECTED_VOLUMES" ]; then
-    docker volume prune --filter "label!=com.knowledgegraph.protected=true" -f
-else
-    docker volume prune -f
-fi
-
-echo "✅ Docker cleanup completed!"
-echo ""
-echo "Current Docker usage:"
-docker system df
+echo "  bash cleanup-docker.sh                  # Basic cleanup; preserves all volumes"
+echo "  bash cleanup-docker.sh --full           # Remove all unused images; still preserves volumes"
+echo "  bash cleanup-docker.sh --remove-volumes # Remove only anonymous dangling volumes"
+echo "  bash cleanup-docker.sh --optimize       # Include Docker disk optimization"
+echo "  bash cleanup-docker.sh -f -o            # Full image cleanup + disk optimization"

@@ -23,14 +23,12 @@ Write-Host ""
 $scriptDir = $PSScriptRoot
 $repoDir = Split-Path -Parent (Split-Path -Parent $scriptDir)
 Set-Location $repoDir
-$devWasRunning = @((docker compose ps -q 2>$null) | Where-Object { $_ }).Count -gt 0
-$personalWasRunning = @((docker compose -f docker-compose.personal.yml ps -q 2>$null) | Where-Object { $_ }).Count -gt 0
-
-# Default the test stack to SKIP_AUTH=true so the first E2E/BDD phase
-# (and the frontend image built in step 4) bypasses authentication.
-# Only SKIP_AUTH is passed to docker-compose.test.yml; do not set VITE_SKIP_AUTH
-# here because it leaks into Vitest and breaks auth-store unit tests.
-$env:SKIP_AUTH = "true"
+# Detect pre-existing stacks by exact container names. The test stack shares the
+# compose project name, so `docker compose ps` would otherwise see kg-test-*
+# containers and falsely report dev/personal as running.
+$runningContainers = @(docker ps --format "{{.Names}}" 2>$null)
+$devWasRunning = $runningContainers -contains "kg-backend"
+$personalWasRunning = $runningContainers -contains "kg-backend-personal"
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $snapshotBase = Join-Path (Join-Path $scriptDir "temp") "snapshots"
@@ -90,7 +88,7 @@ function Restore-Stacks {
 try {
     # Step 0: Capture dev stack state snapshot
     Write-Host "[Step 0/28] Capturing dev stack state snapshot..." -ForegroundColor Yellow
-    docker ps --filter "name=kg-" --format "{{.Names}}" | Sort-Object > "$snapshotDir\pre-test-ps.txt"
+    docker ps --format "{{.Names}}" | Where-Object { $_ -like "kg-*" -and $_ -notlike "kg-test-*" } | Sort-Object > "$snapshotDir\pre-test-ps.txt"
     Write-Host "  ✓ Container names snapshot saved to $snapshotDir\pre-test-ps.txt" -ForegroundColor Green
 
     try {
@@ -132,8 +130,20 @@ try {
 
     # Step 4: Start test stack
     Write-Host "`n[Step 4/28] Starting test stack..." -ForegroundColor Yellow
-    & $scriptDir\start-test.ps1
-    $startTestStackExit = $LASTEXITCODE
+    # SKIP_AUTH is needed only while docker compose builds/starts the stack;
+    # leaving it set globally leaks into `go test` and breaks config tests.
+    $previousSkipAuth = $env:SKIP_AUTH
+    $env:SKIP_AUTH = "true"
+    try {
+        & $scriptDir\start-test.ps1
+        $startTestStackExit = $LASTEXITCODE
+    } finally {
+        if ($null -ne $previousSkipAuth) {
+            $env:SKIP_AUTH = $previousSkipAuth
+        } else {
+            Remove-Item Env:SKIP_AUTH -ErrorAction SilentlyContinue
+        }
+    }
     Register-Phase -Name "Start test stack" -ExitCode $startTestStackExit
     if ($startTestStackExit -ne 0) {
         throw "Failed to start test stack"
@@ -508,7 +518,7 @@ try {
     Write-Host "`n[Step 26/28] State, identity and health checks" -ForegroundColor Yellow
     $devStateChanged = $false
     New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
-    docker ps --filter "name=kg-" --format "{{.Names}}" | Sort-Object > "$snapshotDir\post-test-ps.txt"
+    docker ps --format "{{.Names}}" | Where-Object { $_ -like "kg-*" -and $_ -notlike "kg-test-*" } | Sort-Object > "$snapshotDir\post-test-ps.txt"
     Write-Host "  ✓ Post-test container names snapshot saved" -ForegroundColor Green
 
     if ($devWasRunning) {

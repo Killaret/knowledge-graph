@@ -27,18 +27,19 @@ RUN pip install --no-cache-dir transformers tqdm scikit-learn scipy sentencepiec
 # Set HuggingFace / NLTK environment before downloading data
 ENV HF_HUB_DISABLE_TELEMETRY=1
 ENV HF_HUB_ENABLE_HF_TRANSFER=0
+ENV HF_HUB_DISABLE_XET=1
 
 # Build-time embedding model selection.
 # When the test stack or a rebuild passes a different model via build args,
 # the image will preload that one instead.
-ARG NLP_MODEL_NAME=all-MiniLM-L6-v2
+ARG NLP_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
 ENV NLP_MODEL_NAME=${NLP_MODEL_NAME}
 
 # Download NLTK data during build
 RUN python -c "import nltk; nltk.download('punkt', download_dir='/root/nltk_data'); nltk.download('stopwords', download_dir='/root/nltk_data')"
 
 # Pre-download embedding model so the service can start offline (HF_HUB_OFFLINE=1)
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${NLP_MODEL_NAME}')"
+RUN python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='sentence-transformers/${NLP_MODEL_NAME}', cache_dir='${HF_HOME}/hub')"
 
 COPY . .
 
@@ -52,10 +53,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+ARG NLP_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
 ENV HF_HOME=/root/.cache/huggingface
 ENV NLTK_DATA=/root/nltk_data
 ENV HF_HUB_DISABLE_TELEMETRY=1
 ENV HF_HUB_ENABLE_HF_TRANSFER=0
+ENV HF_HUB_DISABLE_XET=1
+ENV NLP_MODEL_NAME=${NLP_MODEL_NAME}
 ENV PATH="/app/.venv/bin:$PATH" VIRTUAL_ENV=/app/.venv
 
 COPY --from=builder /app/.venv /app/.venv

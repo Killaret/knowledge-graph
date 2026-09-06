@@ -87,6 +87,16 @@
 - **Status:** fixed, covered by unit tests, container rebuilt.
 - **Screenshot / Logs:** —
 
+- **Case:** Real-auth E2E suite (`chromium-real-auth`) — 7 stable failures
+- **What:** During the full regression cycle, and again on an isolated re-run against the same real-auth build, 7 of 27 tests fail identically:
+  - `cockpit-canvas-controls.spec.ts` — `top-bar-fog` click is intercepted by `.right-cluster` (60s timeout); the zoom/transform "keeps the canvas visible" check fails.
+  - `floating-auth-panel.spec.ts` — after login through the floating panel, `graph-stats` stays `" 10 nodes · 20 links"` for the whole 20s poll (graph never reloads).
+  - `note-creation-flows.spec.ts` (×3) and `child-note-flows.spec.ts` — a note created via the floating `+` button, the `N` hotkey ghost form, or the child-note panel never appears in list view (`[data-testid="note-title"]` not found within 20s).
+- **Expected:** All `chromium-real-auth` tests pass on the seeded real-auth test stack.
+- **Actual:** `20 passed / 7 failed`, identical on both runs — a stable defect, not flakiness.
+- **Status:** reproduced on the isolated test stack (`SKIP_AUTH=false`). Unrelated to P11-2: no frontend/auth code changed in this session. Needs triage.
+- **Screenshot / Logs:** `frontend/test-results/*chromium-real-auth*/error-context.md`; Playwright `line` reporter output for the `chromium-real-auth` project.
+
 ### Roadmap items
 
 <!-- Real feature work that is understood and has clear value. -->
@@ -171,6 +181,27 @@ None yet.
   - `cd services/graph-service && go build ./...` → `exit 0`
   - `cd services/graph-service && go test ./...` → `ok` (all packages)
 - **Findings:** None; the model-filtering integration test confirms that `FindSimilarNotes` only compares vectors with the same `model_name` and `FindNoteIDsMissingModel` correctly flags notes that still carry the old model vector.
+
+## Verification
+
+### P11-2 — multilingual embeddings (live test stack)
+
+- **Scope:** live verification on the isolated test stack after a clean rebuild (`docker-compose.test.yml`, model `paraphrase-multilingual-MiniLM-L12-v2`).
+- **Date:** 2026-09-07
+- **Agent:** Devin
+- **Tests executed:**
+  - `docker compose -f docker-compose.test.yml up -d --build --wait` → all 8 `kg-test-*` containers healthy.
+  - `GET http://127.0.0.1:15002/health` → `{"status":"healthy","model_loaded":true}`.
+  - `POST /embed` («кошка сидит на окне») → 384-dim vector.
+  - `POST /similarity` RU↔EN («кошка сидит на окне» / "a cat sits on the window") → `0.9897`; unrelated RU pair → `0.5447`.
+  - DB: `schema_migrations` latest = `030`; `note_embeddings.model_name` NOT NULL, no default; all seeded rows carry `paraphrase-multilingual-MiniLM-L12-v2`.
+  - `go run ./cmd/embed-recompute -dry-run` → `0` missing; after marking one row `all-MiniLM-L6-v2` → exactly `1` missing (`785e5934-…`); after restoring → `0`.
+  - `scripts/testing/run-full-test-cycle.ps1 -SkipManual` → all phases pass except the pre-existing `chromium-real-auth` failures recorded in Findings above.
+- **Findings fixed during this pass:**
+  - `nlp-service/entrypoint.sh` and the Dockerfile preloaded the model via `SentenceTransformer(name)`, which fills `~/.cache/torch` — not the HF hub cache (`$HF_HOME/hub`) that `nlp_utils.py` reads via `snapshot_download`. The runtime then re-downloaded the model on every fresh cache. Switched both paths to `snapshot_download(repo_id='sentence-transformers/<model>', cache_dir=$HF_HOME/hub)` and set `HF_HUB_DISABLE_XET=1` after CDN read timeouts.
+  - `run-full-test-cycle.ps1` set `SKIP_AUTH=true` globally, leaking into `go test` (`SKIP_AUTH` is only allowed with `APP_ENV=test`) and falsely detecting dev/personal as running because the test stack shares the `knowledge-graph` compose project — it then tried to restore (i.e. start) both stacks. `SKIP_AUTH` is now scoped to the test-stack start, and stack detection uses exact container names.
+  - Default `all-MiniLM-L6-v2` values remained in compose files, `backend/.env.example`, both Go configs, both repo fallbacks, the NLP Dockerfile ARG and `nlp_utils.py` — all switched to `paraphrase-multilingual-MiniLM-L12-v2`. Remaining `all-MiniLM-L6-v2` mentions are intentional: migration `030` marks historical rows, task docs describe the old state, and tests use it as the "other model" fixture.
+  - `cleanup-docker.ps1/.sh` could remove unused volumes (including Personal volumes once their containers were stopped). Volumes are now preserved by default; `-RemoveVolumes`/`--remove-volumes` removes only anonymous dangling volumes, never anything matching `personal` or the protected label. A raw tarball backup of the three Personal volumes was taken beforehand (`backups/personal-volumes-raw-2026-09-06-215805-*.tar.gz`).
 
 ## How to add a finding
 

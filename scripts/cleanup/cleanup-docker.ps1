@@ -1,11 +1,12 @@
 # Docker Cleanup Script for Knowledge Graph (Windows with WSL2)
 # Removes dangling images, stopped containers, unused networks, and build cache
 # Optionally compresses WSL2 disk for efficient storage
-# Usage: .\cleanup-docker.ps1 [-Full] [-WslOptimize]
+# Usage: .\cleanup-docker.ps1 [-Full] [-RemoveVolumes] [-WslOptimize]
 # Note: -WslOptimize requires admin rights (diskpart). Hyper-V is NOT required.
 
 param(
     [switch]$Full = $false,
+    [switch]$RemoveVolumes = $false,
     [switch]$WslOptimize = $false
 )
 
@@ -75,26 +76,43 @@ try {
     Write-Status "Failed to clear build cache" "WARNING"
 }
 
-# 6. Remove unused volumes
-Write-Host "`n6️⃣ Removing unused volumes..." -ForegroundColor Cyan
+# 6. Volumes are preserved by default. They are only removed with -RemoveVolumes,
+# and even then only anonymous dangling volumes are eligible.
+Write-Host "`n6️⃣ Volume cleanup..." -ForegroundColor Cyan
 try {
-    $protectedVolumes = docker volume ls --filter "label=com.knowledgegraph.protected=true" --format "{{.Name}}" 2>$null
-    if ($protectedVolumes) {
-        Write-Status "Protected volumes found (will be kept)" "INFO"
-        docker volume prune --filter "label!=com.knowledgegraph.protected=true" -f 2>$null | Out-Null
+    if (-not $RemoveVolumes) {
+        Write-Status "Volume cleanup skipped (default safe mode)" "INFO"
     } else {
-        docker volume prune -f 2>$null | Out-Null
+        $protectedVolumes = @(docker volume ls --filter "label=com.knowledgegraph.protected=true" --format "{{.Name}}" 2>$null)
+        $danglingVolumes = @(docker volume ls --filter "dangling=true" --format "{{.Name}}" 2>$null)
+        $removedVolumes = 0
+
+        foreach ($volume in $danglingVolumes) {
+            $isAnonymous = $volume -match '^[0-9a-f]{64}$'
+            $isPersonal = $volume -match 'personal'
+            $isProtected = $protectedVolumes -contains $volume
+
+            if (-not $isAnonymous -or $isPersonal -or $isProtected) {
+                continue
+            }
+
+            docker volume rm $volume 2>$null | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                $removedVolumes++
+            }
+        }
+
+        Write-Status "Removed $removedVolumes anonymous dangling volumes" "SUCCESS"
     }
-    Write-Status "Unused volumes removed" "SUCCESS"
 } catch {
-    Write-Status "Failed to remove volumes" "WARNING"
+    Write-Status "Failed to process volumes" "WARNING"
 }
 
-# 7. Full cleanup mode (optional)
+# 7. Full cleanup mode (optional; volumes are still not removed)
 if ($Full) {
-    Write-Host "`n7️⃣ Full cleanup mode (removing ALL unused images)..." -ForegroundColor Cyan
+    Write-Host "`n7️⃣ Full cleanup mode (removing ALL unused images, not volumes)..." -ForegroundColor Cyan
     try {
-        docker system prune -af --volumes 2>$null | Out-Null
+        docker system prune -af 2>$null | Out-Null
         Write-Status "Full system cleanup completed" "SUCCESS"
     } catch {
         Write-Status "Full cleanup completed with warnings" "WARNING"
@@ -186,7 +204,8 @@ Write-Host "`n✅ Cleanup completed!" -ForegroundColor Green
 Write-Host "$(Get-Date -Format 'HH:mm:ss') Done." -ForegroundColor Gray
 
 Write-Host "`nℹ️  Usage:" -ForegroundColor Cyan
-Write-Host "  .\cleanup-docker.ps1              # Basic cleanup" -ForegroundColor Gray
-Write-Host "  .\cleanup-docker.ps1 -Full        # Full system cleanup (aggressive)" -ForegroundColor Gray
-Write-Host "  .\cleanup-docker.ps1 -WslOptimize # Include WSL2 disk optimization" -ForegroundColor Gray
-Write-Host "  .\cleanup-docker.ps1 -Full -WslOptimize  # Full cleanup + WSL optimization" -ForegroundColor Gray
+Write-Host "  .\cleanup-docker.ps1                  # Basic cleanup; preserves all volumes" -ForegroundColor Gray
+Write-Host "  .\cleanup-docker.ps1 -Full            # Remove all unused images; still preserves volumes" -ForegroundColor Gray
+Write-Host "  .\cleanup-docker.ps1 -RemoveVolumes   # Remove only anonymous dangling volumes" -ForegroundColor Gray
+Write-Host "  .\cleanup-docker.ps1 -WslOptimize     # Include WSL2 disk optimization" -ForegroundColor Gray
+Write-Host "  .\cleanup-docker.ps1 -Full -WslOptimize # Full image cleanup + WSL optimization" -ForegroundColor Gray

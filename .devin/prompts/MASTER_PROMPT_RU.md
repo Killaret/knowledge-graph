@@ -21,7 +21,7 @@
 
 - **Backend**: Go 1.25, Gin v1.12, GORM v1.25, pgx/v5, go-redis/v9.14.1, asynq v0.26.0, mongo-driver, pgvector-go, golang-jwt/jwt/v5.
 - **Frontend**: SvelteKit, Svelte 5 runes (`$state`, `$derived`, `$effect`, `$props`), TypeScript strict, ky, D3-force v3, Three.js v0.184.
-- **NLP / runtime AI**: Python 3.11, FastAPI, sentence-transformers `all-MiniLM-L6-v2`, YAKE, NLTK.
+- **NLP / runtime AI**: Python 3.11, FastAPI, sentence-transformers `paraphrase-multilingual-MiniLM-L12-v2`, YAKE, NLTK.
 - **Данные**: PostgreSQL 16 + pgvector, Redis 7, MongoDB 7.
 - **Инфраструктура**: Docker multi-stage, nginx, docker-compose (dev / personal / test).
 - **AI-инструменты проекта**:

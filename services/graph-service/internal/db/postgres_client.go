@@ -76,7 +76,7 @@ type postgresClient struct {
 // incompatible vector spaces.
 func NewPostgresClient(pool *pgxpool.Pool, modelName string) PostgresClient {
 	if modelName == "" {
-		modelName = "all-MiniLM-L6-v2"
+		modelName = "paraphrase-multilingual-MiniLM-L12-v2"
 	}
 	return &postgresClient{pool: pool, modelName: modelName}
 }

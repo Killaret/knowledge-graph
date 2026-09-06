@@ -383,8 +383,8 @@ wsl
 # Единая команда (требует права админа, Hyper-V НЕ нужен):
 .\scripts\cleanup\cleanup-docker.ps1 -Full -WslOptimize
 #   - останавливает контейнеры
-#   - очищает dangling images, build cache, unused volumes
-#   - удаляет ВСЕ неиспользуемые образы (system prune -af --volumes)
+#   - очищает dangling images, build cache, stopped containers, unused networks
+#   - удаляет ВСЕ неиспользуемые образы (system prune -af), но не трогает volumes
 #   - останавливает WSL и убивает leftover процессы
 #   - находит самый большой .vhdx и сжимает через diskpart
 #   - перезапускает WSL

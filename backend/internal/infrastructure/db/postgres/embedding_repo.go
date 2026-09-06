@@ -22,7 +22,7 @@ type EmbeddingRepository struct {
 // embedding spaces.
 func NewEmbeddingRepository(db *gorm.DB, modelName string) *EmbeddingRepository {
 	if modelName == "" {
-		modelName = "all-MiniLM-L6-v2"
+		modelName = "paraphrase-multilingual-MiniLM-L12-v2"
 	}
 	return &EmbeddingRepository{db: db, modelName: modelName}
 }

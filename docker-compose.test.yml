@@ -62,7 +62,7 @@ services:
     ports:
       - "127.0.0.1:15002:5000"
     environment:
-      - NLP_MODEL_NAME=${NLP_MODEL_NAME:-all-MiniLM-L6-v2}
+      - NLP_MODEL_NAME=${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
       - HF_HOME=/root/.cache/huggingface
       - HF_HUB_DISABLE_TELEMETRY=1
       - HF_HUB_OFFLINE=0
@@ -93,7 +93,7 @@ services:
       REDIS_URL: redis-test:6379
       REDIS_FLUSH_ON_STARTUP: "true"
       NLP_SERVICE_URL: http://nlp-test:5000
-      NLP_MODEL_NAME: ${NLP_MODEL_NAME:-all-MiniLM-L6-v2}
+      NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
       APP_ENV: test
       SKIP_AUTH: ${SKIP_AUTH:-true}
       JWT_SECRET: ${JWT_SECRET}
@@ -139,7 +139,7 @@ services:
       GRPC_PORT: "9090"
       EVENT_CHANNEL: graph:events
       GRAPH_FULL_LIMIT: "500"
-      NLP_MODEL_NAME: ${NLP_MODEL_NAME:-all-MiniLM-L6-v2}
+      NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
       APP_ENV: test
       SKIP_AUTH: ${SKIP_AUTH:-true}
       JWT_SECRET: ${JWT_SECRET}
@@ -205,7 +205,7 @@ services:
       DATABASE_URL: postgresql://${TEST_POSTGRES_USER:-kb_user}:${TEST_POSTGRES_PASSWORD:-kb_password}@postgres-test:5432/${TEST_POSTGRES_DB:-knowledge_test}?sslmode=disable
       REDIS_URL: redis-test:6379
       NLP_SERVICE_URL: http://nlp-test:5000
-      NLP_MODEL_NAME: ${NLP_MODEL_NAME:-all-MiniLM-L6-v2}
+      NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
       APP_ENV: test
       SKIP_AUTH: ${SKIP_AUTH:-true}
       JWT_SECRET: ${JWT_SECRET}

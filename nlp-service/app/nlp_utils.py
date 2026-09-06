@@ -10,7 +10,7 @@ from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
-MODEL_NAME = os.environ.get("NLP_MODEL_NAME") or os.environ.get("MODEL_NAME", "all-MiniLM-L6-v2")
+MODEL_NAME = os.environ.get("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2")
 HF_HOME = os.environ.get("HF_HOME", "/root/.cache/huggingface")
 HF_CACHE = os.environ.get("HF_HUB_CACHE") or os.path.join(HF_HOME, "hub")
 

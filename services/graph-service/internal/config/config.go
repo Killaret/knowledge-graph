@@ -123,7 +123,7 @@ func Load() (*Config, error) {
 		SkipAuth:          getBoolEnv("SKIP_AUTH", false),
 
 		// NLP (env only)
-		NLPModelName: getEnv("NLP_MODEL_NAME", "all-MiniLM-L6-v2"),
+		NLPModelName: getEnv("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2"),
 	}
 
 	return cfg, nil

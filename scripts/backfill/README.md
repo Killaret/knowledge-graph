@@ -90,7 +90,7 @@ Final Score = α × Graph + β × Semantic + γ × Keyword
 
 2. **Semantic Score** (β = 0.5)
    - Cosine similarity of 384-dimensional vectors
-   - Model: `all-MiniLM-L6-v2`
+   - Model: `paraphrase-multilingual-MiniLM-L12-v2`
    - From the `note_embeddings` table
 
 3. **Keyword Score** (γ = 0.2)
