@@ -67,12 +67,16 @@ func runSeed(ctx context.Context, cfg *config.Config, database *gorm.DB, passwor
 		return fmt.Errorf("look up 'user' role: %w", err)
 	}
 
+	if roleIDStr == "" {
+		return fmt.Errorf("'user' role not found in database; migrations must be applied before seeding")
+	}
+
 	roleID, err := uuid.Parse(roleIDStr)
 	if err != nil {
 		return fmt.Errorf("parse 'user' role id: %w", err)
 	}
 	if roleID == uuid.Nil {
-		return fmt.Errorf("'user' role not found in database; migrations must be applied before seeding")
+		return fmt.Errorf("'user' role id is nil; migrations must be applied before seeding")
 	}
 
 	testID, err := uuid.Parse(testUserID)
