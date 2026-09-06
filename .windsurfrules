@@ -274,6 +274,20 @@ After completing any task that changes behavior, configuration, architecture, Do
 - All secrets via environment variables only
 - Input validation with go-playground/validator
 
+**Review checklist** — walk it whenever a change touches authentication, authorization, input handling, or transport. Recovered from the retired `.koda` skill set; the only part of it worth keeping.
+
+*Authentication:* short JWT expiry (15–30 min) · refresh tokens · JWT secret 32+ chars · token validated on every request · bcrypt cost ≥ 12 · rate limit on the login endpoint · lockout after repeated failures.
+
+*Authorization:* role-based access control · resource-level permissions · no IDOR (object ownership checked, not just authentication) · admin routes protected · API keys scoped.
+
+*Input:* every input validated · parameterized queries only · XSS prevented via sanitization and CSP · uploads checked for type and size · maximum lengths enforced.
+
+*Headers:* HSTS in production · `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · Content-Security-Policy · Referrer-Policy · Permissions-Policy.
+
+*Data:* TLS in transit · database connections over SSL · secrets never written to logs · API keys rotated.
+
+*Monitoring:* failed logins logged · rate-limit violations tracked · alerts configured.
+
 ```go
 // ✅ JWT in middleware, not handler
 func AuthMiddleware(jwtSecret string) gin.HandlerFunc {

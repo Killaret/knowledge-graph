@@ -30,6 +30,17 @@ Knowledge Graph is a note-management system with graph relationships and NLP-pow
 - Agent handoff: `docs/AI_HANDOFF.md`
 - Agent protocol: `docs/AI_AGENT_PROTOCOL.md`
 - Current audit: `docs/AI_PROCESS_AUDIT.md`
+
+## Project Skills
+
+Stored once under `.devin/skills/`; `.claude/skills/` holds pointers to the same text.
+
+- `kg-graph-3d` — 3D subsystem map and its traps
+- `kg-regression` — test stack and the full regression cycle
+- `kg-backup` — Personal stack data safety
+- `kg-layers` — layer boundaries and how to check them
+
+How to write new ones: `docs/AI_AGENT_PROTOCOL.md`, section «Как писать скиллы». A skill is written after an incident, must cite real artifacts, and never duplicates the norm.
 - Roadmap: `ROADMAP.md`; детальные планы: `docs/BACKLOG.md`
 
 ## Devin Workflow

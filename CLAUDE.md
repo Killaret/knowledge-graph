@@ -31,6 +31,17 @@
 
 Префикс `kg-` обязателен для новых команд: без него имя сталкивается со встроенными.
 
+## Проектные скиллы
+
+Хранятся в одном экземпляре в [`.devin/skills/`](.devin/skills/), в `.claude/skills/` — указатели на них.
+
+- `kg-graph-3d` — [подсистема 3D и её ловушки](.devin/skills/kg-graph-3d/SKILL.md)
+- `kg-regression` — [тест-стек и полный цикл](.devin/skills/kg-regression/SKILL.md)
+- `kg-backup` — [сохранность данных Personal-стека](.devin/skills/kg-backup/SKILL.md)
+- `kg-layers` — [границы слоёв](.devin/skills/kg-layers/SKILL.md)
+
+Правила написания новых — в [протоколе](docs/AI_AGENT_PROTOCOL.md), раздел «Как писать скиллы». Коротко: скилл пишется задним числом, обязан ссылаться на реальные артефакты и не дублирует норму.
+
 ## Команды
 
 Канонический список — [`COMMANDS.md`](COMMANDS.md) и раздел Common Commands в [`.windsurfrules`](.windsurfrules). Разрешения на прогон тестов уже выданы в [`.claude/settings.json`](.claude/settings.json).
