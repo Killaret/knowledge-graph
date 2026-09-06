@@ -612,7 +612,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 **Артефакты.**
 
-- Базовый и «туманный» снимки: [`docs/assets/a1-3d-visual-regression/`](../assets/a1-3d-visual-regression/)
+- Базовый и «туманный» снимки: [`docs/assets/a1-3d-visual-regression/`](assets/a1-3d-visual-regression/)
 - Скрипт сравнения: удалён после использования.
 
 **Осталось.**
