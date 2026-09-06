@@ -145,6 +145,17 @@ None yet.
 - **Actual:** Before fix: `GET /api/v1/auth/yandex/login` returned `404 Not Found`; `GET /api/v1/auth/yandex` returned `501 Not Implemented` (no client id configured). After fix and rebuild with `YANDEX_CLIENT_ID=test-yandex-client-id`: `GET /api/v1/auth/yandex/login` returns `200 OK` and JSON `{"url":"https://oauth.yandex.com/authorize?client_id=test-yandex-client-id&code_challenge=...&code_challenge_method=S256&response_type=code&scope=login%3Aemail+login%3Ainfo&state=..."}`. `GET /api/v1/auth/yandex` returns `401` (route removed, falls through to JWT middleware).
 - **Screenshot / Logs:** `curl -s -D - http://127.0.0.1:18083/api/v1/auth/yandex/login` (before: `404`, after: `200`); `go test ./...` green; `go vet ./...` clean; `npm run test:unit` 987/987; `npm run check` 0 errors; `npm run lint` no new warnings.
 
+## Verification
+
+- **Case:** Playwright real-auth setup for visual regression
+- **What:** Verified that `tests/setup/auth.setup.ts` can log in as the seeded `testuser` and persist a `storageState` file, and that the new `visual-real-auth` project runs `@visual` tests against the real-auth test stack.
+- **Expected:** `setup-auth` project completes; `visual-real-auth` loads the authenticated page and a sample `@visual` test passes without `__SKIP_AUTH__` injection.
+- **Actual:**
+  - `npx playwright test --project=setup-auth` → `1 passed` in 6.3s.
+  - `npx playwright test --project=visual-real-auth --grep "Home page - default view"` → `2 passed` (setup + test) in 9.8s.
+  - `frontend/tests/setup/.auth/testuser.json` was created and used by the `visual-real-auth` project.
+- **Screenshot / Logs:** Playwright `line` reporter output for `setup-auth` and `visual-real-auth` projects.
+
 ## How to add a finding
 
 Create a new bullet under the right section with:
