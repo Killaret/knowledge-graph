@@ -45,3 +45,5 @@
 | 2026-09-06 | Devin | AUD-6: разведка по 125 осиротевшим BDD-сценариям | принято | `cc09058` |
 | 2026-09-06 | Devin | AUD-2: откат плотности тумана вместе с `app_env` | **отклонено** — переоткрыто | `889c33e` |
 | 2026-09-06 | Claude Code | Ревью AUD-3/AUD-6/мелочей, поправка находки S-6 | принято | этот коммит |
+| 2026-09-06 | Devin | AUD-2: fog density restored in `config/frontend.json` and `knowledge-graph.config.json` (`birth` 0.01/0.0006, `nebula` 0.005/0.0003); `engine.performance.test.ts` passes, full unit tests 987/987, `check`/`lint` clean | на ревью | этот коммит |
+| 2026-09-06 | Devin | CI: add `npm run build-config` + `git diff --exit-code knowledge-graph.config.json` step to `_core-checks.yml` to prevent future config drift | на ревью | этот коммит |

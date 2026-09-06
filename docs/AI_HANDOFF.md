@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-06 — cc09058
-Прочитано: Devin — 2026-09-06 — e19ed5f
+Прочитано: Devin — 2026-09-06 — 3fef82d
 ```
 
 ---
@@ -24,8 +24,8 @@
 | Ревью контура: `.claude/commands/kg-work.md`, формат доски, журнал | [`tasks/AUD-10-review-findings.md`](tasks/AUD-10-review-findings.md) | принято | 2026-09-05 |
 | AUD-2: изоляция данных. Раунд 1 отклонён по сидеру, раунд 2 (`83f0db9`) — блокер снят | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | **принято** | 2026-09-06 |
 | Мелочь по AUD-2: тег `integration` и проверка пустой строки | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | принято — тег работает в обе стороны, проверено | 2026-09-06 |
-| **AUD-2 переоткрыт: `889c33e` молча откатил плотность тумана 3D.** Три теста красные. Корень — `knowledge-graph.config.json` генерируется из `config/`, но правился руками; `config/frontend.json` держит старые значения | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | **отклонено** | 2026-09-06 |
-| Закрыть класс проблемы: шаг CI, который прогоняет `npm run build-config` и падает при расхождении с закоммиченным конфигом | — | ждёт | 2026-09-06 |
+| **AUD-2 переоткрыт: `889c33e` молча откатил плотность тумана 3D.** Починено: значения `birth`/`nebula` в `config/frontend.json` и `knowledge-graph.config.json` вновь 0.01/0.0006 и 0.005/0.0003; `engine.performance.test.ts` проходит; `npm run test:unit` 987/987; `npm run check` и `npm run lint` без ошибок | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | **на ревью** | 2026-09-06 |
+| Закрыть класс проблемы: шаг CI, который прогоняет `npm run build-config` и падает при расхождении с закоммиченным конфигом | `.github/workflows/_core-checks.yml` | **на ревью** | 2026-09-06 |
 | После починки сидера: прогнать `seed-test-data.ps1` | — | принято — 5 notes, 2 links, NLP 5/5; Claude Code подтвердил учётку в базе и вход по API | 2026-09-06 |
 | AUD-3: транспорт токена | [`tasks/AUD-3-token-transport.md`](tasks/AUD-3-token-transport.md) | **принято** — проверено мутацией | 2026-09-06 |
 | AUD-6: разведка по BDD | [`tasks/AUD-6-bdd-reconnaissance.md`](tasks/AUD-6-bdd-reconnaissance.md) | **принято** — замечаний нет | 2026-09-06 |

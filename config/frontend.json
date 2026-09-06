@@ -36,8 +36,8 @@
         "layout_provider": "graph-service",
         "fog": {
           "presets": {
-            "birth": { "density_initial": 0.08, "density_final": 0.005 },
-            "nebula": { "density_initial": 0.04, "density_final": 0.015 },
+            "birth": { "density_initial": 0.01, "density_final": 0.0006 },
+            "nebula": { "density_initial": 0.005, "density_final": 0.0003 },
             "deep-space": { "density_initial": 0.0, "density_final": 0.0 }
           },
           "default_preset": "birth"
