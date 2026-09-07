@@ -34,6 +34,97 @@ export default [
       "@typescript-eslint/no-require-imports": "off",
     },
   },
+  // FSD layer import boundaries (mirrors .windsurfrules). In these glob
+  // patterns "**" also matches ".." segments, so relative-path escapes such
+  // as "../../widgets/x" are covered together with the $alias form.
+  {
+    files: ["src/shared/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "$entities/**",
+            "$features/**",
+            "$widgets/**",
+            "$components/**",
+            "../**/entities/**",
+            "../**/features/**",
+            "../**/widgets/**",
+            "../**/components/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/entities/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "$features/**",
+            "$widgets/**",
+            "$components/**",
+            "../**/features/**",
+            "../**/widgets/**",
+            "../**/components/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/components/atoms/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "$components/molecules/**",
+            "$components/organisms/**",
+            "$features/**",
+            "$widgets/**",
+            "../**/molecules/**",
+            "../**/organisms/**",
+            "../**/features/**",
+            "../**/widgets/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/components/molecules/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "$components/organisms/**",
+            "$features/**",
+            "$widgets/**",
+            "../**/organisms/**",
+            "../**/features/**",
+            "../**/widgets/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/features/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: ["$widgets/**", "../**/widgets/**"],
+        },
+      ],
+    },
+  },
+  // src/routes/** stays unrestricted: the norm allows it to import any layer.
   {
     rules: {
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],

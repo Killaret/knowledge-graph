@@ -47,7 +47,19 @@ jobs:
           install-mode: binary
 
       - name: Run backend tests
-        run: go test -v ./...
+        run: go test -v -coverprofile=cover.out ./...
+
+      - name: Check backend coverage threshold (min 64.8%)
+        run: |
+          total=$(go tool cover -func=cover.out | awk '/^total:/ {gsub("%", "", $NF); print $NF}')
+          echo "Total backend coverage: ${total}% (required >= 64.8%)"
+          if awk "BEGIN{exit !($total >= 64.8)}"; then
+            rm -f cover.out
+          else
+            rm -f cover.out
+            echo "Backend coverage ${total}% is below the required minimum of 64.8%"
+            exit 1
+          fi
 
       - name: Validate config
         env:
