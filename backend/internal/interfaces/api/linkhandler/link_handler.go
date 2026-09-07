@@ -7,64 +7,58 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-graph/internal/application/common"
-	"knowledge-graph/internal/application/recommendation"
+	"knowledge-graph/internal/application/achievement"
+	"knowledge-graph/internal/application/cache"
+	appevents "knowledge-graph/internal/application/events"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
-	"knowledge-graph/internal/infrastructure/db/postgres"
-	"knowledge-graph/internal/infrastructure/queue/tasks"
+	apicommon "knowledge-graph/internal/interfaces/api/common"
+	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type Handler struct {
-	linkRepo         link.Repository
-	noteRepo         note.Repository
-	taskQueue        common.TaskQueue
-	affectedNotesSvc *recommendation.AffectedNotesService
-	taskDelay        time.Duration
+	linkRepo           link.Repository
+	noteRepo           note.Repository
+	achievementService *achievement.Service
+	graphCache         *cache.GraphCache
+	eventPublisher     appevents.Publisher
 }
 
-func New(linkRepo link.Repository, noteRepo note.Repository, taskQueue common.TaskQueue, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration) *Handler {
+func getUserIDString(c *gin.Context) string {
+	if userID, exists := middleware.GetUserID(c); exists && userID != uuid.Nil {
+		return userID.String()
+	}
+	return ""
+}
+
+func New(linkRepo link.Repository, noteRepo note.Repository, achievementService *achievement.Service, graphCache *cache.GraphCache) *Handler {
 	return &Handler{
-		linkRepo:         linkRepo,
-		noteRepo:         noteRepo,
-		taskQueue:        taskQueue,
-		affectedNotesSvc: affectedNotesSvc,
-		taskDelay:        taskDelay,
+		linkRepo:           linkRepo,
+		noteRepo:           noteRepo,
+		achievementService: achievementService,
+		graphCache:         graphCache,
 	}
 }
 
-// enqueueRecommendationTasks queues recommendation refresh tasks for affected notes
-func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UUID) {
-	if h.affectedNotesSvc == nil || h.taskQueue == nil {
-		return
-	}
-
-	affected, err := h.affectedNotesSvc.GetAffectedNotes(ctx, noteID)
-	if err != nil {
-		// Log error but don't fail the request
-		return
-	}
-
-	for _, nid := range affected {
-		task, err := tasks.NewRefreshRecommendationsTask(nid, h.taskDelay)
-		if err != nil {
-			continue
-		}
-		if err := h.taskQueue.Enqueue(ctx, task); err != nil {
-			// Log error but continue
-		}
-	}
+// SetEventPublisher sets the optional graph event publisher for cache invalidation.
+func (h *Handler) SetEventPublisher(p appevents.Publisher) {
+	h.eventPublisher = p
 }
 
 type createLinkRequest struct {
 	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
 	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
-	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom"`
+	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom parent child"`
 	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
 	Metadata     map[string]interface{} `json:"metadata"`
+}
+
+type updateLinkRequest struct {
+	LinkType string  `json:"link_type" binding:"omitempty,oneof=reference dependency related custom parent child"`
+	Weight   float64 `json:"weight" binding:"omitempty,min=0,max=1"`
 }
 
 // LinkValidationErrors defines human-readable error messages for link validation
@@ -74,146 +68,324 @@ var LinkValidationErrors = map[string]string{
 	"target_note_id.required": "Target note ID is required",
 	"target_note_id.uuid":     "Target note ID must be a valid UUID",
 	"link_type.required":      "Link type is required",
-	"link_type.oneof":         "Link type must be one of: reference, dependency, related, custom",
+	"link_type.oneof":         "Link type must be one of: reference, dependency, related, custom, parent, child",
 	"weight.min":              "Weight must be between 0 and 1",
 	"weight.max":              "Weight must be between 0 and 1",
 }
 
 func (h *Handler) Create(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "create")
+
 	var req createLinkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// Provide structured validation error response
 		errStr := err.Error()
+		var details []apicommon.FieldError
 		for key, msg := range LinkValidationErrors {
 			if strings.Contains(errStr, key) {
-				c.JSON(400, gin.H{"error": "validation_failed", "message": msg})
-				return
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
 			}
 		}
-		c.JSON(400, gin.H{"error": "validation_failed", "message": errStr})
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
 		return
 	}
 
 	sourceID, err := uuid.Parse(req.SourceNoteID)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid source_note_id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("source_note_id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, req.SourceNoteID),
+		})
 		return
 	}
 	targetID, err := uuid.Parse(req.TargetNoteID)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid target_note_id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("target_note_id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, req.TargetNoteID),
+		})
 		return
 	}
 
 	ctx := c.Request.Context()
 	sourceNote, err := h.noteRepo.FindByID(ctx, sourceID)
-	if err != nil || sourceNote == nil {
-		c.JSON(404, gin.H{"error": "source note not found"})
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
 		return
 	}
+	if sourceNote == nil {
+		apicommon.NotFound(c, apicommon.MsgSourceNotFound)
+		return
+	}
+
 	targetNote, err := h.noteRepo.FindByID(ctx, targetID)
-	if err != nil || targetNote == nil {
-		c.JSON(404, gin.H{"error": "target note not found"})
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+		return
+	}
+	if targetNote == nil {
+		apicommon.NotFound(c, apicommon.MsgTargetNotFound)
 		return
 	}
 
 	linkType, err := link.NewLinkType(req.LinkType)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("link_type", apicommon.ReasonInvalidValue, err.Error(), req.LinkType),
+		})
 		return
 	}
+
 	weight := 1.0
 	if req.Weight > 0 {
 		weight = req.Weight
 	}
 	weightVO, err := link.NewWeight(weight)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	metadata, err := link.NewMetadata(req.Metadata)
-	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("weight", apicommon.ReasonOutOfRange, err.Error(), weight),
+		})
 		return
 	}
 
-	newLink := link.NewLink(sourceID, targetID, linkType, weightVO, metadata)
+	metadata, err := link.NewMetadata(req.Metadata)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), req.Metadata),
+		})
+		return
+	}
+
+	// Get authenticated user ID if available and create link with creator
+	var newLink *link.Link
+	if userID, exists := middleware.GetUserID(c); exists {
+		newLink = link.NewLinkWithCreator(sourceID, targetID, userID, linkType, weightVO, metadata)
+	} else {
+		newLink = link.NewLink(sourceID, targetID, linkType, weightVO, metadata)
+	}
 
 	if err := h.linkRepo.Save(ctx, newLink); err != nil {
 		log.Printf("[LinkHandler.Create] Failed to save link: source=%s target=%s type=%s error=%v",
 			newLink.SourceNoteID(), newLink.TargetNoteID(), newLink.LinkType().String(), err)
-		// Проверяем на дубликат связи
-		if errors.Is(err, postgres.ErrDuplicateLink) {
-			c.JSON(409, gin.H{"error": "link of this type already exists between these notes"})
+		if errors.Is(err, link.ErrDuplicateLink) {
+			apicommon.Conflict(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorFull("link", apicommon.ReasonAlreadyExists, apicommon.MsgDuplicateLink,
+					map[string]string{"source_note_id": req.SourceNoteID, "target_note_id": req.TargetNoteID, "link_type": req.LinkType},
+					"unique combination of source, target and type"),
+			})
 			return
 		}
-		c.JSON(500, gin.H{"error": "failed to save link", "details": err.Error()})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveLink)
 		return
 	}
 
-	c.JSON(201, gin.H{
-		"id":             newLink.ID(),
-		"source_note_id": newLink.SourceNoteID(),
-		"target_note_id": newLink.TargetNoteID(),
-		"link_type":      newLink.LinkType().String(),
-		"weight":         newLink.Weight().Value(),
-		"metadata":       newLink.Metadata().Value(),
-		"created_at":     newLink.CreatedAt(),
-	})
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkCreated(context.Background(), newLink.SourceNoteID().String(), newLink.TargetNoteID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkCreated event: %v", err)
+		}
+	}
+
+	// Check for achievements asynchronously with bounded context
+	if userID, exists := middleware.GetUserID(c); exists && h.achievementService != nil {
+		go func(ctx context.Context) {
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			if err := h.achievementService.CheckTrigger(ctx, userID, "link.create"); err != nil {
+				log.Printf("[LinkHandler] Failed to check achievements: %v", err)
+			}
+		}(c.Request.Context())
+	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[LinkHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	responseData := toLinkResponse(newLink)
+	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
 
-func (h *Handler) Get(c *gin.Context) {
+func (h *Handler) Update(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "update")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
+		return
+	}
+
+	var req updateLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		if strings.Contains(errStr, "link_type") {
+			details = append(details, apicommon.NewFieldError("link_type", apicommon.ReasonInvalidValue, LinkValidationErrors["link_type.oneof"]))
+		}
+		if strings.Contains(errStr, "weight") {
+			details = append(details, apicommon.NewFieldError("weight", apicommon.ReasonOutOfRange, LinkValidationErrors["weight.max"]))
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
+		return
+	}
+
+	if req.LinkType == "" && req.Weight == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, "at least one of link_type or weight must be provided"),
+		})
+		return
+	}
+
+	ctx := c.Request.Context()
+	l, err := h.linkRepo.FindByID(ctx, id)
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
+		return
+	}
+	if l == nil {
+		apicommon.NotFound(c, apicommon.MsgLinkNotFound)
+		return
+	}
+
+	// Authorization: only the creator can update the link.
+	userID, authenticated := middleware.GetUserID(c)
+	if authenticated {
+		if l.CreatorID() != nil && *l.CreatorID() != userID {
+			apicommon.Forbidden(c)
+			return
+		}
+	} else {
+		// Anonymous users cannot update links.
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	modified := false
+	if req.LinkType != "" {
+		linkType, err := link.NewLinkType(req.LinkType)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("link_type", apicommon.ReasonInvalidValue, err.Error(), req.LinkType),
+			})
+			return
+		}
+		l.UpdateLinkType(linkType)
+		modified = true
+	}
+
+	if req.Weight != 0 {
+		weightVO, err := link.NewWeight(req.Weight)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("weight", apicommon.ReasonOutOfRange, err.Error(), req.Weight),
+			})
+			return
+		}
+		l.UpdateWeight(weightVO)
+		modified = true
+	}
+
+	if !modified {
+		apicommon.JSON(c, 200, toLinkResponse(l))
+		return
+	}
+
+	if err := h.linkRepo.Update(ctx, l); err != nil {
+		log.Printf("[LinkHandler.Update] Failed to update link: id=%s error=%v", id, err)
+		if errors.Is(err, link.ErrLinkNotFound) {
+			apicommon.NotFound(c, apicommon.MsgLinkNotFound)
+			return
+		}
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveLink)
+		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkUpdated(context.Background(), l.SourceNoteID().String(), l.TargetNoteID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkUpdated event: %v", err)
+		}
+	}
+
+	// Invalidate graph cache for the user
+	if userID != uuid.Nil && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[LinkHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	apicommon.JSON(c, 200, toLinkResponse(l))
+}
+
+func (h *Handler) Get(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "read")
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
 	l, err := h.linkRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch link"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
 		return
 	}
 	if l == nil {
-		c.JSON(404, gin.H{"error": "link not found"})
+		apicommon.NotFound(c, apicommon.MsgLinkNotFound)
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"id":             l.ID(),
-		"source_note_id": l.SourceNoteID(),
-		"target_note_id": l.TargetNoteID(),
-		"link_type":      l.LinkType().String(),
-		"weight":         l.Weight().Value(),
-		"metadata":       l.Metadata().Value(),
-		"created_at":     l.CreatedAt(),
-	})
+	apicommon.JSON(c, 200, toLinkResponse(l))
 }
 
 func (h *Handler) GetByNote(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "read_by_note")
+
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid note id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, noteIDStr),
+		})
 		return
 	}
 
 	ctx := c.Request.Context()
 	n, err := h.noteRepo.FindByID(ctx, noteID)
-	if err != nil || n == nil {
-		c.JSON(404, gin.H{"error": "note not found"})
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+		return
+	}
+	if n == nil {
+		apicommon.NotFound(c, apicommon.MsgNoteNotFound)
 		return
 	}
 
 	outgoing, err := h.linkRepo.FindBySource(ctx, noteID)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch outgoing links"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
 		return
 	}
 	incoming, err := h.linkRepo.FindByTarget(ctx, noteID)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch incoming links"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
 		return
 	}
 
@@ -226,46 +398,78 @@ func (h *Handler) GetByNote(c *gin.Context) {
 		incomingResp = append(incomingResp, toLinkResponse(l))
 	}
 
-	c.JSON(200, gin.H{
+	apicommon.JSON(c, 200, gin.H{
 		"outgoing": outgoingResp,
 		"incoming": incomingResp,
 	})
 }
 
 func (h *Handler) Delete(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "delete")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
 		return
 	}
 
 	ctx := c.Request.Context()
 	l, err := h.linkRepo.FindByID(ctx, id)
-	if err != nil || l == nil {
-		c.JSON(404, gin.H{"error": "link not found"})
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
+		return
+	}
+	if l == nil {
+		apicommon.NotFound(c, apicommon.MsgLinkNotFound)
 		return
 	}
 
 	if err := h.linkRepo.Delete(ctx, id); err != nil {
-		c.JSON(500, gin.H{"error": "failed to delete link"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
 		return
 	}
-	c.JSON(204, nil)
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkDeleted(context.Background(), l.SourceNoteID().String(), l.TargetNoteID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkDeleted event: %v", err)
+		}
+	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[LinkHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	apicommon.NoContent(c)
 }
 
 func (h *Handler) DeleteByNote(c *gin.Context) {
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "invalid note id"})
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, noteIDStr),
+		})
 		return
 	}
 
 	ctx := c.Request.Context()
 	if err := h.linkRepo.DeleteBySource(ctx, noteID); err != nil {
-		c.JSON(500, gin.H{"error": "failed to delete links for note"})
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
 		return
 	}
-	c.JSON(204, nil)
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkDeleted(context.Background(), noteID.String(), "", getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkDeleted event for DeleteByNote: %v", err)
+		}
+	}
+
+	apicommon.NoContent(c)
 }

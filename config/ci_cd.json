@@ -1,0 +1,13 @@
+{
+  "ci_cd": {
+    "integration_test": {
+      "migrate_all": true,
+      "truncate_list": [
+        "notes",
+        "links",
+        "embeddings",
+        "recommendations"
+      ]
+    }
+  }
+}

@@ -1,0 +1,1 @@
+DROP MATERIALIZED VIEW IF EXISTS note_links_closure CASCADE;

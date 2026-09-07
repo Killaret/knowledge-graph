@@ -7,16 +7,21 @@ import (
 )
 
 type Link struct {
-	id           uuid.UUID
-	sourceNoteID uuid.UUID
-	targetNoteID uuid.UUID
-	linkType     LinkType
-	weight       Weight
-	metadata     Metadata
-	createdAt    time.Time
+	id               uuid.UUID
+	sourceNoteID     uuid.UUID
+	targetNoteID     uuid.UUID
+	linkType         LinkType
+	weight           Weight
+	metadata         Metadata
+	sourceType       SourceType
+	creatorID        *uuid.UUID
+	createdAt        time.Time
+	updatedAt        time.Time
+	lastWeightUpdate *time.Time
 }
 
 func NewLink(sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata) *Link {
+	now := time.Now()
 	return &Link{
 		id:           uuid.New(),
 		sourceNoteID: sourceID,
@@ -24,24 +29,81 @@ func NewLink(sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, met
 		linkType:     linkType,
 		weight:       weight,
 		metadata:     metadata,
-		createdAt:    time.Now(),
+		sourceType:   DefaultSourceType(),
+		creatorID:    nil,
+		createdAt:    now,
+		updatedAt:    now,
 	}
 }
 
-// ReconstructLink восстанавливает связь из сохранённых данных
-func ReconstructLink(id uuid.UUID, sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata, createdAt time.Time) *Link {
+func NewLinkWithCreator(sourceID, targetID, creatorID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata) *Link {
+	now := time.Now()
 	return &Link{
-		id:           id,
+		id:           uuid.New(),
 		sourceNoteID: sourceID,
 		targetNoteID: targetID,
 		linkType:     linkType,
 		weight:       weight,
 		metadata:     metadata,
-		createdAt:    createdAt,
+		sourceType:   DefaultSourceType(),
+		creatorID:    &creatorID,
+		createdAt:    now,
+		updatedAt:    now,
 	}
 }
 
-// Геттеры
+// NewGammaLink creates a link from recommendations (gamma source type)
+func NewGammaLink(sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata) *Link {
+	sourceType, _ := NewSourceType("gamma")
+	now := time.Now()
+	return &Link{
+		id:           uuid.New(),
+		sourceNoteID: sourceID,
+		targetNoteID: targetID,
+		linkType:     linkType,
+		weight:       weight,
+		metadata:     metadata,
+		sourceType:   sourceType,
+		creatorID:    nil,
+		createdAt:    now,
+		updatedAt:    now,
+	}
+}
+
+// ReconstructLink reconstructs a link from saved data
+func ReconstructLink(id uuid.UUID, sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata, sourceType SourceType, createdAt, updatedAt time.Time, lastWeightUpdate *time.Time) *Link {
+	return &Link{
+		id:               id,
+		sourceNoteID:     sourceID,
+		targetNoteID:     targetID,
+		linkType:         linkType,
+		weight:           weight,
+		metadata:         metadata,
+		sourceType:       sourceType,
+		creatorID:        nil,
+		createdAt:        createdAt,
+		updatedAt:        updatedAt,
+		lastWeightUpdate: lastWeightUpdate,
+	}
+}
+
+func ReconstructLinkWithCreator(id uuid.UUID, sourceID, targetID uuid.UUID, linkType LinkType, weight Weight, metadata Metadata, sourceType SourceType, creatorID *uuid.UUID, createdAt, updatedAt time.Time, lastWeightUpdate *time.Time) *Link {
+	return &Link{
+		id:               id,
+		sourceNoteID:     sourceID,
+		targetNoteID:     targetID,
+		linkType:         linkType,
+		weight:           weight,
+		metadata:         metadata,
+		sourceType:       sourceType,
+		creatorID:        creatorID,
+		createdAt:        createdAt,
+		updatedAt:        updatedAt,
+		lastWeightUpdate: lastWeightUpdate,
+	}
+}
+
+// Getters
 func (l *Link) ID() uuid.UUID {
 	return l.id
 }
@@ -70,7 +132,40 @@ func (l *Link) CreatedAt() time.Time {
 	return l.createdAt
 }
 
-// UpdateWeight обновляет вес связи
+func (l *Link) UpdatedAt() time.Time {
+	return l.updatedAt
+}
+
+func (l *Link) LastWeightUpdate() *time.Time {
+	return l.lastWeightUpdate
+}
+
+func (l *Link) CreatorID() *uuid.UUID {
+	return l.creatorID
+}
+
+func (l *Link) SetCreatorID(creatorID uuid.UUID) {
+	l.creatorID = &creatorID
+}
+
+func (l *Link) SourceType() SourceType {
+	return l.sourceType
+}
+
+func (l *Link) SetSourceType(sourceType SourceType) {
+	l.sourceType = sourceType
+}
+
+// UpdateWeight updates the link weight and records when the weight was last changed.
 func (l *Link) UpdateWeight(newWeight Weight) {
+	now := time.Now()
 	l.weight = newWeight
+	l.updatedAt = now
+	l.lastWeightUpdate = &now
+}
+
+// UpdateLinkType updates the link type and touches updated_at.
+func (l *Link) UpdateLinkType(newLinkType LinkType) {
+	l.linkType = newLinkType
+	l.updatedAt = time.Now()
 }

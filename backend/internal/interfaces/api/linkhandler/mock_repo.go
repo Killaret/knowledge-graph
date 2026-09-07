@@ -79,6 +79,16 @@ func (m *mockLinkRepo) DeleteBySource(ctx context.Context, sourceID uuid.UUID) e
 	return nil
 }
 
+func (m *mockLinkRepo) Update(ctx context.Context, l *link.Link) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.links[l.ID()]; !ok {
+		return link.ErrLinkNotFound
+	}
+	m.links[l.ID()] = l
+	return nil
+}
+
 func (m *mockLinkRepo) List(ctx context.Context) ([]*link.Link, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -117,4 +127,16 @@ func (m *mockLinkRepo) FindAllPaginated(ctx context.Context, limit, offset int) 
 	}
 
 	return allLinks[offset:end], total, nil
+}
+
+// Create is a convenience method for tests
+func (m *mockLinkRepo) Create(ctx context.Context, sourceID, targetID uuid.UUID, linkType string, weight float64, metadata map[string]interface{}, sourceType string) *link.Link {
+	// Convert types to domain types
+	linkTypeDomain, _ := link.NewLinkType(linkType)
+	weightDomain, _ := link.NewWeight(weight)
+	metadataDomain, _ := link.NewMetadata(metadata)
+
+	newLink := link.NewLink(sourceID, targetID, linkTypeDomain, weightDomain, metadataDomain)
+	m.Save(ctx, newLink)
+	return newLink
 }

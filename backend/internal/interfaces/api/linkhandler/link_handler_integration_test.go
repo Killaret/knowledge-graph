@@ -48,7 +48,7 @@ func (s *LinkHandlerIntegrationTestSuite) SetupSuite() {
 	// Применяем миграцию для уникального ограничения
 	err = s.db.Exec(`
 		ALTER TABLE links DROP CONSTRAINT IF EXISTS links_source_target_type_unique;
-		ALTER TABLE links ADD CONSTRAINT links_source_target_type_unique UNIQUE (source_id, target_id, link_type);
+		ALTER TABLE links ADD CONSTRAINT links_source_target_type_unique UNIQUE (source_note_id, target_note_id, link_type);
 	`).Error
 	s.Require().NoError(err, "failed to apply unique constraint migration")
 
@@ -57,7 +57,7 @@ func (s *LinkHandlerIntegrationTestSuite) SetupSuite() {
 	s.linkRepo = postgres.NewLinkRepository(s.db)
 
 	// Создаем хендлер
-	handler := New(s.linkRepo, s.noteRepo, nil, nil, 0)
+	handler := New(s.linkRepo, s.noteRepo, nil, nil)
 
 	// Настраиваем Gin
 	gin.SetMode(gin.TestMode)
@@ -66,6 +66,7 @@ func (s *LinkHandlerIntegrationTestSuite) SetupSuite() {
 	// Регистрируем маршруты
 	s.router.POST("/links", handler.Create)
 	s.router.GET("/links/:id", handler.Get)
+	s.router.PUT("/links/:id", handler.Update)
 	s.router.DELETE("/links/:id", handler.Delete)
 	s.router.GET("/notes/:id/links", handler.GetByNote)
 	s.router.DELETE("/notes/:id/links", handler.DeleteByNote)
@@ -114,14 +115,15 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_Success() {
 
 	s.Equal(201, w.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
-	s.NotEmpty(response["id"])
-	s.Equal(source.ID().String(), response["source_note_id"])
-	s.Equal(target.ID().String(), response["target_note_id"])
-	s.Equal("reference", response["link_type"])
-	s.Equal(0.8, response["weight"])
+	data := wrappedResponse["data"].(map[string]interface{})
+	s.NotEmpty(data["id"])
+	s.Equal(source.ID().String(), data["source_note_id"])
+	s.Equal(target.ID().String(), data["target_note_id"])
+	s.Equal("reference", data["link_type"])
+	s.Equal(0.8, data["weight"])
 }
 
 // TestCreateLink_MissingSourceNote - несуществующая исходная заметка
@@ -145,7 +147,7 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_MissingSourceNote() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "source note not found")
+	s.Equal("NOT_FOUND", response["code"])
 }
 
 // TestCreateLink_MissingTargetNote - несуществующая целевая заметка
@@ -169,7 +171,7 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_MissingTargetNote() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "target note not found")
+	s.Equal("NOT_FOUND", response["code"])
 }
 
 // TestCreateLink_Duplicate - проверка отклонения дубликата связи (409 Conflict)
@@ -192,10 +194,11 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_Duplicate() {
 	s.router.ServeHTTP(w1, req1)
 	s.Equal(201, w1.Code)
 
-	var resp1 map[string]interface{}
-	err := json.Unmarshal(w1.Body.Bytes(), &resp1)
+	var wrappedResp1 map[string]interface{}
+	err := json.Unmarshal(w1.Body.Bytes(), &wrappedResp1)
 	s.NoError(err)
-	s.NotEmpty(resp1["id"])
+	data1 := wrappedResp1["data"].(map[string]interface{})
+	s.NotEmpty(data1["id"])
 
 	// Пытаемся создать дубликат - ожидаем 409 Conflict
 	w2 := httptest.NewRecorder()
@@ -206,10 +209,10 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_Duplicate() {
 	// После добавления unique constraint ожидаем 409 Conflict
 	s.Equal(409, w2.Code)
 
-	var resp2 map[string]interface{}
-	err = json.Unmarshal(w2.Body.Bytes(), &resp2)
+	var wrappedResp2 map[string]interface{}
+	err = json.Unmarshal(w2.Body.Bytes(), &wrappedResp2)
 	s.NoError(err)
-	s.Contains(resp2["error"], "already exists")
+	s.Equal("CONFLICT", wrappedResp2["code"])
 }
 
 // TestCreateLink_InvalidJSON - невалидный JSON
@@ -241,7 +244,7 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_InvalidUUID() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "invalid source_note_id")
+	s.Equal("VALIDATION_ERROR", response["code"])
 }
 
 // TestGetLink_Success - получение связи по ID
@@ -263,10 +266,11 @@ func (s *LinkHandlerIntegrationTestSuite) TestGetLink_Success() {
 	s.router.ServeHTTP(w1, req1)
 	s.Equal(201, w1.Code)
 
-	var createResponse map[string]interface{}
-	err := json.Unmarshal(w1.Body.Bytes(), &createResponse)
+	var createWrappedResponse map[string]interface{}
+	err := json.Unmarshal(w1.Body.Bytes(), &createWrappedResponse)
 	s.NoError(err)
-	linkID := createResponse["id"].(string)
+	createData := createWrappedResponse["data"].(map[string]interface{})
+	linkID := createData["id"].(string)
 
 	// Получаем связь
 	w2 := httptest.NewRecorder()
@@ -275,12 +279,13 @@ func (s *LinkHandlerIntegrationTestSuite) TestGetLink_Success() {
 
 	s.Equal(200, w2.Code)
 
-	var getResponse map[string]interface{}
-	err = json.Unmarshal(w2.Body.Bytes(), &getResponse)
+	var getWrappedResponse map[string]interface{}
+	err = json.Unmarshal(w2.Body.Bytes(), &getWrappedResponse)
 	s.NoError(err)
-	s.Equal(linkID, getResponse["id"])
-	s.Equal(source.ID().String(), getResponse["source_note_id"])
-	s.Equal(target.ID().String(), getResponse["target_note_id"])
+	getData := getWrappedResponse["data"].(map[string]interface{})
+	s.Equal(linkID, getData["id"])
+	s.Equal(source.ID().String(), getData["source_note_id"])
+	s.Equal(target.ID().String(), getData["target_note_id"])
 }
 
 // TestGetLink_NotFound - получение несуществующей связи
@@ -294,7 +299,7 @@ func (s *LinkHandlerIntegrationTestSuite) TestGetLink_NotFound() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "link not found")
+	s.Equal("NOT_FOUND", response["code"])
 }
 
 // TestGetLink_InvalidID - невалидный ID
@@ -308,7 +313,7 @@ func (s *LinkHandlerIntegrationTestSuite) TestGetLink_InvalidID() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "invalid id")
+	s.Equal("VALIDATION_ERROR", response["code"])
 }
 
 // TestDeleteLink_Success - удаление связи
@@ -330,10 +335,11 @@ func (s *LinkHandlerIntegrationTestSuite) TestDeleteLink_Success() {
 	s.router.ServeHTTP(w1, req1)
 	s.Equal(201, w1.Code)
 
-	var createResponse map[string]interface{}
-	err := json.Unmarshal(w1.Body.Bytes(), &createResponse)
+	var createWrappedResponse map[string]interface{}
+	err := json.Unmarshal(w1.Body.Bytes(), &createWrappedResponse)
 	s.NoError(err)
-	linkID := createResponse["id"].(string)
+	createData := createWrappedResponse["data"].(map[string]interface{})
+	linkID := createData["id"].(string)
 
 	// Удаляем связь
 	w2 := httptest.NewRecorder()
@@ -360,7 +366,7 @@ func (s *LinkHandlerIntegrationTestSuite) TestDeleteLink_NotFound() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "link not found")
+	s.Equal("NOT_FOUND", response["code"])
 }
 
 // TestGetLinksByNote - получение связей заметки
@@ -403,12 +409,13 @@ func (s *LinkHandlerIntegrationTestSuite) TestGetLinksByNote() {
 
 	s.Equal(200, w3.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w3.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w3.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
+	data := wrappedResponse["data"].(map[string]interface{})
 
-	outgoing := response["outgoing"].([]interface{})
-	incoming := response["incoming"].([]interface{})
+	outgoing := data["outgoing"].([]interface{})
+	incoming := data["incoming"].([]interface{})
 
 	s.Len(outgoing, 1) // note1 -> note2
 	s.Len(incoming, 1) // note3 -> note1
@@ -425,7 +432,7 @@ func (s *LinkHandlerIntegrationTestSuite) TestGetLinksByNote_NotFound() {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	s.NoError(err)
-	s.Contains(response["error"], "note not found")
+	s.Equal("NOT_FOUND", response["code"])
 }
 
 // TestDeleteLinksByNote - удаление всех связей заметки
@@ -462,11 +469,12 @@ func (s *LinkHandlerIntegrationTestSuite) TestDeleteLinksByNote() {
 	s.router.ServeHTTP(w2, req2)
 	s.Equal(200, w2.Code)
 
-	var response map[string]interface{}
-	err := json.Unmarshal(w2.Body.Bytes(), &response)
+	var wrappedResponse map[string]interface{}
+	err := json.Unmarshal(w2.Body.Bytes(), &wrappedResponse)
 	s.NoError(err)
+	data := wrappedResponse["data"].(map[string]interface{})
 
-	outgoing := response["outgoing"].([]interface{})
+	outgoing := data["outgoing"].([]interface{})
 	s.Len(outgoing, 0)
 }
 
@@ -491,12 +499,13 @@ func (s *LinkHandlerIntegrationTestSuite) TestFullLinkLifecycle() {
 
 	s.Equal(201, w1.Code)
 
-	var createResponse map[string]interface{}
-	err := json.Unmarshal(w1.Body.Bytes(), &createResponse)
+	var createWrappedResponse map[string]interface{}
+	err := json.Unmarshal(w1.Body.Bytes(), &createWrappedResponse)
 	s.NoError(err)
-	linkID := createResponse["id"].(string)
-	s.Equal("reference", createResponse["link_type"])
-	s.Equal(0.9, createResponse["weight"])
+	createData := createWrappedResponse["data"].(map[string]interface{})
+	linkID := createData["id"].(string)
+	s.Equal("reference", createData["link_type"])
+	s.Equal(0.9, createData["weight"])
 
 	// 2. Получаем связь
 	w2 := httptest.NewRecorder()
@@ -505,10 +514,11 @@ func (s *LinkHandlerIntegrationTestSuite) TestFullLinkLifecycle() {
 
 	s.Equal(200, w2.Code)
 
-	var getResponse map[string]interface{}
-	err = json.Unmarshal(w2.Body.Bytes(), &getResponse)
+	var getWrappedResponse map[string]interface{}
+	err = json.Unmarshal(w2.Body.Bytes(), &getWrappedResponse)
 	s.NoError(err)
-	s.Equal(linkID, getResponse["id"])
+	getData := getWrappedResponse["data"].(map[string]interface{})
+	s.Equal(linkID, getData["id"])
 
 	// 3. Удаляем связь
 	w3 := httptest.NewRecorder()

@@ -7,10 +7,11 @@ import (
 	"log"
 	"time"
 
+	"knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/note"
+	contextkeys "knowledge-graph/internal/shared/context"
 
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -23,43 +24,67 @@ const (
 
 type NoteRepository struct {
 	db    *gorm.DB
-	redis *redis.Client
+	cache cache.CacheClient
 }
 
-func NewNoteRepository(db *gorm.DB, redis *redis.Client) *NoteRepository {
-	return &NoteRepository{db: db, redis: redis}
+func NewNoteRepository(db *gorm.DB, cacheClient cache.CacheClient) *NoteRepository {
+	return &NoteRepository{db: db, cache: cacheClient}
+}
+
+// applyNoteScope фильтрует заметки по пользователю: авторизованный — только свои,
+// анонимный — только публичные.
+func applyNoteScope(db *gorm.DB, userID uuid.UUID) *gorm.DB {
+	// In SKIP_AUTH mode the test user has uuid.Nil, which would normally be treated as
+	// an anonymous (public-only) request. Use the request context flag to keep the test
+	// user scope unmodified and return all notes.
+	if db.Statement != nil && db.Statement.Context != nil {
+		if isSkip, _ := db.Statement.Context.Value(contextkeys.SkipAuthKey).(bool); isSkip {
+			return db
+		}
+	}
+
+	if userID == uuid.Nil {
+		return db.Where("is_public = ?", true)
+	}
+	return db.Where("creator_id = ?", userID.String())
 }
 
 // invalidateCache удаляет кэш списка заметок
 func (r *NoteRepository) invalidateCache(ctx context.Context) {
-	if r.redis != nil {
-		r.redis.Del(ctx, notesCacheKey)
+	if r.cache != nil {
+		if err := r.cache.Del(ctx, notesCacheKey); err != nil {
+			log.Printf("failed to invalidate notes cache: %v", err)
+		}
 	}
 }
 
 func (r *NoteRepository) Save(ctx context.Context, n *note.Note) error {
-	var existing NoteModel
-	err := r.db.WithContext(ctx).Where("id = ?", n.ID()).First(&existing).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	// Use explicit transaction to ensure clean state
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var existing NoteModel
+		err := tx.Where("id = ?", n.ID()).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			model, err := toGormNote(n)
+			if err != nil {
+				return err
+			}
+			if err := tx.Create(&model).Error; err != nil {
+				return err
+			}
+			// Инвалидация кэша при создании новой заметки
+			r.invalidateCache(ctx)
+			return nil
+		}
+		if err != nil {
+			return err
+		}
 		model, err := toGormNote(n)
 		if err != nil {
 			return err
 		}
-		if err := r.db.WithContext(ctx).Create(&model).Error; err != nil {
-			return err
-		}
-		// Инвалидация кэша при создании новой заметки
-		r.invalidateCache(ctx)
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	model, err := toGormNote(n)
-	if err != nil {
-		return err
-	}
-	return r.db.WithContext(ctx).Model(&existing).Updates(model).Error
+		// Select("*") ensures boolean zero values (e.g. is_public=false) are persisted.
+		return tx.Model(&existing).Select("*").Updates(model).Error
+	})
 }
 
 func (r *NoteRepository) FindByID(ctx context.Context, id uuid.UUID) (*note.Note, error) {
@@ -84,18 +109,50 @@ func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// FindAllPaginated возвращает заметки с пагинацией на уровне БД
+// DeleteBatch soft-deletes multiple notes by ID in a single transaction.
+func (r *NoteRepository) DeleteBatch(ctx context.Context, ids []uuid.UUID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	if err := r.db.WithContext(ctx).Delete(&NoteModel{}, "id IN ?", ids).Error; err != nil {
+		return err
+	}
+	// Инвалидация кэша при удалении заметок
+	r.invalidateCache(ctx)
+	return nil
+}
+
+// Restore recovers a soft-deleted note by clearing its deleted_at timestamp.
+func (r *NoteRepository) Restore(ctx context.Context, id uuid.UUID) error {
+	result := r.db.WithContext(ctx).Unscoped().
+		Model(&NoteModel{}).
+		Where("id = ?", id).
+		Update("deleted_at", nil)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return note.ErrNoteNotFound
+	}
+	// Инвалидация кэша при восстановлении заметки
+	r.invalidateCache(ctx)
+	return nil
+}
+
+// FindAllPaginated возвращает заметки с пагинацией на уровне БД.
+// userID = uuid.Nil — только публичные, иначе только заметки пользователя.
 // limit=0 означает "все записи"
-func (r *NoteRepository) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (r *NoteRepository) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	var total int64
 
-	// Считаем общее количество
-	if err := r.db.WithContext(ctx).Model(&NoteModel{}).Count(&total).Error; err != nil {
+	// Считаем общее количество с учётом видимости
+	countQuery := applyNoteScope(r.db.WithContext(ctx).Model(&NoteModel{}), userID)
+	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	// Запрос с пагинацией
-	query := r.db.WithContext(ctx).Order("created_at DESC")
+	query := applyNoteScope(r.db.WithContext(ctx), userID).Order("created_at DESC")
 	if limit > 0 {
 		query = query.Limit(limit).Offset(offset)
 	}
@@ -108,15 +165,15 @@ func (r *NoteRepository) FindAllPaginated(ctx context.Context, limit, offset int
 	return toDomainNotes(models), total, nil
 }
 
-// FindAll возвращает все заметки без пагинации с кэшированием в Redis
+// FindAll возвращает все заметки без пагинации с кэшированием
 // DEPRECATED: используйте FindAllPaginated для больших наборов данных
 func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
-	// 1. Проверяем кэш Redis (кэшируем NoteModel, а не Note, т.к. у Note неэкспортированные поля)
-	if r.redis != nil {
-		cached, err := r.redis.Get(ctx, notesCacheKey).Bytes()
+	// 1. Проверяем кэш (кэшируем NoteModel, а не Note, т.к. у Note неэкспортированные поля)
+	if r.cache != nil {
+		cached, err := r.cache.Get(ctx, notesCacheKey)
 		if err == nil {
 			var models []NoteModel
-			if err := json.Unmarshal(cached, &models); err == nil {
+			if err := json.Unmarshal([]byte(cached), &models); err == nil {
 				// Конвертируем модели в доменные объекты
 				return toDomainNotes(models), nil
 			}
@@ -132,51 +189,39 @@ func (r *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 	notes := toDomainNotes(models)
 
 	// 3. Сохраняем в кэш (NoteModel с экспортированными полями)
-	if r.redis != nil {
+	if r.cache != nil {
 		if data, err := json.Marshal(models); err == nil {
-			r.redis.Set(ctx, notesCacheKey, data, notesCacheTTL)
+			if err := r.cache.Set(ctx, notesCacheKey, string(data), notesCacheTTL); err != nil {
+				log.Printf("failed to cache notes: %v", err)
+			}
 		}
 	}
 
 	return notes, nil
 }
 
-// List возвращает заметки с пагинацией
-func (r *NoteRepository) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	var models []NoteModel
-	var total int64
-
-	db := r.db.WithContext(ctx).Model(&NoteModel{})
-
-	// Count total
-	if err := db.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	// Get paginated results
-	err := db.Order("created_at DESC").Limit(limit).Offset(offset).Find(&models).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return toDomainNotes(models), total, nil
+// List возвращает заметки с пагинацией. userID = uuid.Nil — только публичные.
+func (r *NoteRepository) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	// NoteRepository has its own per-user scope; no need for a transaction here.
+	return r.FindAllPaginated(ctx, userID, limit, offset)
 }
 
-// Search performs multilingual full-text search on notes (Russian + English)
+// Search performs multilingual full-text search on notes (Russian + English).
+// userID = uuid.Nil — ищет только по публичным, иначе только по заметкам пользователя.
 // Falls back to ILIKE search if full-text search returns no results
-func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+func (r *NoteRepository) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
 	var models []NoteModel
 	var total int64
 
 	// Try full-text search first
 	if query != "" {
-		db := r.db.WithContext(ctx).Model(&NoteModel{})
+		db := applyNoteScope(r.db.WithContext(ctx).Model(&NoteModel{}), userID)
 
 		// Multilingual search using tsvector
-		db = db.Where(`
-			search_vector @@ plainto_tsquery('russian', ?) OR 
+		db = db.Where(`(
+			search_vector @@ plainto_tsquery('russian', ?) OR
 			search_vector @@ plainto_tsquery('simple', ?)
-		`, query, query)
+		)`, query, query)
 
 		// Безопасная сортировка: используем placeholder для query в ts_rank
 		db = db.Order(clause.Expr{
@@ -199,9 +244,9 @@ func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset
 		}
 
 		// Fallback: use ILIKE search if full-text returned nothing
-		dbLike := r.db.WithContext(ctx).Model(&NoteModel{})
+		dbLike := applyNoteScope(r.db.WithContext(ctx).Model(&NoteModel{}), userID)
 		dbLike = dbLike.Where(`
-			title ILIKE ? OR content ILIKE ?
+			(title ILIKE ? OR content ILIKE ?)
 		`, "%"+query+"%", "%"+query+"%")
 		dbLike = dbLike.Order("created_at DESC")
 
@@ -216,8 +261,8 @@ func (r *NoteRepository) Search(ctx context.Context, query string, limit, offset
 		return toDomainNotes(models), total, nil
 	}
 
-	// Empty query - return all notes
-	db := r.db.WithContext(ctx).Model(&NoteModel{}).Order("created_at DESC")
+	// Empty query - return all notes scoped by user
+	db := applyNoteScope(r.db.WithContext(ctx).Model(&NoteModel{}), userID).Order("created_at DESC")
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
@@ -236,7 +281,7 @@ func toGormNote(n *note.Note) (NoteModel, error) {
 	}
 	noteType := n.Type()
 	if noteType == "" {
-		noteType = "star"
+		noteType = "unknown"
 	}
 	return NoteModel{
 		ID:        n.ID(),
@@ -244,6 +289,8 @@ func toGormNote(n *note.Note) (NoteModel, error) {
 		Content:   n.Content().String(),
 		Type:      noteType,
 		Metadata:  datatypes.JSON(metadataJSON),
+		CreatorID: n.CreatorID(),
+		IsPublic:  n.IsPublic(),
 		CreatedAt: n.CreatedAt(),
 		UpdatedAt: n.UpdatedAt(),
 	}, nil
@@ -271,9 +318,9 @@ func toDomainNote(m *NoteModel) (*note.Note, error) {
 	}
 	noteType := m.Type
 	if noteType == "" {
-		noteType = "star"
+		noteType = "unknown"
 	}
-	return note.ReconstructNote(m.ID, title, content, noteType, metadata, m.CreatedAt, m.UpdatedAt), nil
+	return note.ReconstructNoteWithCreator(m.ID, title, content, noteType, metadata, m.CreatorID, m.CreatedAt, m.UpdatedAt, note.WithIsPublic(m.IsPublic)), nil
 }
 
 // toDomainNotes преобразует список GORM-моделей в список доменных сущностей

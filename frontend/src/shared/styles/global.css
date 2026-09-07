@@ -1,0 +1,251 @@
+:root {
+  /* === Основная палитра === */
+  /* Primary colors */
+  --color-primary: #8b5cf6;
+  --color-primary-hover: #7c3aed;
+  --color-primary-light: rgba(139, 92, 246, 0.15);
+
+  /* Secondary colors */
+  --color-secondary: #6b7280;
+  --color-secondary-hover: #4b5563;
+  --color-secondary-light: rgba(107, 114, 128, 0.1);
+
+  /* Danger/error colors */
+  --color-danger: #ff3a2f;
+  --color-danger-hover: #dc2626;
+  --color-danger-light: rgba(255, 58, 47, 0.1);
+
+  /* Info colors */
+  --color-info: #2dd4bf;
+  --color-info-hover: #14b8a6;
+  --color-info-light: rgba(45, 212, 191, 0.1);
+
+  /* Surface colors */
+  --color-surface: #0a0a0f;
+  --color-surface-elevated: #14142b;
+  --color-background: #0a0a0f;
+
+  /* Text colors */
+  --color-text: #e0e0e0;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-text-primary: #e0e0e0;
+  --color-text-dark: #e0e0e0;
+
+  /* Border colors */
+  --color-border: #2d2d3a;
+  --color-border-focus: #8b5cf6;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+
+  /* === Типы небесных тел === */
+  --color-star: #ffcc00;
+  --color-planet: #60a5fa;
+  --color-comet: #e879f9;
+  --color-galaxy: #c084fc;
+  --color-asteroid: #94a3b8;
+  --color-dust: #a0a0a0;
+
+  /* ================================
+     COSMIC THEME VARIABLES
+     ================================ */
+
+  /* Glow effects */
+  --color-glow: #ffcc00;
+  --color-glow-purple: #8b5cf6;
+  --color-glow-red: #ff3a2f;
+  --color-glow-cyan: #2dd4bf;
+  --color-glow-subtle: rgba(139, 92, 246, 0.3);
+
+  /* Link/connection glow */
+  --color-link-glow: #8b5cf6;
+
+  /* Nebula effect */
+  --color-nebula: rgba(139, 92, 246, 0.15);
+  --color-nebula-red: rgba(255, 58, 47, 0.12);
+
+  /* Ember effect */
+  --color-ember: rgba(255, 58, 47, 0.08);
+
+  /* Cosmic gradients */
+  --gradient-cosmic-bg: radial-gradient(ellipse at 50% 100%, #14142b 0%, #0a0a0f 80%);
+  --gradient-nebula: radial-gradient(
+    circle at 50% 50%,
+    rgba(139, 92, 246, 0.2) 0%,
+    transparent 70%
+  );
+
+  /* Shadow with glow */
+  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
+  --shadow-glow-red: 0 0 20px rgba(255, 58, 47, 0.3);
+  --shadow-glow-cyan: 0 0 20px rgba(45, 212, 191, 0.3);
+
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* Backdrop blur */
+  --backdrop-blur: blur(12px);
+
+  /* ================================
+     ALLOTROPIC CARBON THEME
+     Graphene / fullerene / diamond
+     ================================ */
+
+  /* Carbon surfaces */
+  --carbon-black: #050508;
+  --carbon-graphite: #0b0b10;
+  --carbon-graphene: #12121a;
+  --carbon-c70: #1a1a24;
+  --carbon-elevated: #20202c;
+  --carbon-fiber: #2a2a38;
+
+  /* Carbon border */
+  --carbon-border: #2d2d3d;
+  --carbon-border-active: #4b4b5e;
+  --carbon-border-glow: rgba(139, 92, 246, 0.35);
+
+  /* Carbon glows — electric, fullerene, diamond */
+  --carbon-glow-purple: #8b5cf6;
+  --carbon-glow-amber: #f59e0b;
+  --carbon-glow-cyan: #22d3ee;
+  --carbon-glow-red: #ff3a2f;
+
+  /* Carbon text */
+  --carbon-text: #f0f0f5;
+  --carbon-text-muted: #8b8b9e;
+  --carbon-text-dim: #5a5a6e;
+
+  /* Carbon effects */
+  --carbon-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --carbon-glow-sm: 0 0 8px rgba(139, 92, 246, 0.25);
+  --carbon-glow-md: 0 0 18px rgba(139, 92, 246, 0.35);
+  --carbon-glow-amber: 0 0 16px rgba(245, 158, 11, 0.35);
+  --carbon-glow-cyan: 0 0 16px rgba(34, 211, 238, 0.35);
+
+  /* Hexagon carbon mesh */
+  --carbon-hex-fill: rgba(139, 92, 246, 0.04);
+  --carbon-hex-stroke: rgba(139, 92, 246, 0.12);
+
+  /* Alotropic gradients */
+  --carbon-gradient-primary: linear-gradient(135deg, #22d3ee 0%, #8b5cf6 100%);
+  --carbon-gradient-amber: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  --carbon-gradient-danger: linear-gradient(135deg, #ff3a2f 0%, #c2410c 100%);
+  --carbon-gradient-success: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  --carbon-gradient-surface: linear-gradient(135deg, #14141e 0%, #0b0b10 100%);
+  --carbon-gradient-card: linear-gradient(
+    145deg,
+    rgba(30, 30, 42, 0.7) 0%,
+    rgba(18, 18, 26, 0.9) 100%
+  );
+
+  /* Alotropic glows (distinct, never overlapping hue roles) */
+  --carbon-glow-primary: 0 0 18px rgba(34, 211, 238, 0.35), 0 0 36px rgba(139, 92, 246, 0.2);
+  --carbon-glow-amber: 0 0 16px rgba(245, 158, 11, 0.35);
+  --carbon-glow-cyan: 0 0 16px rgba(34, 211, 238, 0.35);
+  --carbon-glow-red: 0 0 16px rgba(255, 58, 47, 0.35);
+  --carbon-glow-green: 0 0 16px rgba(52, 211, 153, 0.3);
+  --carbon-glow-purple: 0 0 18px rgba(139, 92, 246, 0.4);
+
+  /* Focus ring */
+  --carbon-focus-ring: 0 0 0 3px rgba(34, 211, 238, 0.15);
+
+  /* Animation */
+  --carbon-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Shared carbon surface utility values */
+  --carbon-surface-blur: blur(12px);
+}
+
+/* ================================
+   COSMIC COCKPIT THEME ALIASES
+   Cockpit-scoped aliases into the existing Allotropic Carbon palette.
+   Do NOT introduce new hues here — the cockpit reuses the same theme as
+   the rest of the app, just applied to different components.
+   ================================ */
+.cosmic-cockpit {
+  --cockpit-accent: var(--color-info);
+  --cockpit-accent-2: var(--color-comet);
+  --cockpit-panel-bg: var(--carbon-gradient-surface);
+  --cockpit-panel-border: 1px solid var(--carbon-border-glow);
+  --cockpit-glow: var(--carbon-glow-primary);
+  --cockpit-gradient-text: var(--carbon-gradient-primary);
+}
+
+/* ================================
+   COCKPIT GRADIENT TEXT
+   Animated (desynchronized via --cockpit-text-delay) gradient text for
+   decorative cockpit headings. NOT meant for HUD numeric readouts — those
+   should stay solid/legible (see --cockpit-gradient-text--static below).
+   ================================ */
+.cockpit-gradient-text {
+  background: var(--cockpit-gradient-text, var(--carbon-gradient-primary));
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: cockpit-gradient-shift 6s ease-in-out infinite;
+  animation-delay: var(--cockpit-text-delay, 0s);
+}
+
+/* Static variant: same gradient look, no motion — for data-critical text
+   where legibility matters more than atmosphere. */
+.cockpit-gradient-text--static {
+  animation: none;
+  background-position: 0% 50%;
+}
+
+@keyframes cockpit-gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cockpit-gradient-text {
+    animation: none;
+    background-position: 0% 50%;
+  }
+}
+
+/* Base cosmic theme styles */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  background: var(--gradient-cosmic-bg);
+  background-attachment: fixed;
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+/* Ensure all pages have dark background by default */
+#app,
+.app-shell,
+main {
+  background: transparent;
+  min-height: 100%;
+}
+
+/* Global box-sizing for better responsive behavior */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}

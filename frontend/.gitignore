@@ -6,6 +6,8 @@ build/
 .svelte2tsx-language-server-files/
 playwright-report/
 test-results/screenshots/
+tests/setup/.auth/
+screenshots/visual-real-auth/
 
 # --- Test Results & Coverage ---
 cucumber-report.html
@@ -40,3 +42,7 @@ Thumbs.db
 *.tmp
 *.temp
 *.cache
+
+
+# Argos configuration (contains token)
+argos.json

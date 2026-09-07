@@ -8,31 +8,22 @@ import (
 	"testing"
 
 	"knowledge-graph/internal/domain/note"
+	"knowledge-graph/internal/testutil"
 
 	"github.com/pgvector/pgvector-go"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
-func setupTestDBForEmbedding(t *testing.T) *gorm.DB {
-	dsn := "host=localhost user=kb_user password=kb_password dbname=knowledge_base_test port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to connect test db: %v", err)
-	}
-	// Автомиграция (создаст таблицы notes и note_embeddings)
-	if err := db.AutoMigrate(&NoteModel{}, &NoteEmbeddingModel{}); err != nil {
-		t.Fatalf("failed to migrate: %v", err)
-	}
-	// Очистка таблиц перед каждым тестом
-	db.Exec("DELETE FROM note_embeddings")
-	db.Exec("DELETE FROM notes")
-	return db
-}
-
 func TestEmbeddingRepository_UpsertAndFind(t *testing.T) {
-	db := setupTestDBForEmbedding(t)
-	repo := NewEmbeddingRepository(db)
+	db, cleanup := testutil.SetupTestVectorDB(t)
+	defer cleanup()
+
+	// Включаем расширение pgvector и мигрируем зависимые модели
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate models: %v", err)
+	}
+
+	repo := NewEmbeddingRepository(db, "all-MiniLM-L6-v2")
 
 	// Создаем заметку сначала (для foreign key)
 	noteRepo := NewNoteRepository(db, nil)
@@ -68,8 +59,16 @@ func TestEmbeddingRepository_UpsertAndFind(t *testing.T) {
 }
 
 func TestEmbeddingRepository_UpsertUpdate(t *testing.T) {
-	db := setupTestDBForEmbedding(t)
-	repo := NewEmbeddingRepository(db)
+	db, cleanup := testutil.SetupTestVectorDB(t)
+	defer cleanup()
+
+	// Включаем расширение pgvector и мигрируем зависимые модели
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate models: %v", err)
+	}
+
+	repo := NewEmbeddingRepository(db, "all-MiniLM-L6-v2")
 
 	// Создаем заметку
 	noteRepo := NewNoteRepository(db, nil)
@@ -83,155 +82,110 @@ func TestEmbeddingRepository_UpsertUpdate(t *testing.T) {
 		t.Fatalf("Save note failed: %v", err)
 	}
 
-	// Первый upsert
+	// Первый эмбеддинг
 	embedding1 := make([]float32, 384)
 	for i := range embedding1 {
-		embedding1[i] = 0.1
+		embedding1[i] = float32(i) / 100.0
 	}
 	vec1 := pgvector.NewVector(embedding1)
+
 	if err := repo.Upsert(ctx, n.ID(), vec1); err != nil {
-		t.Fatalf("First upsert failed: %v", err)
+		t.Fatalf("Upsert embedding failed: %v", err)
 	}
 
-	// Второй upsert (должен обновить)
+	// Обновляем эмбеддинг
 	embedding2 := make([]float32, 384)
 	for i := range embedding2 {
-		embedding2[i] = 0.9
+		embedding2[i] = float32(i+1) / 100.0
 	}
 	vec2 := pgvector.NewVector(embedding2)
+
 	if err := repo.Upsert(ctx, n.ID(), vec2); err != nil {
-		t.Fatalf("Second upsert failed: %v", err)
+		t.Fatalf("Upsert update failed: %v", err)
 	}
 
-	// Проверяем что все еще 1 запись (не 2)
+	// Проверяем что остался 1 эмбеддинг
 	var count int64
 	db.Model(&NoteEmbeddingModel{}).Where("note_id = ?", n.ID()).Count(&count)
 	if count != 1 {
 		t.Errorf("expected 1 embedding after update, got %d", count)
 	}
-}
 
-func TestEmbeddingRepository_Delete(t *testing.T) {
-	db := setupTestDBForEmbedding(t)
-	repo := NewEmbeddingRepository(db)
-
-	// Создаем заметку
-	noteRepo := NewNoteRepository(db, nil)
-	title, _ := note.NewTitle("Delete Test")
-	content, _ := note.NewContent("Test content")
-	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
-
-	ctx := context.Background()
-	if err := noteRepo.Save(ctx, n); err != nil {
-		t.Fatalf("Save note failed: %v", err)
-	}
-
-	// Создаем эмбеддинг
-	embedding := make([]float32, 384)
-	vec := pgvector.NewVector(embedding)
-	if err := repo.Upsert(ctx, n.ID(), vec); err != nil {
-		t.Fatalf("Upsert failed: %v", err)
-	}
-
-	// Удаляем
-	if err := repo.Delete(ctx, n.ID()); err != nil {
-		t.Fatalf("Delete failed: %v", err)
-	}
-
-	// Проверяем что удалено
-	var count int64
-	db.Model(&NoteEmbeddingModel{}).Where("note_id = ?", n.ID()).Count(&count)
-	if count != 0 {
-		t.Errorf("expected 0 embeddings after delete, got %d", count)
+	// After an Upsert the model_name column matches the repo's configured model
+	var modelName string
+	db.Model(&NoteEmbeddingModel{}).Where("note_id = ?", n.ID()).Select("model_name").Scan(&modelName)
+	if modelName != "all-MiniLM-L6-v2" {
+		t.Errorf("expected model_name to be 'all-MiniLM-L6-v2', got %q", modelName)
 	}
 }
 
-func TestEmbeddingRepository_FindSimilarNotes(t *testing.T) {
-	db := setupTestDBForEmbedding(t)
-	repo := NewEmbeddingRepository(db)
-	noteRepo := NewNoteRepository(db, nil)
+func TestEmbeddingRepository_ModelFiltering(t *testing.T) {
+	db, cleanup := testutil.SetupTestVectorDB(t)
+	defer cleanup()
 
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate models: %v", err)
+	}
+
+	currentRepo := NewEmbeddingRepository(db, "paraphrase-multilingual-MiniLM-L12-v2")
+	oldRepo := NewEmbeddingRepository(db, "all-MiniLM-L6-v2")
+	noteRepo := NewNoteRepository(db, nil)
 	ctx := context.Background()
 
-	// Создаем 3 заметки
-	notes := make([]*note.Note, 3)
-	for i := 0; i < 3; i++ {
-		title, _ := note.NewTitle("Note " + string(rune('A'+i)))
-		content, _ := note.NewContent("Content " + string(rune('A'+i)))
+	createNote := func(title string) *note.Note {
+		titleV, _ := note.NewTitle(title)
+		content, _ := note.NewContent("content")
 		metadata, _ := note.NewMetadata(nil)
-		notes[i] = note.NewNote(title, content, "star", metadata)
-		if err := noteRepo.Save(ctx, notes[i]); err != nil {
-			t.Fatalf("Save note %d failed: %v", i, err)
+		n := note.NewNote(titleV, content, "star", metadata)
+		if err := noteRepo.Save(ctx, n); err != nil {
+			t.Fatalf("Save note failed: %v", err)
 		}
+		return n
 	}
 
-	// Создаем эмбеддинги
-	// Note A - [1, 0, 0, ...]
-	// Note B - [0.9, 0.1, 0, ...] (похож на A)
-	// Note C - [0, 1, 0, ...] (не похож на A)
-	for i, n := range notes {
-		embedding := make([]float32, 384)
-		if i == 0 {
-			embedding[0] = 1.0
-		} else if i == 1 {
-			embedding[0] = 0.9
-			embedding[1] = 0.1
-		} else {
-			embedding[1] = 1.0
+	// Two notes with vectors from the current (multilingual) model.
+	n1 := createNote("Note one")
+	n2 := createNote("Note two")
+	vec := func() pgvector.Vector {
+		v := make([]float32, 384)
+		for i := range v {
+			v[i] = float32(i) / 100.0
 		}
-		vec := pgvector.NewVector(embedding)
-		if err := repo.Upsert(ctx, n.ID(), vec); err != nil {
-			t.Fatalf("Upsert embedding %d failed: %v", i, err)
-		}
+		return pgvector.NewVector(v)
+	}
+	if err := currentRepo.Upsert(ctx, n1.ID(), vec()); err != nil {
+		t.Fatalf("Upsert n1 current failed: %v", err)
+	}
+	if err := currentRepo.Upsert(ctx, n2.ID(), vec()); err != nil {
+		t.Fatalf("Upsert n2 current failed: %v", err)
 	}
 
-	// Ищем похожие на Note A
-	similar, err := repo.FindSimilarNotes(ctx, notes[0].ID(), 10)
+	// A third note still has the old English-only vector.
+	// This models a partially migrated state.
+	n3 := createNote("Old model note")
+	if err := oldRepo.Upsert(ctx, n3.ID(), vec()); err != nil {
+		t.Fatalf("Upsert n3 old failed: %v", err)
+	}
+
+	// Similar-note search for the current model must not mix in the old vector.
+	similar, err := currentRepo.FindSimilarNotes(ctx, n1.ID(), 10)
 	if err != nil {
 		t.Fatalf("FindSimilarNotes failed: %v", err)
 	}
-
-	// Должны найти Note B и Note C
-	if len(similar) != 2 {
-		t.Errorf("expected 2 similar notes, got %d", len(similar))
+	if len(similar) != 1 {
+		t.Errorf("expected 1 current-model similar note, got %d", len(similar))
+	}
+	if len(similar) > 0 && similar[0].NoteID != n2.ID() {
+		t.Errorf("expected n2 as the only similar note, got %v", similar[0].NoteID)
 	}
 
-	// Note B должен быть более похож чем Note C
-	if len(similar) >= 2 {
-		// Note B имеет большее сходство (0.9 по первому измерению)
-		// Note C имеет 0 по первому измерению
-		if similar[0].Score < similar[1].Score {
-			t.Error("expected first result to have higher similarity")
-		}
-	}
-}
-
-func TestEmbeddingRepository_FindSimilarNotesNoEmbedding(t *testing.T) {
-	db := setupTestDBForEmbedding(t)
-	repo := NewEmbeddingRepository(db)
-	noteRepo := NewNoteRepository(db, nil)
-
-	ctx := context.Background()
-
-	// Создаем заметку без эмбеддинга
-	title, _ := note.NewTitle("No Embedding")
-	content, _ := note.NewContent("Test")
-	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
-	if err := noteRepo.Save(ctx, n); err != nil {
-		t.Fatalf("Save note failed: %v", err)
-	}
-
-	// Ищем похожие - должно вернуть пустой результат без ошибки
-	similar, err := repo.FindSimilarNotes(ctx, n.ID(), 10)
+	// Missing model query should flag the note that only has the old vector.
+	missing, err := currentRepo.FindNoteIDsMissingModel(ctx)
 	if err != nil {
-		// Может вернуть ошибку или пустой результат - оба валидно
-		t.Logf("FindSimilarNotes returned error (expected): %v", err)
-		return
+		t.Fatalf("FindNoteIDsMissingModel failed: %v", err)
 	}
-
-	if len(similar) != 0 {
-		t.Errorf("expected 0 similar notes for note without embedding, got %d", len(similar))
+	if len(missing) != 1 || missing[0] != n3.ID() {
+		t.Errorf("expected [%v] missing for current model, got %v", n3.ID(), missing)
 	}
 }

@@ -1,13 +1,21 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
-  import { searchNotes, type Note } from '$lib/api/notes';
-  import SearchBar from '$lib/components/SearchBar.svelte';
-  import NoteCard from '$lib/components/NoteCard.svelte';
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  import { searchNotes, type Note } from "$shared/api/notes";
+  import { SearchQuery } from "$entities";
+  import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import SearchBar from "$widgets/search/SearchBar.svelte";
+  import NoteCard from "$widgets/notes/NoteCard.svelte";
+  import StateIllustration from "$components/atoms/StateIllustration.svelte";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   let notes = $state<Note[]>([]);
   let loading = $state(false);
-  let error = $state('');
+  let error = $state("");
   let total = $state(0);
   let currentPage = $state(1);
   let totalPages = $state(1);
@@ -15,30 +23,29 @@
 
   // Get parameters from URL and perform search
   $effect(() => {
-    const q = $page.url.searchParams.get('q') || '';
-    const pageParam = $page.url.searchParams.get('page');
+    const q = SearchQuery.fromURL($page.url.searchParams.get("q"));
+    const pageParam = $page.url.searchParams.get("page");
     const pageNum = pageParam ? parseInt(pageParam, 10) : 1;
     currentPage = pageNum > 0 ? pageNum : 1;
 
-    if (q) {
-      performSearch(q, currentPage);
-    } else {
-      // If query is empty, redirect to home page
-      goto('/');
+    if (!q.isEmpty()) {
+      performSearch(q.value, currentPage);
     }
   });
 
   async function performSearch(query: string, pageNum: number) {
     loading = true;
-    error = '';
+    error = "";
     try {
       const response = await searchNotes(query, pageNum, size);
       notes = response.data;
       total = response.total;
       totalPages = response.totalPages;
     } catch (e) {
-      error = 'Failed to perform search. Please try again later.';
-      console.error('Search error:', e);
+      error = t("search.error");
+      if (import.meta.env.DEV) {
+        console.error("Search error:", e);
+      }
     } finally {
       loading = false;
     }
@@ -47,14 +54,19 @@
   // Navigate to different page
   function goToPage(newPage: number) {
     if (newPage < 1 || newPage > totalPages) return;
-    const q = $page.url.searchParams.get('q') || '';
-    goto(`/search?q=${encodeURIComponent(q)}&page=${newPage}`);
+    const q = SearchQuery.fromURL($page.url.searchParams.get("q"));
+    goto(`/search?q=${q.toURL()}&page=${newPage}`);
   }
 
   function getPluralForm(count: number, one: string, few: string, many: string): string {
+    // Use i18n keys search.noteOne, search.noteFew, search.noteMany
+    return [one, few, many].join("").length === 0 ? "" : getPluralFormRaw(count, one, few, many);
+  }
+
+  function getPluralFormRaw(count: number, one: string, few: string, many: string): string {
     const lastDigit = count % 10;
     const lastTwoDigits = count % 100;
-    
+
     if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
       return many;
     }
@@ -70,65 +82,79 @@
 
 <div class="search-page">
   <div class="search-header">
-    <h1>Search Notes</h1>
-    <SearchBar placeholder="Enter your search query..." autoFocus={true} />
+    <h1>{t("search.title")}</h1>
+    <SearchBar placeholder={t("search.pagePlaceholder")} autoFocus={true} />
   </div>
 
   {#if loading}
     <div class="center">
       <div class="spinner"></div>
-      <p>Searching...</p>
+      <p>{t("search.searching")}</p>
     </div>
   {:else if error}
     <div class="error-message">{error}</div>
-  {:else if $page.url.searchParams.get('q') && notes.length === 0}
+  {:else if $page.url.searchParams.get("q") && notes.length === 0}
     <div class="no-results">
-      <div class="no-results-icon">No results found</div>
-      <h2>No results found</h2>
-      <p>No notes found for query "{$page.url.searchParams.get('q')}".</p>
-      <p>Try using different keywords or check spelling.</p>
+      <StateIllustration type="no-results" />
+      <h2>{t("search.noResultsTitle")}</h2>
+      <p>
+        {t("search.noResultsForQuery", {
+          query: $page.url.searchParams.get("q") || "",
+        })}
+      </p>
+      <p>{t("search.tryDifferent")}</p>
     </div>
-  {:else if $page.url.searchParams.get('q')}
+  {:else if $page.url.searchParams.get("q")}
     <div class="search-stats">
-      Found: {total} {getPluralForm(total, 'note', 'notes', 'notes')}
+      {t("search.found")}
+      {total}
+      {getPluralForm(total, t("search.noteOne"), t("search.noteFew"), t("search.noteMany"))}
     </div>
 
     <div class="notes-grid">
-      {#each notes as note}
-        <NoteCard {note} highlightQuery={$page.url.searchParams.get('q') || ''} />
+      {#each notes as note, index (note.id)}
+        <NoteCard
+          {note}
+          animationIndex={index}
+          highlightQuery={$page.url.searchParams.get("q") || ""}
+          readonly={!isAuthenticated()}
+        />
       {/each}
     </div>
 
     <!-- Pagination -->
     {#if totalPages > 1}
       <div class="pagination">
-        <button 
-          onclick={() => goToPage(currentPage - 1)} 
+        <button
+          onclick={() => goToPage(currentPage - 1)}
           disabled={currentPage === 1}
           class="pagination-button"
         >
-          Previous
+          {t("search.previous")}
         </button>
-        
+
         <span class="pagination-info">
-          Page {currentPage} of {totalPages}
+          {t("search.pageInfo", {
+            current: currentPage.toString(),
+            total: totalPages.toString(),
+          })}
         </span>
-        
-        <button 
-          onclick={() => goToPage(currentPage + 1)} 
+
+        <button
+          onclick={() => goToPage(currentPage + 1)}
           disabled={currentPage === totalPages}
           class="pagination-button"
         >
-          Next
+          {t("search.next")}
         </button>
       </div>
     {/if}
   {:else}
     <div class="empty-state">
-      <div class="empty-icon">Search</div>
-      <h2>Search Notes</h2>
-      <p>Enter keywords above to search through your notes.</p>
-      <p>Search supports both Russian and English languages with automatic stemming.</p>
+      <StateIllustration type="empty" />
+      <h2>{t("search.emptyTitle")}</h2>
+      <p>{t("search.emptyPrompt")}</p>
+      <p>{t("search.supports")}</p>
     </div>
   {/if}
 </div>
@@ -170,8 +196,12 @@
   }
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
   .error-message {
@@ -183,19 +213,15 @@
     margin: 2rem 0;
   }
 
-  .no-results, .empty-state {
+  .no-results,
+  .empty-state {
     text-align: center;
     padding: 3rem;
     color: var(--color-text-secondary, #6b7280);
   }
 
-  .no-results-icon, .empty-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-  }
-
-  .no-results h2, .empty-state h2 {
+  .no-results h2,
+  .empty-state h2 {
     color: var(--color-text, #1f2937);
     margin-bottom: 1rem;
   }

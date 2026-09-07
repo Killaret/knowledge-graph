@@ -6,9 +6,9 @@ import (
 	"context"
 	"strings"
 	"testing"
-	"time"
 
 	"knowledge-graph/internal/domain/note"
+	tagDomain "knowledge-graph/internal/domain/tag"
 	"knowledge-graph/internal/testutil"
 
 	"github.com/google/uuid"
@@ -70,39 +70,35 @@ func (s *TagRepositoryIntegrationTestSuite) createTestNote(title string) *note.N
 	return n
 }
 
+// createTestTag создает тестовый тег
+func (s *TagRepositoryIntegrationTestSuite) createTestTag(name string) *tagDomain.Tag {
+	t, err := tagDomain.New(name)
+	s.Require().NoError(err, "failed to create test tag")
+	err = s.repo.Create(s.ctx, t)
+	s.Require().NoError(err, "failed to save test tag")
+	return t
+}
+
 // TestCreate - создание тега
 func (s *TagRepositoryIntegrationTestSuite) TestCreate() {
-	tag := &TagModel{
-		ID:        uuid.New(),
-		Name:      "golang",
-		CreatedAt: time.Now(),
-	}
-
-	err := s.repo.Create(s.ctx, tag)
-	s.NoError(err)
+	t := s.createTestTag("golang")
 
 	// Проверяем что тег создан
-	found, err := s.repo.FindByID(s.ctx, tag.ID)
+	found, err := s.repo.FindByID(s.ctx, t.ID())
 	s.NoError(err)
 	s.NotNil(found)
-	s.Equal("golang", found.Name)
+	s.Equal("golang", found.Name())
 }
 
 // TestFindByID - поиск по ID
 func (s *TagRepositoryIntegrationTestSuite) TestFindByID() {
-	tag := &TagModel{
-		ID:        uuid.New(),
-		Name:      "find_me",
-		CreatedAt: time.Now(),
-	}
-	err := s.repo.Create(s.ctx, tag)
-	s.NoError(err)
+	t := s.createTestTag("find_me")
 
-	found, err := s.repo.FindByID(s.ctx, tag.ID)
+	found, err := s.repo.FindByID(s.ctx, t.ID())
 	s.NoError(err)
 	s.NotNil(found)
-	s.Equal(tag.ID, found.ID)
-	s.Equal("find_me", found.Name)
+	s.Equal(t.ID(), found.ID())
+	s.Equal("find_me", found.Name())
 }
 
 // TestFindByID_NotFound - поиск несуществующего
@@ -114,18 +110,12 @@ func (s *TagRepositoryIntegrationTestSuite) TestFindByID_NotFound() {
 
 // TestFindByName - поиск по имени
 func (s *TagRepositoryIntegrationTestSuite) TestFindByName() {
-	tag := &TagModel{
-		ID:        uuid.New(),
-		Name:      "specific_tag",
-		CreatedAt: time.Now(),
-	}
-	err := s.repo.Create(s.ctx, tag)
-	s.NoError(err)
+	t := s.createTestTag("specific_tag")
 
 	found, err := s.repo.FindByName(s.ctx, "specific_tag")
 	s.NoError(err)
 	s.NotNil(found)
-	s.Equal(tag.ID, found.ID)
+	s.Equal(t.ID(), found.ID())
 }
 
 // TestFindByName_NotFound - поиск несуществующего имени
@@ -137,19 +127,11 @@ func (s *TagRepositoryIntegrationTestSuite) TestFindByName_NotFound() {
 
 // TestDuplicateName - проверка уникальности имени
 func (s *TagRepositoryIntegrationTestSuite) TestDuplicateName() {
-	tag1 := &TagModel{
-		ID:        uuid.New(),
-		Name:      "unique_tag",
-		CreatedAt: time.Now(),
-	}
-	err := s.repo.Create(s.ctx, tag1)
-	s.NoError(err)
+	s.createTestTag("unique_tag")
 
-	tag2 := &TagModel{
-		ID:        uuid.New(),
-		Name:      "unique_tag",
-		CreatedAt: time.Now(),
-	}
+	tag2, err := tagDomain.New("unique_tag")
+	s.Require().NoError(err)
+
 	err = s.repo.Create(s.ctx, tag2)
 	s.Error(err)
 	s.Contains(strings.ToLower(err.Error()), "duplicate")
@@ -157,45 +139,33 @@ func (s *TagRepositoryIntegrationTestSuite) TestDuplicateName() {
 
 // TestUpdate - обновление тега
 func (s *TagRepositoryIntegrationTestSuite) TestUpdate() {
-	tag := &TagModel{
-		ID:        uuid.New(),
-		Name:      "old_name",
-		CreatedAt: time.Now(),
-	}
-	err := s.repo.Create(s.ctx, tag)
-	s.NoError(err)
+	t := s.createTestTag("old_name")
 
 	// Обновляем через прямое изменение в БД
-	err = s.db.Model(&TagModel{}).Where("id = ?", tag.ID).Update("name", "new_name").Error
+	err := s.db.Model(&TagModel{}).Where("id = ?", t.ID()).Update("name", "new_name").Error
 	s.NoError(err)
 
 	// Проверяем обновление
-	found, err := s.repo.FindByID(s.ctx, tag.ID)
+	found, err := s.repo.FindByID(s.ctx, t.ID())
 	s.NoError(err)
-	s.Equal("new_name", found.Name)
+	s.Equal("new_name", found.Name())
 }
 
 // TestDelete - удаление тега
 func (s *TagRepositoryIntegrationTestSuite) TestDelete() {
-	tag := &TagModel{
-		ID:        uuid.New(),
-		Name:      "delete_me",
-		CreatedAt: time.Now(),
-	}
-	err := s.repo.Create(s.ctx, tag)
-	s.NoError(err)
+	t := s.createTestTag("delete_me")
 
 	// Проверяем что существует
-	exists, err := s.repo.Exists(s.ctx, tag.ID)
+	exists, err := s.repo.Exists(s.ctx, t.ID())
 	s.NoError(err)
 	s.True(exists)
 
 	// Удаляем
-	err = s.repo.Delete(s.ctx, tag.ID)
+	err = s.repo.Delete(s.ctx, t.ID())
 	s.NoError(err)
 
 	// Проверяем что не существует
-	exists, err = s.repo.Exists(s.ctx, tag.ID)
+	exists, err = s.repo.Exists(s.ctx, t.ID())
 	s.NoError(err)
 	s.False(exists)
 }
@@ -203,45 +173,31 @@ func (s *TagRepositoryIntegrationTestSuite) TestDelete() {
 // TestAddTagToNote - добавление тега к заметке
 func (s *TagRepositoryIntegrationTestSuite) TestAddTagToNote() {
 	// Создаем тег и заметку
-	tag := &TagModel{
-		ID:        uuid.New(),
-		Name:      "important",
-		CreatedAt: time.Now(),
-	}
-	err := s.repo.Create(s.ctx, tag)
-	s.NoError(err)
-
+	t := s.createTestTag("important")
 	n := s.createTestNote("Tagged Note")
 
 	// Добавляем тег к заметке
-	err = s.repo.AddTagToNote(s.ctx, n.ID(), tag.ID)
+	err := s.repo.AddTagToNote(s.ctx, n.ID(), t.ID())
 	s.NoError(err)
 
 	// Проверяем что тег добавлен
 	tags, err := s.repo.GetTagsForNote(s.ctx, n.ID())
 	s.NoError(err)
 	s.Len(tags, 1)
-	s.Equal(tag.ID, tags[0].ID)
+	s.Equal(t.ID(), tags[0].ID)
 }
 
 // TestRemoveTagFromNote - удаление тега от заметки
 func (s *TagRepositoryIntegrationTestSuite) TestRemoveTagFromNote() {
 	// Создаем тег и заметку
-	tag := &TagModel{
-		ID:        uuid.New(),
-		Name:      "removable",
-		CreatedAt: time.Now(),
-	}
-	err := s.repo.Create(s.ctx, tag)
-	s.NoError(err)
-
+	t := s.createTestTag("removable")
 	n := s.createTestNote("Untag Me")
 
 	// Добавляем и удаляем тег
-	err = s.repo.AddTagToNote(s.ctx, n.ID(), tag.ID)
+	err := s.repo.AddTagToNote(s.ctx, n.ID(), t.ID())
 	s.NoError(err)
 
-	err = s.repo.RemoveTagFromNote(s.ctx, n.ID(), tag.ID)
+	err = s.repo.RemoveTagFromNote(s.ctx, n.ID(), t.ID())
 	s.NoError(err)
 
 	// Проверяем что тег удален
@@ -255,19 +211,10 @@ func (s *TagRepositoryIntegrationTestSuite) TestGetTagsForNote() {
 	n := s.createTestNote("Multi Tagged")
 
 	// Создаем несколько тегов
-	for i, name := range []string{"tag1", "tag2", "tag3"} {
-		tag := &TagModel{
-			ID:        uuid.New(),
-			Name:      name,
-			CreatedAt: time.Now(),
-		}
-		err := s.repo.Create(s.ctx, tag)
+	for _, name := range []string{"tag1", "tag2", "tag3"} {
+		t := s.createTestTag(name)
+		err := s.repo.AddTagToNote(s.ctx, n.ID(), t.ID())
 		s.NoError(err)
-
-		err = s.repo.AddTagToNote(s.ctx, n.ID(), tag.ID)
-		s.NoError(err)
-
-		_ = i // используем i чтобы избежать warning
 	}
 
 	// Получаем теги
@@ -279,23 +226,18 @@ func (s *TagRepositoryIntegrationTestSuite) TestGetTagsForNote() {
 // TestGetNotesForTag - получение всех заметок с тегом
 func (s *TagRepositoryIntegrationTestSuite) TestGetNotesForTag() {
 	// Создаем тег
-	tag := &TagModel{
-		ID:        uuid.New(),
-		Name:      "shared_tag",
-		CreatedAt: time.Now(),
-	}
-	err := s.repo.Create(s.ctx, tag)
-	s.NoError(err)
+	t := s.createTestTag("shared_tag")
 
 	// Создаем несколько заметок с этим тегом
 	for i := 0; i < 3; i++ {
 		n := s.createTestNote("Note " + string(rune('A'+i)))
-		err = s.repo.AddTagToNote(s.ctx, n.ID(), tag.ID)
+		err := s.repo.AddTagToNote(s.ctx, n.ID(), t.ID())
 		s.NoError(err)
+		_ = i // используем i чтобы избежать warning
 	}
 
 	// Получаем заметки
-	notes, err := s.repo.GetNotesForTag(s.ctx, tag.ID)
+	notes, err := s.repo.GetNotesForTag(s.ctx, t.ID())
 	s.NoError(err)
 	s.Len(notes, 3)
 }
@@ -303,36 +245,29 @@ func (s *TagRepositoryIntegrationTestSuite) TestGetNotesForTag() {
 // TestConstraintProtection - проверка FK constraint защищает от удаления тега с связями
 func (s *TagRepositoryIntegrationTestSuite) TestConstraintProtection() {
 	// Создаем тег и заметку
-	tag := &TagModel{
-		ID:        uuid.New(),
-		Name:      "protected_tag",
-		CreatedAt: time.Now(),
-	}
-	err := s.repo.Create(s.ctx, tag)
-	s.NoError(err)
-
+	t := s.createTestTag("protected_tag")
 	n := s.createTestNote("Protected Note")
 
 	// Добавляем тег
-	err = s.repo.AddTagToNote(s.ctx, n.ID(), tag.ID)
+	err := s.repo.AddTagToNote(s.ctx, n.ID(), t.ID())
 	s.NoError(err)
 
 	// Пытаемся удалить тег - должно упасть из-за FK constraint
-	err = s.repo.Delete(s.ctx, tag.ID)
+	err = s.repo.Delete(s.ctx, t.ID())
 	s.Error(err)
 	s.Contains(err.Error(), "violates foreign key constraint")
 
 	// Корректный порядок: сначала удаляем связи
-	err = s.repo.RemoveTagFromNote(s.ctx, n.ID(), tag.ID)
+	err = s.repo.RemoveTagFromNote(s.ctx, n.ID(), t.ID())
 	s.NoError(err)
 
 	// Теперь можно удалить тег
-	err = s.repo.Delete(s.ctx, tag.ID)
+	err = s.repo.Delete(s.ctx, t.ID())
 	s.NoError(err)
 
 	// Проверяем что связей больше нет
 	var count int64
-	s.db.Model(&NoteTagModel{}).Where("tag_id = ?", tag.ID).Count(&count)
+	s.db.Model(&NoteTagModel{}).Where("tag_id = ?", t.ID()).Count(&count)
 	s.Equal(int64(0), count)
 }
 
@@ -340,13 +275,7 @@ func (s *TagRepositoryIntegrationTestSuite) TestConstraintProtection() {
 func (s *TagRepositoryIntegrationTestSuite) TestFindAll() {
 	// Создаем несколько тегов
 	for _, name := range []string{"go", "python", "java"} {
-		tag := &TagModel{
-			ID:        uuid.New(),
-			Name:      name,
-			CreatedAt: time.Now(),
-		}
-		err := s.repo.Create(s.ctx, tag)
-		s.NoError(err)
+		s.createTestTag(name)
 	}
 
 	tags, err := s.repo.FindAll(s.ctx)

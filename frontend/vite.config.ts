@@ -1,31 +1,39 @@
 // Конфигурация Vite для SvelteKit
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
-import path from 'path';
+import { sveltekit } from "@sveltejs/kit/vite";
+import { defineConfig } from "vite";
+import path from "path";
 
 export default defineConfig({
   plugins: [sveltekit()],
   resolve: {
     alias: {
-      // Алиас для конфигурации проекта (корневой knowledge-graph.config.json)
-      '$config': path.resolve(__dirname, '../knowledge-graph.config.json')
-    }
+      // FSD aliases (must match svelte.config.js)
+      $shared: path.resolve(__dirname, "src/shared"),
+      $entities: path.resolve(__dirname, "src/entities"),
+      $features: path.resolve(__dirname, "src/features"),
+      $widgets: path.resolve(__dirname, "src/widgets"),
+      $components: path.resolve(__dirname, "src/components"),
+      // Алиас для проекта (корневой knowledge-graph.config.json)
+      $config: path.resolve(__dirname, "../knowledge-graph.config.json"),
+    },
   },
   build: {
-    // Manual chunks disabled - causing conflicts with external modules
-    // rollupOptions: { output: { manualChunks: { ... } } }
+    sourcemap: false,
+    minify: "esbuild",
   },
   server: {
+    // Vite dev server proxy - only used in dev mode, not in production SSR
+    // Defaults target the dev stack (docker-compose.yml) services on host ports
     proxy: {
-      // Прокси для запросов к API бэкенда
-      // В Docker: используем имя сервиса backend:8080
-      // Локально: используем localhost:8080 (через env VITE_API_TARGET)
-      '/api': {
-        target: process.env.VITE_API_TARGET || 'http://localhost:8080',
+      "/api/v1": {
+        target: process.env.VITE_API_TARGET || process.env.VITE_API_URL || "http://127.0.0.1:9000",
         changeOrigin: true,
-        // Убираем префикс /api, чтобы не было /api/notes
-        rewrite: (path) => path.replace(/^\/api/, '')
-      }
-    }
-  }
+      },
+      "/graph-service/api": {
+        target: process.env.VITE_GRAPH_SERVICE_URL || "http://127.0.0.1:9091",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/graph-service/, ""),
+      },
+    },
+  },
 });

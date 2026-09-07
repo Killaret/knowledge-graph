@@ -2,16 +2,35 @@ package common
 
 import (
 	"context"
+	"time"
 
-	"github.com/hibiken/asynq"
+	"github.com/google/uuid"
 )
 
-// TaskQueue интерфейс для постановки асинхронных задач.
+// TaskQueue is an application-level port for enqueueing asynchronous tasks.
+// Infrastructure adapters (e.g. asynq) implement this interface.
 type TaskQueue interface {
-	// Enqueue ставит произвольную задачу в очередь.
-	Enqueue(ctx context.Context, task *asynq.Task) error
-	// EnqueueExtractKeywords ставит задачу извлечения ключевых слов для заметки.
+	// EnqueueBackupToCloud schedules a cloud backup task.
+	EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error
+
+	// EnqueueBackupOnNoteChange schedules a database backup after a note is created or modified.
+	EnqueueBackupOnNoteChange(ctx context.Context) error
+
+	// EnqueueRefreshRecommendations schedules a recommendation refresh for the given note.
+	EnqueueRefreshRecommendations(ctx context.Context, noteID uuid.UUID, delay time.Duration) error
+
+	// EnqueueExtractKeywords schedules keyword extraction for a note.
 	EnqueueExtractKeywords(ctx context.Context, noteID string, topN int) error
-	// EnqueueComputeEmbedding ставит задачу вычисления эмбеддинга для заметки.
+
+	// EnqueueComputeEmbedding schedules embedding computation for a note.
 	EnqueueComputeEmbedding(ctx context.Context, noteID string) error
+
+	// EnqueueRecalculateLinkWeights schedules link weight recalculation for a note.
+	EnqueueRecalculateLinkWeights(ctx context.Context, noteID uuid.UUID, delay time.Duration) error
+
+	// EnqueueNotification schedules a notification task with the given payload.
+	EnqueueNotification(ctx context.Context, payload []byte) error
+
+	// EnqueueImportBookmarks schedules an async batch import of captured web pages.
+	EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error
 }

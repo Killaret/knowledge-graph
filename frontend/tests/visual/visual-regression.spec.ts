@@ -1,197 +1,197 @@
-import { test } from '@playwright/test';
-import { createNote, createLink } from '../helpers/testData';
+import { test, expect, type Page } from "@playwright/test";
+import { argosScreenshot } from "@argos-ci/playwright";
+import { clickViewToggle, clickFilterChip } from "../helpers/testUtils";
 
 /**
- * Visual Regression Tests with Argos
- * Captures screenshots of key UI states for comparison
- * 
- * Requires: ARGOS_TOKEN environment variable
- * Screenshots saved to: argos-screenshots/
+ * Visual Regression Tests with Argos Playwright SDK
+ *
+ * - Uses argosScreenshot for automatic stabilization and upload.
+ * - Injects a seeded Math.random and __SKIP_AUTH__ before each test.
+ * - Runs against the isolated test stack with seeded data.
  */
 
-test.describe('Visual Regression @visual', { tag: ['@visual'] }, () => {
-  
-  test('Home page - default view', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
-    
-    // Capture full page
-    await page.screenshot({ 
-      path: 'argos-screenshots/home-default.png',
-      fullPage: true 
-    });
-  });
+const STABLE_RENDER = "?stableRender=true";
 
-  test('Home page - list view', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    
-    // Click list toggle using JavaScript to bypass viewport issues
-    const listToggle = page.locator('[data-testid="view-toggle-list"]');
-    if (await listToggle.isVisible().catch(() => false)) {
-      await listToggle.evaluate(el => (el as HTMLElement).click());
-      await page.waitForTimeout(1000);
+const VIEWPORTS = [
+  { width: 1920, height: 1080 },
+  { width: 768, height: 1024 },
+  { width: 375, height: 667 },
+];
+
+test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.addInitScript(() => {
+      // Disable cockpit panel slide/resize animations so the 3D scene element
+      // is stable before the element-screenshot in argosScreenshot.
+      localStorage.setItem(
+        "cockpit-settings",
+        JSON.stringify({ reducedMotion: true })
+      );
+
+      // Seeded Math.random for deterministic canvas / d3-force / particle output
+      let seed = 12345;
+      const m = 2 ** 31;
+      Math.random = function seededRandom() {
+        seed = (1103515245 * seed + 12345) % m;
+        return seed / m;
+      };
+    });
+
+    // The public baseline still uses SKIP_AUTH injection; the authorized
+    // baseline relies on the persisted storageState from tests/setup/auth.setup.ts.
+    if (testInfo.project.name !== "visual-real-auth") {
+      await page.addInitScript(() => {
+        (window as any).__SKIP_AUTH__ = true;
+      });
     }
-    
-    await page.screenshot({ 
-      path: 'argos-screenshots/home-list-view.png',
-      fullPage: true 
-    });
   });
 
-  test('Home page - with star filter', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    
-    // Click star filter using JavaScript to bypass viewport issues
-    const starFilter = page.locator('[data-testid="filter-chip-star"]');
-    if (await starFilter.isVisible().catch(() => false)) {
-      await starFilter.evaluate(el => (el as HTMLElement).click());
-      await page.waitForTimeout(1000);
+  async function waitForApp(page: Page) {
+    await expect(page.locator("main")).toBeVisible({ timeout: 15000 });
+  }
+
+  async function waitForGraph(page: Page) {
+    const canvas = page.locator('[data-testid="graph-canvas"][data-test-stable="true"]');
+    await canvas.waitFor({ timeout: 15000 });
+  }
+
+  test("Home page - default view", async ({ page }) => {
+    await page.goto("/" + STABLE_RENDER);
+    await waitForApp(page);
+    await argosScreenshot(page, "home-default", { fullPage: true });
+  });
+
+  test("Home page - list view", async ({ page }) => {
+    await page.goto("/" + STABLE_RENDER);
+    await waitForApp(page);
+
+    await clickViewToggle(page, "list");
+    await page.waitForTimeout(500);
+
+    await argosScreenshot(page, "home-list-view", { fullPage: true });
+  });
+
+  test("Home page - with star filter", async ({ page }) => {
+    await page.goto("/" + STABLE_RENDER);
+    await waitForApp(page);
+
+    await clickFilterChip(page, "star");
+
+    await argosScreenshot(page, "home-filtered-stars", { fullPage: true });
+  });
+
+  test("2D Graph - full view with links", async ({ page }) => {
+    await page.goto("/graph" + STABLE_RENDER);
+    await waitForGraph(page);
+
+    await argosScreenshot(page, "2d-graph-full", { fullPage: true });
+  });
+
+  test("2D Graph - ghost node creation form", async ({ page }) => {
+    await page.goto("/graph" + STABLE_RENDER);
+    await waitForGraph(page);
+
+    await page.keyboard.press("N");
+    await page.waitForTimeout(500);
+
+    await argosScreenshot(page, "2d-ghost-node-form", { fullPage: true });
+  });
+
+  test("2D Graph - help modal", async ({ page }) => {
+    await page.goto("/graph" + STABLE_RENDER);
+    await waitForGraph(page);
+
+    await page.keyboard.press("?");
+    await page.waitForTimeout(500);
+
+    await argosScreenshot(page, "2d-help-modal", { fullPage: true });
+  });
+
+  test("NoteCard - selected state", async ({ page }) => {
+    await page.goto("/" + STABLE_RENDER);
+    await waitForApp(page);
+
+    await clickViewToggle(page, "list");
+    await page.waitForTimeout(500);
+
+    const selectButton = page.locator('[data-testid="select-mode-toggle"]');
+    await expect(selectButton).toBeVisible({ timeout: 5000 });
+    await selectButton.click();
+    await page.waitForTimeout(500);
+
+    const firstNote = page.locator('[data-testid="note-card"]').first();
+    await expect(firstNote).toBeVisible({ timeout: 5000 });
+    await firstNote.click();
+    await page.waitForTimeout(500);
+
+    await argosScreenshot(page, "notecard-selected", { fullPage: true });
+  });
+
+  test("Search page", async ({ page }) => {
+    await page.goto("/search" + STABLE_RENDER);
+    await waitForApp(page);
+    await argosScreenshot(page, "search-page", { fullPage: true });
+  });
+
+  test("Search with query", async ({ page }) => {
+    await page.goto("/search?q=star" + STABLE_RENDER);
+    await waitForApp(page);
+
+    const searchInput = page.locator('[data-testid="search-input"]').first();
+    await expect(searchInput).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(500);
+
+    await argosScreenshot(page, "search-with-query", { fullPage: true });
+  });
+
+  test("Empty state", async ({ page }) => {
+    await page.goto("/search?q=nonexistentquery123456789" + STABLE_RENDER);
+    await waitForApp(page);
+    await argosScreenshot(page, "empty-state", { fullPage: true });
+  });
+
+  test("3D Graph - renders 3D view", async ({ page }) => {
+    await page.goto("/graph/3d" + STABLE_RENDER);
+
+    // The outer wrapper mounts before the scene is ready, and the loading
+    // overlay must be fully gone before the viewer marks itself stable.
+    const viewer = page.locator('[data-testid="graph-3d-viewer"]');
+    const scene = page.locator('[data-testid="graph-3d-scene"]');
+    const errorOverlay = page.locator('[data-testid="graph-3d-error"]');
+
+    await expect(scene, "3D scene container should mount").toBeVisible({ timeout: 15000 });
+    try {
+      await expect(
+        viewer,
+        "3D viewer should reach data-test-stable after the scene is rendered and the overlay is hidden"
+      ).toHaveAttribute("data-test-stable", "true", { timeout: 20000 });
+    } catch (e) {
+      if ((await errorOverlay.count()) > 0) {
+        throw new Error(
+          "3D scene failed to initialize: graph-3d-error overlay is shown (WebGL unavailable or init failed)"
+        );
+      }
+      throw e;
     }
-    
-    await page.screenshot({ 
-      path: 'argos-screenshots/home-filtered-stars.png',
-      fullPage: true 
-    });
+    // A WebGL error overlay must never produce a passing screenshot.
+    await expect(errorOverlay, "graph-3d-error overlay must not be present").toHaveCount(0);
+
+    // Keep the pointer inside the 3D canvas and disable Argos's own hover
+    // reset to (0, 0). The cockpit panel handles react to mouse enter/leave,
+    // and moving the cursor over an edge handle makes the frame insets change
+    // while the screenshot is taken, which causes Playwright's "element not
+    // stable" timeout on the WebGL element.
+    await scene.hover();
+    await argosScreenshot(page, "3d-graph-view", { element: scene, disableHover: false });
   });
 
-  test('3D Graph - loading state', async ({ page, request }) => {
-    const note = await createNote(request, {
-      title: 'Visual 3D Test',
-      content: 'Testing 3D visualization',
-      type: 'star'
-    });
-    
-    await page.goto(`/graph/3d/${note.id}`);
-    
-    // Capture loading state
-    await page.waitForSelector('[data-testid="loading-overlay"]');
-    await page.screenshot({ 
-      path: 'argos-screenshots/3d-loading-state.png',
-      fullPage: true 
-    });
-  });
-
-  test('3D Graph - with star', async ({ page, request }) => {
-    const note = await createNote(request, {
-      title: 'Star Visual Test',
-      content: 'Star type visualization',
-      type: 'star'
-    });
-    
-    await page.goto(`/graph/3d/${note.id}`);
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(4000); // Wait for graph to render
-    
-    await page.screenshot({ 
-      path: 'argos-screenshots/3d-star-node.png',
-      fullPage: true 
-    });
-  });
-
-  test('3D Graph - with planet', async ({ page, request }) => {
-    const note = await createNote(request, {
-      title: 'Planet Visual Test',
-      content: 'Planet type visualization',
-      type: 'planet'
-    });
-    
-    await page.goto(`/graph/3d/${note.id}`);
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(4000);
-    
-    await page.screenshot({ 
-      path: 'argos-screenshots/3d-planet-node.png',
-      fullPage: true 
-    });
-  });
-
-  test('3D Graph - with connections', async ({ page, request }) => {
-    const center = await createNote(request, {
-      title: 'Center Node',
-      content: 'Center',
-      type: 'star'
-    });
-    
-    const satellite = await createNote(request, {
-      title: 'Satellite Node',
-      content: 'Satellite',
-      type: 'planet'
-    });
-    
-    await createLink(request, center.id, satellite.id, 0.8, 'related');
-    
-    await page.goto(`/graph/3d/${center.id}`);
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(4000);
-    
-    await page.screenshot({ 
-      path: 'argos-screenshots/3d-with-link.png',
-      fullPage: true 
-    });
-  });
-
-  test('ConfirmModal - delete confirmation', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    
-    // Trigger delete modal (if accessible)
-    // For now, just render modal directly via URL or state
-    // This is a placeholder - actual implementation depends on how modal is triggered
-    
-    await page.screenshot({ 
-      path: 'argos-screenshots/modal-confirm.png',
-      fullPage: false 
-    });
-  });
-
-  test('Search - with results', async ({ page, request }) => {
-    // Create searchable note
-    await createNote(request, {
-      title: 'Searchable Test Note',
-      content: 'Unique content for search',
-      type: 'comet'
-    });
-    
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    
-    // Type in search - use JavaScript to ensure input is interactable
-    const searchInput = page.locator('[data-testid="search-input"]');
-    if (await searchInput.isVisible().catch(() => false)) {
-      await searchInput.evaluate(el => (el as HTMLElement).focus());
-      await searchInput.fill('Searchable');
-      await page.waitForTimeout(1000);
-    }
-    
-    await page.screenshot({ 
-      path: 'argos-screenshots/search-with-results.png',
-      fullPage: true 
-    });
-  });
-
-  test('Empty state - no notes', async ({ page }) => {
-    // Navigate to list view when no notes exist
-    await page.goto('/?view=list');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-    
-    await page.screenshot({ 
-      path: 'argos-screenshots/empty-state.png',
-      fullPage: true 
-    });
-  });
-
-  test('Full 3D Graph view', async ({ page }) => {
-    await page.goto('/graph/3d');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(4000);
-    
-    await page.screenshot({ 
-      path: 'argos-screenshots/3d-full-graph.png',
-      fullPage: true 
+  test("Home responsive viewports", async ({ page }) => {
+    await page.goto("/" + STABLE_RENDER);
+    await waitForApp(page);
+    await argosScreenshot(page, "home-responsive", {
+      fullPage: true,
+      viewports: VIEWPORTS,
     });
   });
 });

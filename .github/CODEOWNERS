@@ -1,0 +1,31 @@
+# Code Owners for Knowledge Graph Project
+
+# Global settings - require approval from maintainers for sensitive changes
+* @knowledge-graph-maintainers
+
+# Dependency files require extra review
+frontend/package.json @knowledge-graph-maintainers
+frontend/package-lock.json @knowledge-graph-maintainers
+backend/go.mod @knowledge-graph-maintainers
+backend/go.sum @knowledge-graph-maintainers
+nlp-service/requirements.txt @knowledge-graph-maintainers
+
+# CI/CD configurations
+.github/workflows/*.yml @knowledge-graph-maintainers
+.github/dependabot.yml @knowledge-graph-maintainers
+
+# Security configurations
+frontend/.npmrc @knowledge-graph-maintainers
+.env.example @knowledge-graph-maintainers
+
+# Docker configurations
+docker-compose.yml @knowledge-graph-maintainers
+docker-compose.personal.yml @knowledge-graph-maintainer
+docker-compose.test.yml @knowledge-graph-maintainers
+
+# Infrastructure
+services/*/Dockerfile @knowledge-graph-maintainers
+
+# Documentation
+README.md @knowledge-graph-maintainers
+docs/SECURITY.md @knowledge-graph-maintainers

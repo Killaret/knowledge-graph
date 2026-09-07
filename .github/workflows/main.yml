@@ -1,0 +1,473 @@
+name: Main Branch CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ============ CORE CHECKS (reusable) ============
+  core-checks:
+    name: Core Checks
+    uses: ./.github/workflows/_core-checks.yml
+    secrets: inherit
+
+  # ============ CONFIG & MIGRATION VALIDATION ============
+  config-validation:
+    name: Config & Migration Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: backend/go.sum
+
+      - name: Validate JSON syntax
+        run: |
+          cat ../knowledge-graph.config.json | jq . > /dev/null
+          echo "✓ JSON syntax valid"
+
+      - name: Check config loads successfully
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+        run: |
+          go mod download
+          go run cmd/checkconfig/main.go ../knowledge-graph.config.json
+
+      - name: Verify required env vars documented
+        run: |
+          # Check only required environment variables (those without reasonable defaults)
+          REQUIRED_VARS=(
+            "DATABASE_URL"
+            "JWT_SECRET"
+          )
+          MISSING=0
+          for var in "${REQUIRED_VARS[@]}"; do
+            if ! grep -qE "^#?$var=" ../.env.example 2>/dev/null; then
+              echo "⚠️  Required variable $var not found in .env.example"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+          if [ $MISSING -eq 0 ]; then
+            echo "✓ All required environment variables documented"
+          else
+            echo "⚠️  $MISSING required environment variables missing from .env.example"
+            exit 1
+          fi
+
+  check-migrations:
+    name: Check Migration Drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ./backend
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: kb_user
+          POSTGRES_PASSWORD: kb_password
+          POSTGRES_DB: knowledge_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: backend/go.sum
+
+      - name: Check GORM AutoMigrate compatibility
+        env:
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
+        run: |
+          go mod download
+          go test -v ./internal/infrastructure/db/postgres -run TestAutoMigrate 2>&1
+
+  # ============ STACKS IDENTITY CHECK ============
+  stacks-identity-check:
+    name: Stacks Identity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check stacks identity
+        run: |
+          chmod +x scripts/ci/check-stacks-identity.sh
+          ./scripts/ci/check-stacks-identity.sh
+
+  # ============ FULL TEST SUITE ============
+  full-tests:
+    name: Full Test Suite
+    runs-on: ubuntu-latest
+    needs: [core-checks, config-validation, stacks-identity-check]
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ./frontend
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: kb_user
+          POSTGRES_PASSWORD: kb_password
+          POSTGRES_DB: knowledge_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+      mongo:
+        image: mongo:7
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: ./frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('./frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Apply database migrations
+        env:
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate /usr/local/bin/
+          migrate -path ../backend/migrations -database "$DATABASE_URL" up
+
+      - name: Start backend for E2E tests
+        env:
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
+          REDIS_URL: redis://localhost:6379
+          MONGO_URL: mongodb://localhost:27017
+          REDIS_FLUSH_ON_STARTUP: "true"
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
+          GRAPH_SERVICE_URL: ""
+          SKIP_AUTH: "true"
+        run: |
+          cd ../backend
+          go mod download
+          go mod tidy
+          go run ./cmd/server &
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+              echo "✅ Backend is ready!"
+              break
+            fi
+            echo "Waiting for backend... attempt $i/30"
+            sleep 2
+          done
+          if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
+            echo "❌ Backend failed to start"
+            exit 1
+          fi
+
+      - name: Run all Playwright tests
+        env:
+          PLAYWRIGHT_DEV_SERVER: true
+          VITE_API_TARGET: http://127.0.0.1:8080
+          BACKEND_URL: http://localhost:8080
+        run: npm test
+
+      - name: Run all Cucumber tests
+        env:
+          VITE_API_TARGET: http://127.0.0.1:8080
+          BACKEND_URL: http://localhost:8080
+        run: npm run test:cucumber
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: full-test-results
+          path: frontend/test-results/
+          retention-days: 7
+
+  # ============ PERFORMANCE TESTS ============
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [full-tests]
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli
+          lhci autorun --config=lighthouserc.cjs
+
+      - name: Upload performance results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: performance-results
+          path: |
+            frontend/.lighthouseci/
+            frontend/test-results/
+          retention-days: 7
+
+  # ============ VISUAL REGRESSION ============
+  visual-regression:
+    name: Visual Regression
+    runs-on: ubuntu-latest
+    needs: [full-tests]
+    timeout-minutes: 25
+    env:
+      SKIP_AUTH: "true"
+      FRONTEND_URL: http://localhost:3002
+      ARGOS_REFERENCE_BRANCH: ai-agents
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: ./frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Start test stack
+        run: docker compose -f docker-compose.test.yml up -d --build --wait
+
+      - name: Seed visual fixture
+        run: |
+          chmod +x scripts/testing/seed-test-data.sh
+          NOTE_COUNT=20 LINK_COUNT=10 SEED=42 NLP_WAIT_SECONDS=120 scripts/testing/seed-test-data.sh
+
+      - name: Run visual tests with Argos
+        working-directory: ./frontend
+        env:
+          ARGOS_TOKEN: ${{ secrets.ARGOS_TOKEN }}
+        run: npx playwright test --project=visual
+
+      - name: Upload debug artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: visual-test-results
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+          retention-days: 7
+
+  # ============ DOCKER BUILD & HEALTH CHECK ============
+  build-docker:
+    name: Build Docker Images & Health Check
+    runs-on: ubuntu-latest
+    needs: [core-checks, full-tests]
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: kb_user
+          POSTGRES_PASSWORD: kb_password
+          POSTGRES_DB: knowledge_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+      mongo:
+        image: mongo:7
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build backend image
+        run: docker build -t knowledge-graph-backend -f ./backend/Dockerfile .
+
+      - name: Build graph-service image
+        run: docker build -t knowledge-graph-graph-service -f ./services/graph-service/Dockerfile .
+
+      - name: Build frontend image
+        run: docker build -t knowledge-graph-frontend -f ./frontend/Dockerfile .
+
+      - name: Build NLP service image
+        run: docker build -t knowledge-graph-nlp ./nlp-service
+
+      - name: Test docker-compose
+        run: docker compose config || docker-compose config
+
+      - name: Apply migrations for health check
+        env:
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate /usr/local/bin/
+          migrate -path ./backend/migrations -database "$DATABASE_URL" up
+
+      - name: Start backend container
+        env:
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
+          REDIS_URL: redis://localhost:6379
+          MONGO_URL: mongodb://localhost:27017
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
+          GRAPH_SERVICE_URL: ""
+          SKIP_AUTH: "false"
+        run: |
+          docker run -d --network host --name kg-backend \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -e REDIS_URL="$REDIS_URL" \
+            -e MONGO_URL="$MONGO_URL" \
+            -e JWT_SECRET="$JWT_SECRET" \
+            -e GRAPH_SERVICE_INTERNAL_TOKEN="$GRAPH_SERVICE_INTERNAL_TOKEN" \
+            -e GRAPH_SERVICE_URL="$GRAPH_SERVICE_URL" \
+            -e SKIP_AUTH="$SKIP_AUTH" \
+            knowledge-graph-backend
+
+      - name: Start graph-service container
+        env:
+          POSTGRES_URL: postgresql://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
+          REDIS_URL: redis://localhost:6379
+          HTTP_PORT: 9091
+          GRPC_PORT: 9090
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
+        run: |
+          docker run -d --network host --name kg-graph-service \
+            -e POSTGRES_URL="$POSTGRES_URL" \
+            -e REDIS_URL="$REDIS_URL" \
+            -e HTTP_PORT="$HTTP_PORT" \
+            -e GRPC_PORT="$GRPC_PORT" \
+            -e GRAPH_SERVICE_INTERNAL_TOKEN="$GRAPH_SERVICE_INTERNAL_TOKEN" \
+            -e EVENT_CHANNEL=graph:events \
+            -e GRAPH_FULL_LIMIT=500 \
+            knowledge-graph-graph-service
+
+      - name: Start frontend container
+        run: |
+          docker run -d --network host --name kg-frontend -e PORT=3001 knowledge-graph-frontend
+
+      - name: Health check all services
+        run: |
+          wait_for_url() {
+            local url=$1
+            local name=$2
+            for i in {1..30}; do
+              if curl -fsS "$url" > /dev/null 2>&1; then
+                echo "✅ $name is healthy ($url)"
+                return 0
+              fi
+              echo "Waiting for $name... attempt $i/30"
+              sleep 2
+            done
+            echo "❌ $name failed to respond at $url"
+            docker logs "$name" || true
+            return 1
+          }
+
+          wait_for_url http://localhost:8080/health backend
+          wait_for_url http://localhost:9091/health graph-service
+          wait_for_url http://localhost:3001/ frontend
+
+      - name: Stop health-check containers
+        if: always()
+        run: |
+          docker stop kg-backend kg-graph-service kg-frontend || true
+          docker rm kg-backend kg-graph-service kg-frontend || true

@@ -1,0 +1,92 @@
+<script lang="ts">
+  import ProfileEditor from "$components/organisms/ProfileEditor.svelte";
+  import { currentUser, initAuth, isInitialized } from "$shared/stores/auth.svelte.js";
+  import { useRequireAuth } from "$shared/composables/auth";
+  import { onMount } from "svelte";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
+
+  // Initialize auth once on mount
+  onMount(async () => {
+    await initAuth();
+  });
+
+  // Redirect unauthenticated users to login, then back to this page
+  $effect(() => {
+    if (!isInitialized()) return;
+    useRequireAuth("/auth/login?redirect=/profile");
+  });
+</script>
+
+<div class="profile-page">
+  <div class="profile-container" data-testid="profile-content">
+    <div class="header">
+      <h1>{t("profile.title")}</h1>
+      <p>{t("profile.subtitle")}</p>
+    </div>
+
+    {#if currentUser()}
+      <ProfileEditor />
+    {:else}
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>{t("profile.loading")}</p>
+      </div>
+    {/if}
+  </div>
+</div>
+
+<style>
+  .profile-page {
+    min-height: 100vh;
+    padding: 2rem;
+    background: var(--color-background);
+  }
+
+  .profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .header {
+    margin-bottom: 2rem;
+    color: var(--color-text-primary);
+  }
+
+  .header h1 {
+    margin: 0 0 0.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  .header p {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 3rem;
+    color: var(--color-text-secondary);
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>

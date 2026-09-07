@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	dcache "knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/graph"
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 )
 
 type GetSuggestionsQuery struct {
@@ -27,44 +27,44 @@ type SuggestionDTO struct {
 type GetSuggestionsHandler struct {
 	traversalSvc *graph.TraversalService
 	noteRepo     note.Repository
-	cache        *redis.Client
+	cacheClient  dcache.CacheClient
 	cacheTTL     time.Duration
 }
 
 func NewGetSuggestionsHandler(
 	traversalSvc *graph.TraversalService,
 	noteRepo note.Repository,
-	cache *redis.Client,
+	cacheClient dcache.CacheClient,
 	cacheTTL time.Duration,
 ) *GetSuggestionsHandler {
 	return &GetSuggestionsHandler{
 		traversalSvc: traversalSvc,
 		noteRepo:     noteRepo,
-		cache:        cache,
+		cacheClient:  cacheClient,
 		cacheTTL:     cacheTTL,
 	}
 }
 
 func (h *GetSuggestionsHandler) Handle(ctx context.Context, query GetSuggestionsQuery) ([]SuggestionDTO, error) {
-	// 1. Проверяем кэш
+	// 1. Check cache
 	cacheKey := fmt.Sprintf("suggestions:%s:%d", query.NoteID.String(), query.Limit)
-	if h.cache != nil {
-		cached, err := h.cache.Get(ctx, cacheKey).Bytes()
+	if h.cacheClient != nil {
+		cached, err := h.cacheClient.Get(ctx, cacheKey)
 		if err == nil {
 			var result []SuggestionDTO
-			if err := json.Unmarshal(cached, &result); err == nil {
+			if err := json.Unmarshal([]byte(cached), &result); err == nil {
 				return result, nil
 			}
 		}
 	}
 
-	// 2. Получаем рекомендации через доменный сервис (глубина 3, затухание 0.5, берём с запасом)
+	// 2. Get suggestions via domain service (depth 3, decay 0.5, with reserve)
 	suggestions, err := h.traversalSvc.GetSuggestions(ctx, query.NoteID, query.Limit*2)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Загружаем заголовки заметок (можно оптимизировать, загружая все сразу)
+	// 3. Load note titles (could be optimized by loading all at once)
 	result := make([]SuggestionDTO, 0, len(suggestions))
 	for _, s := range suggestions {
 		noteEntity, err := h.noteRepo.FindByID(ctx, s.NodeID)
@@ -81,10 +81,10 @@ func (h *GetSuggestionsHandler) Handle(ctx context.Context, query GetSuggestions
 		}
 	}
 
-	// 4. Сохраняем в кэш
-	if h.cache != nil && len(result) > 0 {
+	// 4. Save to cache
+	if h.cacheClient != nil && len(result) > 0 {
 		data, _ := json.Marshal(result)
-		h.cache.Set(ctx, cacheKey, data, h.cacheTTL)
+		_ = h.cacheClient.Set(ctx, cacheKey, string(data), h.cacheTTL)
 	}
 
 	return result, nil

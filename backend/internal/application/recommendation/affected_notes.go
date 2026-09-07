@@ -3,8 +3,6 @@ package recommendation
 import (
 	"context"
 
-	"knowledge-graph/internal/infrastructure/db/postgres"
-
 	"github.com/google/uuid"
 )
 
@@ -15,11 +13,11 @@ const reverseCascadeDepth = 1
 // AffectedNotesService determines which notes should have their recommendations recalculated
 // when a specific note changes.
 type AffectedNotesService struct {
-	recRepo *postgres.RecommendationRepository
+	recRepo Repository
 }
 
 // NewAffectedNotesService creates a new affected notes service
-func NewAffectedNotesService(recRepo *postgres.RecommendationRepository) *AffectedNotesService {
+func NewAffectedNotesService(recRepo Repository) *AffectedNotesService {
 	return &AffectedNotesService{recRepo: recRepo}
 }
 

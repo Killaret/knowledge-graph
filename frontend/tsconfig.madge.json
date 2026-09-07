@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "$shared": ["src/shared"],
+      "$shared/*": ["src/shared/*"],
+      "$features": ["src/features"],
+      "$features/*": ["src/features/*"],
+      "$components": ["src/components"],
+      "$components/*": ["src/components/*"],
+      "$entities": ["src/entities"],
+      "$entities/*": ["src/entities/*"],
+      "$widgets": ["src/widgets"],
+      "$widgets/*": ["src/widgets/*"],
+      "$config": ["../knowledge-graph.config.json"]
+    }
+  },
+  "include": ["src/**/*"]
+}

@@ -1,0 +1,419 @@
+/**
+ * Visual tests for GraphCanvas renderer - anomaly types
+ */
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { drawNode, drawStar, drawUnknown } from "./renderer";
+import { drawRealityRift } from "$shared/lib/graph/renderer/anomalies/reality-rift";
+import { getAnomalyParams } from "$shared/lib/graph/renderer/anomalies/helpers";
+import { getGlowIntensity } from "$shared/lib/graph/glow-intensity";
+import { getNodeGradient } from "$shared/lib/graph/node-gradient";
+import { graphConfig2D } from "$shared/config";
+
+// Mock CanvasRenderingContext2D
+const mockCtx = {
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  beginPath: vi.fn(),
+  closePath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  arc: vi.fn(),
+  ellipse: vi.fn(),
+  bezierCurveTo: vi.fn(),
+  fill: vi.fn(),
+  stroke: vi.fn(),
+  createRadialGradient: vi.fn(() => ({
+    addColorStop: vi.fn(),
+  })),
+  createLinearGradient: vi.fn(() => ({
+    addColorStop: vi.fn(),
+  })),
+  shadowBlur: 0,
+  shadowColor: "",
+  lineWidth: 0,
+  lineCap: "",
+  fillStyle: "",
+  strokeStyle: "",
+  setLineDash: vi.fn(),
+  globalAlpha: 1,
+  fillText: vi.fn(),
+  measureText: vi.fn(() => ({ width: 50 })),
+  imageSmoothingEnabled: true,
+  imageSmoothingQuality: "low",
+} as unknown as CanvasRenderingContext2D;
+
+describe("renderer anomaly functions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("drawRealityRift", () => {
+    it("should draw reality rift with dark core and cracks", () => {
+      const params = getAnomalyParams("node-1");
+
+      drawRealityRift(mockCtx, 100, 100, 30, params);
+
+      expect(mockCtx.save).toHaveBeenCalled();
+      expect(mockCtx.translate).toHaveBeenCalledWith(100, 100);
+      expect(mockCtx.restore).toHaveBeenCalled();
+    });
+
+    it("should use deterministic parameters for same nodeId", () => {
+      const params1 = getAnomalyParams("node-1");
+      const params2 = getAnomalyParams("node-1");
+
+      expect(params1.crackCount).toBe(params2.crackCount);
+      expect(params1.deformAmount).toBe(params2.deformAmount);
+      expect(params1.rotationOffset).toBe(params2.rotationOffset);
+    });
+
+    it("should generate different parameters for different nodeIds", () => {
+      const params1 = getAnomalyParams("node-1");
+      const params2 = getAnomalyParams("node-2");
+
+      // At least one parameter should differ
+      const differs =
+        params1.crackCount !== params2.crackCount ||
+        params1.deformAmount !== params2.deformAmount ||
+        params1.rotationOffset !== params2.rotationOffset;
+
+      expect(differs).toBe(true);
+    });
+  });
+
+  describe("drawUnknown dispatcher", () => {
+    it("should select anomaly type based on hash of nodeId", () => {
+      // Test different node IDs to ensure they don't crash
+      const nodeIds = ["node-0", "node-1", "node-2", "node-3"];
+
+      vi.clearAllMocks();
+
+      nodeIds.forEach((nodeId) => {
+        drawUnknown(mockCtx, 100, 100, 30, 0, nodeId);
+      });
+
+      // Verify that drawUnknown was called for each node
+      expect(mockCtx.save).toHaveBeenCalledTimes(4);
+      expect(mockCtx.restore).toHaveBeenCalledTimes(4);
+    });
+
+    it("should call the same renderer for the same nodeId", () => {
+      const nodeId = "consistent-node";
+
+      // Clear previous calls
+      vi.clearAllMocks();
+
+      drawUnknown(mockCtx, 100, 100, 30, 0, nodeId);
+      const firstCallCount = (mockCtx.save as any).mock.calls.length;
+
+      drawUnknown(mockCtx, 100, 100, 30, 0, nodeId);
+      const secondCallCount = (mockCtx.save as any).mock.calls.length;
+
+      // Both calls should have been made
+      expect(secondCallCount).toBe(firstCallCount + 1);
+    });
+
+    it("should generate different parameters for different nodeIds", () => {
+      const params1 = getAnomalyParams("node-a");
+      const params2 = getAnomalyParams("node-b");
+
+      // At least one parameter should differ
+      const differs =
+        params1.crackCount !== params2.crackCount ||
+        params1.tentacleCount !== params2.tentacleCount ||
+        params1.particleCount !== params2.particleCount ||
+        params1.colorShift1 !== params2.colorShift1 ||
+        params1.colorShift2 !== params2.colorShift2 ||
+        params1.deformAmount !== params2.deformAmount ||
+        params1.rotationOffset !== params2.rotationOffset;
+
+      expect(differs).toBe(true);
+    });
+
+    it("should be deterministic for the same nodeId", () => {
+      const nodeId = "deterministic-node";
+
+      const params1 = getAnomalyParams(nodeId);
+      const params2 = getAnomalyParams(nodeId);
+      const params3 = getAnomalyParams(nodeId);
+
+      // All parameters should be identical across multiple calls
+      expect(params1).toEqual(params2);
+      expect(params2).toEqual(params3);
+    });
+
+    it("should accept custom renderers without crashing", () => {
+      const customRenderer = vi.fn();
+      const customRenderers: Record<number, any> = {
+        0: customRenderer,
+        1: customRenderer,
+        2: customRenderer,
+        3: customRenderer,
+      };
+
+      // Just verify the function accepts the parameter without error
+      expect(() => {
+        drawUnknown(mockCtx, 100, 100, 30, 0, "node-custom", customRenderers);
+      }).not.toThrow();
+    });
+  });
+
+  describe("getAnomalyParams", () => {
+    it("should generate parameters within configured ranges", () => {
+      const params = getAnomalyParams("test-node");
+
+      // Verify all required parameters exist
+      expect(params).toHaveProperty("crackCount");
+      expect(params).toHaveProperty("tentacleCount");
+      expect(params).toHaveProperty("particleCount");
+      expect(params).toHaveProperty("colorShift1");
+      expect(params).toHaveProperty("colorShift2");
+      expect(params).toHaveProperty("deformAmount");
+      expect(params).toHaveProperty("rotationOffset");
+      expect(params).toHaveProperty("seedBase");
+    });
+
+    it("should generate integer counts", () => {
+      const params = getAnomalyParams("test-node");
+
+      expect(Number.isInteger(params.crackCount)).toBe(true);
+      expect(Number.isInteger(params.tentacleCount)).toBe(true);
+      expect(Number.isInteger(params.particleCount)).toBe(true);
+    });
+
+    it("should generate rotation offset in valid range", () => {
+      const params = getAnomalyParams("test-node");
+
+      expect(params.rotationOffset).toBeGreaterThanOrEqual(0);
+      expect(params.rotationOffset).toBeLessThanOrEqual(Math.PI * 2);
+    });
+
+    it("should generate non-negative seed base", () => {
+      const params = getAnomalyParams("test-node");
+
+      expect(params.seedBase).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe("drawNode default/unknown type fallback", () => {
+    it('should call anomaly renderer for type "unknown"', () => {
+      vi.clearAllMocks();
+
+      const node = {
+        id: "unknown-node-1",
+        title: "Test",
+        type: "unknown",
+        x: 100,
+        y: 100,
+      };
+      drawNode(mockCtx, node as any, 24, 0, false);
+
+      // Anomaly renderers use save/translate/restore pattern
+      expect(mockCtx.save).toHaveBeenCalled();
+      expect(mockCtx.translate).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
+      expect(mockCtx.restore).toHaveBeenCalled();
+    });
+
+    it("should call anomaly renderer for unrecognized type (default case)", () => {
+      vi.clearAllMocks();
+
+      const node = {
+        id: "weird-node-1",
+        title: "Test",
+        type: "nonexistent_type",
+        x: 100,
+        y: 100,
+      };
+      drawNode(mockCtx, node as any, 24, 0, false);
+
+      // Anomaly renderers use save/translate/restore
+      expect(mockCtx.save).toHaveBeenCalled();
+      expect(mockCtx.translate).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
+      expect(mockCtx.restore).toHaveBeenCalled();
+    });
+
+    it("should NOT call drawStar for unrecognized types", () => {
+      vi.clearAllMocks();
+
+      const node = {
+        id: "weird-node-2",
+        title: "Test",
+        type: "banana_type",
+        x: 100,
+        y: 100,
+      };
+      drawNode(mockCtx, node as any, 24, 0, false, true);
+
+      // drawStar does NOT use save/translate/restore, so save being called means anomaly was used
+      // Also verify translate was called (anomaly pattern)
+      expect(mockCtx.translate).toHaveBeenCalled();
+    });
+
+    it("should produce stable anomaly selection for same nodeId regardless of type string", () => {
+      vi.clearAllMocks();
+
+      const node1 = {
+        id: "stable-node",
+        title: "Test",
+        type: "unknown",
+        x: 100,
+        y: 100,
+      };
+      const node2 = {
+        id: "stable-node",
+        title: "Test",
+        type: "xyz_bogus",
+        x: 100,
+        y: 100,
+      };
+
+      drawNode(mockCtx, node1 as any, 24, 0, false, true);
+      const callsAfterFirst = (mockCtx.translate as any).mock.calls.length;
+
+      drawNode(mockCtx, node2 as any, 24, 0, false, true);
+      const callsAfterSecond = (mockCtx.translate as any).mock.calls.length;
+
+      // Both should have called translate (anomaly renderer)
+      expect(callsAfterFirst).toBeGreaterThan(0);
+      expect(callsAfterSecond).toBeGreaterThan(callsAfterFirst);
+    });
+
+    it("should draw a simplified circle when simplified is true", () => {
+      vi.clearAllMocks();
+
+      const node = {
+        id: "simple-node",
+        title: "Simple",
+        type: "star",
+        x: 100,
+        y: 100,
+      };
+      drawNode(
+        mockCtx,
+        node as any,
+        24,
+        0,
+        false,
+        false,
+        undefined,
+        undefined,
+        undefined,
+        false,
+        true
+      );
+
+      // Simplified path only calls beginPath/arc/fill without titles or shadows
+      expect(mockCtx.beginPath).toHaveBeenCalled();
+      expect(mockCtx.arc).toHaveBeenCalled();
+      expect(mockCtx.fill).toHaveBeenCalled();
+      expect(mockCtx.fillText).not.toHaveBeenCalled();
+    });
+
+    it("should bypass simplified mode in focus mode", () => {
+      vi.clearAllMocks();
+
+      const node = {
+        id: "focus-node",
+        title: "Focus",
+        type: "star",
+        x: 100,
+        y: 100,
+      };
+      drawNode(
+        mockCtx,
+        node as any,
+        24,
+        0,
+        false,
+        false,
+        undefined,
+        undefined,
+        undefined,
+        true,
+        true
+      );
+
+      // Focus mode always uses the full star renderer (which uses lineTo), not the arc shortcut.
+      expect(mockCtx.lineTo).toHaveBeenCalled();
+      expect(mockCtx.arc).not.toHaveBeenCalled();
+    });
+
+    it("should not draw a node missing coordinates", () => {
+      vi.clearAllMocks();
+
+      const node = {
+        id: "no-coords",
+        title: "No Coords",
+        type: "star",
+      };
+      drawNode(mockCtx, node as any, 24, 0, false);
+
+      // Without coordinates neither arc nor fillText should be called
+      expect(mockCtx.arc).not.toHaveBeenCalled();
+      expect(mockCtx.fillText).not.toHaveBeenCalled();
+      expect(mockCtx.beginPath).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("drawStar", () => {
+    it("should start the star shape with moveTo to avoid a stray line from the origin", () => {
+      vi.clearAllMocks();
+
+      drawStar(mockCtx, 100, 100, 20, 0);
+
+      // The star is one closed shape, so after its beginPath the first subpath
+      // operation must be a moveTo, not a lineTo. This prevents some Canvas
+      // implementations from drawing a line from (0,0) to the first outer point.
+      expect(mockCtx.beginPath).toHaveBeenCalled();
+      expect(mockCtx.moveTo).toHaveBeenCalled();
+      // Without time/nodeCount the corona is skipped, so we expect 9 lineTo calls
+      // (one inner point for every outer point except the first, plus 4 outer points).
+      expect(mockCtx.lineTo).toHaveBeenCalledTimes(9);
+    });
+  });
+
+  describe("getGlowIntensity", () => {
+    it("should return minimal glow when nodeCount exceeds the visual-fx threshold", () => {
+      const intensity = getGlowIntensity("node-1", 1000, graphConfig2D.visual_fx_threshold + 1);
+      expect(intensity).toBe(0.3);
+    });
+
+    it("should return pulsating value between 0.3 and 1.0", () => {
+      const intensity = getGlowIntensity("node-1", 1000, 50);
+      expect(intensity).toBeGreaterThanOrEqual(0.3);
+      expect(intensity).toBeLessThanOrEqual(1.0);
+    });
+
+    it("should return different values for different nodeIds", () => {
+      const intensity1 = getGlowIntensity("node-1", 1000, 50);
+      const intensity2 = getGlowIntensity("node-2", 1000, 50);
+      // Due to hash-based phase offset, values should differ
+      expect(intensity1).not.toBe(intensity2);
+    });
+  });
+
+  describe("getNodeGradient", () => {
+    it("should create a radial gradient", () => {
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, "star", "#ffcc00");
+      expect(mockCtx.createRadialGradient).toHaveBeenCalled();
+      expect(gradient).toBeDefined();
+    });
+
+    it("should add color stops for star type", () => {
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, "star", "#ffcc00");
+      expect(gradient.addColorStop).toHaveBeenCalledTimes(3);
+    });
+
+    it("should add color stops for planet type", () => {
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, "planet", "#d6aa5d");
+      expect(gradient.addColorStop).toHaveBeenCalledTimes(3);
+    });
+
+    it("should add color stops for galaxy type", () => {
+      const gradient = getNodeGradient(mockCtx, 100, 100, 30, "galaxy", "#8b5cf6");
+      expect(gradient.addColorStop).toHaveBeenCalledTimes(3);
+    });
+  });
+});

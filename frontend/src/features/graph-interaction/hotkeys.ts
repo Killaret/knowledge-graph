@@ -1,0 +1,198 @@
+import type { TransformState, SimulationNode } from "$entities/graph-canvas/lib/types";
+import type { GhostNodeState } from "$entities/graph-canvas/lib";
+
+export interface HotkeysState {
+  showSearchBox: boolean;
+  searchQuery: string;
+  searchMatchIds: string[];
+  searchCurrentIndex: number;
+  showHelpModal: boolean;
+  showHelpTooltip: boolean;
+  helpTooltipPosition: { x: number; y: number };
+  helpTooltipMessage: string;
+  inactivityTimeout: ReturnType<typeof setTimeout> | null;
+  lastActivityTime: number;
+}
+
+export interface HotkeysCallbacks {
+  onFocusModeToggle?: () => void;
+  onSearchOpen?: () => void;
+  onSearchClose?: () => void;
+  onHelpToggle?: () => void;
+  onGhostNodeCreate?: () => void;
+  onNodeDelete?: (nodeId: string) => void;
+  onUndo?: () => void;
+  onNoteFormClose?: () => void;
+  onLinkFormClose?: () => void;
+}
+
+export function createHotkeysState(): HotkeysState {
+  return {
+    showSearchBox: false,
+    searchQuery: "",
+    searchMatchIds: [],
+    searchCurrentIndex: 0,
+    showHelpModal: false,
+    showHelpTooltip: false,
+    helpTooltipPosition: { x: 0, y: 0 },
+    helpTooltipMessage: "",
+    inactivityTimeout: null,
+    lastActivityTime: 0,
+  };
+}
+
+export function handleKeyDownEvent(
+  e: KeyboardEvent,
+  state: HotkeysState,
+  canvas: HTMLCanvasElement | null,
+  transform: TransformState,
+  simNodes: SimulationNode[],
+  ghostNode: GhostNodeState,
+  selectedNodeId: string | null,
+  showNoteForm: boolean,
+  showLinkForm: boolean,
+  searchInput: HTMLInputElement | null,
+  callbacks: HotkeysCallbacks
+): void {
+  // Ignore hotkeys when typing in a form or search input
+  const active = document.activeElement;
+  const isTyping =
+    active instanceof HTMLInputElement ||
+    active instanceof HTMLTextAreaElement ||
+    active instanceof HTMLSelectElement;
+
+  if (e.key === "Escape") {
+    if (state.showHelpModal) {
+      state.showHelpModal = false;
+    } else if (state.showSearchBox) {
+      callbacks.onSearchClose?.();
+    } else if (showNoteForm) {
+      callbacks.onNoteFormClose?.();
+    } else if (showLinkForm) {
+      callbacks.onLinkFormClose?.();
+    } else {
+      callbacks.onFocusModeToggle?.();
+    }
+    e.preventDefault();
+    return;
+  }
+
+  if (isTyping && !state.showSearchBox) {
+    return;
+  }
+
+  const code = e.code;
+  const key = e.key;
+  const isPrintable = (k: string) => k.length === 1;
+
+  // F — open search. Support both physical KeyF and the typed "f" character
+  // so tests and non-code event sources still work.
+  if ((code === "KeyF" || key === "f") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+    e.preventDefault();
+    callbacks.onSearchOpen?.();
+    requestAnimationFrame(() => searchInput?.focus());
+    return;
+  }
+
+  // Help: "?" (US) or Shift+Slash in any layout; ignore Ctrl/Alt so we don't steal system keys.
+  if ((key === "?" || (code === "Slash" && e.shiftKey)) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    callbacks.onHelpToggle?.();
+    return;
+  }
+
+  if (key === "Enter" && state.showSearchBox) {
+    e.preventDefault();
+    focusNextSearchMatch(state, transform, simNodes, canvas);
+    return;
+  }
+
+  // N - Create ghost node
+  if ((code === "KeyN" || key === "n") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+    e.preventDefault();
+    callbacks.onGhostNodeCreate?.();
+    return;
+  }
+
+  // Delete/Backspace - Delete selected node (if not typing)
+  if (
+    (code === "Delete" || code === "Backspace" || key === "Delete" || key === "Backspace") &&
+    !isTyping
+  ) {
+    e.preventDefault();
+    if (selectedNodeId) {
+      callbacks.onNodeDelete?.(selectedNodeId);
+    }
+    return;
+  }
+
+  // Ctrl+Z - Undo
+  if (
+    (e.ctrlKey || e.metaKey) &&
+    (code === "KeyZ" || (isPrintable(key) && key.toLowerCase() === "z")) &&
+    !e.shiftKey
+  ) {
+    e.preventDefault();
+    callbacks.onUndo?.();
+    return;
+  }
+}
+
+export function updateSearch(state: HotkeysState, simNodes: SimulationNode[]): void {
+  const query = state.searchQuery.trim().toLowerCase();
+  if (!query) {
+    state.searchMatchIds = [];
+    state.searchCurrentIndex = 0;
+    return;
+  }
+
+  state.searchMatchIds = simNodes
+    .filter((node) => node.title.toLowerCase().includes(query))
+    .map((node) => node.id);
+  state.searchCurrentIndex = 0;
+}
+
+export function focusNextSearchMatch(
+  state: HotkeysState,
+  transform: TransformState,
+  simNodes: SimulationNode[],
+  canvas: HTMLCanvasElement | null
+): void {
+  if (state.searchMatchIds.length === 0) return;
+  state.searchCurrentIndex = (state.searchCurrentIndex + 1) % state.searchMatchIds.length;
+  const nodeId = state.searchMatchIds[state.searchCurrentIndex];
+  const node = simNodes.find((n) => n.id === nodeId);
+  if (node && node.x != null && node.y != null && canvas) {
+    const rect = canvas.getBoundingClientRect();
+    transform.k = Math.max(transform.k, 1.2);
+    transform.x = rect.width / 2 - node.x * transform.k;
+    transform.y = rect.height / 2 - node.y * transform.k;
+  }
+}
+
+export function resetInactivityTimer(state: HotkeysState, onTipShow: () => void): void {
+  if (state.inactivityTimeout) clearTimeout(state.inactivityTimeout);
+  state.inactivityTimeout = setTimeout(() => {
+    onTipShow();
+  }, 10000);
+}
+
+export function updateActivity(state: HotkeysState, onInactivityTip: () => void): void {
+  state.lastActivityTime = Date.now();
+  // Hide tip on activity (not show it)
+  if (state.showHelpTooltip && state.helpTooltipPosition.x === -1) {
+    state.showHelpTooltip = false;
+  }
+  resetInactivityTimer(state, onInactivityTip);
+}
+
+export function showRandomTip(state: HotkeysState, tips: string[]): void {
+  const tip = tips[Math.floor(Math.random() * tips.length)];
+  state.helpTooltipMessage = tip;
+  // Position at bottom-center; actual centering is handled via CSS transform
+  state.helpTooltipPosition = { x: -1, y: -1 };
+  state.showHelpTooltip = true;
+  setTimeout(() => {
+    state.showHelpTooltip = false;
+  }, 4000);
+}

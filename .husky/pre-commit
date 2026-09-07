@@ -1,0 +1,5 @@
+#!/bin/sh
+# Pre-commit hook for Knowledge Graph project
+# Runs lint-staged to check frontend and backend code
+
+npx lint-staged

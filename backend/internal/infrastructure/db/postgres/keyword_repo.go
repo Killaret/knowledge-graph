@@ -15,6 +15,45 @@ func NewKeywordRepository(db *gorm.DB) *KeywordRepository {
 	return &KeywordRepository{db: db}
 }
 
+// GetKeywordsWithWeights возвращает ключевые слова с весами для одной заметки
+func (r *KeywordRepository) GetKeywordsWithWeights(ctx context.Context, noteID uuid.UUID) (map[string]float64, error) {
+	var keywords []NoteKeywordModel
+	if err := r.db.WithContext(ctx).
+		Where("note_id = ?", noteID).
+		Find(&keywords).Error; err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]float64, len(keywords))
+	for _, kw := range keywords {
+		result[kw.Keyword] = kw.Weight
+	}
+	return result, nil
+}
+
+// GetKeywordsBatchWithWeights возвращает ключевые слова с весами для нескольких заметок
+func (r *KeywordRepository) GetKeywordsBatchWithWeights(ctx context.Context, noteIDs []uuid.UUID) (map[uuid.UUID]map[string]float64, error) {
+	if len(noteIDs) == 0 {
+		return make(map[uuid.UUID]map[string]float64), nil
+	}
+
+	var keywords []NoteKeywordModel
+	if err := r.db.WithContext(ctx).
+		Where("note_id IN ?", noteIDs).
+		Find(&keywords).Error; err != nil {
+		return nil, err
+	}
+
+	result := make(map[uuid.UUID]map[string]float64)
+	for _, kw := range keywords {
+		if result[kw.NoteID] == nil {
+			result[kw.NoteID] = make(map[string]float64)
+		}
+		result[kw.NoteID][kw.Keyword] = kw.Weight
+	}
+	return result, nil
+}
+
 // SaveAll сохраняет ключевые слова для заметки (удаляет старые, вставляет новые)
 func (r *KeywordRepository) SaveAll(ctx context.Context, noteID uuid.UUID, keywords []NoteKeywordModel) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

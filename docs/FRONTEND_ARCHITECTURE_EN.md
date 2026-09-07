@@ -22,7 +22,7 @@ The Knowledge Graph frontend is a **note-centric Svelte 5 application** with gra
 - **Framework**: Svelte 5 (Runes mode)
 - **Language**: TypeScript
 - **Styling**: CSS with CSS variables for theming
-- **Visualization**: 
+- **Visualization**:
   - **3D (Primary)**: Three.js + d3-force-3d physics
   - **2D (Fallback)**: D3-force + Canvas API
 - **Testing**: Playwright + Cucumber (BDD)
@@ -33,19 +33,7 @@ The Knowledge Graph frontend is a **note-centric Svelte 5 application** with gra
 The 3D graph visualization is organized in modular layers:
 
 ```
-src/lib/three/
-├── core/
-│   ├── sceneSetup.ts         # Scene, camera, renderer initialization
-│   └── controls.ts           # OrbitControls, mouse interactions
-├── simulation/
-│   └── forceSimulation.ts    # d3-force-3d physics engine integration
-├── rendering/
-│   ├── objectManager.ts      # Node/link mesh management
-│   ├── nodeFactory.ts        # 3D node geometry creation
-│   ├── linkFactory.ts        # Link line geometry creation
-│   └── labelFactory.ts       # Text label management
-└── camera/
-    └── cameraUtils.ts        # Animation, zoom, positioning utilities
+(frozen/removed for v1.0 — the src/shared/three/ module no longer exists)
 ```
 
 ### Progressive Rendering (Fog of War)
@@ -77,34 +65,32 @@ cameraUtils.autoZoomToFit(nodes, padding)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Main Page (/)                               │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │                 NoteListView (Primary)                     ││
-│  │     Grid of note cards with search and filters             ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              │                                   │
-│         ┌────────────────────┼────────────────────┐             │
-│         │                    │                    │             │
-│    ┌────▼────┐         ┌────▼────┐         ┌────▼────┐       │
-│    │Floating │         │  Note   │         │ Create  │       │
-│    │Controls │         │SidePanel│         │  Modal  │       │
-│    └─────────┘         └─────────┘         └─────────┘       │
-│                                                                  │
+│  App Shell (/*) - All Pages                                      │
+│  ┌─────────┬──────────────────────────────────────────────────┐  │
+│  │Sidebar  │              Main Content Area                    │  │
+│  │(CCC)    │                                                  │  │
+│  │[v2.0]   │  ┌───────────────────────────────────────────┐  │  │
+│  │width:0  │  │           Main Page (/)                    │  │  │
+│  │(hidden) │  │                                            │  │  │
+│  │         │  │  ┌─────────────────────────────────────┐   │  │  │
+│  │         │  │  │      NoteListView (Primary)         │   │  │  │
+│  │         │  │  │   Grid of note cards with search    │   │  │  │
+│  │         │  │  └─────────────────────────────────────┘   │  │  │
+│  │         │  │         │                                   │  │  │
+│  │         │  │    ┌────┴────┐        ┌────┴────┐          │  │  │
+│  │         │  │    │Floating │        │  Note   │          │  │  │
+│  │         │  │    │Controls │        │SidePanel│          │  │  │
+│  │         │  │    └─────────┘        └─────────┘          │  │  │
+│  │         │  └───────────────────────────────────────────┘  │  │
+│  │         │                                                  │  │
+│  │         │  ┌─────────────────┐  ┌─────────────────────┐   │  │
+│  │         │  │ 2D Graph View   │  │  3D Graph View      │   │  │
+│  │         │  │ /graph/:id      │  │ /graph/3d/:id       │   │  │
+│  │         │  │                 │  │                     │   │  │
+│  │         │  │ GraphCanvas     │  │ Graph3D.svelte      │   │  │
+│  │         │  └─────────────────┘  └─────────────────────┘   │  │
+│  └─────────┴──────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
-                              │
-              ┌───────────────┴───────────────┐
-              │                               │
-     ┌────────▼─────────┐          ┌──────────▼──────────┐
-     │  2D Graph View   │          │  3D Graph View      │
-     │  /graph/:id      │          │  /graph/3d/:id      │
-     │                  │          │                     │
-     │  GraphCanvas     │          │  Graph3D.svelte     │
-     │  ├── Nodes       │          │  ├── sceneSetup.ts  │
-     │  ├── Links       │          │  ├── forceSim       │
-     │  └── Canvas      │          │  └── Progressive    │
-     │                  │          │     Rendering       │
-     └──────────────────┘          └─────────────────────┘
 ```
 
 ## Component Hierarchy
@@ -167,8 +153,13 @@ Slide-out panel for note details:
 Modal for creating new notes:
 - Title input
 - Content textarea (with wiki link support `[[Link]]`)
-- Type selector (Star, Planet, Comet, Galaxy)
+- Type selector (star, planet, moon, comet, galaxy, nebula, asteroid, satellite, blackhole, unknown)
 - Save/Cancel actions
+
+**Node Type Display Logic**:
+- If node has a type → display that type
+- If node has no type → display as 'unknown' (question mark in dashed circle)
+- The 'unknown' type represents a conditional/indeterminate object of any shape
 
 ### 5. ConfirmModal.svelte
 
@@ -185,7 +176,33 @@ Smart component that decides between 2D and 3D:
 - Respects user preference via URL param (`?force3d=1`)
 - Falls back to 2D on low-end devices
 
-### 7. Graph3D.svelte (3D Visualization)
+### 7. Sidebar.svelte (Context Control Center) 🆕
+
+Reserved component for the future **Context Control Center (CCC)** - a left navigation panel for advanced filtering and graph navigation.
+
+**Status**: Reserved/Stub (width: 0, hidden)
+
+**Planned Modules (v2.0)**:
+1. **Note Groups (Projects/Folders)** - Manual grouping with drag-and-drop
+2. **Dynamic Clusters** - Auto-generated groups by semantic similarity
+3. **Advanced Filters** - Type, tags, keywords, custom labels with AND/OR logic
+4. **Saved Searches** - Bookmarked filter combinations
+
+**Current Implementation**:
+- Skeleton component present in all pages via `+layout.svelte`
+- App-shell flex layout ready for 280px panel activation
+- Zero visual impact until enabled
+
+**Activation** (future):
+```css
+/* In Sidebar.svelte */
+.sidebar-placeholder {
+  width: 280px;  /* Change from 0 */
+  padding: 1rem;
+}
+```
+
+### 8. Graph3D.svelte (3D Visualization)
 
 Three.js-based 3D graph visualization with progressive loading:
 
@@ -205,23 +222,23 @@ Three.js-based 3D graph visualization with progressive loading:
 - **Camera Animation**: Smooth transitions between views
 - **Stats Bar**: Shows loading progress and node count
 
-**Three.js Integration**:
+**Three.js Integration** — 3D graph is **frozen/removed for v1.0**; the `src/shared/three/` module no longer exists:
 ```typescript
-// Core modules
-import { setupScene } from '$lib/three/core/sceneSetup';
-import { createSimulation } from '$lib/three/simulation/forceSimulation';
-import { ObjectManager } from '$lib/three/rendering/objectManager';
-import { lerpCamera, autoZoomToFit } from '$lib/three/camera/cameraUtils';
+// Core modules (historical — 3D frozen/removed)
+// import { setupScene } from '$shared/three/core/sceneSetup';
+// import { createSimulation } from '$shared/three/simulation/forceSimulation';
+// import { ObjectManager } from '$shared/three/rendering/objectManager';
+// import { lerpCamera, autoZoomToFit } from '$shared/three/camera/cameraUtils';
 
 // Progressive loading flow
 onMount(async () => {
   const { scene, camera, renderer } = setupScene(container);
   const simulation = createSimulation();
   const objects = new ObjectManager(scene);
-  
+
   // Load graph data
   const graphData = await fetchGraphData(noteId, loadDepth);
-  
+
   // Progressive loading with fog animation
   await loadNodesProgressively(graphData.nodes, {
     batchSize: 5,
@@ -232,7 +249,7 @@ onMount(async () => {
       animateFogClearing();
     }
   });
-  
+
   // Auto-position camera
   autoZoomToFit(camera, objects.getNodes(), { padding: 50 });
 });
@@ -243,9 +260,76 @@ onMount(async () => {
 - `toggleAutoRotation()`: Enable/disable automatic camera rotation
 - `exportView()`: Export current camera position as shareable URL
 
+## Graph Data Loading and Filtering Flow
+
+On the main page (`/`) `+page.svelte` loads notes and graph data, normalizes the API response, falls back to a note-derived graph when the API returns empty or non-intersecting IDs, and then filters both the list and the graph reactively.
+
+### Loading sequence
+
+![Graph Data Loading and Filtering Flow](assets/graph-loading-flow.png)
+
+<details>
+<summary>Source (Mermaid)</summary>
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as +page.svelte
+    participant Notes as Notes API
+    participant Graph as Graph API
+    participant FS as FilterState
+    participant GC as GraphCanvas
+    participant LV as Note list
+
+    P->>Notes: getNotes()
+    P->>Graph: getFreshGraph() / getGraphWithPreload()
+    Notes-->>P: allNotes
+    Graph-->>P: graphResult
+
+    P->>P: validate graphResult structure
+    alt graphResult empty or node IDs do not intersect allNotes
+        P->>P: graphData = build from allNotes
+    else valid and intersecting
+        P->>P: graphData = normalize(graphResult)
+    end
+
+    P->>Graph: getFullGraphData() (after notes loaded)
+    Graph-->>P: rawData
+    P->>P: validate + normalize + intersection check
+
+    P->>FS: filterState.filterGraphData(graphData, allNotes)
+    FS-->>P: filteredGraphData
+    P->>FS: filterState.applyFiltersAndSort(allNotes)
+    FS-->>P: filteredNotes
+
+    GC->>P: render filteredGraphData.nodes
+    LV->>P: render filteredNotes
+
+    Note over GC,LV: FloatingControls triggers filterState.with({...})
+    GC->>P: request update
+    LV->>P: request update
+    P->>FS: re-derive filtered data
+```
+
+</details>
+
+### Key resilience rules
+
+1. **Empty graph fallback**: when `graphResult.nodes` is empty, missing, or invalid, `graphData` is built directly from `allNotes`.
+2. **Intersection fallback**: even when the graph API returns nodes, if none of the returned node IDs match the IDs in `allNotes`, the graph is rebuilt from `allNotes` to keep filtering consistent.
+3. **Reactive filtering**: `filteredNotes` and `filteredGraphData` are derived from `filterState`; `FloatingControls` updates `filterState` immutably via `filterState.with({...})`.
+4. **Cache busting**: `getNotes`, `getFreshGraph`, and `getGraphWithPreload` use `cache: "no-store"` so that tests and reloads never reuse stale responses.
+
+### Related code
+
+- `frontend/src/routes/+page.svelte` — `loadDataParallel()`, `loadGraphData()`, `applyFiltersAndSort()`
+- `frontend/src/entities/filter-state.ts` — `FilterState.filterGraphData()` / `applyFiltersAndSort()`
+- `frontend/src/shared/api/notes.ts` — `getNotes()`
+- `frontend/src/shared/api/graph.ts` — `getFreshGraph()`, `getGraphWithPreload()`, `getFullGraphData()`
+
 ## State Management
 
-### Graph Store (`$lib/stores/graph.ts`)
+### Graph Store (`$shared/stores/graph.ts`)
 
 ```typescript
 interface GraphState {
@@ -297,7 +381,7 @@ export const graphStore = writable<GraphState>({
 ### Navigation Flow
 
 ```
-Main Page (/) 
+Main Page (/)
     ├── Click Note Card → /notes/:id
     │   ├── Click "View Graph" → /graph/3d/:id
     │   └── Click "Edit" → /notes/:id/edit
@@ -455,7 +539,8 @@ npm run lint
 8. **Plugin System**: Third-party visualization plugins
 
 ### Long Term (v2.0)
-9. **Collaborative Editing**: WebRTC or WebSocket for real-time collaboration
-10. **Version History**: Note versioning with diff view
-11. **Advanced Analytics**: Usage statistics, most connected notes
-12. **Voice Input**: Speech-to-text for note creation
+9. **Context Control Center**: Left sidebar with groups, clusters, filters, saved searches
+10. **Collaborative Editing**: WebRTC or WebSocket for real-time collaboration
+11. **Version History**: Note versioning with diff view
+12. **Advanced Analytics**: Usage statistics, most connected notes
+13. **Voice Input**: Speech-to-text for note creation

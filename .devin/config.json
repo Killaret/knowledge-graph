@@ -1,0 +1,45 @@
+{
+  "_comment": "Проектные разрешения Devin. Личный оверрайд — .devin/config.local.json (не в git). Деструктивные команды запрещены здесь намеренно: удаление данных Personal-стека допускается только после проверки бэкапа, см. docs/AI_PROCESS_AUDIT.md, находка B-1, и docs/AI_AGENT_PROTOCOL.md.",
+  "permissions": {
+    "allow": [
+      "Exec(go test)",
+      "Exec(go vet)",
+      "Exec(go build)",
+      "Exec(npm run test:unit)",
+      "Exec(npm run test:coverage)",
+      "Exec(npm run check)",
+      "Exec(npm run lint)",
+      "Exec(npx vitest)",
+      "Exec(pytest)",
+      "Exec(git status)",
+      "Exec(git diff)",
+      "Exec(git log)",
+      "Exec(git show)",
+      "Exec(docker compose ps)",
+      "Exec(docker ps)",
+      "Exec(netstat)",
+      "Exec(findstr)",
+      "Exec(grep)",
+      "Exec(head)",
+      "Exec(dir)",
+      "Exec(cd)",
+      "Exec(Select-String)",
+      "Exec(Select-Object)",
+      "Exec(sleep)",
+      "Exec(curl)",
+      "Exec(act)",
+      "Exec(gh repo)"
+    ],
+    "deny": [
+      "Exec(docker volume rm)",
+      "Exec(docker volume prune)",
+      "Exec(docker system prune)",
+      "Exec(rm)",
+      "Exec(rmdir)",
+      "Exec(del)",
+      "Exec(Remove-Item)",
+      "Exec(Format-Volume)",
+      "Exec(Clear-RecycleBin)"
+    ]
+  }
+}

@@ -29,7 +29,7 @@ func setupRecommendationRepoMock(t *testing.T) (*RecommendationRepository, sqlmo
 	}
 }
 
-func TestRecommendationRepository_Get(t *testing.T) {
+func TestRecommendationRepository_GetRecommendations(t *testing.T) {
 	repo, mock, cleanup := setupRecommendationRepoMock(t)
 	defer cleanup()
 
@@ -46,7 +46,7 @@ func TestRecommendationRepository_Get(t *testing.T) {
 			`SELECT * FROM "note_recommendations" WHERE note_id = $1 ORDER BY score DESC LIMIT $2`,
 		)).WithArgs(noteID, limit).WillReturnRows(rows)
 
-		recs, err := repo.Get(ctx, noteID, limit)
+		recs, err := repo.GetRecommendations(ctx, noteID, limit)
 		require.NoError(t, err)
 		assert.Len(t, recs, 2)
 		assert.Equal(t, 0.9, recs[0].Score)
@@ -59,7 +59,7 @@ func TestRecommendationRepository_Get(t *testing.T) {
 			`SELECT * FROM "note_recommendations" WHERE note_id = $1 ORDER BY score DESC LIMIT $2`,
 		)).WithArgs(noteID, limit).WillReturnRows(sqlmock.NewRows([]string{"note_id", "recommended_note_id", "score", "created_at", "updated_at"}))
 
-		recs, err := repo.Get(ctx, noteID, limit)
+		recs, err := repo.GetRecommendations(ctx, noteID, limit)
 		require.NoError(t, err)
 		assert.Empty(t, recs)
 		assert.NoError(t, mock.ExpectationsWereMet())

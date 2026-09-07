@@ -8,11 +8,8 @@ import (
 
 	"knowledge-graph/internal/domain/graph"
 	"knowledge-graph/internal/domain/note"
-	"knowledge-graph/internal/infrastructure/db/postgres"
 
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 // NoteRepository defines the interface for note operations needed by RefreshService
@@ -35,25 +32,25 @@ var _ RefreshServiceInterface = (*RefreshService)(nil)
 
 // RefreshService handles background recalculation of note recommendations
 type RefreshService struct {
-	db           *gorm.DB
-	redis        *redis.Client
+	noteRepo     NoteRepository
+	recRepo      Repository
 	traversalSvc TraversalService
 	topN         int
 }
 
 // NewRefreshService creates a new refresh service
 // Note: traversalSvc can be *graph.TraversalService which implements TraversalService interface
-func NewRefreshService(db *gorm.DB, redis *redis.Client, traversalSvc TraversalService, topN int) *RefreshService {
+func NewRefreshService(noteRepo NoteRepository, recRepo Repository, traversalSvc TraversalService, topN int) *RefreshService {
 	return &RefreshService{
-		db:           db,
-		redis:        redis,
+		noteRepo:     noteRepo,
+		recRepo:      recRepo,
 		traversalSvc: traversalSvc,
 		topN:         topN,
 	}
 }
 
 // RefreshRecommendations recalculates and atomically updates recommendations for a note
-// Uses database transaction to ensure consistency and prevent race conditions
+// Uses repository transaction to ensure consistency and prevent race conditions
 func (s *RefreshService) RefreshRecommendations(ctx context.Context, noteID uuid.UUID) error {
 	start := time.Now()
 	log.Printf("[RefreshService] Starting refresh recommendations for note %s", noteID)
@@ -62,13 +59,17 @@ func (s *RefreshService) RefreshRecommendations(ctx context.Context, noteID uuid
 	}()
 
 	// Verify note exists
-	noteRepo := postgres.NewNoteRepository(s.db, s.redis)
-	n, err := noteRepo.FindByID(ctx, noteID)
+	n, err := s.noteRepo.FindByID(ctx, noteID)
 	if err != nil {
 		return fmt.Errorf("note not found: %w", err)
 	}
 	if n == nil {
 		return fmt.Errorf("note not found: %s", noteID)
+	}
+
+	// Pass the note's creator so graph-service visibility filtering is applied.
+	if n.CreatorID() != nil {
+		ctx = graph.WithUserID(ctx, n.CreatorID().String())
 	}
 
 	// Get fresh recommendations via BFS traversal
@@ -84,26 +85,9 @@ func (s *RefreshService) RefreshRecommendations(ctx context.Context, noteID uuid
 	}
 
 	// Atomic update: insert/update new recommendations and delete stale ones
-	// This runs in a transaction to ensure consistency
-	err = s.db.Transaction(func(tx *gorm.DB) error {
-		repo := postgres.NewRecommendationRepository(tx)
-
-		// Save new recommendations (upsert with ON CONFLICT)
-		if err := repo.SaveBatch(ctx, noteID, recs); err != nil {
-			return fmt.Errorf("failed to save recommendations: %w", err)
-		}
-
-		// Delete recommendations that are no longer in the top N
-		if err := repo.DeleteNotInBatch(ctx, noteID, recs); err != nil {
-			return fmt.Errorf("failed to delete stale recommendations: %w", err)
-		}
-
-		return nil
-	})
-
-	if err != nil {
+	if err := s.recRepo.ReplaceRecommendations(ctx, noteID, recs); err != nil {
 		log.Printf("[RefreshService] Failed to refresh recommendations for note %s: %v", noteID, err)
-		return err
+		return fmt.Errorf("failed to replace recommendations: %w", err)
 	}
 
 	log.Printf("[RefreshService] Successfully refreshed %d recommendations for note %s", len(recs), noteID)
