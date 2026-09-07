@@ -338,7 +338,8 @@ export const ru: Record<string, string> = {
   // Public note detail panel
   "publicNoteDetail.title": "Публичная заметка",
   "publicNoteDetail.relatedNotes": "Связанные заметки ({{count}})",
-  "publicNoteDetail.signInPrompt": "Войдите, чтобы просмотреть полное содержание и управлять заметками.",
+  "publicNoteDetail.signInPrompt":
+    "Войдите, чтобы просмотреть полное содержание и управлять заметками.",
   "publicNoteDetail.signIn": "Войти",
   "publicNoteDetail.notFound": "Заметка не найдена",
 

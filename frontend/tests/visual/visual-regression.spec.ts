@@ -24,10 +24,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await page.addInitScript(() => {
       // Disable cockpit panel slide/resize animations so the 3D scene element
       // is stable before the element-screenshot in argosScreenshot.
-      localStorage.setItem(
-        "cockpit-settings",
-        JSON.stringify({ reducedMotion: true })
-      );
+      localStorage.setItem("cockpit-settings", JSON.stringify({ reducedMotion: true }));
 
       // Seeded Math.random for deterministic canvas / d3-force / particle output
       let seed = 12345;

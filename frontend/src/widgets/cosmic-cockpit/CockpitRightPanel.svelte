@@ -67,13 +67,7 @@
         onCreateChildNote={handleCreateChild}
       />
     {:else}
-      <PublicNoteDetails
-        {nodeId}
-        {notes}
-        {links}
-        onClose={handleClose}
-        {onSignIn}
-      />
+      <PublicNoteDetails {nodeId} {notes} {links} onClose={handleClose} {onSignIn} />
     {/if}
   {:else}
     <div class="empty-state">

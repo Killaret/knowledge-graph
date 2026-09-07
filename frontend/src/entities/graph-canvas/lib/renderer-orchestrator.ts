@@ -323,13 +323,7 @@ export function drawAllNodes(
     const isNeighbor =
       hoveredNodeId != null && hoveredNeighborIds ? hoveredNeighborIds.has(node.id) : false;
     const isSearchMatch = searchMatchIds?.has(node.id) ?? false;
-    const finalOpacity = hoveredNodeId
-      ? isHovered
-        ? 1
-        : isNeighbor
-          ? 0.85
-          : 0.3
-      : opacity;
+    const finalOpacity = hoveredNodeId ? (isHovered ? 1 : isNeighbor ? 0.85 : 0.3) : opacity;
     const nodeSimplified = simplified && !isHovered && !isNeighbor;
 
     const previousAlpha = ctx.globalAlpha;

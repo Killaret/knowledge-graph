@@ -406,9 +406,7 @@ describe("GraphCanvas - Rendering", () => {
     unmount();
 
     const onUpdateLogs = logSpy.mock.calls.filter(
-      (call) =>
-        typeof call[0] === "string" &&
-        call[0].includes("animation onUpdate called")
+      (call) => typeof call[0] === "string" && call[0].includes("animation onUpdate called")
     );
     expect(onUpdateLogs).toHaveLength(0);
 
