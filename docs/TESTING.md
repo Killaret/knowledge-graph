@@ -202,7 +202,7 @@ Runs the same command-bearing checks as the five jobs in `.github/workflows/_cor
 ./scripts/testing/check-all.sh --quick
 ```
 
-The quick mode skips backend integration tests explicitly. A summary containing skipped phases says `COMPLETE WITH SKIPS`, not that all checks passed. `check-core-workflow-sync.mjs` fails when a command-bearing workflow step and `core-checks.tsv` diverge. The scripts remove the `backend/cover.out` file they produce; generated config drift remains in the working tree and is reported as a failure.
+The quick mode skips backend and graph-service integration tests explicitly. A summary containing skipped phases says `COMPLETE WITH SKIPS`, not that all checks passed. `check-core-workflow-sync.mjs` fails when a command-bearing workflow step and `core-checks.tsv` diverge. The scripts remove the `backend/cover.out` file they produce; generated config drift remains in the working tree and is reported as a failure.
 
 ### run-full-test-cycle
 Orchestrates the complete testing cycle with **full stack isolation**.
@@ -229,7 +229,7 @@ Orchestrates the complete testing cycle with **full stack isolation**.
 7. **Docker build verification** - Check Docker images
 8. **NLP service tests** - Verify NLP health and functionality
 9. **Backend unit tests** - `go test ./...`
-10. **Backend integration tests** - `go test -tags=integration ./...` (requires Linux/WSL Docker)
+10. **Backend and graph-service integration tests** - `go test -tags=integration ./...` in `backend` and `services/graph-service` (requires Linux/WSL Docker)
 11. **Backend API verification** - Test critical endpoints
 12. **Asynchronous tasks verification** - Check worker and Redis
 13. **PGVECTOR verification** - Verify pgvector extension
@@ -351,7 +351,7 @@ The manual test checklist covers:
 
 **Notes:**
 - Backend unit tests (`go test ./...`) pass with 1085 passing, 4 skipped, 0 failures.
-- Backend integration tests are excluded by default; run `go test -tags=integration ./...` on Linux/WSL or in CI.
+- Integration tests are excluded by default; run `go test -tags=integration ./...` in `backend` and `services/graph-service` on Linux/WSL or in CI. The `graph-service-checks` CI job runs them after the unit tests.
 - Frontend unit tests (`npm run test:unit`) pass with 923 passing, 0 skipped, 0 failures.
 - Frontend E2E and BDD tests are not part of `npm run test:unit`; they require the isolated test stack.
 - **Latest run (2026-08-10):** real-auth E2E `27/27` passed, skip-auth E2E `75 passed / 11 skipped`, BDD `5 scenarios / 43 steps` passed, visual `13/13` passed.
@@ -402,6 +402,12 @@ go test -tags=integration ./...
 ```bash
 cd services/graph-service
 go test ./...
+```
+
+**Integration tests** (testcontainers, requires Docker; run in CI and `check-all`):
+```bash
+cd services/graph-service
+go test -tags=integration -p=1 -count=1 ./...
 ```
 
 ### Frontend Tests

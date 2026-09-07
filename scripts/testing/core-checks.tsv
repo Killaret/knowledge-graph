@@ -5,6 +5,7 @@ backend-coverage	Backend coverage >= 64.8%	backend-checks	Check backend coverage
 backend-config	Backend config validation	backend-checks	Validate config	backend	go run cmd/checkconfig/main.go ../knowledge-graph.config.json	go run cmd/checkconfig/main.go ../knowledge-graph.config.json	0	go
 backend-integration	Backend integration tests	backend-integration-tests	Run backend integration tests	backend	go test -tags=integration -p=1 -count=1 ./...	go test -tags=integration -p=1 -count=1 ./...	1	docker+go
 graph-unit	Graph-service unit tests	graph-service-checks	Run graph-service unit tests	services/graph-service	go test -v ./...	go test -v ./...	0	go
+graph-integration	Graph-service integration tests	graph-service-checks	Run graph-service integration tests	services/graph-service	go test -tags=integration -p=1 -count=1 ./...	go test -tags=integration -p=1 -count=1 ./...	1	docker+go
 frontend-circular	Frontend circular dependencies	frontend-checks	Check for circular dependencies	frontend	npm run check:circular	npm run check:circular	0	npm
 frontend-lint	Frontend ESLint	frontend-checks	Run ESLint	frontend	npm run lint	npm run lint	0	npm
 frontend-format	Frontend formatting	frontend-checks	Check formatting	frontend	npm run format:check	npm run format:check	0	npm
