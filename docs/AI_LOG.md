@@ -115,3 +115,4 @@
 | 2026-09-07 | Claude Code | CI-3 находки 1–5 приняты: порог покрытия и равенство команд ловятся, `-Strict`, `lint` без `--fix` | принято | [`tasks/CI-3-review-findings.md`](tasks/CI-3-review-findings.md) |
 | 2026-09-07 | Claude Code | A-3 принят: три мутации боевого кода роняют три новых сценария | принято | [`tasks/A-3-review-findings.md`](tasks/A-3-review-findings.md) |
 | 2026-09-07 | Claude Code | Правило `check-all` перед приёмкой принято: одна строка в обеих копиях, ужесточение | принято | `9ad375f` |
+| 2026-09-07 | Claude Code | VIS-1 отклонён: прогон зелёный, но сессия не поднимается, `stableRender` портит query, анонимный поиск даёт 401 в эталоне | отклонено | [`tasks/VIS-1-round2-review-findings.md`](tasks/VIS-1-round2-review-findings.md) |

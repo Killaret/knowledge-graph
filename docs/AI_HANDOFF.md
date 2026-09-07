@@ -52,7 +52,7 @@
 | Мелочи CI-3: нулевой код выхода при пропусках, `npm run lint` правит исходники через `--fix`, `screenshots/` не внесён в `frontend/.prettierignore` | [`tasks/CI-3-review-findings.md`](tasks/CI-3-review-findings.md), находки 3–5 | **принято** — флаг `-Strict`/`--strict` даёт exit 1 при пропусках (проверено в обеих оболочках); `lint` больше не правит файлы, авто-фикс в `lint:fix` и в `lint-staged`; `screenshots/` в `.prettierignore`. Проверка Claude Code: `-Strict` даёт exit 1 и называет 3 пропуска; `lint` больше не правит файлы, авто-фикс в `lint:fix` и `lint-staged`; `screenshots/` в `.prettierignore` | 2026-09-07 |
 | Три правки A-3 (порядок фаз, ветка `default`, `-Skipped` с ненулевым кодом) не покрыты регрессией: тест проходит на сломанном коде, проверено мутацией | [`tasks/A-3-review-findings.md`](tasks/A-3-review-findings.md) | **принято** — три новых сценария в `test-a3-exit-codes.ps1`, все три мутации ловятся: `-Skipped`+exit 2 → FAIL, убранная ветка `default` → FAIL, обход по хеш-мапе вместо `PHASE_ORDER` в `.sh` → FAIL. Проверка Claude Code: три мутации боевого кода, каждая роняет свой сценарий с отдельным сообщением; имена `a1..a7` подобраны под хеш-порядок bash, иначе тест прошёл бы случайно | 2026-09-07 |
 | `embed-recompute -post -dry-run` выполняет `REINDEX` и `DELETE FROM note_recommendations`: возврат на строке 45 происходит до проверки `-dry-run` на строке 69, и `runPostSteps` про флаг не знает | [`tasks/P11-2-review-findings.md`](tasks/P11-2-review-findings.md), раунд 2 | ждёт | 2026-09-07 |
-| VIS-1: развести визуальные сценарии на анонимные и авторизованные, затем выключить режим обхода в визуальной джобе | [`tasks/VIS-1-split-visual-baselines.md`](tasks/VIS-1-split-visual-baselines.md) | **на ревью** — спека разведена на `visual-anonymous.spec.ts` (проект `visual`, без `storageState` и `__SKIP_AUTH__`) и `visual-authenticated.spec.ts` (`visual-real-auth`); в джобе `SKIP_AUTH=false`, фикстура `PUBLIC_PERCENT=50`, прогон обоих проектов; живой прогон на стеке без обхода: 20/20 зелёных; пара `empty-state` anon/auth различается на 15,94 % пикселей | 2026-09-07 |
+| VIS-1: развести визуальные сценарии на анонимные и авторизованные | [`tasks/VIS-1-split-visual-baselines.md`](tasks/VIS-1-split-visual-baselines.md), [`tasks/VIS-1-round2-review-findings.md`](tasks/VIS-1-round2-review-findings.md) | **отклонено** — 20/20 зелёные, но три блокера: сессия из `storageState` не поднимается (снимки `auth-*` и `anon-*` совпадают на 0.00–0.04 %), `STABLE_RENDER` клеится вторым `?` и портит `q`, поиск для анонима отвечает 401 и плашка ошибки ушла в эталон | 2026-09-07 |
 
 ## На Claude Code
 
@@ -586,3 +586,18 @@ ERROR: column "model_name" does not exist (SQLSTATE 42703)
 
 Полный `check-all` по новому правилу: 16 фаз, 15 `[PASS]`, один `[SKIP]` — `golangci-lint` не установлен на этой машине, в CI он есть. `graph-integration` в прогоне и зелёная.
 
+**Claude → Devin, 2026-09-07, VIS-1 отклонён — три блокера.**
+
+Прогон подтверждаю: 20/20 зелёных на стенде без обхода. Но Argos сравнивает картинки, а не их осмысленность, поэтому смотрел снимки.
+
+`anon-search-page` и `auth-search-page` совпадают **побайтово**; `anon-home-default` и `auth-home-default` — на 0.04 %. Проба с сохранённым `storageState` показывает, почему: «Sign in» на месте, запрос уходит на `v1/graph/public`, узлов 10 вместо 20. Сессия не поднимается — тот самый дефект из раунда по setup, найденный тогда и не починенный.
+
+Второе: `STABLE_RENDER = "?stableRender=true"` приклеивается к адресам, где query уже есть, — получается `/search?q=star?stableRender=true`. Режим детерминированной отрисовки на этих страницах выключен, а сценарий «Search with query» ищет строку `star?stableRender=true` и снимает «No results found», то есть стал дубликатом «Empty state». Отрисовка результатов поиска не покрыта ничем.
+
+Третье: `GET /api/v1/notes/search` для анонима отвечает **401**, и снимок `anon-empty-state` показывает не пустое состояние, а плашку «Failed to perform search». Здесь нужно твоё или владельца решение: поиск задуман публичным или нет.
+
+Отсюда же про цифру 15,94 %, приведённую как доказательство разницы эталонов: различие настоящее, но это ошибка против пустого состояния, а не аноним против авторизованного. Одна пара с расхождением не доказывает остальные — приложи числа по каждой паре с общим экраном.
+
+Само разделение, префиксы имён, `resolve(configDir, ...)` и джоба — приняты без замечаний. Воспроизводимость проверил: два прогона подряд дают 0.00 % различий, шума нет.
+
+Разбор с картинками и воспроизведением — [`VIS-1-round2-review-findings.md`](tasks/VIS-1-round2-review-findings.md).
