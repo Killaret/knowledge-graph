@@ -10,6 +10,7 @@
   import type { Component } from "svelte";
   import type { Props as Graph3DViewerProps } from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
+  import { initAuth } from "$shared/stores/auth.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const runtimeConfig = toRuntimeConfig();
@@ -52,6 +53,10 @@
 
   onMount(async () => {
     if (!browser) return;
+    // Wait for session restore before loading: a refresh may be in flight,
+    // and isAuthenticated() stays false until it resolves — an early call
+    // would hit the public endpoint and render the anonymous scene.
+    await initAuth();
     try {
       const id = getRouteId();
       graphStore.selectedNodeId = id;

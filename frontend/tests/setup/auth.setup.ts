@@ -18,6 +18,11 @@ const STORAGE_STATE = resolve(dirname(fileURLToPath(import.meta.url)), ".auth/te
  * resulting cookies (HttpOnly refresh token) and session hint to a storage
  * state file. The `visual-real-auth` project then uses this state so tests
  * enter the app already authenticated.
+ *
+ * Note: the saved state is one-shot. The backend rotates the refresh token,
+ * so a reused file yields `refresh 401` and the app silently falls back to
+ * the anonymous view. Always rerun this setup project (`visual-real-auth`
+ * depends on it) instead of reusing a stale file.
  */
 setup("authenticate as testuser", async ({ page }) => {
   await page.goto("/auth/login");

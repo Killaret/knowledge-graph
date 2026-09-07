@@ -17,6 +17,10 @@ interface PreloadedGraphData {
   ttl: number; // Time to live в миллисекундах
   lastHash?: string; // Layout hash from graph-service for delta updates
   delta?: GraphDeltaData; // Delta for incremental updates
+  // True when the data was fetched via the public endpoint while anonymous.
+  // Such a cache must never be served to an authenticated session: it would
+  // silently downgrade the scene to the public subset after login.
+  isPublic?: boolean;
 }
 
 interface PreloadedAchievementsData {
@@ -79,7 +83,13 @@ class PreloadServiceClass {
 
   public async preloadAuthenticatedGraph(): Promise<void> {
     if (this.preloadPromise) {
-      return this.preloadPromise;
+      // An in-flight guest preload resolves with public data; it must not
+      // satisfy the authenticated cache. Wait for it, then run our own fetch
+      // unless that in-flight call already produced authenticated data.
+      await this.preloadPromise;
+      if (this.preloadedGraph && !this.preloadedGraph.isPublic) {
+        return;
+      }
     }
 
     if (!browser || this.isPreloading || !isAuthenticated()) {
@@ -134,6 +144,7 @@ class PreloadServiceClass {
         timestamp: Date.now(),
         ttl: this.GRAPH_TTL,
         lastHash: graphData.hash,
+        isPublic: false,
       };
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -154,6 +165,7 @@ class PreloadServiceClass {
         timestamp: Date.now(),
         ttl: this.GRAPH_TTL,
         lastHash: graphData.hash,
+        isPublic: true,
       };
       if (import.meta.env.DEV) {
         console.log("[PreloadService] Public graph preloaded successfully");
@@ -176,6 +188,7 @@ class PreloadServiceClass {
       timestamp: Date.now(),
       ttl: this.GRAPH_TTL,
       lastHash: graphData.hash,
+      isPublic: !isAuthenticated(),
     };
   }
 
@@ -244,6 +257,12 @@ class PreloadServiceClass {
    */
   public getPreloadedGraphData(): PreloadedGraphData | null {
     if (!this.preloadedGraph) {
+      return null;
+    }
+
+    // A public graph must not be served to an authenticated caller: it is a
+    // subset of the user's data and would render the anonymous scene.
+    if (this.preloadedGraph.isPublic && isAuthenticated()) {
       return null;
     }
 

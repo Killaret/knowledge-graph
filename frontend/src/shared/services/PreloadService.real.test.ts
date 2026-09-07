@@ -211,6 +211,43 @@ describe("PreloadService (real)", () => {
     expect(stats.graphAge).toBe(0);
   });
 
+  it("does not serve a public cached graph to an authenticated session", async () => {
+    // Regression: a graph fetched via the public endpoint while anonymous
+    // must not be returned once the session is authenticated — it would
+    // silently render the anonymous subset after login/session restore.
+    await PreloadService.startPreload();
+    expect(PreloadService.getPreloadedGraph()).not.toBeNull();
+
+    mockAuth.isAuthenticated.mockReturnValue(true);
+
+    expect(PreloadService.getPreloadedGraph()).toBeNull();
+    expect(PreloadService.getPreloadedGraphData()).toBeNull();
+  });
+
+  it("does not let an in-flight guest preload satisfy an authenticated preload", async () => {
+    // Regression: preloadAuthenticatedGraph used to return the in-flight
+    // guest promise, leaving the public graph cached for an authenticated
+    // session (found via auth-setup review: graph/full returned 100 nodes
+    // but the scene stayed at the public 20).
+    let resolveGuest: (value: any) => void = () => {};
+    mockGraphApi.getFullGraphData.mockImplementationOnce(
+      () => new Promise((r) => (resolveGuest = r))
+    );
+
+    const guest = PreloadService.startPreload();
+
+    mockAuth.isAuthenticated.mockReturnValue(true);
+    const auth = PreloadService.preloadAuthenticatedGraph();
+
+    resolveGuest({ ...mockGraphData, hash: "public-hash" });
+    await Promise.all([guest, auth]);
+
+    // The guest fetch completed, then a separate authenticated fetch ran.
+    expect(mockGraphApi.getFullGraphData).toHaveBeenCalledTimes(2);
+    // The authenticated reader gets the second (non-public) result.
+    expect(PreloadService.getPreloadedGraph()).toEqual({ ...mockGraphData, hash: "hash-1" });
+  });
+
   it("clears and invalidates caches", async () => {
     await PreloadService.startPreload();
     expect(PreloadService.hasPreloadedData()).toBe(true);
