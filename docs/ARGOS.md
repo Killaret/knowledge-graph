@@ -20,7 +20,7 @@ This project uses the official [`@argos-ci/playwright`](https://www.argos-ci.com
 | `ARGOS_TOKEN` | Repository token for uploading screenshots. |
 | `FRONTEND_URL` | Target frontend URL for tests (default: `http://localhost:3002`). |
 | `ARGOS_UPLOAD_LOCAL` | Set to `true` to upload from a local run. CI uploads automatically. |
-| `ARGOS_REFERENCE_BRANCH` | Baseline branch for comparisons (`ai-agents` for this work). |
+| `ARGOS_REFERENCE_BRANCH` | Baseline branch for comparisons (`main`). |
 | `SKIP_AUTH` | Set to `true` for the test stack so the backend accepts the test user. |
 
 ### GitHub CI Workflow
@@ -96,7 +96,9 @@ FRONTEND_URL=http://localhost:3002 ARGOS_UPLOAD_LOCAL=true npm run test:visual
 
 ### Baselines
 
-Argos uses the `ARGOS_REFERENCE_BRANCH` (`ai-agents`) as the baseline for new PRs. The first upload on a branch creates the baseline; subsequent uploads are compared against it.
+Argos uses the `ARGOS_REFERENCE_BRANCH` (`main`) as the baseline for new PRs. The first upload on a branch creates the baseline; subsequent uploads are compared against it.
+
+The CI job deliberately runs only the `visual` project with `SKIP_AUTH=true` for now. The visual suite was written against an authenticated session that bypass mode was silently supplying, so the anonymous project fails without it. Splitting the scenarios is [`VIS-1`](tasks/VIS-1-split-visual-baselines.md); the second baseline is added once that lands.
 
 ## Test Data
 

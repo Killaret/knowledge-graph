@@ -464,7 +464,7 @@ FRONTEND_URL=http://127.0.0.1:3002 ARGOS_UPLOAD_LOCAL=true npm run test:visual
 **Configuration:**
 - `ARGOS_TOKEN` — required for upload.
 - `FRONTEND_URL` — defaults to `http://127.0.0.1:3002` (test stack).
-- `ARGOS_REFERENCE_BRANCH` — baseline branch (`ai-agents` for this work).
+- `ARGOS_REFERENCE_BRANCH` — baseline branch (`main`).
 - `ARGOS_UPLOAD_LOCAL` — set to `true` to upload from a local run.
 
 **Determinism helpers:**

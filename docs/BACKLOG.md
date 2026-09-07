@@ -468,6 +468,14 @@ Description: Кластеризация графа и визуализация �
 ---
 ## ⚠️ Technical Debt & Research
 
+### TD-TLS: TLS termination for nginx
+
+**Priority:** 🟢 Low
+**Status:** ⏸️ Deferred by owner (2026-09-07)
+**Description:** The gateway serves plain HTTP. The public perimeter itself was separated in AUD-5 — nginx strips client-supplied internal headers and graph-service gates `X-User-Id` behind an off-by-default flag — but transport is unencrypted.
+
+Deferred because the project has no domain and no public hosting, so TLS would buy nothing today. Revisit if the stack is ever exposed beyond localhost; at that point Let's Encrypt with a real domain is the option worth taking, not self-signed certificates, which only teach the browser to ignore warnings and break the E2E suite.
+
 ### TD-1: CelestialBody Auto-Assignment (MVP)
 
 **Priority:** 🟡 Medium
