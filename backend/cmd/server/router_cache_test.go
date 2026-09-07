@@ -13,10 +13,10 @@ func TestCacheControlMiddlewareHeaders(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
-		name      string
-		maxAge    int
-		wantCC    string
-		wantVary  string
+		name       string
+		maxAge     int
+		wantCC     string
+		wantVary   string
 		wantPublic bool
 	}{
 		{

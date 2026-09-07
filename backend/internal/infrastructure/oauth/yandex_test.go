@@ -116,7 +116,8 @@ func TestYandexProvider_UserInfo_EmptyEmail(t *testing.T) {
 
 func TestYandexProvider_UserInfo_InvalidJSON(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("not-json"))
+		_, err := w.Write([]byte("not-json"))
+		require.NoError(t, err)
 	}))
 	defer ts.Close()
 

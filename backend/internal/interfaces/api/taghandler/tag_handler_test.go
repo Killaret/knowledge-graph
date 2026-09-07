@@ -2,6 +2,7 @@ package taghandler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -24,7 +25,7 @@ func createTestNote(t *testing.T, repo *mockNoteRepo, title string) *note.Note {
 	metadata, err := note.NewMetadata(map[string]interface{}{})
 	require.NoError(t, err)
 	n := note.NewNote(noteTitle, content, "star", metadata)
-	err = repo.Save(nil, n)
+	err = repo.Save(context.TODO(), n)
 	require.NoError(t, err)
 	return n
 }
@@ -32,7 +33,7 @@ func createTestNote(t *testing.T, repo *mockNoteRepo, title string) *note.Note {
 func createTestTag(t *testing.T, repo *mockTagRepo, name string) *tagDomain.Tag {
 	tag, err := tagDomain.New(name)
 	require.NoError(t, err)
-	err = repo.Create(nil, tag)
+	err = repo.Create(context.TODO(), tag)
 	require.NoError(t, err)
 	return tag
 }
@@ -257,7 +258,7 @@ func TestHandler_Delete(t *testing.T) {
 
 		assert.Equal(t, http.StatusNoContent, w.Code)
 
-		found, err := tagRepo.FindByID(nil, tag.ID())
+		found, err := tagRepo.FindByID(context.TODO(), tag.ID())
 		require.NoError(t, err)
 		assert.Nil(t, found)
 	})
@@ -291,7 +292,7 @@ func TestHandler_AddTagToNote(t *testing.T) {
 	})
 
 	t.Run("already assigned", func(t *testing.T) {
-		err := tagRepo.AddTagToNote(nil, n.ID(), tag.ID())
+		err := tagRepo.AddTagToNote(context.TODO(), n.ID(), tag.ID())
 		require.NoError(t, err)
 
 		body := map[string]interface{}{"tag_id": tag.ID().String()}
@@ -337,7 +338,7 @@ func TestHandler_RemoveTagFromNote(t *testing.T) {
 	r, tagRepo, noteRepo := setupTagRouter()
 	n := createTestNote(t, noteRepo, "note")
 	tag := createTestTag(t, tagRepo, "removable")
-	err := tagRepo.AddTagToNote(nil, n.ID(), tag.ID())
+	err := tagRepo.AddTagToNote(context.TODO(), n.ID(), tag.ID())
 	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodDelete, "/notes/"+n.ID().String()+"/tags/"+tag.ID().String(), nil)
@@ -353,9 +354,9 @@ func TestHandler_GetTagsByNote(t *testing.T) {
 	n := createTestNote(t, noteRepo, "note")
 	tag1 := createTestTag(t, tagRepo, "t1")
 	tag2 := createTestTag(t, tagRepo, "t2")
-	err := tagRepo.AddTagToNote(nil, n.ID(), tag1.ID())
+	err := tagRepo.AddTagToNote(context.TODO(), n.ID(), tag1.ID())
 	require.NoError(t, err)
-	err = tagRepo.AddTagToNote(nil, n.ID(), tag2.ID())
+	err = tagRepo.AddTagToNote(context.TODO(), n.ID(), tag2.ID())
 	require.NoError(t, err)
 
 	t.Run("success", func(t *testing.T) {

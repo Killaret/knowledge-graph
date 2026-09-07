@@ -68,7 +68,7 @@ func TestDraftUpdate(t *testing.T) {
 	require.NoError(t, d.UpdateTitle("new title"))
 	assert.Equal(t, "new title", d.Title())
 
-	d.StartPublishing()
+	require.NoError(t, d.StartPublishing())
 	assert.Error(t, d.UpdateContent("x"))
 	assert.Error(t, d.UpdateTitle("y"))
 }

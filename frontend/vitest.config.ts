@@ -76,11 +76,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      include: [
-        "src/shared/**/*.{ts,svelte}",
-        "src/features/**/*.{ts,svelte}",
-        "src/components/**/*.{ts,svelte}",
-      ],
+      include: ["src/**/*.{ts,svelte}"],
       exclude: [
         "node_modules/",
         "vitest-setup.ts",

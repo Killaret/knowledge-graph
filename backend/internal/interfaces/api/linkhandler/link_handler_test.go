@@ -293,7 +293,7 @@ func TestGetLink(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	var resp map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	data := resp["data"].(map[string]interface{})
 	linkIDStr := data["id"].(string)
 	linkID, _ := uuid.Parse(linkIDStr)
@@ -1074,7 +1074,7 @@ func TestUpdateLink_Forbidden(t *testing.T) {
 	weight, _ := link.NewWeight(0.8)
 	linkMetadata, _ := link.NewMetadata(nil)
 	l := link.NewLinkWithCreator(sourceID, targetID, otherUser, linkType, weight, linkMetadata)
-	linkRepo.Save(context.Background(), l)
+	require.NoError(t, linkRepo.Save(context.Background(), l))
 
 	body := map[string]interface{}{"weight": 0.6}
 	jsonBody, _ := json.Marshal(body)

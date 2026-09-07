@@ -104,7 +104,7 @@ func TestLoggingMiddlewareWithError(t *testing.T) {
 	router := gin.New()
 	router.Use(LoggingMiddleware())
 	router.GET("/test", func(c *gin.Context) {
-		c.Error(assert.AnError)
+		_ = c.Error(assert.AnError)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "test error"})
 	})
 
@@ -252,8 +252,8 @@ func TestLoggingMiddlewareMultipleErrors(t *testing.T) {
 	router := gin.New()
 	router.Use(LoggingMiddleware())
 	router.GET("/test", func(c *gin.Context) {
-		c.Error(fmt.Errorf("error 1"))
-		c.Error(fmt.Errorf("error 2"))
+		_ = c.Error(fmt.Errorf("error 1"))
+		_ = c.Error(fmt.Errorf("error 2"))
 		c.JSON(http.StatusOK, gin.H{"message": "ok"})
 	})
 

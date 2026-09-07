@@ -11,6 +11,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/require"
 )
 
 // TestNLPClient_ExtractKeywords_Success тестирует успешное извлечение ключевых слов
@@ -46,7 +47,7 @@ func TestNLPClient_ExtractKeywords_Success(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -77,7 +78,8 @@ func TestNLPClient_ExtractKeywords_HTTPError(t *testing.T) {
 	// Создаём тестовый сервер, возвращающий ошибку
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal server error"))
+		_, err := w.Write([]byte("internal server error"))
+		require.NoError(t, err)
 	}))
 	defer server.Close()
 
@@ -100,7 +102,8 @@ func TestNLPClient_ExtractKeywords_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("invalid json"))
+		_, err := w.Write([]byte("invalid json"))
+		require.NoError(t, err)
 	}))
 	defer server.Close()
 
@@ -133,7 +136,7 @@ func TestNLPClient_Embed_Success(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -167,7 +170,7 @@ func TestNLPClient_Embed_CacheHit(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -201,7 +204,7 @@ func TestNLPClient_Embed_EmptyText(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -223,7 +226,7 @@ func TestNLPClient_ExtractKeywords_EmptyResponse(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -318,7 +321,7 @@ func TestNLPClient_Embed_RedisCache(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -367,7 +370,7 @@ func TestNLPClient_Similarity_Success(t *testing.T) {
 		response := map[string]interface{}{"similarity": expectedSimilarity}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -412,7 +415,7 @@ func TestNLPClient_Similarity_RedisCache(t *testing.T) {
 		response := map[string]interface{}{"similarity": expectedSimilarity}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -454,7 +457,7 @@ func TestNLPClient_ExtractKeywords_Retry(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 

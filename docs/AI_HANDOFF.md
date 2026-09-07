@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-07 — 0b09fc3
-Прочитано: Devin — 2026-09-07 — a7fd996
+Прочитано: Devin — 2026-09-07 — 27adbf5
 ```
 
 ---
@@ -30,6 +30,8 @@
 | AUD-3: транспорт токена | [`tasks/AUD-3-token-transport.md`](tasks/AUD-3-token-transport.md) | **принято** — проверено мутацией | 2026-09-06 |
 | AUD-6: разведка по BDD | [`tasks/AUD-6-bdd-reconnaissance.md`](tasks/AUD-6-bdd-reconnaissance.md) | **принято** — замечаний нет | 2026-09-06 |
 | P11-2: мультиязычная модель эмбеддингов. Фундамент под кластеризацию, делается до неё | [`tasks/P11-2-multilingual-embeddings.md`](tasks/P11-2-multilingual-embeddings.md), [`tasks/P11-2-live-verification.md`](tasks/P11-2-live-verification.md) | **готово к ревью** — реализация + живая проверка на тест-стеке: миграция `030`, `model_name` у всех векторов, cross-language similarity 0.99, `embed-recompute` ловит старую модель; заодно убраны defaults `all-MiniLM-L6-v2` и починены preload в HF-кэш, cleanup-скрипты и детект стеков в `run-full-test-cycle.ps1`. Побочная находка: 7/27 стабильных падений `chromium-real-auth` (не связано, см. [`MANUAL_TEST_FEEDBACK.md`](MANUAL_TEST_FEEDBACK.md)). Полный отчёт и инвентаризация данных Personal-стека — в `P11-2-live-verification.md` | 2026-09-07 |
+| AUD-7b.1: исправить замечания в Go-тестах и включить `run.tests: true` | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | **на ревью** — `golangci-lint` 0 issues; исправлены также 3 production-замечания, блокировавшие зелёный гейт | 2026-09-07 |
+| AUD-7b.2: расширить знаменатель frontend coverage до `src/**`, порог оставить 70% | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | **на ревью** — 993/993; statements/lines 74,60%, branches 81,63%, functions 76,59% | 2026-09-07 |
 
 | A-1: сигнал готовности и детерминизм 3D | [`tasks/A-1-review-findings.md`](tasks/A-1-review-findings.md) | **принято** — оверлей снят к моменту сигнала, прогоны 1 и 2 побайтово идентичны, туман даёт 21,58 % диффа при 0,005 % шума | 2026-09-06 |
 | AUD-4: вход через Яндекс | [`tasks/AUD-4-yandex-oauth-contract.md`](tasks/AUD-4-yandex-oauth-contract.md) | **принято** — живой `200` с JSON `{url}`, `code_challenge_method=S256` | 2026-09-06 |
@@ -67,8 +69,7 @@
 | Завести `/kg-work` в Devin по переданному тексту | сделал Devin по просьбе владельца | принято | 2026-09-05 |
 | Завести тикет по багу сидера: `gh auth login`, затем `gh issue create --body-file docs/tasks/AUD-2-seeder-issue.md` | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | ждёт | 2026-09-05 |
 | Решить по конструкции: `SKIP_AUTH` зависит от строки в базе через FK `notes.creator_id`. Обход мог бы не опираться на персистентного пользователя вовсе | [`tasks/AUD-2-seeder-issue.md`](tasks/AUD-2-seeder-issue.md) | ждёт решения | 2026-09-05 |
-| **Решение по AUD-7b стало дешёвым:** покрытие при полном знаменателе 73,49 % — выше порога 70, опускать ничего не нужно; по линтеру всего 23 замечания, 20 из них в тестах. Оба ответа сводятся к «да» | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | ждёт | 2026-09-07 |
-| ~~Решение по AUD-7b: что делать с замечаниями линтера на тестах и с цифрой покрытия. Принимается по итогам этапа 1 | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | ждёт решения — измерение готово: 20 замечаний в тестах (объём ≈ полдня), покрытие `src/**` = 73,49 % | 2026-09-07 |
+| Решение по AUD-7b: исправить все замечания и включить линтинг тестов; расширить знаменатель frontend coverage до `src/**`, порог оставить 70% | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | **принято владельцем: да по обоим пунктам** | 2026-09-07 |
 | `.github/CODEOWNERS` — ссылается на несуществующую команду | — | отложено | 2026-09-05 |
 | Отключить MCP-коннекторы в настройках claude.ai | — | отложено | 2026-09-05 |
 | Удалить каталог `.kilo/` | — | решено удалить, не сделано | 2026-09-05 |

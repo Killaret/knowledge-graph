@@ -160,7 +160,7 @@ func (w *Worker) HandleComputeEmbedding(ctx context.Context, t *asynq.Task) erro
 
 // HandleImportBookmarks processes an async batch bookmark import task.
 func (w *Worker) HandleImportBookmarks(ctx context.Context, t *asynq.Task) error {
-	log.Println("HandleImportBookmarks: received task", t.Payload())
+	log.Println("HandleImportBookmarks: received task", string(t.Payload()))
 
 	var p ImportBookmarksPayload
 	if err := json.Unmarshal(t.Payload(), &p); err != nil {

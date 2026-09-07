@@ -41,7 +41,8 @@ func diskHandler(t *testing.T, content []byte) http.HandlerFunc {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
-			io.Copy(io.Discard, r.Body)
+			_, err := io.Copy(io.Discard, r.Body)
+			require.NoError(t, err)
 			w.Header().Set("ETag", "abc123")
 			w.WriteHeader(http.StatusCreated)
 		case "/v1/disk/resources/download":
@@ -49,7 +50,8 @@ func diskHandler(t *testing.T, content []byte) http.HandlerFunc {
 			fmt.Fprintf(w, `{"href":"%s/download","method":"GET"}`, href)
 		case "/download":
 			w.Header().Set("Content-Type", "application/octet-stream")
-			w.Write(content)
+			_, err := w.Write(content)
+			require.NoError(t, err)
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDraftToModelAndBack(t *testing.T) {
@@ -15,7 +16,7 @@ func TestDraftToModelAndBack(t *testing.T) {
 	userID := uuid.New()
 
 	draft := note.NewDraft(noteID, userID, "draft content", "Draft title")
-	draft.StartPublishing()
+	require.NoError(t, draft.StartPublishing())
 
 	model := draftToModel(draft)
 	assert.Equal(t, draft.ID(), model.ID)

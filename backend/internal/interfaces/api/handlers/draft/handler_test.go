@@ -223,8 +223,8 @@ func TestResolveConflict(t *testing.T) {
 	r, repo := setupDraftHandler()
 	draftID := uuid.New()
 	d := noteDomain.NewDraft(uuid.New(), uuid.New(), "content", "title")
-	d.StartPublishing()
-	d.MarkAsConflict()
+	require.NoError(t, d.StartPublishing())
+	require.NoError(t, d.MarkAsConflict())
 
 	repo.On("FindByID", mock.Anything, draftID).Return(d, nil)
 	repo.On("Update", mock.Anything, mock.Anything).Return(nil)
