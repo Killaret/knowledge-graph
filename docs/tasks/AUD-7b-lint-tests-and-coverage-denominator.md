@@ -69,3 +69,71 @@
 ## Что приложить к результату
 
 Сырой хвост вывода `golangci-lint` и сводку покрытия. Цифры без вывода непроверяемы, а решение владельца будет приниматься именно по ним.
+
+## Ответ исполнителя (Devin, 2026-09-07)
+
+Этап 1 выполнен, ничего не правилось: конфиги не менялись (линтер прогнан флагом `--tests`, знаменатель — временной правкой, откаченной сразу после замера; `git status` чист).
+
+### 1. `golangci-lint run --tests` (v2.12.2, тот же, что в CI)
+
+**Итого: 23 замечания — 20 в тестовых файлах, 3 предсуществующих вне тестов.**
+
+По линтерам:
+
+| Линтер | Всего | В тестах | Характер |
+|---|---|---|---|
+| errcheck | 16 | 16 | Непроверенные возвраты `json.Unmarshal`, `c.Error`, `repo.Save` в тестовых хелперах |
+| staticcheck | 5 | 3 | `SA1012` — `nil`-контекст в `repo.Save(nil, n)` вместо `context.TODO()` (×3 в `tag_handler_test.go`) |
+| gofmt | 2 | 1 | `cmd/server/router_cache_test.go` |
+
+По файлам (тесты): `internal/infrastructure/nlp/client_test.go` — 4; `internal/interfaces/api/middleware/logging_test.go` — 3; `internal/interfaces/api/taghandler/tag_handler_test.go` — 3; `internal/infrastructure/cloud/yandex_disk_test.go` — 2; `internal/interfaces/api/handlers/draft/handler_test.go` — 2; `internal/interfaces/api/linkhandler/link_handler_test.go` — 2; `cmd/server/router_cache_test.go`, `internal/domain/note/draft_test.go`, `internal/infrastructure/mongo/draft_model_test.go`, `internal/infrastructure/oauth/yandex_test.go` — по 1.
+
+3 замечания вне тестов предсуществующие: `backup.go:1` (gofmt), `worker.go:163` (QF1010), `skip_auth.go:58` (SA1029) — уже зафиксированы в ревью AUD-7a.
+
+**Важно:** новые правила `depguard` из AUD-7a на тестовых файлах нарушений не дали — тесты слоёв не импортируют запрещённое.
+
+Сырой хвост вывода:
+
+```
+internal\interfaces\api\linkhandler\link_handler_test.go:296:16: Error return value of `json.Unmarshal` is not checked (errcheck)
+internal\interfaces\api\middleware\logging_test.go:107:10: Error return value of `c.Error` is not checked (errcheck)
+cmd\server\router_cache_test.go:16:1: File is not properly formatted (gofmt)
+internal\interfaces\api\taghandler\tag_handler_test.go:27:18: SA1012: do not pass a nil Context ... (staticcheck)
+23 issues:
+* errcheck: 16
+* gofmt: 2
+* staticcheck: 5
+```
+
+**Рекомендация по решению 1: починить все 20 и включить `tests: true`.** Объём мал — это не «неизвестная пропасть», а полдня механической работы (в основном `_ = json.Unmarshal(...)` и `context.TODO()`). Альтернатива «суженный набор линтеров» на этом объёме не нужна: цена включения полного набора та же. errcheck в тестах — не косметика: непроверенный `Save`/`Unmarshal` даёт ложно-зелёные прогоны, что уже дважды кусало.
+
+### 2. Покрытие фронтенда при полном знаменателе
+
+`include` временно расширен до `src/**/*.{ts,svelte}` (вычеты без изменений: тесты, моки, `test-utils`, `*.d.ts`). Прогон: 988/988 тестов зелёные.
+
+| Метрика | Текущий знаменатель (3 слоя) | Полный знаменатель (`src/**`) |
+|---|---|---|
+| Statements | ~81,8 % (по тем же данным) | **73,49 %** |
+| Branches | — | **81,67 %** |
+| Functions | — | **77,05 %** |
+| Lines | — | **73,49 %** |
+
+Разбивка по слоям (statements / branches / functions, объём в statements):
+
+| Слой | Stmts | Branch | Funcs | Объём |
+|---|---|---|---|---|
+| `src/shared` | 89,9 % | 85,5 % | 92,1 % | 4176 |
+| `src/entities` | 88,1 % | 84,3 % | 88,0 % | 3959 |
+| `src/features` | 80,1 % | 77,1 % | 66,4 % | 3880 |
+| `src/widgets` | 83,2 % | 82,9 % | 64,9 % | 2252 |
+| `src/components` | 63,7 % | 80,8 % | 74,2 % | 1516 |
+| `src/routes` | **15,7 %** | 55,7 % | 18,5 % | 2585 |
+| `src/hooks.server.ts` | 0 % | 0 % | 0 % | 125 |
+
+Неожиданность против прогноза постановки: итог **выше** порога 70 — `entities` и `widgets` (движок отрисовки, Cockpit) покрыты хорошо и тянут вверх. Но состав цифры другой: `routes` (2585 операторов, 14 % кодовой базы) почти не покрыт — 15,7 %, — и `components` на 63,7 % ниже заявленных 70. Старая цифра «70 %» была мягче реальности по покрытым слоям (~82 %), но скрывала дыру в `routes`.
+
+**Рекомендация по решению 2: расширить знаменатель до `src/**` и порог оставить 70.** Фактические 73,5 % проходят его без запаса на дрейф по сути (запас 3,5 п.п.). Если нужен тот же запас −2 п.п., что на бэкенде, — порог 71,5. Поднимать цифру добиванием `routes` тестами — отдельная задача, не этап 1 и не обязательно этап 2.
+
+### Статус
+
+Этап 1 закрыт: оба замера сделаны, дерево чистое, рекомендации даны. Дальше — решения владельца, этап 2 не начинал.

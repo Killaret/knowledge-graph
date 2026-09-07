@@ -58,7 +58,7 @@
 | Контур: `/kg-work` вместо двух команд, формат доски, журнал | [`tasks/AUD-10-review-findings.md`](tasks/AUD-10-review-findings.md) | принято, два неблокирующих замечания | 2026-09-05 |
 
 | AUD-7a: `depguard` на границы Go, правила импортов FSD в ESLint, гейт покрытия бэкенда. Нарушений сейчас ноль — правила пройдут сразу | [`tasks/AUD-7a-enforce-boundaries.md`](tasks/AUD-7a-enforce-boundaries.md) | **на ревью** — все три сторожа стоят и доказанно ловят: `depguard` отказал на `gorm.io/gorm` в домене с внятным сообщением, ESLint отказал и на `$widgets`, и на `../../widgets` из `shared`, гейт покрытия падает при завышенном пороге. Покрытие измерено: **66,8 %**, порог 64,8 % вписан в `.windsurfrules` и CI. Побочное: `golangci-lint` v2.12.2 нашёл 3 предсуществующих замечания (gofmt в `backup.go`, staticcheck в `worker.go`/`skip_auth.go`) — не мои файлы, в обмене репликами | 2026-09-07 |
-| AUD-7b, этап 1: измерить `golangci-lint` при `tests: true` и покрытие фронта при полном знаменателе. **Только измерить, ничего не править** | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | ждёт, после 7a | 2026-09-07 |
+| AUD-7b, этап 1: измерить `golangci-lint` при `tests: true` и покрытие фронта при полном знаменателе. **Только измерить, ничего не править** | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | **на ревью** — этап 1 готов: 23 замечания (20 в тестах: errcheck 16, staticcheck 3, gofmt 1), покрытие с полным знаменателем 73,49 % — выше порога 70, но `routes` на 15,7 %; цифры и рекомендации в разделе «Ответ исполнителя» | 2026-09-07 |
 
 ## На человеке
 
@@ -67,7 +67,7 @@
 | Завести `/kg-work` в Devin по переданному тексту | сделал Devin по просьбе владельца | принято | 2026-09-05 |
 | Завести тикет по багу сидера: `gh auth login`, затем `gh issue create --body-file docs/tasks/AUD-2-seeder-issue.md` | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | ждёт | 2026-09-05 |
 | Решить по конструкции: `SKIP_AUTH` зависит от строки в базе через FK `notes.creator_id`. Обход мог бы не опираться на персистентного пользователя вовсе | [`tasks/AUD-2-seeder-issue.md`](tasks/AUD-2-seeder-issue.md) | ждёт решения | 2026-09-05 |
-| Решение по AUD-7b: что делать с замечаниями линтера на тестах и с цифрой покрытия. Принимается по итогам этапа 1 | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | ждёт измерения | 2026-09-07 |
+| Решение по AUD-7b: что делать с замечаниями линтера на тестах и с цифрой покрытия. Принимается по итогам этапа 1 | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | ждёт решения — измерение готово: 20 замечаний в тестах (объём ≈ полдня), покрытие `src/**` = 73,49 % | 2026-09-07 |
 | `.github/CODEOWNERS` — ссылается на несуществующую команду | — | отложено | 2026-09-05 |
 | Отключить MCP-коннекторы в настройках claude.ai | — | отложено | 2026-09-05 |
 | Удалить каталог `.kilo/` | — | решено удалить, не сделано | 2026-09-05 |
