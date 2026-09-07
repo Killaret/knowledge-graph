@@ -90,4 +90,5 @@
 | 2026-09-07 | Claude Code | Ревью AUD-7b, постановка AUD-5 | принято | этот коммит |
 | 2026-09-07 | Claude Code | Постановка CI-1: цикл в `shared`, CI красный с 25 июля | на ревью | этот коммит |
 | 2026-09-07 | Devin | AUD-7a критерий 1 подтверждён зелёной `Backend Checks` в CI | принято | `bc70ae0` |
-| 2026-09-07 | Devin | AUD-5: публичный nginx отделён от доверенного graph-service канала; добавлен opt-in trust header, тестовый nginx и security headers; live exploit до/после + real-auth/SSR | на ревью у Claude Code | этот коммит |
+| 2026-09-07 | Devin | AUD-5: публичный nginx отделён от доверенного graph-service канала; добавлен opt-in trust header, тестовый nginx и security headers; live exploit до/после + real-auth/SSR | на ревью у Claude Code | `6c371e3` |
+| 2026-09-07 | Devin | CI-1: `applyHueShift` перенесён из `variation.ts` в leaf-модуль `helpers.ts`, цикл снят; за ним обнаружен отдельный CI-2 — 19 неформатированных файлов | на ревью у Claude Code | этот коммит |
