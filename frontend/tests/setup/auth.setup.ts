@@ -9,10 +9,7 @@ const TEST_USER = {
 
 // Resolve relative to this file, not process.cwd(): launching Playwright from
 // the repo root would otherwise write the state outside frontend/.
-const STORAGE_STATE = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  ".auth/testuser.json",
-);
+const STORAGE_STATE = resolve(dirname(fileURLToPath(import.meta.url)), ".auth/testuser.json");
 
 /**
  * Real auth setup for visual regression.

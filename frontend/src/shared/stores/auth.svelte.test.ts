@@ -241,9 +241,7 @@ describe("Auth Store Integration with PreloadService", () => {
       // this test cannot catch initAuth wiping kg_auth_session before reading
       // it (regression: restoring the API key used to clear the hint).
       const store = new Map<string, string>([["kg_auth_session", "1"]]);
-      localStorageMock.getItem.mockImplementation(
-        (key: string) => store.get(key) ?? null
-      );
+      localStorageMock.getItem.mockImplementation((key: string) => store.get(key) ?? null);
       localStorageMock.setItem.mockImplementation((key: string, value: string) => {
         store.set(key, value);
       });
