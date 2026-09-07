@@ -31,9 +31,13 @@ if (-not (Test-AnyFailed)) {
 # Scenario 3: a skipped phase must not count as a failure.
 $script:PhaseResults.Clear()
 Register-Phase -Name "Start test stack" -ExitCode 0
-Register-Phase -Name "Argos visual tests" -Skipped
+Register-Phase -Name "Argos visual tests" -Skipped -Reason "ARGOS_TOKEN is not configured"
 if (Test-AnyFailed) {
     Write-Host "Skipped phase must not count as a failure" -ForegroundColor Red
+    exit 1
+}
+if ($script:PhaseResults["Argos visual tests"].Reason -ne "ARGOS_TOKEN is not configured") {
+    Write-Host "Skipped phase reason was not preserved" -ForegroundColor Red
     exit 1
 }
 

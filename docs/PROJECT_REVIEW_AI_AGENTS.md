@@ -222,6 +222,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 | E2E             | `cd frontend && npm run test`                   | Playwright                       | —                   |
 | BDD             | `cd frontend && npm run test:bdd`               | Cucumber                         | —                   |
 | NLP             | `cd nlp-service && pytest`                      | pytest                           | —                   |
+| Local core checks | `.\scripts\testing\check-all.ps1 [-Quick]`    | PowerShell/Bash + shared manifest | CI-equivalent phases |
 | Full regression | `.\scripts\testing\run-full-test-cycle.ps1`     | PowerShell + Docker + Playwright | —                   |
 | Stacks identity | `.\scripts\ci\check-stacks-identity.ps1`        | PowerShell                       | —                   |
 

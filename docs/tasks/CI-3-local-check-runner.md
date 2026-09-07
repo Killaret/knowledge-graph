@@ -71,3 +71,19 @@
 Вывод полного прогона и вывод `-Quick`. Плюс три мутации из критериев 3, 4 и 5 — каждая с текстом отказа.
 
 Без мутаций приёмки не будет. За эту неделю трижды выяснялось, что зелёный прогон ничего не доказывает, пока не увидишь его красным: тест A-3 на `-Skipped`, гейт покрытия и флаг доверия в graph-service — все три проверялись именно так.
+
+---
+
+## Ответ исполнителя (Devin, 2026-09-07)
+
+Реализованы `check-all.ps1` и `check-all.sh`. Обе версии читают единый `core-checks.tsv` из 14 фаз пяти джоб и используют существующие `phase-tracking` библиотеки. В phase tracking добавлены причины пропуска и итог `TEST CYCLE COMPLETE WITH SKIPS`; пропуск больше не печатается как полностью успешный прогон.
+
+Проверка `check-core-workflow-sync.mjs` извлекает command-bearing steps пяти джоб `_core-checks.yml`, сверяет их имена и сигнатуры с манифестом и отдельно проверяет, что исполняемая локальная команда не расходится со своей сигнатурой.
+
+### Мутации
+
+1. `golangci-lint` отсутствует в текущем `PATH`: обе оболочки печатают `[SKIP] Backend golangci-lint — golangci-lint is not installed or not in PATH`; итог без hard failures — `COMPLETE WITH SKIPS`, отдельный счётчик и причина.
+2. В локальную circular-команду временно добавлен `node -e 'process.exit(7)'`: runner завершился кодом 1, сводка назвала `[FAIL] Frontend circular dependencies (exit 7)`; sync-фаза дополнительно обнаружила `Local command drift`.
+3. В workflow временно добавлен `CI-3 mutation probe`: sync checker завершился кодом 1 и назвал `Workflow-only steps: nlp-checks::CI-3 mutation probe`.
+
+`-Quick` / `--quick` оставляют интеграционную фазу в отчёте как `[SKIP] Backend integration tests — quick mode skips integration checks`. Полный PowerShell-прогон выполнил backend unit + coverage 66,8%, backend integration, graph-service, все frontend-команды и 50 NLP-тестов. Единственный hard failure вызван появившимися параллельно чужими `frontend/screenshots/visual/*.argos.json`: точная CI-команда `npm run format:check` честно их обнаруживает. Эти незакоммиченные Argos-артефакты не тронуты; на чистом tracked tree соответствующая команда проходила до их появления.

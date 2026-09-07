@@ -76,6 +76,20 @@ npm run build                      # Production сборка
 npm run preview                    # Предпросмотр production сборки
 ```
 
+### Единая локальная проверка Core Checks
+
+```powershell
+.\scripts\testing\check-all.ps1          # Все локально доступные проверки
+.\scripts\testing\check-all.ps1 -Quick   # Интеграционные явно помечаются [SKIP]
+```
+
+```bash
+./scripts/testing/check-all.sh
+./scripts/testing/check-all.sh --quick
+```
+
+Команда повторяет пять джоб `_core-checks.yml`. Недоступные инструменты не скрываются: каждая такая фаза получает `[SKIP]` с причиной, а итог помечается `COMPLETE WITH SKIPS`.
+
 ### Проверка кода
 ```bash
 cd frontend

@@ -188,6 +188,22 @@ Seeds the test database with test data.
 - 5 test notes (star, planet, comet, galaxy, asteroid)
 - 2 test links between notes
 
+### Local Core Checks
+
+Runs the same command-bearing checks as the five jobs in `.github/workflows/_core-checks.yml` without managing dev or personal stacks. Both scripts read the same phase manifest and report unavailable tools as `[SKIP]` with a reason.
+
+```powershell
+.\scripts\testing\check-all.ps1
+.\scripts\testing\check-all.ps1 -Quick
+```
+
+```bash
+./scripts/testing/check-all.sh
+./scripts/testing/check-all.sh --quick
+```
+
+The quick mode skips backend integration tests explicitly. A summary containing skipped phases says `COMPLETE WITH SKIPS`, not that all checks passed. `check-core-workflow-sync.mjs` fails when a command-bearing workflow step and `core-checks.tsv` diverge. The scripts remove the `backend/cover.out` file they produce; generated config drift remains in the working tree and is reported as a failure.
+
 ### run-full-test-cycle
 Orchestrates the complete testing cycle with **full stack isolation**.
 

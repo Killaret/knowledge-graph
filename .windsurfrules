@@ -374,6 +374,11 @@ CMD ["/server"]
 .\scripts\testing\test.ps1 integration                       # Backend integration tests
 .\scripts\testing\test.ps1 all                                # All test layers
 
+# Local equivalent of the reusable Core Checks workflow
+.\scripts\testing\check-all.ps1                  # Full local checks
+.\scripts\testing\check-all.ps1 -Quick           # Skip integration checks, report [SKIP]
+./scripts/testing/check-all.sh [--quick]          # Linux/macOS
+
 # Backend
 cd backend && go test ./...                          # Unit tests
 cd backend && go test -tags=integration ./...        # Integration tests

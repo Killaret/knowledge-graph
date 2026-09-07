@@ -9,7 +9,7 @@ triggers:
 
 Использовать при запуске E2E, BDD, визуальных тестов, полного цикла, а также при правках `scripts/testing/`.
 
-Выведено из: `scripts/testing/run-full-test-cycle.ps1`, `scripts/testing/lib/phase-tracking.ps1`, `.windsurfrules` (раздел Testing Requirements), `docs/TESTING.md`, `docs/tasks/A-3-review-findings.md`. При их изменении скилл проверить.
+Выведено из: `scripts/testing/run-full-test-cycle.ps1`, `scripts/testing/check-all.ps1`, `scripts/testing/core-checks.tsv`, `scripts/testing/lib/phase-tracking.ps1`, `.github/workflows/_core-checks.yml`, `.windsurfrules` (раздел Testing Requirements), `docs/TESTING.md`, `docs/tasks/A-3-review-findings.md`. При их изменении скилл проверить.
 
 ## Железное правило
 
@@ -74,6 +74,20 @@ FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 npx playwr
 Проверять правки фазовой логики мутацией: временно испортить агрегацию в `lib/phase-tracking.ps1`, прогнать `pwsh -NoProfile -File scripts/testing/test-a3-exit-codes.ps1` и убедиться, что тест упал. Если не упал — тест не измеряет то, что должен.
 
 Подставная упавшая фаза должна отдавать код выхода **2**, а не 1: ошибка, которую этот тест ловит, как раз в том, что проверялась только единица.
+
+## Локальная копия Core Checks
+
+`check-all.ps1` / `check-all.sh` повторяют пять джоб `_core-checks.yml` без управления стеками. Полный режим запускает интеграционные тесты при доступном Docker; `-Quick` / `--quick` регистрирует их как `[SKIP]`. Любой недоступный инструмент также даёт `[SKIP]` с причиной; это не выводится как полностью зелёный прогон. Соответствие команд workflow проверяет `check-core-workflow-sync.mjs` по общему `core-checks.tsv`.
+
+```powershell
+.\scripts\testing\check-all.ps1
+.\scripts\testing\check-all.ps1 -Quick
+```
+
+```bash
+./scripts/testing/check-all.sh
+./scripts/testing/check-all.sh --quick
+```
 
 ## Пирамида и команды
 

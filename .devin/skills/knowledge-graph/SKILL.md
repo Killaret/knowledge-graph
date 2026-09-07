@@ -79,6 +79,10 @@ How to write new ones: `docs/AI_AGENT_PROTOCOL.md`, section «Как писат�
 ## Common Commands
 
 ```powershell
+# Local core checks
+.\scripts\testing\check-all.ps1
+.\scripts\testing\check-all.ps1 -Quick
+
 # Backend
 cd backend; go test ./...
 cd backend; go test -tags=integration ./...
