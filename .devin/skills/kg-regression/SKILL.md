@@ -20,9 +20,10 @@ Personal-стек не поднимается без явной просьбы �
 ## Порядок
 
 ```powershell
+$env:SKIP_AUTH='false'   # визуальные эталоны строятся без обхода авторизации (VIS-1)
 .\scripts\testing\start-test.ps1
-.\scripts\testing\seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
-cd frontend; npx playwright test --project=visual
+.\scripts\testing\seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42 -PublicPercent 50
+cd frontend; npx playwright test --project=visual --project=visual-real-auth
 .\scripts\testing\stop-test.ps1
 ```
 
@@ -99,7 +100,7 @@ FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 npx playwr
 | Frontend покрытие | `cd frontend; npm run test:coverage` |
 | E2E | `cd frontend; npx playwright test --project=chromium-skip-auth` |
 | BDD | `cd frontend; npm run test:bdd` |
-| Визуальные | `cd frontend; npx playwright test --project=visual` |
+| Визуальные | `cd frontend; npx playwright test --project=visual --project=visual-real-auth` |
 | NLP | `cd nlp-service; pytest tests/ -v` |
 
 Найден дефект — регрессионный тест обязателен до закрытия задачи. Уровень выбирается по охвату, тест должен падать до правки. Норма — `.windsurfrules`, блок «Manual Found → Automated Covered».

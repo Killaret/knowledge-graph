@@ -27,16 +27,16 @@ This project uses the official [`@argos-ci/playwright`](https://www.argos-ci.com
 
 See `.github/workflows/main.yml` for the `visual-regression` job. It performs:
 
-1. Starts the isolated test stack (`docker compose -f docker-compose.test.yml up -d --build --wait`) with `SKIP_AUTH=true`.
-2. Seeds a small deterministic fixture (`NOTE_COUNT=20 LINK_COUNT=10 SEED=42`).
-3. Runs `npx playwright test --project=visual`.
+1. Starts the isolated test stack (`docker compose -f docker-compose.test.yml up -d --build --wait`) with `SKIP_AUTH=false`.
+2. Seeds a small deterministic fixture (`NOTE_COUNT=20 LINK_COUNT=10 SEED=42 PUBLIC_PERCENT=50`).
+3. Runs `npx playwright test --project=visual --project=visual-real-auth`.
 4. The Argos Playwright reporter uploads screenshots automatically.
 
 ```yaml
 - name: Run visual tests with Argos
   env:
     ARGOS_TOKEN: ${{ secrets.ARGOS_TOKEN }}
-  run: npx playwright test --project=visual
+  run: npx playwright test --project=visual --project=visual-real-auth
 ```
 
 The manual `npx argos upload` step is no longer needed.
@@ -45,60 +45,57 @@ The manual `npx argos upload` step is no longer needed.
 
 ### Test Location
 
-`frontend/tests/visual/visual-regression.spec.ts`
+The suite is split into two files by audience ([`VIS-1`](tasks/VIS-1-split-visual-baselines.md)):
+
+- `frontend/tests/visual/visual-anonymous.spec.ts` — what a logged-out visitor sees: login and register pages, the public 2D graph, search page, empty state, responsive home. Runs in the `visual` project with no `storageState` and no `__SKIP_AUTH__` injection.
+- `frontend/tests/visual/visual-authenticated.spec.ts` — scenarios that need a session: list view, star filter, ghost node form, help modal, selected NoteCard, 3D view. Runs in the `visual-real-auth` project; `tests/setup/auth.setup.ts` logs in as the seeded `testuser` and persists `storageState`.
 
 ### Test Scenarios
 
 The suite captures stable, deterministic views only:
 
-1. **Home**
-   - Default view
-   - List view
-   - Filtered by star node type
+1. **Anonymous (`visual`)**
+   - Login and register pages
+   - Public 2D graph
+   - Search page and empty state
+   - Home default and responsive viewports
 
-2. **2D Graph**
-   - Full graph view
-   - Ghost node creation form (press `N`)
-   - Help hotkeys modal (press `?`)
-
-3. **NoteCard**
-   - Selected state in list view
-
-4. **Search**
-   - Search page
-   - Search with query (`star`)
-   - Empty state
-
-5. **3D Graph**
-   - Frozen notice redirect to 2D graph
+2. **Authenticated (`visual-real-auth`)**
+   - Home: default view, list view, filtered by star node type
+   - 2D Graph: full view, ghost node creation form (press `N`), help modal (press `?`)
+   - NoteCard selected state in list view
+   - Search: page, query (`star`), empty state
+   - 3D Graph view
+   - Home responsive viewports
 
 ### Running Tests Locally
 
 **Windows:**
 ```powershell
+$env:SKIP_AUTH = "false"
 ./scripts/testing/start-test.ps1
-./scripts/testing/seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
+./scripts/testing/seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42 -PublicPercent 50
 
 cd frontend
 $env:FRONTEND_URL = "http://localhost:3002"
-$env:SKIP_AUTH = "true"
-npm run test:visual:upload
+$env:SKIP_AUTH = "false"
+npx playwright test --project=visual --project=visual-real-auth
 ```
 
 **Linux / Mac:**
 ```bash
-SKIP_AUTH=true ./scripts/testing/start-test.sh
-NOTE_COUNT=20 LINK_COUNT=10 SEED=42 ./scripts/testing/seed-test-data.sh
+SKIP_AUTH=false ./scripts/testing/start-test.sh
+NOTE_COUNT=20 LINK_COUNT=10 SEED=42 PUBLIC_PERCENT=50 ./scripts/testing/seed-test-data.sh
 
 cd frontend
-FRONTEND_URL=http://localhost:3002 ARGOS_UPLOAD_LOCAL=true npm run test:visual
+FRONTEND_URL=http://localhost:3002 SKIP_AUTH=false ARGOS_UPLOAD_LOCAL=true npm run test:visual
 ```
 
 ### Baselines
 
 Argos uses the `ARGOS_REFERENCE_BRANCH` (`main`) as the baseline for new PRs. The first upload on a branch creates the baseline; subsequent uploads are compared against it.
 
-The CI job deliberately runs only the `visual` project with `SKIP_AUTH=true` for now. The visual suite was written against an authenticated session that bypass mode was silently supplying, so the anonymous project fails without it. Splitting the scenarios is [`VIS-1`](tasks/VIS-1-split-visual-baselines.md); the second baseline is added once that lands.
+Both projects run with `SKIP_AUTH=false`: the anonymous baseline records the real logged-out state (public notes only, `applyNoteScope` filters by owner), the authorized baseline records the seeded `testuser` session. The two baselines are expected to differ — the public graph shows only the published subset.
 
 ## Test Data
 
@@ -116,7 +113,8 @@ Playwright configuration is in `frontend/playwright.config.ts`:
 
 - `reporter` includes `createArgosReporterOptions` from `@argos-ci/playwright/reporter`.
 - `use.bypassCSP: true` allows Argos stabilization script injection.
-- The `visual` project is filtered by `grep: /@visual/` and depends on `setup`.
+- The `visual` project runs `tests/visual/visual-anonymous.spec.ts` with no storage state.
+- The `visual-real-auth` project runs `tests/visual/visual-authenticated.spec.ts` with `storageState` from `tests/setup/.auth/testuser.json` (produced by the `setup-auth` dependency).
 - The default `chromium` project uses `grepInvert: /@3d|@visual/`.
 
 ## Troubleshooting

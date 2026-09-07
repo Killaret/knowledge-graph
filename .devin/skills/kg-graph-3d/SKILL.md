@@ -9,7 +9,7 @@ triggers:
 
 Использовать при любой правке `frontend/src/features/graph-3d/`, при работе с визуальным тестом 3D и при разборе жалоб «граф пустой», «ничего не меняется на снимке», «мигает».
 
-Выведено из: `frontend/src/features/graph-3d/lib/engine.ts`, `ui/Graph3DScene.svelte`, `frontend/tests/visual/visual-regression.spec.ts`, `docs/tasks/A-1-3d-readiness-signal.md`. При их изменении скилл проверить.
+Выведено из: `frontend/src/features/graph-3d/lib/engine.ts`, `ui/Graph3DScene.svelte`, `frontend/tests/visual/visual-authenticated.spec.ts`, `docs/tasks/A-1-3d-readiness-signal.md`. При их изменении скилл проверить.
 
 ## Карта
 
@@ -46,6 +46,6 @@ cd frontend; npx vitest run src/features/graph-3d
 cd frontend; npm run test:unit
 ```
 
-Визуальный тест 3D — `frontend/tests/visual/visual-regression.spec.ts`, проект Playwright `visual`, только на изолированном тест-стеке. Порядок прогона и порты — скилл `kg-regression`.
+Визуальный тест 3D — `frontend/tests/visual/visual-authenticated.spec.ts`, проект Playwright `visual-real-auth`, только на изолированном тест-стеке с `SKIP_AUTH=false`. Порядок прогона и порты — скилл `kg-regression`.
 
 Признак того, что снимок действительно измеряет сцену: изменение плотности тумана в `config/frontend.json` с пересборкой артефакта даёт видимо другой снимок. Если снимок не меняется — сначала проверяйте ловушки 1 и 3, а не графику.

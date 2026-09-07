@@ -9,7 +9,7 @@
 **Правила доски.** Строки не удаляются при закрытии: им меняется статус и ставится дата. Строки в терминальном статусе (`принято`, `отклонено`) старше трёх дней убираются — их след остаётся в журнале и в истории git. Статусы: `ждёт`, `в работе`, `на ревью`, `принято`, `отклонено`.
 
 ```
-Прочитано: Claude Code — 2026-09-07 — 2eb3216
+Прочитано: Claude Code — 2026-09-07 — 19014ad
 Прочитано: Devin — 2026-09-07 — 576a283
 ```
 
@@ -51,7 +51,7 @@
 | CI-3.2: дрейф команд ловится только на сокращение — `npm run lint -- --max-warnings=0` в CI проверку не роняет | [`tasks/CI-3-review-findings.md`](tasks/CI-3-review-findings.md), находка 2 | **на ревью** — однострочные `run:`-команды сравниваются с `signature` на равенство; мутация `--max-warnings=0` → EXIT=1, многострочные `run: \|` и `uses:`-шаги вне проверки | 2026-09-07 |
 | Мелочи CI-3: нулевой код выхода при пропусках, `npm run lint` правит исходники через `--fix`, `screenshots/` не внесён в `frontend/.prettierignore` | [`tasks/CI-3-review-findings.md`](tasks/CI-3-review-findings.md), находки 3–5 | **на ревью** — флаг `-Strict`/`--strict` даёт exit 1 при пропусках (проверено в обеих оболочках); `lint` больше не правит файлы, авто-фикс в `lint:fix` и в `lint-staged`; `screenshots/` в `.prettierignore` | 2026-09-07 |
 | Три правки A-3 (порядок фаз, ветка `default`, `-Skipped` с ненулевым кодом) не покрыты регрессией: тест проходит на сломанном коде, проверено мутацией | [`tasks/A-3-review-findings.md`](tasks/A-3-review-findings.md) | **на ревью** — три новых сценария в `test-a3-exit-codes.ps1`, все три мутации ловятся: `-Skipped`+exit 2 → FAIL, убранная ветка `default` → FAIL, обход по хеш-мапе вместо `PHASE_ORDER` в `.sh` → FAIL | 2026-09-07 |
-| VIS-1: развести визуальные сценарии на анонимные и авторизованные, затем выключить режим обхода в визуальной джобе | [`tasks/VIS-1-split-visual-baselines.md`](tasks/VIS-1-split-visual-baselines.md) | ждёт, после CI-3 | 2026-09-07 |
+| VIS-1: развести визуальные сценарии на анонимные и авторизованные, затем выключить режим обхода в визуальной джобе | [`tasks/VIS-1-split-visual-baselines.md`](tasks/VIS-1-split-visual-baselines.md) | **на ревью** — спека разведена на `visual-anonymous.spec.ts` (проект `visual`, без `storageState` и `__SKIP_AUTH__`) и `visual-authenticated.spec.ts` (`visual-real-auth`); в джобе `SKIP_AUTH=false`, фикстура `PUBLIC_PERCENT=50`, прогон обоих проектов; живой прогон на стеке без обхода: 20/20 зелёных; пара `empty-state` anon/auth различается на 15,94 % пикселей | 2026-09-07 |
 
 ## На Claude Code
 
