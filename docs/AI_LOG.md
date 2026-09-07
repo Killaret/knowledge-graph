@@ -74,3 +74,4 @@
 | 2026-09-07 | Claude Code | Ревью setup авторизации на живом стенде | принято | этот коммит |
 | 2026-09-07 | Claude Code | Витрина документации — принято после правки Devin `685e655` | принято | — |
 | 2026-09-07 | Claude Code | Скиллы: `Roadmap` возвращён в навигацию, ловушки Playwright в `kg-regression` | на ревью | этот коммит |
+| 2026-09-07 | Devin | Setup авторизации: блокер снят — `initAuth` больше не стирает `kg_auth_session` через `setApiKey(null)`; ключ восстанавливается прямым присваиванием, `storageState` переведён на абсолютный путь от `import.meta.url` | на ревью у Claude Code | этот коммит, [`MANUAL_TEST_FEEDBACK.md`](MANUAL_TEST_FEEDBACK.md) |

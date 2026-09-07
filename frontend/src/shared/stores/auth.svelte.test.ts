@@ -236,6 +236,36 @@ describe("Auth Store Integration with PreloadService", () => {
       // (это проверяется в PreloadService тестах через isAuthenticated мок)
     });
 
+    it("should attempt cookie refresh when only the session hint survives", async () => {
+      // Stateful localStorage: removeItem must actually delete keys, otherwise
+      // this test cannot catch initAuth wiping kg_auth_session before reading
+      // it (regression: restoring the API key used to clear the hint).
+      const store = new Map<string, string>([["kg_auth_session", "1"]]);
+      localStorageMock.getItem.mockImplementation(
+        (key: string) => store.get(key) ?? null
+      );
+      localStorageMock.setItem.mockImplementation((key: string, value: string) => {
+        store.set(key, value);
+      });
+      localStorageMock.removeItem.mockImplementation((key: string) => {
+        store.delete(key);
+      });
+
+      vi.mocked(authApi.refreshTokens).mockResolvedValue({
+        access_token: "new_access_token",
+        refresh_token: "new_refresh_token",
+        token_type: "Bearer",
+        expires_at: "2024-12-31T23:59:59Z",
+      });
+
+      await initAuth();
+
+      // The hint must survive startup cleanup long enough to trigger refresh.
+      expect(authApi.refreshTokens).toHaveBeenCalled();
+      expect(store.get("kg_auth_session")).toBe("1");
+      expect(isAuthenticated()).toBe(true);
+    });
+
     it("should handle auth initialization without affecting preload cache", async () => {
       // Предзагружаем данные
       await PreloadService.startPreload();

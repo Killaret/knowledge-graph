@@ -203,6 +203,21 @@ None yet.
   - Default `all-MiniLM-L6-v2` values remained in compose files, `backend/.env.example`, both Go configs, both repo fallbacks, the NLP Dockerfile ARG and `nlp_utils.py` — all switched to `paraphrase-multilingual-MiniLM-L12-v2`. Remaining `all-MiniLM-L6-v2` mentions are intentional: migration `030` marks historical rows, task docs describe the old state, and tests use it as the "other model" fixture.
   - `cleanup-docker.ps1/.sh` could remove unused volumes (including Personal volumes once their containers were stopped). Volumes are now preserved by default; `-RemoveVolumes`/`--remove-volumes` removes only anonymous dangling volumes, never anything matching `personal` or the protected label. A raw tarball backup of the three Personal volumes was taken beforehand (`backups/personal-volumes-raw-2026-09-06-215805-*.tar.gz`).
 
+## Verification
+
+### Auth session restore (A-1 auth setup blocker, fixed)
+
+- **Scope:** `initAuth` wiped `kg_auth_session` at startup via `setApiKey(null)` before `hasSessionHint()` was consulted, so `visual-real-auth` pages rendered the anonymous public view.
+- **Date:** 2026-09-07
+- **Agent:** Devin
+- **Tests executed:**
+  - New unit test `should attempt cookie refresh when only the session hint survives` in `auth.svelte.test.ts` — green on the fix, **red on the buggy code** (mutation check: `refreshTokens` never called).
+  - `npm run test:unit` → 988/988; `npm run check` → 0 errors.
+  - Live probe on the isolated test stack (`SKIP_AUTH=false`, locally built `node build` on :3002): `setup-auth` produced `storageState`, then a fresh context loaded `/` — calls were `/api/v1/auth/refresh` → `/api/v1/users/me` → `graph-service/api/v1/graph/full?limit=100`; `localStorage.kg_auth_session` remained `1`; "Sign in" absent.
+  - `npx playwright test --project=setup-auth` → 1 passed; `--project=visual-real-auth --grep "Home page - default view"` → 2 passed.
+- **Screenshot / Logs:** probe output above (request list + `HINT: 1`, `SIGN_IN_COUNT: 0`, `RESULT: SESSION-RESTORED`); Playwright `line` reporter output.
+- **Note:** the 7 `chromium-real-auth` failures above are a **separate** defect — those tests inject `__ACCESS_TOKEN__` and do not use the cookie/session-hint path.
+
 ## How to add a finding
 
 Create a new bullet under the right section with:

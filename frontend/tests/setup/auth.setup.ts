@@ -1,11 +1,18 @@
 import { test as setup, expect } from "@playwright/test";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const TEST_USER = {
   login: "testuser",
   password: "TestPassword123!",
 };
 
-const STORAGE_STATE = "tests/setup/.auth/testuser.json";
+// Resolve relative to this file, not process.cwd(): launching Playwright from
+// the repo root would otherwise write the state outside frontend/.
+const STORAGE_STATE = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  ".auth/testuser.json",
+);
 
 /**
  * Real auth setup for visual regression.

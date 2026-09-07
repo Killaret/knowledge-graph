@@ -1,7 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 import { createArgosReporterOptions } from "@argos-ci/playwright/reporter";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Resolve paths relative to this config file, not process.cwd(): Playwright
+// resolves storageState and setup paths against the caller's working directory,
+// so running from the repo root would create tests/setup/.auth outside frontend/.
+const configDir = dirname(fileURLToPath(import.meta.url));
 
 // Load Argos token from gitignored argos.json if ARGOS_TOKEN is not set.
 // This lets local runs upload screenshots without hardcoding the secret in the repo.
@@ -115,7 +121,7 @@ export default defineConfig({
       name: "visual-real-auth",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "tests/setup/.auth/testuser.json",
+        storageState: resolve(configDir, "tests/setup/.auth/testuser.json"),
         launchOptions: {
           args: ["--disable-web-security"],
         },

@@ -83,9 +83,11 @@ export async function initAuth(): Promise<void> {
     let hadTokenAtStart = false;
 
     try {
-      // Restore API key (user-provided, not a JWT)
+      // Restore API key (user-provided, not a JWT). Assign the in-memory
+      // field directly: setApiKey(null) also removes the kg_auth_session
+      // hint, and initAuth must still consult that hint below.
       const storedApiKey = browser ? localStorage.getItem(API_KEY) : null;
-      setApiKey(storedApiKey);
+      authState.apiKey = storedApiKey;
 
       // Check for SKIP_AUTH mode from query parameter on first load (dev only)
       if (import.meta.env.DEV) {
