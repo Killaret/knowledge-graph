@@ -218,6 +218,19 @@ None yet.
 - **Screenshot / Logs:** probe output above (request list + `HINT: 1`, `SIGN_IN_COUNT: 0`, `RESULT: SESSION-RESTORED`); Playwright `line` reporter output.
 - **Note:** the 7 `chromium-real-auth` failures above are a **separate** defect — those tests inject `__ACCESS_TOKEN__` and do not use the cookie/session-hint path.
 
+### AUD-5 public/internal graph-service perimeter
+
+- **Scope:** forged `X-Internal-Auth` plus `X-User-Id` could cross the browser-facing nginx listener and select another user's graph.
+- **Date:** 2026-09-07
+- **Agent:** Devin
+- **Before:** isolated test-stack, old graph-service image and nginx pass-through mutation; identical request through `http://127.0.0.1:18086/graph-service/api/v1/graph/full?limit=100` returned `HTTP/1.1 200 OK` and the seeded private graph.
+- **After:** the same URL and headers returned `HTTP/1.1 401 Unauthorized`; `Access-Control-Allow-Headers` contains only `Authorization, Content-Type`.
+- **Internal channel:** direct test-network-equivalent request on `127.0.0.1:19091` with the configured internal token and user ID returned 100 nodes, proving explicitly trusted server-to-server delegation still works.
+- **Browser / SSR:** fresh real-auth storage state rendered `/graph/3d` with `100 nodes` and two successful `graph/full` responses; the SvelteKit server proxy returned 20 nodes from the public endpoint.
+- **Security headers:** nginx `/health` returned `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`; `Server: nginx` contains no version.
+- **Automated regression:** HTTP and gRPC tests reject a forged user header when trust is disabled. Mutation back to unconditional HTTP trust makes `TestAuthMiddlewareIgnoresInternalUserHeaderByDefault` fail with `expected 401 ... got 200`.
+- **Screenshot / Logs:** before/after `curl -D -` output, live node counts, mutation output, and test command output recorded in the implementing session; no screenshot applies to this transport-level finding.
+
 ## How to add a finding
 
 Create a new bullet under the right section with:

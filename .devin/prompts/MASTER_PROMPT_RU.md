@@ -73,6 +73,7 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
 - JWT-валидация только в middleware, не в хендлерах.
 - Rate limiting обязателен на всех write-эндпоинтах (POST/PUT/DELETE).
 - Валидация input — go-playground/validator.
+- Публичные прокси обнуляют `X-Internal-Auth` и `X-User-Id`; делегирование по user-header включается явно и только во внутренней сети сервисов.
 - Не пишите код, который раскрывает или логирует секреты.
 
 ## Языковая и документационная политика

@@ -74,6 +74,7 @@ type Config struct {
 	// Auth
 	JWTSecret         string
 	InternalAuthToken string
+	TrustUserHeader   bool
 	SkipAuth          bool
 
 	// NLP
@@ -120,6 +121,7 @@ func Load() (*Config, error) {
 		// Auth (env only; secrets are never read from JSON)
 		JWTSecret:         getEnv("JWT_SECRET", ""),
 		InternalAuthToken: getEnv("GRAPH_SERVICE_INTERNAL_TOKEN", ""),
+		TrustUserHeader:   getBoolEnv("GRAPH_SERVICE_TRUST_USER_HEADER", false),
 		SkipAuth:          getBoolEnv("SKIP_AUTH", false),
 
 		// NLP (env only)

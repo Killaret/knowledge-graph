@@ -273,6 +273,7 @@ After completing any task that changes behavior, configuration, architecture, Do
 - Rate limiting **required** on all write endpoints (POST/PUT/DELETE)
 - All secrets via environment variables only
 - Input validation with go-playground/validator
+- Browser-facing proxies MUST strip internal trust headers (`X-Internal-Auth`, `X-User-Id`); user-header delegation is opt-in and restricted to internal service networks
 
 **Review checklist** — walk it whenever a change touches authentication, authorization, input handling, or transport. Recovered from the retired `.koda` skill set; the only part of it worth keeping.
 
@@ -336,7 +337,7 @@ CMD ["/server"]
 **Port mapping:**
 - Dev: nginx API:18080, nginx frontend:18081, backend:9000, graph-service gRPC:9090 / HTTP:9091
 - Personal: backend direct:18085, nginx API/gateway:18082, nginx frontend:18084, graph-service:9092
-- Test: frontend:3002, backend:18083, graph-service:19091 (gRPC 19090), postgres:15434, redis:16381, mongo:27019, nlp:15002
+- Test: frontend:3002, backend:18083, nginx public perimeter:18086, graph-service:19091 (gRPC 19090), postgres:15434, redis:16381, mongo:27019, nlp:15002
 
 **Volume names:**
 - Dev named volumes: `postgres_data`, `redis_data`, `mongodb_data`; HuggingFace cache uses the `./huggingface_cache` bind mount

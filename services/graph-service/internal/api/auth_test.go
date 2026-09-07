@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,6 +10,7 @@ import (
 	"knowledge-graph-graph-service/internal/config"
 
 	"github.com/golang-jwt/jwt/v5"
+	"google.golang.org/grpc/metadata"
 )
 
 func generateTestToken(userID, secret, tokenType string) string {
@@ -87,7 +89,7 @@ func TestAuthMiddlewareRejectsWrongTokenType(t *testing.T) {
 }
 
 func TestAuthMiddlewareInternalTokenWithUserID(t *testing.T) {
-	cfg := &config.Config{JWTSecret: "test-secret", InternalAuthToken: "internal", SkipAuth: false}
+	cfg := &config.Config{JWTSecret: "test-secret", InternalAuthToken: "internal", TrustUserHeader: true, SkipAuth: false}
 	handler := AuthMiddleware(cfg, false, contextDumpHandler)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/graph/full", nil)
@@ -101,6 +103,47 @@ func TestAuthMiddlewareInternalTokenWithUserID(t *testing.T) {
 	}
 	if !contains(rr.Body.String(), `"user_id":"internal-user"`) {
 		t.Fatalf("expected internal user_id, got %s", rr.Body.String())
+	}
+}
+
+func TestAuthMiddlewareIgnoresInternalUserHeaderByDefault(t *testing.T) {
+	cfg := &config.Config{JWTSecret: "test-secret", InternalAuthToken: "internal", SkipAuth: false}
+	handler := AuthMiddleware(cfg, false, contextDumpHandler)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/graph/full", nil)
+	req.Header.Set("X-Internal-Auth", cfg.InternalAuthToken)
+	req.Header.Set("X-User-Id", "forged-user")
+	rr := httptest.NewRecorder()
+	handler(rr, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 when trust is disabled, got %d: %s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestGRPCAuthIgnoresInternalUserHeaderByDefault(t *testing.T) {
+	cfg := &config.Config{JWTSecret: "test-secret", InternalAuthToken: "internal", SkipAuth: false}
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+		"x-internal-auth", cfg.InternalAuthToken,
+		"x-user-id", "forged-user",
+	))
+
+	userID, ok := grpcAuth(ctx, cfg)
+	if ok || userID != "" {
+		t.Fatalf("expected untrusted user header to be rejected, got user_id=%q ok=%v", userID, ok)
+	}
+}
+
+func TestGRPCAuthAcceptsInternalUserHeaderWhenEnabled(t *testing.T) {
+	cfg := &config.Config{JWTSecret: "test-secret", InternalAuthToken: "internal", TrustUserHeader: true, SkipAuth: false}
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+		"x-internal-auth", cfg.InternalAuthToken,
+		"x-user-id", "internal-user",
+	))
+
+	userID, ok := grpcAuth(ctx, cfg)
+	if !ok || userID != "internal-user" {
+		t.Fatalf("expected trusted internal user, got user_id=%q ok=%v", userID, ok)
 	}
 }
 

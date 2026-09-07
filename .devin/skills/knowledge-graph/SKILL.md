@@ -71,8 +71,9 @@ How to write new ones: `docs/AI_AGENT_PROTOCOL.md`, section «Как писат�
 
 - The NLP embedding model is preloaded during FastAPI lifespan startup through `ensure_model_loaded()`; `/health` verifies readiness.
 - Dev host gateway is `http://127.0.0.1:18080`; backend direct is `http://127.0.0.1:9000`.
-- Test frontend is `http://127.0.0.1:3002`; backend is `http://127.0.0.1:18083`; NLP is `http://127.0.0.1:15002`.
+- Test frontend is `http://127.0.0.1:3002`; backend is `http://127.0.0.1:18083`; nginx public perimeter is `http://127.0.0.1:18086`; NLP is `http://127.0.0.1:15002`.
 - Personal volumes contain live user data and must never be deleted without explicit approval and the required backup procedure.
+- Browser-facing proxies strip `X-Internal-Auth` and `X-User-Id`; graph-service user-header delegation is opt-in on internal networks.
 - E2E and BDD tests run only against `docker-compose.test.yml`; stop dev and personal stacks first.
 
 ## Common Commands

@@ -29,6 +29,7 @@ The test stack is fully isolated from dev and personal stacks:
 | nlp-test | kg-test-nlp | 15002 | Test NLP service |
 | backend-test | kg-test-backend | 18083 | Test backend API |
 | graph-service-test | kg-test-graph-service | 19090/19091 | Test graph analytics service |
+| nginx-test | kg-test-nginx | 18086 | Test public API/graph-service perimeter |
 | frontend-test | kg-test-frontend | 3002 (override with `FRONTEND_PORT`) | Test frontend |
 
 ### Configuration
@@ -43,11 +44,13 @@ The test stack is fully isolated from dev and personal stacks:
 - **Frontend:** `http://127.0.0.1:<FRONTEND_PORT>` (default 3002; browser API calls are proxied through `/api` and `/graph-service/api`)
 - **Backend API:** http://127.0.0.1:18083 (direct access for health/setup)
 - **Graph Service (HTTP):** http://127.0.0.1:19091
+- **nginx public perimeter:** http://127.0.0.1:18086
 
 ### Health Checks
 
 - **Backend:** `curl http://127.0.0.1:18083/health`
 - **Graph Service:** `curl http://127.0.0.1:19091/health`
+- **nginx public perimeter:** `curl http://127.0.0.1:18086/health`
 
 ## Isolated Testing Model
 

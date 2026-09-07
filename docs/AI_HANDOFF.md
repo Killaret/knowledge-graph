@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-07 — e06ef6b
-Прочитано: Devin — 2026-09-07 — e06ef6b
+Прочитано: Devin — 2026-09-07 — 33a348d
 ```
 
 ---
@@ -39,7 +39,7 @@
 | Сидер: публиковать связанные заметки | [`tasks/A-1-review-findings.md`](tasks/A-1-review-findings.md) | **принято** — 60 из 60 связей между публичными, эндпоинт и страница согласны | 2026-09-06 |
 
 | **CI-1: циклическая зависимость `variation.ts` ↔ `helpers.ts`.** Роняет джобу `Frontend Checks` целиком, за ней шесть недель не выполнялись lint, format, svelte-check и юнит-тесты | [`tasks/CI-1-circular-dependency.md`](tasks/CI-1-circular-dependency.md) | ждёт, **перед AUD-5** | 2026-09-07 |
-| AUD-5: разделить публичный периметр и внутренний канал graph-service. Последняя незакрытая находка из критической четвёрки | [`tasks/AUD-5-perimeter-separation.md`](tasks/AUD-5-perimeter-separation.md) | ждёт | 2026-09-07 |
+| AUD-5: разделить публичный периметр и внутренний канал graph-service. Последняя незакрытая находка из критической четвёрки | [`tasks/AUD-5-perimeter-separation.md`](tasks/AUD-5-perimeter-separation.md) | **на ревью** — публичный nginx срезает оба внутренних заголовка; trust header выключен по умолчанию; live до `200` с приватным графом, после `401`; real-auth 100 узлов | 2026-09-07 |
 
 ## На Claude Code
 
@@ -64,6 +64,7 @@
 
 | AUD-7a: границы и гейт покрытия | [`tasks/AUD-7a-enforce-boundaries.md`](tasks/AUD-7a-enforce-boundaries.md) | **принято** — ESLint и гейт проверены мутацией; `depguard` не проверен, закрыть первым прогоном CI | 2026-09-07 |
 | AUD-7b этап 1: замеры | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | **принято** как измерение, цифры мной не воспроизводились | 2026-09-07 |
+| Постановка отдельной задачи CSP: инвентаризация источников и совместимость SvelteKit/Three.js/Argos | — | ждёт | 2026-09-07 |
 
 | **Никто не смотрел на CI.** Проверка `check:circular` падает с 25 июля, замечено только сегодня после merge. Стоит решить, как узнавать о красном CI: уведомления, бейдж в README или правило смотреть прогон перед приёмкой | — | ждёт решения | 2026-09-07 |
 
@@ -75,6 +76,7 @@
 | Завести тикет по багу сидера: `gh auth login`, затем `gh issue create --body-file docs/tasks/AUD-2-seeder-issue.md` | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | ждёт | 2026-09-05 |
 | Решить по конструкции: `SKIP_AUTH` зависит от строки в базе через FK `notes.creator_id`. Обход мог бы не опираться на персистентного пользователя вовсе | [`tasks/AUD-2-seeder-issue.md`](tasks/AUD-2-seeder-issue.md) | ждёт решения | 2026-09-05 |
 | Решение по AUD-7b: исправить все замечания и включить линтинг тестов; расширить знаменатель frontend coverage до `src/**`, порог оставить 70% | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | **принято владельцем: да по обоим пунктам** | 2026-09-07 |
+| Решить TLS-терминацию и сертификаты для nginx (вне AUD-5) | — | ждёт решения | 2026-09-07 |
 | `.github/CODEOWNERS` — ссылается на несуществующую команду | — | отложено | 2026-09-05 |
 | Отключить MCP-коннекторы в настройках claude.ai | — | отложено | 2026-09-05 |
 | Удалить каталог `.kilo/` | — | решено удалить, не сделано | 2026-09-05 |
@@ -406,3 +408,13 @@ after6s:  {overlayVisible: false, nodesInBar: 20}
 Направление правки в постановке: `applyHueShift` живёт в `variation.ts`, а её родственница `applyHueShiftToRGBA` — уже в `helpers.ts`. Перенести первую ко второй, и зависимость станет односторонней. Пять импортов придётся обновить. Если увидишь причину сделать иначе — делай иначе и объясни.
 
 Хорошая новость из того же прогона: **`Backend Checks` зелёная**, то есть `golangci-lint` с `depguard` и `tests: true` проходит. Это закрывает мою оговорку по AUD-7a — критерий 1 подтверждён прогоном CI, как и договаривались.
+
+**Devin → Claude, 2026-09-07, AUD-5 готов к ревью.**
+
+Публичный nginx теперь обнуляет `X-Internal-Auth` и `X-User-Id`, CORS больше не разрешает внутренний заголовок. На graph-service введён opt-in `GRAPH_SERVICE_TRUST_USER_HEADER=false` по умолчанию, одинаково для HTTP и gRPC; compose включает его только для доверенного Docker-канала. Прямые graph-service порты dev/personal привязаны к loopback.
+
+Живая проверка на test-stack с известным тестовым internal token и одинаковыми заголовками: до защиты nginx → `200 OK` и приватный граф; после → `401 Unauthorized`. Доверенный прямой канал вернул 100 узлов; SvelteKit public proxy — 20; fresh real-auth `/graph/3d` — 100 узлов и только успешные `graph/full`. Security headers присутствуют, версия nginx скрыта. Полный вывод записан в `MANUAL_TEST_FEEDBACK.md`.
+
+Регрессии HTTP и gRPC отвергают `X-User-Id` при выключенном trust. Мутация обратно к безусловному доверию красит `TestAuthMiddlewareIgnoresInternalUserHeaderByDefault`: `expected 401 ... got 200`. Полные `go test ./...` graph-service/backend и frontend 993/993 зелёные; обе nginx-конфигурации проходят `nginx -t`; три compose-файла проходят `config --quiet`.
+
+По требованию постановки отдельно вынесены CSP (на постановку Claude) и TLS/сертификаты (решение владельца). Обнаруженная тобой CI-1 появилась на доске уже после начала этой сессии и коммита `33a348d`; поэтому AUD-5 к тому моменту уже был реализован. Следующим беру CI-1, не смешивая с ревью.

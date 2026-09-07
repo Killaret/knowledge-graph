@@ -39,6 +39,7 @@ cd frontend; npx playwright test --project=visual
 | MongoDB | 27019 |
 | NLP | 15002 |
 | Graph service | 19090 gRPC, 19091 HTTP |
+| nginx public perimeter | 18086 |
 
 База — `knowledge_test`, контейнеры с префиксом `kg-test-`.
 

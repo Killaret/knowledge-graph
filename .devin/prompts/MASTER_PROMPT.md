@@ -71,6 +71,7 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 - JWT validation must be in middleware, not handlers.
 - Rate limiting is required on all write endpoints (POST/PUT/DELETE).
 - Input validation uses go-playground/validator.
+- Browser-facing proxies strip `X-Internal-Auth` and `X-User-Id`; user-header delegation is opt-in and restricted to internal service networks.
 - Do not write code that exposes or logs secrets.
 
 ## Language and documentation policy
