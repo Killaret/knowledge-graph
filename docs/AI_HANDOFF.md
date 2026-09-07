@@ -53,6 +53,7 @@
 | Три правки A-3 (порядок фаз, ветка `default`, `-Skipped` с ненулевым кодом) не покрыты регрессией: тест проходит на сломанном коде, проверено мутацией | [`tasks/A-3-review-findings.md`](tasks/A-3-review-findings.md) | **принято** — три новых сценария в `test-a3-exit-codes.ps1`, все три мутации ловятся: `-Skipped`+exit 2 → FAIL, убранная ветка `default` → FAIL, обход по хеш-мапе вместо `PHASE_ORDER` в `.sh` → FAIL. Проверка Claude Code: три мутации боевого кода, каждая роняет свой сценарий с отдельным сообщением; имена `a1..a7` подобраны под хеш-порядок bash, иначе тест прошёл бы случайно | 2026-09-07 |
 | PUB-1: открыть анониму чтение публичной заметки и поиск по публичным. Слой данных уже готов — `applyNoteScope` фильтрует по `is_public` при пустом пользователе; мешает только глобальный `JWTAuth` | [`tasks/PUB-1-anonymous-read-and-search.md`](tasks/PUB-1-anonymous-read-and-search.md) | ждёт | 2026-09-07 |
 | PUB-2: граф сообщества как режим просмотра, а не следствие авторизации | [`tasks/PUB-2-graph-view-mode.md`](tasks/PUB-2-graph-view-mode.md) | ждёт, после PUB-1 | 2026-09-07 |
+| BOARD-1: ретенция для «Обмена репликами», решения владельца в `docs/DECISIONS.md`, машинная проверка размера доски. Доска выросла до 147 КБ, из них 79 % — раздел, который не чистит ни одно правило | [`tasks/BOARD-1-handoff-retention.md`](tasks/BOARD-1-handoff-retention.md) | ждёт, **выше PUB-3** | 2026-09-07 |
 | PUB-3: переименовать `/api/v1/graph/all` в `/graph/public`, жёстко, без алиаса | [`tasks/PUB-3-rename-graph-endpoints.md`](tasks/PUB-3-rename-graph-endpoints.md) | ждёт, последней из PUB | 2026-09-07 |
 | AUTO-1: автопуш в конце сессии и запуск Devin по событию push | [`tasks/AUTO-1-push-and-trigger.md`](tasks/AUTO-1-push-and-trigger.md) | ждёт, можно параллельно | 2026-09-07 |
 | `embed-recompute -post -dry-run` выполняет `REINDEX` и `DELETE FROM note_recommendations`: возврат на строке 45 происходит до проверки `-dry-run` на строке 69, и `runPostSteps` про флаг не знает | [`tasks/P11-2-review-findings.md`](tasks/P11-2-review-findings.md), раунд 2 | ждёт | 2026-09-07 |
@@ -630,4 +631,4 @@ PUB-2 превращает выбор графа в режим просмотр�
 
 Третий блокер VIS-1 закрыт решением: поиск открывается анониму, сценарий остаётся в анонимном наборе. Раунд 3 — после PUB-1, иначе эталон снова снимет плашку ошибки.
 
-Порядок: PUB-1 → PUB-2 → PUB-3, AUTO-1 параллельно. BOARD-1 по-прежнему ждёт — доска выросла до 147 КБ.
+Порядок: PUB-1 → PUB-2 → BOARD-1 → PUB-3, AUTO-1 параллельно. BOARD-1 поднят выше PUB-3 решением владельца: доска выросла до 147 КБ и прибавляет быстрее, чем мы её чистим.
