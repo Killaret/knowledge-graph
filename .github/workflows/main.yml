@@ -290,9 +290,12 @@ jobs:
     needs: [full-tests]
     timeout-minutes: 25
     env:
+      # NOTE: stays "true" until the visual suite is split — most scenarios
+      # need an authenticated session and bypass mode has been supplying it.
+      # See docs/tasks/VIS-1-split-visual-baselines.md.
       SKIP_AUTH: "true"
       FRONTEND_URL: http://localhost:3002
-      ARGOS_REFERENCE_BRANCH: ai-agents
+      ARGOS_REFERENCE_BRANCH: main
     steps:
       - uses: actions/checkout@v5
 
