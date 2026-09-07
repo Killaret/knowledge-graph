@@ -38,6 +38,12 @@ This file covers July 2026 onward. Earlier history lives in the git log.
 
 ### Security
 
+- Note access control: every `/notes/:id` route now enforces object ownership
+  (`middleware.RequireNoteAccess`). Previously any registered user could read,
+  modify and permanently delete another user's private notes by id (IDOR).
+  Foreign notes now answer `404` — including for writes — so their existence is
+  not confirmable; public notes stay readable for any caller.
+
 - OAuth token transport hardened: token removed from the query string, PKCE moved to `S256`,
   `state` validation detached from the PKCE flag.
 - `SKIP_AUTH` restricted to the test profile. It had disabled per-owner data scoping, not just

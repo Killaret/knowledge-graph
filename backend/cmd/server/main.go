@@ -337,6 +337,7 @@ func run(
 		jwtConfig,
 		apiKeyConfig,
 		skipAuthConfig,
+		noteRepo,
 	)
 
 	// Create HTTP server

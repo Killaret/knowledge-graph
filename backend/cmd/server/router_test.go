@@ -27,6 +27,7 @@ func TestSetupRouter(t *testing.T) {
 		jwtConfig,
 		apiKeyConfig,
 		skipAuthConfig,
+		nil,
 	)
 
 	require.NotNil(t, r)

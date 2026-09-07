@@ -783,8 +783,9 @@ func (h *Handler) setNotePublic(c *gin.Context, isPublic bool) {
 		return
 	}
 
-	if existing.CreatorID() == nil || *existing.CreatorID() != userID {
-		apicommon.Forbidden(c)
+	// SEC-1: a stranger's note is indistinguishable from a missing one.
+	if !existing.IsOwnedBy(userID) { // userID comes from a JWT — identity is present here
+		apicommon.NotFound(c, "Note")
 		return
 	}
 
@@ -931,6 +932,24 @@ func (h *Handler) DeleteBatch(c *gin.Context) {
 			return
 		}
 		ids = append(ids, id)
+	}
+
+	// SEC-1: refuse the whole batch when any id points at a note the
+	// caller does not own. Missing ids keep their previous no-op
+	// semantics; foreign ones answer 404 without deleting anything.
+	if !middleware.IsSkipAuth(c.Request.Context()) {
+		userID, authed := middleware.GetUserID(c)
+		for _, id := range ids {
+			n, err := h.repo.FindByID(c.Request.Context(), id)
+			if err != nil {
+				apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+				return
+			}
+			if n != nil && !(authed && n.IsOwnedBy(userID)) {
+				apicommon.NotFound(c, "Note")
+				return
+			}
+		}
 	}
 
 	if err := h.repo.DeleteBatch(c.Request.Context(), ids); err != nil {
