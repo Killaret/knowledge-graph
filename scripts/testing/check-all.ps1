@@ -1,5 +1,6 @@
 param(
-    [switch]$Quick
+    [switch]$Quick,
+    [switch]$Strict
 )
 
 $ErrorActionPreference = 'Continue'
@@ -115,5 +116,10 @@ if ($coverCreated) {
 }
 
 $failed = Test-AnyFailed
+$skippedCount = @($script:PhaseResults.Values | Where-Object { $_.Status -eq 'skip' }).Count
 Write-FinalSummary -Success (-not $failed)
+if ($Strict -and $skippedCount -gt 0) {
+    Write-Host "Strict mode: $skippedCount skipped phase(s) treated as failure." -ForegroundColor Red
+    exit 1
+}
 exit $(if ($failed) { 1 } else { 0 })

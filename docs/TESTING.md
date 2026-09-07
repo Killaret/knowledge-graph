@@ -195,14 +195,16 @@ Runs the same command-bearing checks as the five jobs in `.github/workflows/_cor
 ```powershell
 .\scripts\testing\check-all.ps1
 .\scripts\testing\check-all.ps1 -Quick
+.\scripts\testing\check-all.ps1 -Strict   # exit 1 when any phase is skipped
 ```
 
 ```bash
 ./scripts/testing/check-all.sh
 ./scripts/testing/check-all.sh --quick
+./scripts/testing/check-all.sh --strict  # exit 1 when any phase is skipped
 ```
 
-The quick mode skips backend and graph-service integration tests explicitly. A summary containing skipped phases says `COMPLETE WITH SKIPS`, not that all checks passed. `check-core-workflow-sync.mjs` fails when a command-bearing workflow step and `core-checks.tsv` diverge. The scripts remove the `backend/cover.out` file they produce; generated config drift remains in the working tree and is reported as a failure.
+The quick mode skips backend and graph-service integration tests explicitly. The strict mode makes a run exit non-zero when any phase is skipped, for wrappers that only read the exit code. A summary containing skipped phases says `COMPLETE WITH SKIPS`, not that all checks passed. `check-core-workflow-sync.mjs` fails when a command-bearing workflow step and `core-checks.tsv` diverge. The scripts remove the `backend/cover.out` file they produce; generated config drift remains in the working tree and is reported as a failure.
 
 ### run-full-test-cycle
 Orchestrates the complete testing cycle with **full stack isolation**.

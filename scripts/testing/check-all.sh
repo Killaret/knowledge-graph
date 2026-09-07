@@ -1,12 +1,14 @@
 #!/bin/bash
 
 QUICK=0
-if [[ "${1:-}" == "--quick" ]]; then
-    QUICK=1
-elif [[ $# -gt 0 ]]; then
-    echo "Usage: $0 [--quick]"
-    exit 2
-fi
+STRICT=0
+for arg in "$@"; do
+    case "$arg" in
+        --quick) QUICK=1 ;;
+        --strict) STRICT=1 ;;
+        *) echo "Usage: $0 [--quick] [--strict]"; exit 2 ;;
+    esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -124,5 +126,13 @@ if test_any_failed; then
     write_final_summary false
     exit 1
 fi
+skipped_count=0
+for value in "${PHASE_RESULTS[@]}"; do
+    [[ "$value" == skip\|* ]] && skipped_count=$((skipped_count + 1))
+done
 write_final_summary true
+if [[ $STRICT -eq 1 && $skipped_count -gt 0 ]]; then
+    echo "Strict mode: $skipped_count skipped phase(s) treated as failure."
+    exit 1
+fi
 exit 0

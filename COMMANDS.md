@@ -95,7 +95,8 @@ npm run preview                    # Предпросмотр production сбо�
 cd frontend
 npm run check                      # Проверка типов SvelteKit
 npm run check:watch                # Проверка типов в watch режиме
-npm run lint                       # ESLint linting с авто-фиксом
+npm run lint                       # ESLint проверка (без изменения файлов)
+npm run lint:fix                   # ESLint с авто-фиксом
 npm run format                     # Prettier форматирование
 npm run format:check               # Проверка форматирования
 ```

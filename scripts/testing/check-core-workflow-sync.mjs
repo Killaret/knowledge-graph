@@ -94,6 +94,33 @@ const missingLocally = [...workflowKeys].filter(
 const missingInWorkflow = [...manifestKeys].filter(
     (entry) => !workflowKeys.has(entry),
 );
+// extractRunCommand returns the normalized shell text of a `run:` step —
+// single line or the whole `run: |` block — or null for action-based steps.
+// For equality comparison only single-line commands are meaningful, but the
+// full run text is still used to look up embedded values such as the
+// coverage threshold.
+function extractRunCommand(step) {
+    const lines = step.body.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+        const match = lines[i].match(/^(\s+)run:\s*(.*)$/);
+        if (!match) continue;
+        const indent = match[1].length;
+        const value = match[2].trim();
+        if (value !== "|" && value !== ">") {
+            return { command: value.replace(/\s+/g, " "), multiline: false };
+        }
+        const block = [];
+        for (let j = i + 1; j < lines.length; j++) {
+            const line = lines[j];
+            const lineIndent = line.match(/^\s*/)[0].length;
+            if (line.trim() !== "" && lineIndent <= indent) break;
+            block.push(line.trim());
+        }
+        return { command: block.join(" ").replace(/\s+/g, " "), multiline: true };
+    }
+    return null;
+}
+
 const commandDrift = [];
 const localCommandDrift = [];
 
@@ -110,6 +137,35 @@ for (const entry of manifest) {
         commandDrift.push(
             `${entry.job}/${entry.workflow_step}: expected ${entry.signature}`,
         );
+    }
+
+    const runCommand = extractRunCommand(step);
+
+    if (entry.command.startsWith("@coverage:")) {
+        const threshold = entry.command.slice("@coverage:".length);
+        // The bare number must appear in a comparison, not only inside an
+        // echoed "64.8%" label: exclude matches followed by % or digits.
+        const thresholdPattern = new RegExp(
+            threshold.replace(/\./g, "\\.") + "(?![0-9.%])",
+        );
+        if (!runCommand || !thresholdPattern.test(runCommand.command)) {
+            commandDrift.push(
+                `${entry.job}/${entry.workflow_step}: coverage threshold ${threshold} not found in the CI step`,
+            );
+        }
+    }
+
+    if (
+        runCommand !== null &&
+        !runCommand.multiline &&
+        !entry.command.startsWith("@")
+    ) {
+        const normalizedSignature = entry.signature.replace(/\s+/g, " ").trim();
+        if (runCommand.command !== normalizedSignature) {
+            commandDrift.push(
+                `${entry.job}/${entry.workflow_step}: CI runs '${runCommand.command}', signature is '${normalizedSignature}'`,
+            );
+        }
     }
 
     if (!entry.command.startsWith("@") && entry.id !== "backend-lint") {
