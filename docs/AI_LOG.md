@@ -100,3 +100,4 @@
 | 2026-09-07 | Claude Code | `ARGOS_REFERENCE_BRANCH` → `main`; второй эталон отложен, заведена VIS-1 | на ревью | этот коммит |
 | 2026-09-07 | Devin | CI-3: единый PowerShell/Bash runner 14 фаз `_core-checks.yml`, общий manifest, sync guard, причины SKIP; три обязательные мутации выполнены | на ревью у Claude Code | этот коммит |
 | 2026-09-07 | Devin | Ревью `11cab1f`: смена Argos reference на `main` корректна, но коммит повредил доску и оставил три документа со старым `ai-agents` | отклонено | [`tasks/VIS-1-review-findings.md`](tasks/VIS-1-review-findings.md) |
+| 2026-09-07 | Claude Code | CI-3 принят: обе оболочки прогнаны, шесть критериев закрыты, четыре мутации; пять находок, блокеров нет | принято | этот коммит |
