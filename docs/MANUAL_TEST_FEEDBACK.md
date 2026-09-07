@@ -97,6 +97,13 @@
 - **Status:** reproduced on the isolated test stack (`SKIP_AUTH=false`). Unrelated to P11-2: no frontend/auth code changed in this session. Needs triage.
 - **Screenshot / Logs:** `frontend/test-results/*chromium-real-auth*/error-context.md`; Playwright `line` reporter output for the `chromium-real-auth` project.
 
+- **Case:** P11-2 multilingual embeddings — live verification on the isolated test stack
+- **What:** Stack raised from scratch and seeded with 30 notes / 20 links. Verified the offline model load, embedding dimensions, cross-language similarity and the full recompute path.
+- **Expected:** Offline start with `HF_HUB_OFFLINE=1`, 384 dimensions in both languages, same-meaning cross-language pairs clearly above unrelated ones, recompute restoring every vector to the current model.
+- **Actual:** All four hold. `docker run --network none -e HF_HUB_OFFLINE=1` loaded the model from the baked-in cache and returned 384 dimensions. Similarity: 0.9652 / 0.9897 / 0.9787 for same-meaning RU↔EN pairs against 0.5110 / 0.5984 / 0.5729 for unrelated ones. Three rows marked `all-MiniLM-L6-v2` were found by `embed-recompute -dry-run` (exactly 3), enqueued, recomputed by the workers, and returned to `paraphrase-multilingual-MiniLM-L12-v2` at 384 dimensions; `note_recommendations` held 30 rows.
+- **Status:** task rejected on a different criterion — the graph-service model filter is covered by no executed test and its only integration test fails with `column "model_name" does not exist`. See [`tasks/P11-2-review-findings.md`](tasks/P11-2-review-findings.md).
+- **Screenshot / Logs:** `go test -tags=integration -p=1 -count=1 ./...` in `backend` — 51 packages, exit 0; `go test -tags=integration -run TestPostgresClient ./internal/db/` in `services/graph-service` — FAIL with SQLSTATE 42703; mutation output for `FindSimilarNotes` recorded in the findings file.
+
 ### Roadmap items
 
 <!-- Real feature work that is understood and has clear value. -->
