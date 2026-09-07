@@ -116,3 +116,4 @@
 | 2026-09-07 | Claude Code | A-3 принят: три мутации боевого кода роняют три новых сценария | принято | [`tasks/A-3-review-findings.md`](tasks/A-3-review-findings.md) |
 | 2026-09-07 | Claude Code | Правило `check-all` перед приёмкой принято: одна строка в обеих копиях, ужесточение | принято | `9ad375f` |
 | 2026-09-07 | Claude Code | VIS-1 отклонён: прогон зелёный, но сессия не поднимается, `stableRender` портит query, анонимный поиск даёт 401 в эталоне | отклонено | [`tasks/VIS-1-round2-review-findings.md`](tasks/VIS-1-round2-review-findings.md) |
+| 2026-09-07 | Claude Code | Четыре решения владельца по публичному графу и автономности; постановки PUB-1, PUB-2, PUB-3, AUTO-1 | на ревью у Devin | этот коммит |
