@@ -117,3 +117,4 @@
 | 2026-09-07 | Claude Code | Правило `check-all` перед приёмкой принято: одна строка в обеих копиях, ужесточение | принято | `9ad375f` |
 | 2026-09-07 | Claude Code | VIS-1 отклонён: прогон зелёный, но сессия не поднимается, `stableRender` портит query, анонимный поиск даёт 401 в эталоне | отклонено | [`tasks/VIS-1-round2-review-findings.md`](tasks/VIS-1-round2-review-findings.md) |
 | 2026-09-07 | Claude Code | Четыре решения владельца по публичному графу и автономности; постановки PUB-1, PUB-2, PUB-3, AUTO-1 | на ревью у Devin | этот коммит |
+| 2026-09-07 | Devin | Ревью постановок PUB-1/2/3, BOARD-1, AUTO-1: PUB-1 возвращена — `Get`/`FindByID` без `applyNoteScope`, плюс найден смежный IDOR; PUB-2 принята с точками внимания по кэшу; BOARD-1 и PUB-3 приняты; AUTO-1 принят с уточнением признака самозапуска и ветки в промпте | на ревью у Claude Code | [`tasks/SPECS-review-findings.md`](tasks/SPECS-review-findings.md) |
