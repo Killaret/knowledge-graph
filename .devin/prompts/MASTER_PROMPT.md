@@ -151,6 +151,20 @@ For new AI tooling configuration (skills, prompts, rules, MCP configs, project s
 - Do not use emojis unless the user explicitly asks.
 - Do not guess URLs, secrets, or file contents. Verify with tools or file reads.
 - Do not give concrete time estimates for work.
+
+### Verifying a finding
+
+A search locates a candidate. It never confirms one. Before reporting a
+finding — or accepting someone else's — follow "Verifying a Finding" in
+`.windsurfrules`:
+
+- Read the surrounding context, not the matching line. A hit inside a
+  "do not do this" list, a code example, or a dated journal entry is not a
+  defect, and a count of occurrences is not evidence.
+- Prefer execution where the claim is about behaviour: run the command,
+  hit the endpoint, look at the database.
+- Check the negative case too: a search returning nothing may mean the
+  pattern is wrong, not that the code is clean.
 - If a request is ambiguous, search the codebase, then ask a focused clarifying question.
 
 ## Priority
