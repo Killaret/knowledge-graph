@@ -221,8 +221,15 @@ if ($Full) {
 if ($WslOptimize) {
     Write-Host "`n8. Optimizing WSL2 disk..." -ForegroundColor Cyan
 
+    # diskpart compacts a VHD only with elevated rights; without them the
+    # process does not even start, which is an exception — not an exit code —
+    # so a missing admin check would report success having done nothing.
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
     $wsl_check = wsl --list 2>$null
-    if (-not $wsl_check) {
+    if (-not $isAdmin) {
+        Register-Phase "optimize-disk" -Skipped -Reason "requires an elevated shell (run as administrator)"
+    } elseif (-not $wsl_check) {
         Register-Phase "optimize-disk" -Skipped -Reason "WSL not found"
     } else {
         # Only the Docker Desktop VHD is a valid target; the disk lives
@@ -271,9 +278,19 @@ exit
 "@
                     $scriptPath = Join-Path $env:TEMP 'kg_diskpart_compress.txt'
                     $diskpartScript | Out-File -FilePath $scriptPath -Encoding ASCII
-                    $output = & diskpart /s $scriptPath 2>&1
-                    $code = $LASTEXITCODE
-                    $output | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+                    # A failed launch (no elevation) raises an exception and
+                    # never sets $LASTEXITCODE — handle both failure shapes.
+                    $code = 0
+                    try {
+                        $output = & diskpart /s $scriptPath 2>&1
+                        if ($null -eq $LASTEXITCODE -or $LASTEXITCODE -ne 0) {
+                            $code = if ($null -eq $LASTEXITCODE) { 1 } else { $LASTEXITCODE }
+                        }
+                        $output | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+                    } catch {
+                        $code = 1
+                        Write-Host "    diskpart failed to start: $($_.Exception.Message)" -ForegroundColor DarkGray
+                    }
                     Remove-Item $scriptPath -ErrorAction SilentlyContinue
                     if ($code -eq 0) {
                         $new_size = [math]::Round((Get-Item $vhdx_file.FullName).Length / 1GB, 2)

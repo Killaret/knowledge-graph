@@ -42,6 +42,11 @@ $out = pwsh -NoProfile -File $cleanupPs1 2>&1 | Out-String
 $code = $LASTEXITCODE
 Check "ps1 exits non-zero when docker is down" ($code -ne 0) "exit=$code"
 Check "ps1 prints [FAIL] not [SUCCESS]" (($out -match '\[FAIL\]') -and ($out -notmatch '\[SUCCESS\]')) "exit=$code"
+# Per-phase: every docker-touching step must be red, so a partial rollback of
+# the exit-code checks (one step going back to unconditional success) is seen.
+foreach ($phase in @('stop-containers', 'prune-dangling-images', 'prune-stopped-containers', 'prune-networks', 'prune-build-cache')) {
+    Check "ps1 phase '$phase' fails when docker is down" ($out -match "\[FAIL\] $phase") "phase output:`n$out"
+}
 
 # Stub docker that works: everything returns empty success, `system df` prints a table.
 @'
@@ -80,6 +85,18 @@ try {
     if (-not $hadDir) { Remove-Item $backupDir -Recurse -Force -ErrorAction SilentlyContinue }
 }
 
+Write-Host "Case 4: -WslOptimize without elevation must not report success" -ForegroundColor Cyan
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if ($isAdmin) {
+    Write-Host "  [SKIP] running elevated — non-admin path cannot be exercised" -ForegroundColor Yellow
+} else {
+    $out = pwsh -NoProfile -File $cleanupPs1 -WslOptimize 2>&1 | Out-String
+    $code = $LASTEXITCODE
+    Check "ps1 -WslOptimize w/o admin: optimize-disk not [PASS]" ($out -notmatch '\[PASS\] optimize-disk') "phase reported success`n$out"
+    Check "ps1 -WslOptimize w/o admin: phase is red or explicitly skipped" ($out -match '\[(FAIL|SKIP)\] optimize-disk') "phase missing`n$out"
+    Check "ps1 -WslOptimize w/o admin: exit code reflects the failure" ($code -ne 0 -or $out -match '\[SKIP\] optimize-disk') "exit=$code"
+}
+
 # Bash version, when available — same contract. Prefer Git-bash: it
 # understands Windows paths; a bare `bash` here may be WSL.
 $bash = $null
@@ -95,12 +112,15 @@ if ($bash) {
 echo "error during connect: docker daemon is not running" >&2
 exit 1
 '@ | Set-Content (Join-Path $stubDir "docker") -Encoding ASCII -NoNewline
-    Write-Host "Case 4 (sh): docker unreachable -> failures reported" -ForegroundColor Cyan
+    Write-Host "Case 5 (sh): docker unreachable -> failures reported" -ForegroundColor Cyan
     $shScript = (Join-Path $repoRoot "scripts/cleanup/cleanup-docker.sh") -replace '\\', '/'
     $out = & $bash $shScript 2>&1 | Out-String
     $code = $LASTEXITCODE
     Check "sh exits non-zero when docker is down" ($code -ne 0) "exit=$code"
     Check "sh prints [FAIL]" ($out -match '\[FAIL\]') "no [FAIL]`n$out"
+    foreach ($phase in @('stop-containers', 'prune-dangling-images', 'prune-stopped-containers', 'prune-networks', 'prune-build-cache')) {
+        Check "sh phase '$phase' fails when docker is down" ($out -match "\[FAIL\] $phase") "phase output:`n$out"
+    }
 } else {
     Write-Host "  [SKIP] bash not available — sh cases skipped" -ForegroundColor Yellow
 }

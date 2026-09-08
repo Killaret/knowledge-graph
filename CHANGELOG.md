@@ -45,7 +45,9 @@ This file covers July 2026 onward. Earlier history lives in the git log.
   `scripts/devops/backup-policy.env` and `check-personal-backup.*`), a visible
   image cost before `-Full` (`prune -af` sees every image as unused once all
   containers are gone), and a fixed `-WslOptimize` that no longer kills processes
-  by name and only compacts the Docker VHD under `%LOCALAPPDATA%\Docker\wsl`.
+  by name and only compacts the Docker VHD under `%LOCALAPPDATA%\Docker\wsl`;
+  without elevation the step is skipped with an explicit reason instead of
+  reporting success, and a `diskpart` launch failure is caught as an exception.
 
 ### Security
 
