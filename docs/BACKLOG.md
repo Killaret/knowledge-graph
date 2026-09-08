@@ -468,6 +468,16 @@ Description: Кластеризация графа и визуализация �
 ---
 ## ⚠️ Technical Debt & Research
 
+### TD-CSP-STYLES: remove the inline-style concession from the CSP
+
+**Priority:** 🟢 Low
+**Status:** ⏸️ Deferred by owner (2026-09-08)
+**Description:** The Content-Security-Policy introduced by CSP-1 carries one concession: `style-src-attr 'unsafe-inline'`, needed by 68 `style="..."` attributes in Svelte markup, 8 `style:` directives that compile to the same, and one in `src/app.html`. Attribute-level styles cannot be covered by a nonce, so the alternative was rewriting 76 places inside a security task.
+
+The concession is narrow. A style injection can distort the page and leak through background selectors, but it cannot execute code — `script-src` stays strict and is what the policy is really for.
+
+Revisit when the markup is touched for other reasons: move the values into component styles or classes, then drop the directive and confirm the CSP check still passes.
+
 ### TD-TLS: TLS termination for nginx
 
 **Priority:** 🟢 Low
