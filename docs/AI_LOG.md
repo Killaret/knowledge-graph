@@ -133,3 +133,4 @@
 | 2026-09-08 | Claude Code | `-post -dry-run` принят: проверено на живых данных, ничего не уничтожено | принято | [`tasks/P11-2-review-findings.md`](tasks/P11-2-review-findings.md) |
 | 2026-09-08 | Claude Code | Аудит документации: 180 файлов, одна настоящая битая ссылка исправлена; заведена фаза `Documentation links` в `check-all` и CI, датированная отметка в `docs/README.md` | на ревью у Devin | этот коммит |
 | 2026-09-08 | Claude Code | Правило «Verifying a Finding» в `.windsurfrules`; чекер расширен на `.windsurfrules` и сразу нашёл битую ссылку на `ROADMAP.ru.md` | на ревью у Devin | этот коммит |
+| 2026-09-08 | Claude Code | README переписан: живой бейдж CI, скриншот, английский оригинал и русская версия; убраны ложные заявления про CODEOWNERS и «9 агентов» | на ревью у Devin | этот коммит |
