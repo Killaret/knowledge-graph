@@ -18,7 +18,7 @@
 
 | Документ | О чём |
 |---|---|
-| [architecture/](architecture/README.md) | C4-модель, UML, 17 ADR — принятые архитектурные решения |
+| [architecture/](architecture/README.md) | C4-модель, UML, 18 ADR — принятые архитектурные решения |
 | [ARCHITECTURE_SUMMARY.md](ARCHITECTURE_SUMMARY.md) | Краткий срез системы, с него удобно начинать |
 | [ARCHITECTURE_EN.md](ARCHITECTURE_EN.md) | Подробное описание слоёв и потоков |
 | [FRONTEND_ARCHITECTURE_EN.md](FRONTEND_ARCHITECTURE_EN.md) | FSD и Atomic Design на фронтенде |

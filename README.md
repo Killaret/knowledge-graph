@@ -30,6 +30,26 @@ they were written in Russian or English. The result is rendered as a navigable
 Published notes form a public community graph that anyone can browse without an
 account; signing in switches the view to your own.
 
+## Provenance
+
+The project began with a problem of the author's own: notes accumulating faster
+than any structure to hold them, and no tool that treated the links between them
+as the primary object rather than an afterthought.
+
+The product model and the architecture are the author's, as is every decision in
+[`docs/architecture/decisions/`](docs/architecture/decisions/) — put forward as a
+hypothesis, worked through, argued with colleagues where that helped, then
+accepted or rejected on the merits. The rejected options are recorded next to the
+chosen ones, because they are the part that shows the reasoning. The system was
+built by the author.
+
+AI agents joined later, and they work under a written protocol: one implements,
+another reviews, never both in the same session, and neither may alter its own
+constraints. What gets built, and the criteria it is held to, are decided outside
+them.
+
+---
+
 ## ✨ Features
 
 - **3D visualisation** — notes as celestial bodies, with camera navigation and adaptive fog
@@ -126,7 +146,7 @@ over Atomic Design, with import rules enforced by ESLint.
 the note graph, with pub/sub cache invalidation. **NLP Service** produces
 embeddings and extracts keywords.
 
-Decision records: 17 ADRs in [`docs/architecture/decisions/`](docs/architecture/decisions/),
+Decision records: 18 ADRs in [`docs/architecture/decisions/`](docs/architecture/decisions/),
 C4 model and UML in [`docs/architecture/`](docs/architecture/README.md).
 
 ---
