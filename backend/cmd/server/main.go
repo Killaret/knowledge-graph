@@ -13,8 +13,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 
-	_ "knowledge-graph/docs"
-
 	"knowledge-graph/internal/application/achievement"
 	"knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"

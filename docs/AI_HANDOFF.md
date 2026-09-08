@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-08 — a222b04
-Прочитано: Devin — 2026-09-08 — e4ac0ac
+Прочитано: Devin — 2026-09-08 — 5ff7e1f
 ```
 
 ---
@@ -54,7 +54,7 @@
 | PUB-2: граф сообщества как режим просмотра, а не следствие авторизации | [`tasks/PUB-2-graph-view-mode.md`](tasks/PUB-2-graph-view-mode.md) | ждёт, после PUB-1 — постановка принята; точка внимания: `PreloadService.preloadedGraph`/`lastHash` один на оба режима, скоуп `v1/graph/delta` проверить | 2026-09-07 |
 | BOARD-1: ретенция для «Обмена репликами», решения владельца в `docs/DECISIONS.md`, машинная проверка размера доски. Доска выросла до 147 КБ, из них 79 % — раздел, который не чистит ни одно правило | [`tasks/BOARD-1-handoff-retention.md`](tasks/BOARD-1-handoff-retention.md) | ждёт, **выше PUB-3** — постановка принята без замечаний | 2026-09-07 |
 | Отзеркалить новый раздел `.windsurfrules` «Verifying a Finding» в производные: `.devin/skills/knowledge-graph/SKILL.md` и оба мастер-промпта. Норму правил я, производные в `.devin/` — твои | `.windsurfrules`, `.devin/` | **на ревью** — правило перенесено в `SKILL.md` (пункт workflow 3) и оба мастер-промпта (раздел «Verifying a finding» / «Проверка находки»), со ссылкой на норму | 2026-09-08 |
-| **API-1:** спецификация API — два недостающих маршрута, контрактная проверка против дрейфа, мёртвый пакет `backend/docs`, раздел передачи второму разработчику | [`tasks/API-1-openapi-contract-and-handover.md`](tasks/API-1-openapi-contract-and-handover.md) | **готово к работе, приоритет владельца** — решение по пункту 0 принято: вариант А, спеку опустить до `openapi: 3.0.3`. Проверено живьём: `/swagger/index.html` показывает «Unable to render this definition», спецификация помечена `openapi: 3.1.0`, вшитый Swagger UI понимает только 3.0.x. Развилка: опустить спеку до 3.0.3 (8 строк) или заменить отображалку. Маршруты сверены исполнением: лишнего нет, не хватает двух | 2026-09-08 |
+| **API-1:** спецификация API — два недостающих маршрута, контрактная проверка против дрейфа, мёртвый пакет `backend/docs`, раздел передачи второму разработчику | [`tasks/API-1-openapi-contract-and-handover.md`](tasks/API-1-openapi-contract-and-handover.md) | **на ревью** — спека на 3.0.3 (8 union-типов → `nullable`), дописаны `GET /graph/analytics` и `PUT /links/{id}`, ответ `POST /notes` описан схемой `Note`; контрактный тест `router_contract_test.go` сверяет роутер↔спеку в обе стороны, обе мутации пойманы с именем маршрута; `backend/docs`, слепой импорт, `swag init` и COPY убраны; на пересобранном образе — 72 операции в UI, 0 error-блоков, скриншот в `assets/api-1/`; `docs/API_EN.md` написан и проиндексирован | 2026-09-08 |
 | CSP-1: Content-Security-Policy через `kit.csp`, сначала в режиме отчётов. Инвентаризация уже сделана в постановке | [`tasks/CSP-1-content-security-policy.md`](tasks/CSP-1-content-security-policy.md) | ждёт, после PUB-3 | 2026-09-08 |
 | PUB-3: переименовать `/api/v1/graph/all` в `/graph/public`, жёстко, без алиаса | [`tasks/PUB-3-rename-graph-endpoints.md`](tasks/PUB-3-rename-graph-endpoints.md) | ждёт, последней из PUB — постановка принята; `graph/all` в 28 файлах, в nginx не встречается | 2026-09-07 |
 | AUTO-1: автопуш в конце сессии и запуск Devin по событию push | [`tasks/AUTO-1-push-and-trigger.md`](tasks/AUTO-1-push-and-trigger.md) | **отменено владельцем** — запуск по `push` снят с плана; постановка помечена в шапке, но не удалена. Автопуш уезжает вместе с ней: отдельной задачей он не заводился | 2026-09-08 |

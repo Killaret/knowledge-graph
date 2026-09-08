@@ -250,3 +250,12 @@ Create a new bullet under the right section with:
 - **Screenshot / Logs:** attach if possible
 - **Proposed fix / idea:** optional
 ```
+
+### API-1 Swagger UI renders the hand-written spec
+
+- **Scope:** after lowering `backend/openAPI.yaml` to `openapi: 3.0.3`, the embedded Swagger UI must render the contract instead of «Unable to render this definition»; the generated `backend/docs` package, its blind import and its `swag init`/COPY lines were removed.
+- **Date:** 2026-09-08
+- **Agent:** Devin
+- **Live check (test stack, rebuilt `kg-test-backend` image):** `GET http://127.0.0.1:18083/openapi.yaml` -> 200, 75922 bytes, `openapi: 3.0.3`; `GET /swagger/index.html` -> 200; `GET /swagger/doc.json` -> 500 (the generated spec is gone, the UI does not read it).
+- **Browser check (headless Chromium via Playwright):** `http://127.0.0.1:18083/swagger/index.html` — HTTP 200, 0 `.errors-wrapper`/`.error` blocks, **72 rendered operations**; title «Knowledge Graph API 1.1.0 OAS3».
+- **Screenshot / Logs:** [`assets/api-1/swagger-render.png`](assets/api-1/swagger-render.png); console output `HTTP: 200 | errorBlocks: 0 | operations rendered: 72`.

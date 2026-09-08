@@ -30,6 +30,7 @@
 | [RECOMMENDATION_API.md](RECOMMENDATION_API.md) | Контракт API рекомендаций |
 | [RECOMMENDATION_TROUBLESHOOTING.md](RECOMMENDATION_TROUBLESHOOTING.md) | Разбор типовых сбоев рекомендаций |
 | [API_ERRORS_EN.md](API_ERRORS_EN.md) | Формат ошибок API |
+| [API_EN.md](API_EN.md) | Контракт API: Swagger UI, openAPI.yaml, импорт в Postman, авторизация для проб |
 | [ARCHITECTURE_ROADMAP.md](ARCHITECTURE_ROADMAP.md) | **Архивный.** Фазы 1–6 от апреля 2026; их нумерация не совпадает с текущим планом, Phase 6 отложена |
 
 ## Эксплуатация
