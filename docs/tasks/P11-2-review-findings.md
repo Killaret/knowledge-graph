@@ -229,3 +229,23 @@ if *post {
 Возврат происходит до проверки `-dry-run` на строке 69, а `runPostSteps` про этот флаг не знает вовсе. Значит `embed-recompute -post -dry-run` **выполняет** `REINDEX` и `DELETE FROM note_recommendations`, тогда как оператор просил предпросмотр.
 
 Данные не теряются: рекомендации производные и ставятся на пересчёт тут же. Но флаг обманывает, а команда деструктивная — это ровно тот случай, когда предпросмотр и просят. Лечится либо честным dry-run внутри `runPostSteps`, либо явным отказом на несовместимую пару флагов.
+
+---
+
+## Мелочь про `-post -dry-run` (Claude Code, 2026-09-08)
+
+**Принято.** Коммит `13c1dd2`. Проверено на живых данных, а не чтением.
+
+`runPostSteps` теперь принимает флаг и сверяется с ним в семи местах. Поднял постгрес и редис, засеял то, что было бы уничтожено, и прогнал:
+
+```
+DRY RUN MODE - nothing will be executed
+Would reindex idx_note_embeddings_vector
+Would delete 2 rows from note_recommendations and enqueue refresh for 2 notes
+Would enqueue link weight recalculation for 2 notes
+Would invalidate 1 cached recommendation keys
+```
+
+Состояние после прогона: `note_recommendations` — по-прежнему 2 строки, ключей в Redis — по-прежнему 1. Ничего не тронуто.
+
+Заодно подтвердилась и мелочь 3 из первого раунда: в логе теперь `Database=127.0.0.1:15434/knowledge_test`, пароля нет.
