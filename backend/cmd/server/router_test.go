@@ -185,4 +185,13 @@ func TestNoteIDRoutesRequireAccessGuard(t *testing.T) {
 			"%s %s answered %d for a stranger; a route without RequireNoteAccess falls through to the handler",
 			route.method, route.path, w.Code)
 	}
+
+	// PUB-1: GET /notes/:id is JWT-exempt for anonymous readers, so
+	// concealment of private notes must come from noteRead, not from the 401
+	// barrier. Anonymous must still get 404, never the content.
+	anonReq := httptest.NewRequest(http.MethodGet, "/api/v1/notes/"+noteID.String(), nil)
+	anonW := httptest.NewRecorder()
+	r.ServeHTTP(anonW, anonReq)
+	assert.Equal(t, http.StatusNotFound, anonW.Code,
+		"anonymous GET on a private note must be concealed with 404, got %d", anonW.Code)
 }
