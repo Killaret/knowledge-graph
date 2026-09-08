@@ -11,6 +11,7 @@ frontend-lint	Frontend ESLint	frontend-checks	Run ESLint	frontend	npm run lint	n
 frontend-format	Frontend formatting	frontend-checks	Check formatting	frontend	npm run format:check	npm run format:check	0	npm
 frontend-types	Frontend TypeScript	frontend-checks	Check TypeScript	frontend	npm run check	npm run check	0	npm
 frontend-config	Generated config sync	frontend-checks	Verify generated config is in sync	.	@config-sync	npm run build-config && git diff --exit-code knowledge-graph.config.json	0	npm
+docs-links	Documentation links	frontend-checks	Check documentation links	.	node scripts/testing/check-docs-links.mjs .	node scripts/testing/check-docs-links.mjs .	0	node
 frontend-unit	Frontend unit tests	frontend-checks	Run unit tests	frontend	npm run test:unit	npm run test:unit	0	npm
 frontend-bdd-types	BDD TypeScript	frontend-checks	Check root BDD TypeScript	frontend	npx tsc --noEmit -p ../tests/tsconfig.json	npx tsc --noEmit -p ../tests/tsconfig.json	0	npx
 nlp-unit	NLP tests	nlp-checks	Run NLP tests	nlp-service	pytest tests/ -v	pytest tests/ -v	0	pytest

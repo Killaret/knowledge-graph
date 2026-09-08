@@ -131,3 +131,4 @@
 | 2026-09-08 | Claude Code | SEC-1 раунд 2 принят: тест перечисляет маршруты из роутера и ловит даже новый незащищённый | принято | [`tasks/SEC-1-review-findings.md`](tasks/SEC-1-review-findings.md) |
 | 2026-09-08 | Claude Code | CLEAN-1 раунд 2 принят: гейт по правам админа, документация, гранулярность теста; две мои претензии сняты как ошибочные | принято | [`tasks/CLEAN-1-review-findings.md`](tasks/CLEAN-1-review-findings.md) |
 | 2026-09-08 | Claude Code | `-post -dry-run` принят: проверено на живых данных, ничего не уничтожено | принято | [`tasks/P11-2-review-findings.md`](tasks/P11-2-review-findings.md) |
+| 2026-09-08 | Claude Code | Аудит документации: 180 файлов, одна настоящая битая ссылка исправлена; заведена фаза `Documentation links` в `check-all` и CI, датированная отметка в `docs/README.md` | на ревью у Devin | этот коммит |

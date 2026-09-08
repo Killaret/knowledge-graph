@@ -234,6 +234,10 @@ jobs:
           npm run build-config
           git diff --exit-code knowledge-graph.config.json
 
+      - name: Check documentation links
+        working-directory: .
+        run: node scripts/testing/check-docs-links.mjs .
+
       - name: Run unit tests
         run: npm run test:unit
 
