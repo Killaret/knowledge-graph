@@ -19,9 +19,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **Закоммитить свою работу.** В дереве ~20 незакоммиченных файлов: A-1, хвост A-3, промпты, скиллы. Протокол требует авторства в коммитах | — | принято — `e3a2412`, `18b1593`, `c6399a5`, `01bb76e` | 2026-09-05 |
-| Завести `/kg-work` на своей стороне взамен `kg-handoff` и `kg-review`. Текст скилла передан человеком | `.devin/skills/kg-work/SKILL.md` | принято | 2026-09-05 |
-| Ревью контура: `.claude/commands/kg-work.md`, формат доски, журнал | [`tasks/AUD-10-review-findings.md`](tasks/AUD-10-review-findings.md) | принято | 2026-09-05 |
 | AUD-2: изоляция данных. Раунд 1 отклонён по сидеру, раунд 2 (`83f0db9`) — блокер снят | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | **принято** | 2026-09-06 |
 | Мелочь по AUD-2: тег `integration` и проверка пустой строки | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | принято — тег работает в обе стороны, проверено | 2026-09-06 |
 | AUD-2 переоткрытие: плотность тумана восстановлена в `config/frontend.json`, артефакт пересобран | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | **принято** — 987/987, тесты движка зелёные | 2026-09-06 |
@@ -76,12 +73,7 @@
 | Постановки P11-3 (нормализация ключевых слов) и P11-4 (кластеризация) | [`tasks/P11-1-clustering-design-notes.md`](tasks/P11-1-clustering-design-notes.md) | ждёт | 2026-09-06 |
 | Витрина документации: `CHANGELOG`, роадмап на страницу, планы в `docs/BACKLOG.md`, гипотезы в `docs/IDEAS.md`, указатель `docs/README.md` | [`tasks/DOC-showcase-review-findings.md`](tasks/DOC-showcase-review-findings.md) | **принято** — висячая ссылка исправлена Devin в `685e655`, каталог `docs/assets/a1-3d-visual-regression/` на месте | 2026-09-07 |
 | Верификация AUD-2, два раунда | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | принято | 2026-09-06 |
-| Два замечания Devin по контуру закрыты: методология ревью возвращена в `/kg-work`, атрибуция в журнале исправлена | [`tasks/AUD-10-review-findings.md`](tasks/AUD-10-review-findings.md) | принято | 2026-09-05 |
 | Верификация AUD-3 | [`tasks/AUD-3-token-transport.md`](tasks/AUD-3-token-transport.md) | принято — проверено мутацией | 2026-09-06 |
-| Внешний аудит, 22 находки, прогон всех локальных тестов | [`EXTERNAL_AUDIT_2026-09.md`](EXTERNAL_AUDIT_2026-09.md) | принято | 2026-09-05 |
-| AUD-1: `LICENSE`, честный README, порты, пороги покрытия, снос авто-коммита из `TESTING.md`, числа в `tests/README.md`, статус в ROADMAP | — | принято | 2026-09-05 |
-| Постановки AUD-2, AUD-3, AUD-6, AUD-10 | [`tasks/`](tasks/) | принято | 2026-09-05 |
-| Контур: `/kg-work` вместо двух команд, формат доски, журнал | [`tasks/AUD-10-review-findings.md`](tasks/AUD-10-review-findings.md) | принято, два неблокирующих замечания | 2026-09-05 |
 
 | AUD-7a: границы и гейт покрытия | [`tasks/AUD-7a-enforce-boundaries.md`](tasks/AUD-7a-enforce-boundaries.md) | **принято** — ESLint и гейт проверены мутацией; `depguard` не проверен, закрыть первым прогоном CI | 2026-09-07 |
 | AUD-7b этап 1: замеры | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | **принято** как измерение, цифры мной не воспроизводились | 2026-09-07 |
@@ -94,7 +86,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| Завести `/kg-work` в Devin по переданному тексту | сделал Devin по просьбе владельца | принято | 2026-09-05 |
 | Положить `DEVIN_API_KEY` в секреты репозитория — без него AUTO-1 не заработает | [`tasks/AUTO-1-push-and-trigger.md`](tasks/AUTO-1-push-and-trigger.md) | ждёт | 2026-09-07 |
 | Завести тикет по багу сидера | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | **отменено владельцем** — баг починен и принят, issue задним числом не нужен | 2026-09-07 |
 | Решить по конструкции: `SKIP_AUTH` зависит от строки в базе через FK `notes.creator_id` | [`tasks/AUD-2-seeder-issue.md`](tasks/AUD-2-seeder-issue.md) | **решено: оставить как есть** | 2026-09-07 |
