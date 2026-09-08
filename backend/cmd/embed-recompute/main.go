@@ -43,7 +43,7 @@ func main() {
 	ctx := context.Background()
 
 	if *post {
-		runPostSteps(ctx, database, cfg)
+		runPostSteps(ctx, database, cfg, *dryRun)
 		return
 	}
 
@@ -127,16 +127,23 @@ func dbLocation(databaseURL string) string {
 // runPostSteps performs the follow-up work required after embeddings were
 // recomputed for a new model: it is a separate invocation because the actual
 // recompute is asynchronous and only finishes once the queue drains.
-func runPostSteps(ctx context.Context, database *gorm.DB, cfg *config.Config) {
+func runPostSteps(ctx context.Context, database *gorm.DB, cfg *config.Config, dryRun bool) {
 	log.Println("Post-recompute steps")
+	if dryRun {
+		log.Println("DRY RUN MODE - nothing will be executed")
+	}
 
 	// 1. Rebuild the ivfflat index: it was built over the old vector
 	// distribution and degrades after a full recompute.
-	log.Println("Reindexing idx_note_embeddings_vector ...")
-	if err := database.WithContext(ctx).Exec("REINDEX INDEX idx_note_embeddings_vector").Error; err != nil {
-		log.Fatalf("reindex failed: %v", err)
+	if dryRun {
+		log.Println("Would reindex idx_note_embeddings_vector")
+	} else {
+		log.Println("Reindexing idx_note_embeddings_vector ...")
+		if err := database.WithContext(ctx).Exec("REINDEX INDEX idx_note_embeddings_vector").Error; err != nil {
+			log.Fatalf("reindex failed: %v", err)
+		}
+		log.Println("Index rebuilt")
 	}
-	log.Println("Index rebuilt")
 
 	// Collect all live notes once; both follow-up passes need them.
 	noteRepo := postgres.NewNoteRepository(database, nil)
@@ -146,32 +153,56 @@ func runPostSteps(ctx context.Context, database *gorm.DB, cfg *config.Config) {
 	}
 	log.Printf("Post-recompute covers %d notes", len(notes))
 
-	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled)
-	if err != nil {
-		log.Fatalf("Failed to create task queue client: %v", err)
-	}
-	defer func() {
-		if err := taskQueue.Close(); err != nil {
-			log.Printf("Error closing task queue client: %v", err)
-		}
-	}()
+	delay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
 
 	// 2. Drop stale recommendations and enqueue their recompute.
-	log.Println("Clearing note_recommendations ...")
-	if err := database.WithContext(ctx).Exec("DELETE FROM note_recommendations").Error; err != nil {
-		log.Fatalf("failed to clear note_recommendations: %v", err)
-	}
-	delay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
-	failed := 0
-	for _, n := range notes {
-		if err := taskQueue.EnqueueRefreshRecommendations(ctx, n.ID(), delay); err != nil {
-			log.Printf("Failed to enqueue recommendation refresh for note %s: %v", n.ID(), err)
-			failed++
+	if dryRun {
+		var recCount int64
+		if err := database.WithContext(ctx).Raw("SELECT COUNT(*) FROM note_recommendations").Scan(&recCount).Error; err != nil {
+			log.Fatalf("failed to count note_recommendations: %v", err)
 		}
-	}
-	log.Printf("Recommendations cleared; refresh enqueued for %d notes (%d failed)", len(notes)-failed, failed)
+		log.Printf("Would delete %d rows from note_recommendations and enqueue refresh for %d notes", recCount, len(notes))
+	} else {
+		taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled)
+		if err != nil {
+			log.Fatalf("Failed to create task queue client: %v", err)
+		}
+		defer func() {
+			if err := taskQueue.Close(); err != nil {
+				log.Printf("Error closing task queue client: %v", err)
+			}
+		}()
 
-	// 3. Invalidate the cached recommendation payloads in Redis.
+		log.Println("Clearing note_recommendations ...")
+		if err := database.WithContext(ctx).Exec("DELETE FROM note_recommendations").Error; err != nil {
+			log.Fatalf("failed to clear note_recommendations: %v", err)
+		}
+		failed := 0
+		for _, n := range notes {
+			if err := taskQueue.EnqueueRefreshRecommendations(ctx, n.ID(), delay); err != nil {
+				log.Printf("Failed to enqueue recommendation refresh for note %s: %v", n.ID(), err)
+				failed++
+			}
+		}
+		log.Printf("Recommendations cleared; refresh enqueued for %d notes (%d failed)", len(notes)-failed, failed)
+
+		// 3. Recalculate link weights: they encode semantic similarity computed
+		// by the old model.
+		failed = 0
+		for _, n := range notes {
+			if err := taskQueue.EnqueueRecalculateLinkWeights(ctx, n.ID(), delay); err != nil {
+				log.Printf("Failed to enqueue link weight recalculation for note %s: %v", n.ID(), err)
+				failed++
+			}
+		}
+		log.Printf("Link weight recalculation enqueued for %d notes (%d failed)", len(notes)-failed, failed)
+	}
+	if dryRun {
+		log.Printf("Would enqueue link weight recalculation for %d notes", len(notes))
+	}
+
+	// 4. Invalidate the cached recommendation payloads in Redis. The scan is
+	// read-only, so it runs in both modes; only the delete is skipped.
 	redisClient := redis.NewClient(&redis.Options{Addr: cfg.RedisURL})
 	defer func() {
 		if err := redisClient.Close(); err != nil {
@@ -185,29 +216,22 @@ func runPostSteps(ctx context.Context, database *gorm.DB, cfg *config.Config) {
 		if err != nil {
 			log.Fatalf("redis scan failed: %v", err)
 		}
-		if len(keys) > 0 {
+		if len(keys) > 0 && !dryRun {
 			if err := redisClient.Del(ctx, keys...).Err(); err != nil {
 				log.Fatalf("redis del failed: %v", err)
 			}
-			deleted += len(keys)
 		}
+		deleted += len(keys)
 		cursor = next
 		if cursor == 0 {
 			break
 		}
 	}
-	log.Printf("Invalidated %d cached recommendation keys", deleted)
-
-	// 4. Recalculate link weights: they encode semantic similarity computed by
-	// the old model.
-	failed = 0
-	for _, n := range notes {
-		if err := taskQueue.EnqueueRecalculateLinkWeights(ctx, n.ID(), delay); err != nil {
-			log.Printf("Failed to enqueue link weight recalculation for note %s: %v", n.ID(), err)
-			failed++
-		}
+	if dryRun {
+		log.Printf("Would invalidate %d cached recommendation keys", deleted)
+	} else {
+		log.Printf("Invalidated %d cached recommendation keys", deleted)
 	}
-	log.Printf("Link weight recalculation enqueued for %d notes (%d failed)", len(notes)-failed, failed)
 
 	fmt.Println("Post-recompute steps completed")
 }
