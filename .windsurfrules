@@ -249,6 +249,30 @@ func TestCreateNote(t *testing.T) {
 
 ---
 
+## Verifying a Finding (MANDATORY)
+
+A search locates a candidate. It never confirms one.
+
+`grep`, `Select-String` and file-name matching answer "where does this string
+appear", which is not the same question as "is this true". A hit inside a
+"do not do this" list, inside a code example, or inside a dated journal entry
+looks identical to a real defect. So does a miss caused by a bad pattern.
+
+Before reporting a finding, or accepting someone else's:
+
+- **read the surrounding context**, not the matching line — a count of
+  occurrences is not evidence;
+- **prefer execution** where the claim is about behaviour: run the command,
+  hit the endpoint, look at the database;
+- **check the negative case too** — a search returning nothing may mean the
+  pattern is wrong, not that the code is clean.
+
+This rule exists because it was broken repeatedly on 2026-09-08: three
+"findings" reported from occurrence counts turned out to be a prohibition
+list, a documented section, and a port belonging to a different stack.
+
+---
+
 ## Documentation (MANDATORY)
 
 After completing any task that changes behavior, configuration, architecture, Docker stack, or environment variables:
@@ -257,7 +281,7 @@ After completing any task that changes behavior, configuration, architecture, Do
   - [`.windsurfrules`](.windsurfrules) — project conventions and rules.
   - [`docs/PROJECT_REVIEW_AI_AGENTS.md`](docs/PROJECT_REVIEW_AI_AGENTS.md) — AI knowledge transfer and current state.
   - [`docs/BACKUP.md`](docs/BACKUP.md), [`docs/TESTING.md`](docs/TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md) — subsystem docs.
-  - [`ROADMAP.md`](ROADMAP.md) / [`ROADMAP.ru.md`](ROADMAP.ru.md) — scope and roadmap.
+  - [`ROADMAP.md`](ROADMAP.md) — scope and roadmap. One page; detailed plans live in [`docs/BACKLOG.md`](docs/BACKLOG.md).
   - [`knowledge-graph.config.json`](knowledge-graph.config.json) — new configuration options (default values, schema).
   - [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md) — environment variables and config reference.
 - Authoritative docs are in English; Russian translations may be added alongside.

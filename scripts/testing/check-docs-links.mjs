@@ -17,6 +17,8 @@ const repoRoot = resolve(process.argv[2] ?? ".");
 
 const SKIP_DIRS = new Set(["node_modules", ".git", ".svelte-kit", "dist", "build", "coverage"]);
 
+const EXTRA_FILES = new Set([".windsurfrules"]);
+
 // Documents that record the past rather than describe the present.
 const HISTORICAL = [
     "docs/archive",
@@ -38,7 +40,10 @@ function walk(dir, out = []) {
         if (SKIP_DIRS.has(entry)) continue;
         const full = join(dir, entry);
         if (statSync(full).isDirectory()) walk(full, out);
-        else if (entry.endsWith(".md")) out.push(full);
+        // .windsurfrules is the normative source and carries markdown links, but
+        // has no extension — it was the one file this check could not see, and a
+        // dead ROADMAP.ru.md reference had been sitting in it.
+        else if (entry.endsWith(".md") || EXTRA_FILES.has(entry)) out.push(full);
     }
     return out;
 }
