@@ -97,6 +97,7 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 | Положить `DEVIN_API_KEY` в секреты репозитория | [`tasks/AUTO-1-push-and-trigger.md`](tasks/AUTO-1-push-and-trigger.md) | **отменено владельцем** — вместе с AUTO-1, ключ больше не нужен | 2026-09-08 |
+| Место MongoDB в проекте: сегодня она держит одну коллекцию черновиков из восьми плоских полей — то есть таблицу. Обсуждение записано, ветки разобраны | [`tasks/MONGO-1-drafts-storage-discussion.md`](tasks/MONGO-1-drafts-storage-discussion.md) | **думает владелец** — по его просьбе ничего не делается; решения нет | 2026-09-09 |
 | Завести тикет по багу сидера | [`tasks/AUD-2-review-findings.md`](tasks/AUD-2-review-findings.md) | **отменено владельцем** — баг починен и принят, issue задним числом не нужен | 2026-09-07 |
 | Решить по конструкции: `SKIP_AUTH` зависит от строки в базе через FK `notes.creator_id` | [`tasks/AUD-2-seeder-issue.md`](tasks/AUD-2-seeder-issue.md) | **решено: оставить как есть** | 2026-09-07 |
 | Решение по AUD-7b: исправить все замечания и включить линтинг тестов; расширить знаменатель frontend coverage до `src/**`, порог оставить 70% | [`tasks/AUD-7b-lint-tests-and-coverage-denominator.md`](tasks/AUD-7b-lint-tests-and-coverage-denominator.md) | **принято владельцем: да по обоим пунктам** | 2026-09-07 |
