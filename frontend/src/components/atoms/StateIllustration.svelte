@@ -16,7 +16,13 @@
   };
 </script>
 
-<div class="state-illustration" role="img" aria-label={labels[currentType]}>
+<div
+  class="state-illustration"
+  role="img"
+  aria-label={labels[currentType]}
+  data-testid="state-illustration-{currentType}"
+  data-illustration-type={currentType}
+>
   <svg
     viewBox="0 0 240 180"
     preserveAspectRatio="xMidYMid meet"

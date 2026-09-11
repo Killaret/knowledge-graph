@@ -31,7 +31,7 @@
   const pageError = $page.error as Error | null | undefined;
 </script>
 
-<div class="error-page" role="alert" aria-live="assertive">
+<div class="error-page" role="alert" aria-live="assertive" data-testid="error-page">
   <div class="error-container">
     <div class="error-illustration">
       <StateIllustration type={illustrationType} />
