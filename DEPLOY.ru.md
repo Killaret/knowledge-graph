@@ -1401,6 +1401,110 @@ docker run --rm -v pgdata_personal:/data -v "${PWD}:/backup" alpine sh -c "cd / 
 
 ---
 
+## Обновление между релизами
+
+### Безопасный процесс обновления
+
+1. Зафиксируй текущую версию:
+
+```powershell
+git log --oneline -1
+```
+
+2. Сделай бэкап Personal **перед** обновлением:
+
+```powershell
+.\scripts\devops\backup-personal.ps1 -Mode pre-upgrade
+```
+
+3. Обнови код:
+
+```powershell
+git pull origin ai-agents
+```
+
+4. Пересобери и перезапусти стек:
+
+```powershell
+docker compose -f docker-compose.personal.yml down
+docker compose -f docker-compose.personal.yml up -d --build
+```
+
+5. Проверь, что миграции применились:
+
+```powershell
+docker logs -f kg-backend-personal
+```
+
+Ищи `Migrations applied successfully`. Если видишь `ERROR: Failed to run migrations`, действуй по разделу ниже.
+
+6. Проверь health:
+
+```powershell
+curl http://127.0.0.1:18085/health
+curl http://127.0.0.1:18082/health
+```
+
+7. Сделай smoke-тест: войди, открой заметку, открой граф.
+
+### Миграции базы данных
+
+Бэкенд при старте автоматически запускает миграции из `backend/migrations`. Если миграция зафейлилась, бэкенд падает с `log.Fatalf`, но при `MIGRATIONS_FAIL_ON_ERROR=false` может продолжить. В `.env` по умолчанию `MIGRATIONS_FAIL_ON_ERROR=false` — **не полагайся на это в продакшене**.
+
+Проверить статус миграций вручную:
+
+```powershell
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT id, version, applied_at FROM schema_migrations ORDER BY version;"
+```
+
+> Если таблица называется иначе, смотри `backend/migrations/*.sql`. Обычно `schema_migrations` создаётся `golang-migrate`.
+
+### Если миграция не применилась
+
+1. Читай лог бэкенда:
+
+```powershell
+docker logs kg-backend-personal | Select-String -Pattern "migration|migrations|ERROR"
+```
+
+2. Для **dev**-стека можно сбросить базу и пересоздать:
+
+```powershell
+docker compose down -v
+docker compose up -d --build
+```
+
+> **Никогда** так не делай с Personal — там твои данные.
+
+3. Для **Personal** восстановись из бэкапа:
+
+```powershell
+docker cp backups\backup-personal-pre-upgrade-....sql.gz kg-postgres-personal:/tmp/
+docker exec -i kg-postgres-personal gunzip -c /tmp/backup-personal-pre-upgrade-....sql.gz | psql -U personal -d knowledge_personal
+```
+
+4. Если нужно откатить одну миграцию, используй `golang-migrate` (образ не в стеке, но есть на Docker Hub):
+
+```powershell
+docker run --rm --network knowledge-graph_default -v ${PWD}/backend/migrations:/migrations migrate/migrate -path /migrations -database "postgresql://personal:пароль@postgres_personal:5432/knowledge_personal?sslmode=disable" down 1
+```
+
+### Обновление с релиза на релиз (main)
+
+Если работаешь с `main` вместо `ai-agents`, обычно достаточно:
+
+```powershell
+git fetch origin
+git checkout main
+git pull origin main
+docker compose -f docker-compose.personal.yml down
+docker compose -f docker-compose.personal.yml up -d --build
+```
+
+Но **перед этим** всегда — бэкап и проверка `CHANGELOG.md` / `docs/AI_HANDOFF.md` на ломающие изменения.
+
+---
+
 ## Что не надо трогать
 
 - **Не удаляй** Personal-тома `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal` без бэкапа.

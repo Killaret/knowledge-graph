@@ -1339,6 +1339,110 @@ docker run --rm -v pgdata_personal:/data -v "${PWD}:/backup" alpine sh -c "cd / 
 
 ---
 
+## Updating between releases
+
+### Safe update process
+
+1. Pin the current version:
+
+```powershell
+git log --oneline -1
+```
+
+2. Back up Personal **before** the update:
+
+```powershell
+.\scripts\devops\backup-personal.ps1 -Mode pre-upgrade
+```
+
+3. Pull the new code:
+
+```powershell
+git pull origin ai-agents
+```
+
+4. Rebuild and restart the stack:
+
+```powershell
+docker compose -f docker-compose.personal.yml down
+docker compose -f docker-compose.personal.yml up -d --build
+```
+
+5. Verify that migrations ran:
+
+```powershell
+docker logs -f kg-backend-personal
+```
+
+Look for `Migrations applied successfully`. If you see `ERROR: Failed to run migrations`, follow the section below.
+
+6. Run health checks:
+
+```powershell
+curl http://127.0.0.1:18085/health
+curl http://127.0.0.1:18082/health
+```
+
+7. Do a smoke test: log in, open a note, open the graph.
+
+### Database migrations
+
+The backend automatically runs migrations from `backend/migrations` on startup. If a migration fails, the backend exits with `log.Fatalf`, but with `MIGRATIONS_FAIL_ON_ERROR=false` it may continue. The default in `.env` is `MIGRATIONS_FAIL_ON_ERROR=false` — **do not rely on this in production**.
+
+To check migration status manually:
+
+```powershell
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT id, version, applied_at FROM schema_migrations ORDER BY version;"
+```
+
+> If the table has a different name, look in `backend/migrations/*.sql`. It is usually `schema_migrations` created by `golang-migrate`.
+
+### If a migration fails
+
+1. Read the backend log:
+
+```powershell
+docker logs kg-backend-personal | Select-String -Pattern "migration|migrations|ERROR"
+```
+
+2. For the **dev** stack you can drop and recreate the database:
+
+```powershell
+docker compose down -v
+docker compose up -d --build
+```
+
+> **Never** do this for Personal — that is your data.
+
+3. For **Personal**, restore from the backup:
+
+```powershell
+docker cp backups\backup-personal-pre-upgrade-....sql.gz kg-postgres-personal:/tmp/
+docker exec -i kg-postgres-personal gunzip -c /tmp/backup-personal-pre-upgrade-....sql.gz | psql -U personal -d knowledge_personal
+```
+
+4. To roll back one migration, use `golang-migrate` (not part of the stack, but available on Docker Hub):
+
+```powershell
+docker run --rm --network knowledge-graph_default -v ${PWD}/backend/migrations:/migrations migrate/migrate -path /migrations -database "postgresql://personal:password@postgres_personal:5432/knowledge_personal?sslmode=disable" down 1
+```
+
+### Updating from release to release (main)
+
+If you work with `main` instead of `ai-agents`, usually:
+
+```powershell
+git fetch origin
+git checkout main
+git pull origin main
+docker compose -f docker-compose.personal.yml down
+docker compose -f docker-compose.personal.yml up -d --build
+```
+
+But **always** back up first and check `CHANGELOG.md` / `docs/AI_HANDOFF.md` for breaking changes.
+
+---
+
 ## Do not touch
 
 - **Do not delete** Personal named volumes `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal` without a backup.
