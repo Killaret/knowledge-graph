@@ -1,6 +1,6 @@
 <script lang="ts">
   export type StateIllustrationType =
-    "empty" | "success" | "error" | "404" | "offline" | "no-links" | "no-results";
+    "empty" | "success" | "error" | "404" | "offline" | "no-links" | "no-results" | "server-error";
   const { type = "empty" }: { type?: StateIllustrationType } = $props();
   const currentType = $derived(type);
 
@@ -12,6 +12,7 @@
     offline: "Offline illustration",
     "no-links": "No links illustration",
     "no-results": "No results illustration",
+    "server-error": "Server error illustration",
   };
 </script>
 
@@ -207,6 +208,87 @@
       <circle cx="190" cy="40" r="2" fill="#fff" opacity="0.9" />
       <circle cx="196" cy="66" r="2" fill="#fff" opacity="0.82" />
       <circle cx="172" cy="80" r="1.8" fill="#fff" opacity="0.82" />
+    {:else if currentType === "server-error"}
+      <g>
+        <circle cx="40" cy="30" r="1.5" fill="#fff" opacity="0.8" />
+        <circle cx="210" cy="40" r="2" fill="#fff" opacity="0.9" />
+        <circle cx="195" cy="145" r="1.8" fill="#fff" opacity="0.75" />
+        <circle cx="50" cy="150" r="1.5" fill="#fff" opacity="0.7" />
+        <circle cx="125" cy="25" r="1.5" fill="#fff" opacity="0.6" />
+        <circle cx="120" cy="90" r="22" fill="var(--color-danger, #ef4444)" opacity="0.12" />
+        <!-- left cord and socket -->
+        <path
+          d="M0 90 L30 90"
+          stroke="var(--color-info, #14b8a6)"
+          stroke-width="10"
+          stroke-linecap="round"
+        />
+        <rect
+          x="30"
+          y="70"
+          width="60"
+          height="40"
+          rx="8"
+          fill="var(--color-primary, #7c3aed)"
+          stroke="#fff"
+          stroke-width="2"
+        />
+        <circle cx="75" cy="82" r="4" fill="#fff" opacity="0.6" />
+        <circle cx="75" cy="98" r="4" fill="#fff" opacity="0.6" />
+        <!-- right cord and plug -->
+        <path
+          d="M210 90 L240 90"
+          stroke="var(--color-info, #14b8a6)"
+          stroke-width="10"
+          stroke-linecap="round"
+        />
+        <rect
+          x="150"
+          y="70"
+          width="60"
+          height="40"
+          rx="8"
+          fill="var(--color-primary, #7c3aed)"
+          stroke="#fff"
+          stroke-width="2"
+        />
+        <line
+          x1="150"
+          y1="82"
+          x2="120"
+          y2="82"
+          stroke="#fff"
+          stroke-width="4"
+          stroke-linecap="round"
+        />
+        <line
+          x1="150"
+          y1="98"
+          x2="120"
+          y2="98"
+          stroke="#fff"
+          stroke-width="4"
+          stroke-linecap="round"
+        />
+        <!-- disconnected spark -->
+        <path
+          d="M115 75 L105 90 L115 105"
+          stroke="var(--color-danger, #ef4444)"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"
+        />
+        <path
+          d="M118 80 L108 90 L118 100"
+          stroke="var(--color-danger, #ef4444)"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"
+          opacity="0.7"
+        />
+      </g>
     {/if}
   </svg>
 </div>

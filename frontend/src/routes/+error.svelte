@@ -2,8 +2,15 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { getCurrentLocale, formatMessage } from "$shared/utils/i18n";
+  import StateIllustration from "$components/atoms/StateIllustration.svelte";
 
   const locale = getCurrentLocale();
+
+  const illustrationType = $page.status === 404
+    ? "404"
+    : $page.status >= 500 && $page.status < 600
+      ? "server-error"
+      : "error";
 
   function t(key: string, params?: Record<string, string | number>) {
     return formatMessage(key, locale, params);
@@ -25,6 +32,9 @@
 
 <div class="error-page" role="alert" aria-live="assertive">
   <div class="error-container">
+    <div class="error-illustration">
+      <StateIllustration type={illustrationType} />
+    </div>
     <h1 class="error-title">
       {#if $page.status === 500}
         {t("error.500.title")}
@@ -77,6 +87,11 @@
     max-width: 640px;
     width: 100%;
     text-align: center;
+  }
+
+  .error-illustration {
+    margin: 0 auto 1.5rem;
+    max-width: 260px;
   }
 
   .error-title {

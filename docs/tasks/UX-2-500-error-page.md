@@ -1,8 +1,9 @@
 # UX-2: нормальная страница 500 ошибки
 
-**Статус:** новая, ждёт постановки  
+**Статус:** реализовано — на ревью у Claude Code  
 **Создано:** 2026-09-11  
-**Связано:** `frontend/src/routes/+error.svelte` (отсутствует), SvelteKit error handling, i18n.
+**Обновлено:** 2026-09-11  
+**Связано:** `frontend/src/routes/+error.svelte`, `frontend/src/components/atoms/StateIllustration.svelte`, SvelteKit error handling, i18n.
 
 ## Проблема
 
@@ -10,26 +11,45 @@
 - Страница не растянута на весь браузер, не использует i18n, не соответствует дизайну Cosmic Cockpit.
 - SvelteKit по умолчанию рендерит `+error.svelte` внутри layout; если такого файла нет, fallback выглядит как встроенная минимальная заглушка.
 
-## Что нужно сделать
+## Что сделано
 
-1. Создать `frontend/src/routes/+error.svelte` (или `+error.ts` / `+error.svelte` с load-функцией).
-2. Растянуть страницу на весь viewport (`100vh` / `100dvh`), центрировать контент.
-3. Поддержать i18n-ключи: `error.500.title`, `error.500.message`, `error.500.retry`, `error.500.goHome`.
-4. Добавить кнопки: «Обновить страницу» и «На главную».
-5. Убедиться, что 500 от backend (`/api/v1/*`) корректно прокидывается в SvelteKit и не застревает в маленьком `<slot/>` или `<div>` с scroll.
-6. Для dev/personal режимов (когда `import.meta.env.DEV`) опционально показывать stack trace / сообщение, но не в production.
-7. Добавить unit / Playwright регрессионный тест: симулировать 500 от backend и проверить, что страница от 500 занимает весь viewport и содержит i18n-ключи.
+1. Создан `frontend/src/routes/+error.svelte`:
+   - full-viewport (`position: fixed; inset: 0; z-index: 900`),
+   - Cosmic Cockpit фон,
+   - i18n-ключи `error.500.*` и `error.unknown.*` (en/ru),
+   - кнопки «Обновить страницу» и «На главную»,
+   - dev/personal-режим — `import.meta.env.DEV` показывает stack trace; в production не показывает.
+2. Добавлена иллюстрация для 5xx — `server-error` в `StateIllustration.svelte`: разъединённый удлинитель / вилка и розетка с искрой (по запросу владельца).
+3. `+error.svelte` выбирает иллюстрацию по статусу: `404` → `404`, `5xx` → `server-error`, остальное → `error`.
+4. Добавлен `frontend/src/routes/error-page.spec.ts` (Vitest): рендеринг, i18n, кнопки, иллюстрация.
+5. В ходе работы найден и исправлен баг авторизации: `+layout.svelte` использовал `currentPath.startsWith("/")`, из-за чего **все** маршруты считались публичными. Вынесена функция `isPublicRoute` в `shared/utils/route-match.ts` и добавлены unit-тесты.
+6. Проверки:
+   - `npm run check` — 0 ошибок, 0 warnings.
+   - `npm run test:unit` — 111 файлов, 1009 тестов passed.
+   - `npx vitest run src/routes/error-page.spec.ts src/shared/utils/route-match.test.ts` — passed.
 
-## Вопросы на обсуждение
+## Аудит обработки ошибок по приложению
 
-- Должен ли layout (`+layout.svelte`) оборачивать `+error.svelte` или ошибка должна быть без layout (полный экран)?
-- Нужно ли разделять 4xx и 5xx страницы или единый `+error.svelte`?
-- Как ведёт себя `graph` и `3d/graph` при 500 — тоже показывать full-screen или только внутри canvas-области?
+- **SvelteKit route errors (`+error.svelte`)**: обрабатывает ошибки в `load` / SSR (5xx, 404). Теперь полноэкранный и с i18n.
+- **API errors в компонентах**: вместо `+error.svelte` страницы графа, импорта, поиска, заметок и главной страницы показывают **локальные** ошибки через `StateIllustration type="error"` / `ApiErrorDisplay`.
+- **Graph / 3D graph**: `GraphPageShell.svelte` и `GraphCanvas` ловят ошибки загрузки и рисуют их внутри canvas-области, а не full-screen. Это сознательный UX: граф падает, но остальной UI остаётся.
+- **Auth / network errors**: `+layout.svelte` редиректит на `/auth/login` для непубличных маршрутов. Исправлен баг `startsWith("/")`.
+- **Backend 500**: `frontend/src/hooks.server.ts` проксирует `/api/v1/*` на backend и возвращает status/body. Если сам SvelteKit `load` поймает reject/throw, сработает `+error.svelte`. Чистые API-ошибки (JSON `{code, message}`) обрабатываются клиентским `ky`/API-слоем и показываются в виджетах.
+
+## Открытые вопросы (для ревью Claude Code)
+
+- **Язык по умолчанию**: в постановке написано «по-русски по умолчанию», но проектная норма (`.windsurfrules`, `knowledge-graph.config.json`, `getCurrentLocale()`) — `en`. Нужно решение: либо изменить глобальный дефолт, либо 500-страница пока следует текущему дефолту (`en`).
+- **Graph / 3D при 500**: оставить локальную ошибку внутри canvas или сделать общий full-screen fallback?
+- **Playwright-регрессия**: у нас пока unit-тест. Нужен ли Playwright-сценарий, который доказывает full-viewport на живом браузере? Для этого потребуется стимулировать 500 через `load` (например, временный `+page.ts` в test-only route) или через mock.
+- **ApiErrorDisplay + `server-error`**: стоит ли использовать новую иллюстрацию `server-error` для in-page `INTERNAL_ERROR` (`ApiErrorDisplay`)?
 
 ## Критерий приёмки
 
-- `+error.svelte` существует.
-- 500 ошибка занимает весь браузер, а не кусок экрана.
-- Текст и кнопки через i18n, по-русски по умолчанию.
-- `npm run check` и `npm run test:unit` зелёные.
-- Регрессионный тест или Playwright-сценарий, доказывающий, что заглушка занимает весь viewport.
+- [x] `+error.svelte` существует.
+- [x] 500 ошибка занимает весь браузер, а не кусок экрана.
+- [x] Текст и кнопки через i18n.
+- [x] Есть иллюстрация для 5xx.
+- [x] `npm run check` и `npm run test:unit` зелёные.
+- [x] Unit-регрессионный тест на `+error.svelte`.
+- [ ] Playwright-регрессия на full-viewport (на усмотрение ревью).
+- [ ] Решение про русский по умолчанию.

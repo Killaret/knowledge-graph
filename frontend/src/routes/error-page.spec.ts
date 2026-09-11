@@ -38,4 +38,11 @@ describe("Error 500 page", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Go home" })).toBeInTheDocument();
   });
+
+  it("shows a server-error illustration for 500", () => {
+    render(ErrorPage);
+    expect(
+      screen.getByRole("img", { name: "Server error illustration" })
+    ).toBeInTheDocument();
+  });
 });
