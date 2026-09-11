@@ -114,6 +114,15 @@
     - [Антивирус и файервол](#антивирус-и-файервол)
     - [Пути Windows ↔ WSL](#пути-windows--wsl)
     - [`wsl --shutdown` безопасный](#wsl---shutdown-безопасный)
+  - [Журнал логов: типичные сообщения и что они значат](#журнал-логов-типичные-сообщения-и-что-они-значат)
+    - [Как смотреть логи](#как-смотреть-логи)
+    - [Бэкенд](#бэкенд)
+    - [Graph service](#graph-service-1)
+    - [Worker](#worker)
+    - [NLP](#nlp)
+    - [PostgreSQL](#postgresql-1)
+    - [Redis](#redis-2)
+    - [MongoDB](#mongodb-2)
   - [Что не надо трогать](#что-не-надо-трогать)
   - [Связанные документы](#связанные-документы)
 
@@ -1806,6 +1815,83 @@ wsl --shutdown
 ```
 
 Это безопасная команда — она останавливает WSL, но не удаляет данные. После `docker compose up` всё поднимется.
+
+---
+
+## Журнал логов: типичные сообщения и что они значат
+
+### Как смотреть логи
+
+```powershell
+# посмотреть последние 100 строк
+docker logs --tail 100 kg-backend-personal
+
+# следить в реальном времени
+docker logs -f kg-backend-personal
+
+# логи всех сервисов одновременно
+docker compose -f docker-compose.personal.yml logs -f
+
+# логи с временем
+docker logs -t --tail 50 kg-graph-service-personal
+```
+
+### Бэкенд
+
+| Сообщение | Значение | Что делать |
+|---|---|---|
+| `Migrations applied successfully` | Всё норм. | — |
+| `ERROR: Failed to run migrations` | Миграция упала. | Смотри `version`, `error`, правь или откатывай. |
+| `server error` / `500` | Ошибка в handler. | Смотри stack trace. |
+| `JWT token is missing` | Запрос без токена. | Проверь `Authorization` в `.env`/curl. |
+| `connect: connection refused` | Бэкенд не может подключиться к Postgres/Redis/Mongo. | Проверь `DATABASE_URL`, `REDIS_URL`, `MONGO_URL`. |
+| `failed to connect to `host=postgres_personal`:` | Postgres недоступен. | Проверь `docker ps`. |
+
+### Graph service
+
+| Сообщение | Значение | Что делать |
+|---|---|---|
+| `Graph service started` | Всё норм. | — |
+| `JWT verification failed` | `JWT_SECRET` не совпадает с backend. | Синхронизируй `JWT_SECRET`. |
+| `connection refused redis` | Не видит Redis. | Проверь `REDIS_URL`. |
+
+### Worker
+
+| Сообщение | Значение | Что делать |
+|---|---|---|
+| `worker started` | Всё норм. | — |
+| `asynq: ready` | Подключился к очереди. | — |
+| `error processing task` | Задача упала. | Проверь payload, NLP, DB. |
+
+### NLP
+
+| Сообщение | Значение | Что делать |
+|---|---|---|
+| `Model loaded` | Всё норм. | — |
+| `Model not found` | Нет кэша. | Скачай модель. |
+| `CUDA out of memory` | Не хватает VRAM. | Уменьши batch, не используй GPU. |
+
+### PostgreSQL
+
+| Сообщение | Значение | Что делать |
+|---|---|---|
+| `database system is ready to accept connections` | Всё норм. | — |
+| `password authentication failed` | Неверный пароль. | Проверь `.env` и `docker-compose.personal.yml`. |
+| `could not create lock file` | Нет прав на диск. | Проверь volume permissions. |
+
+### Redis
+
+| Сообщение | Значение | Что делать |
+|---|---|---|
+| `Ready to accept connections` | Всё норм. | — |
+| `MISCONF Redis is configured to save RDB snapshots` | Redis не может сохранить dump. | Проверь права на `/data`. |
+
+### MongoDB
+
+| Сообщение | Значение | Что делать |
+|---|---|---|
+| `Waiting for connections` | Всё норм. | — |
+| `Unrecognized option: --auth` | Возможна опечатка в compose. | Проверь `docker-compose.personal.yml`. |
 
 ---
 

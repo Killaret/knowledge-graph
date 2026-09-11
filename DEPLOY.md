@@ -1719,6 +1719,83 @@ This is a safe command — it stops WSL but does not delete data. After `docker 
 
 ---
 
+## Log journal: common messages and what they mean
+
+### How to read logs
+
+```powershell
+# see the last 100 lines
+docker logs --tail 100 kg-backend-personal
+
+# follow in real time
+docker logs -f kg-backend-personal
+
+# all services at once
+docker compose -f docker-compose.personal.yml logs -f
+
+# logs with timestamps
+docker logs -t --tail 50 kg-graph-service-personal
+```
+
+### Backend
+
+| Message | Meaning | What to do |
+|---|---|---|
+| `Migrations applied successfully` | All good. | — |
+| `ERROR: Failed to run migrations` | A migration failed. | Check `version`, `error`, fix or roll back. |
+| `server error` / `500` | Handler error. | Check the stack trace. |
+| `JWT token is missing` | Request without token. | Check `Authorization` in `.env`/curl. |
+| `connect: connection refused` | Backend cannot reach Postgres/Redis/Mongo. | Check `DATABASE_URL`, `REDIS_URL`, `MONGO_URL`. |
+| `failed to connect to `host=postgres_personal`:` | Postgres is not reachable. | Check `docker ps`. |
+
+### Graph service
+
+| Message | Meaning | What to do |
+|---|---|---|
+| `Graph service started` | All good. | — |
+| `JWT verification failed` | `JWT_SECRET` does not match the backend. | Sync `JWT_SECRET`. |
+| `connection refused redis` | Cannot see Redis. | Check `REDIS_URL`. |
+
+### Worker
+
+| Message | Meaning | What to do |
+|---|---|---|
+| `worker started` | All good. | — |
+| `asynq: ready` | Connected to queue. | — |
+| `error processing task` | A task failed. | Check payload, NLP, DB. |
+
+### NLP
+
+| Message | Meaning | What to do |
+|---|---|---|
+| `Model loaded` | All good. | — |
+| `Model not found` | No cache. | Download the model. |
+| `CUDA out of memory` | Not enough VRAM. | Reduce batch, do not use GPU. |
+
+### PostgreSQL
+
+| Message | Meaning | What to do |
+|---|---|---|
+| `database system is ready to accept connections` | All good. | — |
+| `password authentication failed` | Wrong password. | Check `.env` and `docker-compose.personal.yml`. |
+| `could not create lock file` | No write permissions. | Check volume permissions. |
+
+### Redis
+
+| Message | Meaning | What to do |
+|---|---|---|
+| `Ready to accept connections` | All good. | — |
+| `MISCONF Redis is configured to save RDB snapshots` | Redis cannot save dump. | Check permissions on `/data`. |
+
+### MongoDB
+
+| Message | Meaning | What to do |
+|---|---|---|
+| `Waiting for connections` | All good. | — |
+| `Unrecognized option: --auth` | Possible typo in compose. | Check `docker-compose.personal.yml`. |
+
+---
+
 ## Do not touch
 
 - **Do not delete** Personal named volumes `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal` without a backup.
