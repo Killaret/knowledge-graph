@@ -71,6 +71,17 @@
     - [MongoDB: `connection refused`](#mongodb-connection-refused)
     - [Backup: `BACKUP_YANDEX_TOKEN not set`](#backup-backup_yandex_token-not-set)
     - [Всё стартует, но фронт пустой / белый экран](#всё-стартует-но-фронт-пустой--белый-экран)
+  - [Работа внутри Docker-сети](#работа-внутри-docker-сети)
+    - [Узнать имя сети](#узнать-имя-сети)
+    - [Зайти внутрь контейнера](#зайти-внутрь-контейнера)
+    - [Выполнить SQL-запрос в PostgreSQL](#выполнить-sql-запрос-в-postgresql)
+    - [Redis](#redis-1)
+    - [MongoDB](#mongodb-1)
+    - [Выполнить запрос с хоста, но через опубликованный порт](#выполнить-запрос-с-хоста-но-через-опубликованный-порт)
+    - [Запустить временный контейнер внутри сети](#запустить-временный-контейнер-внутри-сети)
+    - [Поднять отладочный контейнер с клиентами](#поднять-отладочный-контейнер-с-клиентами)
+    - [Скопировать файл в контейнер или из него](#скопировать-файл-в-контейнер-или-из-него)
+    - [Обратиться к бэкенду/граф-сервису изнутри сети](#обратиться-к-бэкендуграф-сервису-изнутри-сети)
   - [Обновление кода](#обновление-кода)
   - [Перенос Personal-данных на другую машину](#перенос-personal-данных-на-другую-машину)
     - [Через SQL-бэкап (рекомендуется)](#через-sql-бэкап-рекомендуется)
@@ -1215,6 +1226,128 @@ docker exec -i kg-frontend-personal cat /app/knowledge-graph.config.json | head
 ```
 
 - Пересобери фронтенд: `docker compose -f docker-compose.personal.yml up -d --build frontend-personal`.
+
+---
+
+## Работа внутри Docker-сети
+
+Docker Compose создаёт отдельную bridge-сеть. Сервисы внутри неё общаются по именам: `backend_personal`, `postgres_personal`, `redis_personal`, `mongo_personal`, `graph-service-personal`, `nlp-personal`.
+
+### Узнать имя сети
+
+```powershell
+docker network ls
+docker network inspect knowledge-graph_default
+```
+
+> Имя сети обычно `knowledge-graph_default` (для Personal — `knowledge-graph_personal_default`, если имя проекта задано через `docker compose --project-name`).
+
+### Зайти внутрь контейнера
+
+```powershell
+# shell PostgreSQL
+docker exec -it kg-postgres-personal bash
+
+# shell Redis
+docker exec -it kg-redis-personal sh
+
+# shell бэкенда
+docker exec -it kg-backend-personal sh
+
+# shell фронтенда
+docker exec -it kg-frontend-personal sh
+```
+
+### Выполнить SQL-запрос в PostgreSQL
+
+```powershell
+docker compose -f docker-compose.personal.yml exec -T postgres_personal psql -U personal -d knowledge_personal -c "SELECT id, email, role_id FROM users;"
+```
+
+Или через `docker exec`:
+
+```powershell
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT * FROM notes LIMIT 5;"
+```
+
+### Redis
+
+```powershell
+docker compose -f docker-compose.personal.yml exec -T redis_personal redis-cli ping
+docker compose -f docker-compose.personal.yml exec -T redis_personal redis-cli --scan --pattern "graph-service:*"
+```
+
+### MongoDB
+
+```powershell
+docker compose -f docker-compose.personal.yml exec -T mongo_personal mongosh knowledge_graph --eval "db.users.countDocuments()"
+```
+
+Если внутри контейнера нет `mongosh`, можно зайти в оболочку:
+
+```powershell
+docker exec -it kg-mongo-personal mongosh
+use knowledge_graph
+db.users.find().limit(5)
+```
+
+### Выполнить запрос с хоста, но через опубликованный порт
+
+Если на хосте установлены клиенты, можно подключаться к проброшенным портам:
+
+```powershell
+psql -h 127.0.0.1 -p 5433 -U personal -d knowledge_personal -c "SELECT 1;"
+redis-cli -h 127.0.0.1 -p 16380 ping
+mongosh "mongodb://127.0.0.1:27018/knowledge_graph"
+```
+
+> Пароль PostgreSQL спросят. Для автоматизации: `set PGpassword=change_me_personal` (Windows) или `export PGPASSWORD=...`.
+
+### Запустить временный контейнер внутри сети
+
+```powershell
+docker run --rm --network knowledge-graph_default -it nicolaka/netshoot
+```
+
+Внутри него:
+
+```bash
+ping backend_personal
+dig postgres_personal
+curl http://backend_personal:8080/health
+curl http://graph-service-personal:9091/health
+```
+
+### Поднять отладочный контейнер с клиентами
+
+```powershell
+docker run --rm --network knowledge-graph_default -it alpine sh
+# внутри:
+apk add --no-cache postgresql-client redis mongodb-tools
+psql -h postgres_personal -U personal -d knowledge_personal -c "SELECT 1;"
+redis-cli -h redis_personal ping
+mongosh mongodb://mongo_personal:27017/knowledge_graph --eval "db.users.countDocuments()"
+```
+
+### Скопировать файл в контейнер или из него
+
+```powershell
+# на хост → контейнер
+docker cp ./my-script.sql kg-postgres-personal:/tmp/
+
+# выполнить скрипт внутри контейнера
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -f /tmp/my-script.sql
+
+# контейнер → хост
+docker cp kg-postgres-personal:/tmp/result.csv .\result.csv
+```
+
+### Обратиться к бэкенду/граф-сервису изнутри сети
+
+```bash
+docker run --rm --network knowledge-graph_default curlimages/curl http://backend_personal:8080/health
+docker run --rm --network knowledge-graph_default curlimages/curl http://graph-service-personal:9091/health
+```
 
 ---
 

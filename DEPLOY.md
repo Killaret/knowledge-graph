@@ -23,6 +23,7 @@
 - [Full annotated `.env` template](#full-annotated-env-template)
 - [Full deployment checklist](#full-deployment-checklist)
 - [Troubleshooting by service](#troubleshooting-by-service)
+- [Working inside the Docker network](#working-inside-the-docker-network)
 - [Updating code](#updating-code)
 - [Moving Personal data to another machine](#moving-personal-data-to-another-machine)
 - [Do not touch](#do-not-touch)
@@ -1163,6 +1164,128 @@ docker exec -i kg-frontend-personal cat /app/knowledge-graph.config.json | head
 ```
 
 - Rebuild frontend: `docker compose -f docker-compose.personal.yml up -d --build frontend-personal`.
+
+---
+
+## Working inside the Docker network
+
+Docker Compose creates a dedicated bridge network. Services inside it talk to each other by name: `backend_personal`, `postgres_personal`, `redis_personal`, `mongo_personal`, `graph-service-personal`, `nlp-personal`.
+
+### Find the network name
+
+```powershell
+docker network ls
+docker network inspect knowledge-graph_default
+```
+
+> The network is usually `knowledge-graph_default` (for Personal it may be `knowledge-graph_personal_default` if the project name is set via `docker compose --project-name`).
+
+### Enter a running container
+
+```powershell
+# PostgreSQL shell
+docker exec -it kg-postgres-personal bash
+
+# Redis shell
+docker exec -it kg-redis-personal sh
+
+# Backend shell
+docker exec -it kg-backend-personal sh
+
+# Frontend shell
+docker exec -it kg-frontend-personal sh
+```
+
+### Run a PostgreSQL query
+
+```powershell
+docker compose -f docker-compose.personal.yml exec -T postgres_personal psql -U personal -d knowledge_personal -c "SELECT id, email, role_id FROM users;"
+```
+
+Or with `docker exec`:
+
+```powershell
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT * FROM notes LIMIT 5;"
+```
+
+### Redis
+
+```powershell
+docker compose -f docker-compose.personal.yml exec -T redis_personal redis-cli ping
+docker compose -f docker-compose.personal.yml exec -T redis_personal redis-cli --scan --pattern "graph-service:*"
+```
+
+### MongoDB
+
+```powershell
+docker compose -f docker-compose.personal.yml exec -T mongo_personal mongosh knowledge_graph --eval "db.users.countDocuments()"
+```
+
+If `mongosh` is not available in the container, open a shell:
+
+```powershell
+docker exec -it kg-mongo-personal mongosh
+use knowledge_graph
+db.users.find().limit(5)
+```
+
+### Run a query from the host through the published port
+
+If the clients are installed on the host, you can connect through forwarded ports:
+
+```powershell
+psql -h 127.0.0.1 -p 5433 -U personal -d knowledge_personal -c "SELECT 1;"
+redis-cli -h 127.0.0.1 -p 16380 ping
+mongosh "mongodb://127.0.0.1:27018/knowledge_graph"
+```
+
+> PostgreSQL will prompt for a password. For automation: `set PGPASSWORD=change_me_personal` (Windows) or `export PGPASSWORD=...`.
+
+### Start a temporary container inside the network
+
+```powershell
+docker run --rm --network knowledge-graph_default -it nicolaka/netshoot
+```
+
+Inside it:
+
+```bash
+ping backend_personal
+dig postgres_personal
+curl http://backend_personal:8080/health
+curl http://graph-service-personal:9091/health
+```
+
+### Start a debug container with clients
+
+```powershell
+docker run --rm --network knowledge-graph_default -it alpine sh
+# inside:
+apk add --no-cache postgresql-client redis mongodb-tools
+psql -h postgres_personal -U personal -d knowledge_personal -c "SELECT 1;"
+redis-cli -h redis_personal ping
+mongosh mongodb://mongo_personal:27017/knowledge_graph --eval "db.users.countDocuments()"
+```
+
+### Copy files into or out of a container
+
+```powershell
+# host → container
+docker cp ./my-script.sql kg-postgres-personal:/tmp/
+
+# run the script inside the container
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -f /tmp/my-script.sql
+
+# container → host
+docker cp kg-postgres-personal:/tmp/result.csv .\result.csv
+```
+
+### Reach backend / graph service from inside the network
+
+```bash
+docker run --rm --network knowledge-graph_default curlimages/curl http://backend_personal:8080/health
+docker run --rm --network knowledge-graph_default curlimages/curl http://graph-service-personal:9091/health
+```
 
 ---
 
