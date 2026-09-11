@@ -131,6 +131,15 @@
     - [Сетевой доступ](#сетевой-доступ)
     - [Docker](#docker)
     - [Бэкапы и целостность](#бэкапы-и-целостность)
+  - [Перформанс-тюнинг](#перформанс-тюнинг)
+    - [Docker Desktop](#docker-desktop)
+    - [Лимиты в compose](#лимиты-в-compose)
+    - [PostgreSQL](#postgresql-2)
+    - [Redis](#redis-3)
+    - [NLP](#nlp-1)
+    - [Frontend](#frontend-1)
+    - [Мониторинг нагрузки](#мониторинг-нагрузки)
+    - [Признаки, что не хватает ресурсов](#признаки-что-не-хватает-ресурсов)
   - [Что не надо трогать](#что-не-надо-трогать)
   - [Связанные документы](#связанные-документы)
 
@@ -1976,6 +1985,110 @@ services:
 - Бэкапы на другой диск.
 - Периодически проверяй восстановление на тестовом стеке.
 - Шифруй чувствительные backup-токены.
+
+---
+
+## Перформанс-тюнинг
+
+### Docker Desktop
+
+Открой Settings → Resources и задай лимиты:
+
+- **CPU**: 4+ cores.
+- **Memory**: 8 GB minimum, 16 GB рекомендуется.
+- **Swap**: 2 GB.
+- **Disk image location**: SSD.
+
+### Лимиты в compose
+
+```yaml
+services:
+  backend:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+  nlp:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+```
+
+> NLP модель съедает 1–2 GB RAM. Оставь запас для Postgres и Redis.
+
+### PostgreSQL
+
+Добавь в `docker-compose.personal.yml` или внешний `postgresql.conf`:
+
+```env
+POSTGRES_INITDB_ARGS="--encoding=UTF-8"
+POSTGRES_EXTRA_ARGS="-c shared_buffers=512MB -c work_mem=64MB -c maintenance_work_mem=256MB -c max_connections=50"
+```
+
+или монтируй `postgresql.conf`:
+
+```yaml
+services:
+  postgres_personal:
+    volumes:
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+```
+
+Проверь использование:
+
+```sql
+SELECT * FROM pg_stat_activity;
+SELECT pg_size_pretty(pg_database_size('knowledge_personal'));
+```
+
+### Redis
+
+Добавь persistence:
+
+```yaml
+services:
+  redis_personal:
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+```
+
+### NLP
+
+- Первый запуск медленный — кэшируй `huggingface_cache`.
+- Для CPU-inference отключи GPU:
+
+```env
+NLP_USE_GPU=false
+```
+
+- Если embedding занимает слишком много времени, уменьши `RECOMMENDATION_TOP_N` в `knowledge-graph.config.json`.
+
+### Frontend
+
+- В production используй `npm run build` (уже внутри Docker).
+- `knowledge-graph.config.json` влияет на лимиты графа:
+  - `frontend.graph.2d.max_nodes` — уменьши, если FPS падает.
+  - `frontend.graph.2d.fog` — адаптивный туман помогает на слабом железе.
+
+### Мониторинг нагрузки
+
+```powershell
+docker stats
+# или
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT COUNT(*) FROM notes;"
+```
+
+### Признаки, что не хватает ресурсов
+
+- `OOMKilled` в `docker ps` — увеличь лимит RAM.
+- `context deadline exceeded` — backend не успевает, проверь CPU/DB.
+- `Graph not responding` — graph-service не хватает RAM или виснет Redis.
 
 ---
 

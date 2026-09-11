@@ -1872,6 +1872,110 @@ services:
 
 ---
 
+## Performance tuning
+
+### Docker Desktop
+
+Open Settings → Resources and set limits:
+
+- **CPU**: 4+ cores.
+- **Memory**: 8 GB minimum, 16 GB recommended.
+- **Swap**: 2 GB.
+- **Disk image location**: SSD.
+
+### Compose limits
+
+```yaml
+services:
+  backend:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+  nlp:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+```
+
+> The NLP model uses 1–2 GB RAM. Leave headroom for Postgres and Redis.
+
+### PostgreSQL
+
+Add in `docker-compose.personal.yml` or an external `postgresql.conf`:
+
+```env
+POSTGRES_INITDB_ARGS="--encoding=UTF-8"
+POSTGRES_EXTRA_ARGS="-c shared_buffers=512MB -c work_mem=64MB -c maintenance_work_mem=256MB -c max_connections=50"
+```
+
+or mount `postgresql.conf`:
+
+```yaml
+services:
+  postgres_personal:
+    volumes:
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+```
+
+Check usage:
+
+```sql
+SELECT * FROM pg_stat_activity;
+SELECT pg_size_pretty(pg_database_size('knowledge_personal'));
+```
+
+### Redis
+
+Add persistence:
+
+```yaml
+services:
+  redis_personal:
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+```
+
+### NLP
+
+- First start is slow — cache `huggingface_cache`.
+- For CPU inference disable GPU:
+
+```env
+NLP_USE_GPU=false
+```
+
+- If embedding takes too long, reduce `RECOMMENDATION_TOP_N` in `knowledge-graph.config.json`.
+
+### Frontend
+
+- In production use `npm run build` (already inside Docker).
+- `knowledge-graph.config.json` controls graph limits:
+  - `frontend.graph.2d.max_nodes` — reduce if FPS drops.
+  - `frontend.graph.2d.fog` — adaptive fog helps on weaker hardware.
+
+### Load monitoring
+
+```powershell
+docker stats
+# or
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT COUNT(*) FROM notes;"
+```
+
+### Signs of resource shortage
+
+- `OOMKilled` in `docker ps` — increase the RAM limit.
+- `context deadline exceeded` — backend cannot keep up, check CPU/DB.
+- `Graph not responding` — graph-service lacks RAM or Redis is stuck.
+
+---
+
 ## Do not touch
 
 - **Do not delete** Personal named volumes `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal` without a backup.
