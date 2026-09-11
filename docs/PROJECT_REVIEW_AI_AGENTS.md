@@ -778,7 +778,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Playwright-регрессия full-viewport: реализована `frontend/tests/error-500-page.spec.ts` + `src/routes/test/500/+page.server.ts` (триггер `?trigger=500`).
 - `ApiErrorDisplay.svelte` использует `server-error` для API-ошибок с кодом `INTERNAL_ERROR`.
 - PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
-- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d`, `5acc40d`, `ff65307` и все последующие до слияния.
+- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d`, `5acc40d`, `ff65307`, `af2f957` и все последующие до слияния.
 
 ## 21. Открытые Dependabot PR (#21–#32), 2026-09-11
 
@@ -834,4 +834,9 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Симптом: `Start backend for smoke tests` провисел более 5 минут на `go mod download`, потому что в smoke-джобе не было `actions/setup-go` и кеша.
 - Исправление (`ff65307`): добавлен `actions/setup-go@v6` с `cache-dependency-path: '**/go.sum'` в `smoke-tests`.
 
-- Статус: все вспомогательные правки в `ci.yml` вместе с `ff65307`; следующий прогон CI подтверждает.
+**Smoke Tests: мало времени на компиляцию сервисов.**
+
+- Симптом: сервис падает по таймауту опроса `health` (30 попыток × 2 сек = 60 сек), потому что `go run` компилирует из исходников дольше минуты.
+- Исправление (`af2f957`): увеличить цикл ожидания backend и graph-service до 90 попыток (до 3 минут).
+
+- Статус: все вспомогательные правки в `ci.yml`; следующий прогон CI подтверждает.
