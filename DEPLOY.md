@@ -1651,6 +1651,74 @@ BACKUP_YANDEX_TOKEN=   # via env, not .env
 
 ---
 
+## WSL2 and Docker Desktop: Windows pitfalls
+
+### Why `localhost` fails but `127.0.0.1` works
+
+Windows prefers IPv6 (`::1`) for `localhost`. Node, Playwright, Go, and some Docker proxies may not listen on `::1`, or they resolve `localhost` to `::1` while the server is on `127.0.0.1`. Always use `127.0.0.1`.
+
+- Playwright: `$env:FRONTEND_URL = "http://127.0.0.1:3002"`
+- Frontend Vite: `VITE_API_URL` and `PERSONAL_VITE_API_URL` should point to `127.0.0.1`.
+- Backend health: `curl http://127.0.0.1:18085/health`.
+
+### WSL2 disk grows
+
+Docker Desktop with WSL2 stores data in `ext4.vhdx`. Over time it grows.
+
+Check size:
+
+```powershell
+Get-ChildItem "$env:LOCALAPPDATA\Docker\wsl" -Recurse | Select-Object Name, @{N="SizeGB";E={[math]::Round($_.Length/1GB,2)}}
+```
+
+Clean up:
+
+```powershell
+wsl --shutdown
+docker system prune -a
+# Inside WSL:
+wsl -d docker-desktop-data -e sh -c "fstrim -av"
+```
+
+> `docker system prune -a` removes unused images and volumes. Make sure Personal is **stopped** or its volumes may be affected.
+
+### Docker Desktop does not restart WSL
+
+After `wsl --shutdown` or a Docker Desktop update:
+
+```powershell
+wsl --list --verbose
+wsl --terminate docker-desktop
+wsl --terminate docker-desktop-data
+```
+
+### Docker Desktop uses Hyper-V or WSL2
+
+In Docker Desktop settings:
+
+- Settings → General → Use the WSL2 based engine (recommended).
+- Settings → Resources → WSL integration → enable for your distribution.
+
+### Antivirus and firewall
+
+- Windows Defender Controlled Folder Access may block Docker bind-mounts (`./backups`, `./huggingface_cache`).
+- McAfee / Symantec / Kaspersky may scan the VHD and crash.
+- Add `D:\knowledge-graph` to exclusions.
+
+### Windows ↔ WSL paths
+
+Bind-mounts in `docker-compose.personal.yml` point to `./huggingface_cache` and `./backups`. Docker Desktop on WSL2 normalizes paths, but on Hyper-V this may break.
+
+### `wsl --shutdown` is safe
+
+```powershell
+wsl --shutdown
+```
+
+This is a safe command — it stops WSL but does not delete data. After `docker compose up` everything will come back.
+
+---
+
 ## Do not touch
 
 - **Do not delete** Personal named volumes `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal` without a backup.

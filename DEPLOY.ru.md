@@ -106,6 +106,14 @@
     - [Восстановление из дампа томов](#восстановление-из-дампа-томов)
     - [Smoke-тест после восстановления](#smoke-тест-после-восстановления)
     - [Хранение бэкапов](#хранение-бэкапов)
+  - [WSL2 и Docker Desktop: ловушки Windows](#wsl2-и-docker-desktop-ловушки-windows)
+    - [Почему `localhost` не работает, а `127.0.0.1` — да](#почему-localhost-не-работает-а-127001--да)
+    - [Диск WSL2 растёт](#диск-wsl2-растёт)
+    - [Docker Desktop не перезапускает WSL](#docker-desktop-не-перезапускает-wsl)
+    - [Docker Desktop использует Hyper-V или WSL2](#docker-desktop-использует-hyper-v-или-wsl2)
+    - [Антивирус и файервол](#антивирус-и-файервол)
+    - [Пути Windows ↔ WSL](#пути-windows--wsl)
+    - [`wsl --shutdown` безопасный](#wsl---shutdown-безопасный)
   - [Что не надо трогать](#что-не-надо-трогать)
   - [Связанные документы](#связанные-документы)
 
@@ -1730,6 +1738,74 @@ BACKUP_CLOUD_ENABLED=true
 BACKUP_CLOUD_PROVIDER=yandex
 BACKUP_YANDEX_TOKEN=   # через env, не через .env
 ```
+
+---
+
+## WSL2 и Docker Desktop: ловушки Windows
+
+### Почему `localhost` не работает, а `127.0.0.1` — да
+
+Windows prefers IPv6 (`::1`) for `localhost`. Node, Playwright, Go и некоторые Docker-прокси могут либо не слушать `::1`, либо разрешать `localhost` в `::1`, хотя сервер на `127.0.0.1`. Всегда используй `127.0.0.1`.
+
+- Playwright: `$env:FRONTEND_URL = "http://127.0.0.1:3002"`
+- Frontend Vite: `VITE_API_URL` и `PERSONAL_VITE_API_URL` должны указывать на `127.0.0.1`.
+- Backend health: `curl http://127.0.0.1:18085/health`.
+
+### Диск WSL2 растёт
+
+Docker Desktop с WSL2 хранит данные в `ext4.vhdx`. Со временем он разрастается.
+
+Узнать размер:
+
+```powershell
+Get-ChildItem "$env:LOCALAPPDATA\Docker\wsl" -Recurse | Select-Object Name, @{N="SizeGB";E={[math]::Round($_.Length/1GB,2)}}
+```
+
+Очистить:
+
+```powershell
+wsl --shutdown
+docker system prune -a
+# Внутри WSL:
+wsl -d docker-desktop-data -e sh -c "fstrim -av"
+```
+
+> `docker system prune -a` удаляет неиспользуемые образы и тома. Проверь, что Personal **остановлен**, иначе его тома могут пострадать.
+
+### Docker Desktop не перезапускает WSL
+
+После `wsl --shutdown` или обновления Docker Desktop:
+
+```powershell
+wsl --list --verbose
+wsl --terminate docker-desktop
+wsl --terminate docker-desktop-data
+```
+
+### Docker Desktop использует Hyper-V или WSL2
+
+В настройках Docker Desktop:
+
+- Settings → General → Use the WSL2 based engine (рекомендуется).
+- Settings → Resources → WSL integration → включи для своего дистрибутива.
+
+### Антивирус и файервол
+
+- Windows Defender Controlled Folder Access может блокировать Docker bind-mount (`./backups`, `./huggingface_cache`).
+- McAfee / Symantec / Kaspersky могут сканировать VHD и падать.
+- Добавь папку `D:\knowledge-graph` в исключения.
+
+### Пути Windows ↔ WSL
+
+Bind-mount в `docker-compose.personal.yml` указывает на `./huggingface_cache` и `./backups`. Docker Desktop на WSL2 нормализует пути, но на Hyper-V это может сломаться.
+
+### `wsl --shutdown` безопасный
+
+```powershell
+wsl --shutdown
+```
+
+Это безопасная команда — она останавливает WSL, но не удаляет данные. После `docker compose up` всё поднимется.
 
 ---
 
