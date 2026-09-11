@@ -256,6 +256,29 @@ jobs:
             exit 1
           fi
 
+      - name: Start frontend dev server for smoke tests
+        env:
+          FRONTEND_URL: http://localhost:5173
+          VITE_API_TARGET: http://localhost:8080
+          VITE_GRAPH_SERVICE_URL: http://localhost:9091
+          BACKEND_URL: http://localhost:8080
+          GRAPH_SERVICE_URL: http://localhost:9091
+          SKIP_AUTH: "true"
+        run: |
+          npm run dev &
+          for i in {1..60}; do
+            if curl -s http://localhost:5173 > /dev/null 2>&1; then
+              echo "✅ Frontend dev server is ready!"
+              break
+            fi
+            echo "Waiting for frontend... attempt $i/60"
+            sleep 2
+          done
+          if ! curl -s http://localhost:5173 > /dev/null 2>&1; then
+            echo "❌ Frontend dev server failed to start"
+            exit 1
+          fi
+
       - name: Run smoke tests only
         env:
           PLAYWRIGHT_DEV_SERVER: true
@@ -273,6 +296,7 @@ jobs:
           VITE_GRAPH_SERVICE_URL: http://localhost:9091
           BACKEND_URL: http://localhost:8080
           GRAPH_SERVICE_URL: http://localhost:9091
+          SKIP_AUTH: "true"
         run: npm run test:cucumber -- --tags="@smoke"
 
       - name: Upload smoke test results
