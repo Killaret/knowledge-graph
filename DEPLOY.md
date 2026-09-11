@@ -33,6 +33,15 @@ docker compose -f docker-compose.personal.yml up -d --build
 | Any | Backups | [`docs/BACKUP.md`](docs/BACKUP.md) |
 | Any | Environment variables and runtime config | [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md) |
 
+## Database setup
+
+- **PostgreSQL inside Docker Compose** is created automatically from `.env` variables (`PERSONAL_POSTGRES_USER`, `PERSONAL_POSTGRES_PASSWORD`, etc.).
+- **External PostgreSQL** requires a user and database created manually, then `PERSONAL_DATABASE_URL` / `DATABASE_URL` in `.env`.
+- **MongoDB inside Docker Compose** has no auth by default.
+- **External MongoDB** requires a user and `MONGO_URL` (not `MONGODB_URL`) plus `MONGO_DATABASE` in `.env`.
+
+Full commands for both databases are in [`DEPLOY.ru.md`](DEPLOY.ru.md) (Russian) under the **"Базы данных"** section.
+
 ## Important safety rules
 
 - **Personal volumes** (`pgdata_personal`, `redisdata_personal`, `mongodbdata_personal`) contain live data. Never delete them without a fresh backup.

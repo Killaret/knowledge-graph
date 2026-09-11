@@ -8,22 +8,42 @@
 
 ## Содержание
 
-1. [Что понадобится](#что-понадобится)
-2. [Быстрый старт (TL;DR)](#быстрый-старт-tldr)
-3. [Клонирование и ветка](#клонирование-и-ветка)
-4. [Настройка `.env`](#настройка-env)
-5. [NLP-модель и `huggingface_cache`](#nlp-модель-и-huggingface_cache)
-6. [Три стека: как запустить](#три-стека-как-запустить)
-   - [Personal](#personal)
-   - [Dev](#dev)
-   - [Test](#test)
-7. [Порты и URL после старта](#порты-и-url-после-старта)
-8. [Проверка, что всё поднялось](#проверка-что-всё-поднялось)
-9. [Первая регистрация и вход](#первая-регистрация-и-вход)
-10. [Частые проблемы](#частые-проблемы)
-11. [Обновление кода](#обновление-кода)
-12. [Перенос Personal-данных на другую машину](#перенос-personal-данных-на-другую-машину)
-13. [Что не надо трогать](#что-не-надо-трогать)
+- [Развёртывание Knowledge Graph на новой машине](#развёртывание-knowledge-graph-на-новой-машине)
+  - [Содержание](#содержание)
+  - [Что понадобится](#что-понадобится)
+  - [Быстрый старт (TL;DR)](#быстрый-старт-tldr)
+  - [Клонирование и ветка](#клонирование-и-ветка)
+  - [Настройка `.env`](#настройка-env)
+  - [Базы данных: пользователи, пароли и подключение](#базы-данных-пользователи-пароли-и-подключение)
+    - [PostgreSQL](#postgresql)
+      - [Если PostgreSQL уже есть (не Docker)](#если-postgresql-уже-есть-не-docker)
+    - [MongoDB](#mongodb)
+      - [Если MongoDB внешняя или с авторизацией](#если-mongodb-внешняя-или-с-авторизацией)
+    - [Краткая сводка](#краткая-сводка)
+  - [NLP-модель и `huggingface_cache`](#nlp-модель-и-huggingface_cache)
+    - [Вариант А — с интернетом](#вариант-а--с-интернетом)
+    - [Вариант Б — без интернета](#вариант-б--без-интернета)
+    - [Вариант В — скачать локально (не в Docker)](#вариант-в--скачать-локально-не-в-docker)
+  - [Три стека: как запустить](#три-стека-как-запустить)
+    - [Personal](#personal)
+    - [Dev](#dev)
+    - [Test](#test)
+  - [Порты и URL после старта](#порты-и-url-после-старта)
+  - [Проверка, что всё поднялось](#проверка-что-всё-поднялось)
+  - [Первая регистрация и вход](#первая-регистрация-и-вход)
+  - [Частые проблемы](#частые-проблемы)
+    - [`vitest is not recognized` / фронтенд не собирается локально](#vitest-is-not-recognized--фронтенд-не-собирается-локально)
+    - [NLP не стартует: `Model not found`](#nlp-не-стартует-model-not-found)
+    - [Фронт пишет `Could not load knowledge-graph.config.json`](#фронт-пишет-could-not-load-knowledge-graphconfigjson)
+    - [Связи в карточке заметки не отображаются](#связи-в-карточке-заметки-не-отображаются)
+    - [E2E падает с `ERR_CONNECTION_REFUSED http://localhost:5173`](#e2e-падает-с-err_connection_refused-httplocalhost5173)
+    - [E2E берёт старый `auth` из другого пути](#e2e-берёт-старый-auth-из-другого-пути)
+  - [Обновление кода](#обновление-кода)
+  - [Перенос Personal-данных на другую машину](#перенос-personal-данных-на-другую-машину)
+    - [Через SQL-бэкап (рекомендуется)](#через-sql-бэкап-рекомендуется)
+    - [Через дамп Docker-томов](#через-дамп-docker-томов)
+  - [Что не надо трогать](#что-не-надо-трогать)
+  - [Связанные документы](#связанные-документы)
 
 ---
 
@@ -73,8 +93,6 @@ git checkout ai-agents
 git pull origin ai-agents
 ```
 
-> Сейчас в корне репозитория `D:\knowledge-graph`, текущая ветка `ai-agents`.
-
 ---
 
 ## Настройка `.env`
@@ -91,9 +109,121 @@ cp .env.example .env
 | `POSTGRES_PASSWORD` | Сложный пароль | Пароль dev-базы. На локалке можно оставить `change_me_in_production`. |
 | `PERSONAL_POSTGRES_PASSWORD` | Сложный пароль | Пароль Personal-базы. |
 | `TEST_POSTGRES_PASSWORD` | Пароль | Для изолированного тест-стека. |
+| `MONGO_URL` | `mongodb://kg-mongo-personal:27017` | Подключение к MongoDB. Бэкенд читает именно `MONGO_URL`, а не `MONGODB_URL`. |
+| `MONGO_DATABASE` | `knowledge_graph` | Имя MongoDB базы. |
 
 Остальные переменные можно оставить по умолчанию.  
 Если планируешь облачный бэкап, добавь `BACKUP_YANDEX_TOKEN` **в окружение**, а не в `.env` — см. [`docs/BACKUP.md`](docs/BACKUP.md) и `SEC-2` в [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md).
+
+---
+
+## Базы данных: пользователи, пароли и подключение
+
+> Этот раздел — подробно о том, как приложение подключается к PostgreSQL и MongoDB, и когда нужно создавать пользователей вручную.
+
+### PostgreSQL
+
+Если PostgreSQL запускается внутри Docker Compose, **нового пользователя создавать не надо** — образ PostgreSQL сам создаёт суперпользователя и базу из переменных окружения:
+
+```env
+PERSONAL_POSTGRES_USER=personal
+PERSONAL_POSTGRES_PASSWORD=change_me_personal
+PERSONAL_POSTGRES_DB=knowledge_personal
+```
+
+Происходящее под капотом (Docker init):
+
+```sql
+CREATE USER personal WITH PASSWORD 'change_me_personal' SUPERUSER;
+CREATE DATABASE knowledge_personal OWNER personal;
+```
+
+Бэкенд подключается через переменную `DATABASE_URL` (для dev) или `PERSONAL_DATABASE_URL` (для personal), либо через compose-шаблон:
+
+```env
+PERSONAL_DATABASE_URL=postgresql://personal:change_me_personal@postgres_personal:5432/knowledge_personal?sslmode=disable
+```
+
+#### Если PostgreSQL уже есть (не Docker)
+
+1. Создай БД и пользователя:
+
+```sql
+-- подключись к postgres как суперпользователь (например, psql -U postgres)
+CREATE USER knowledge WITH PASSWORD 'твой_пароль';
+CREATE DATABASE knowledge_personal OWNER knowledge;
+-- dev-база
+CREATE DATABASE knowledge_base OWNER knowledge;
+```
+
+2. Проверь доступ:
+
+```powershell
+psql -h 127.0.0.1 -U knowledge -d knowledge_personal -c "SELECT 1;"
+```
+
+3. Запиши в `.env`:
+
+```env
+PERSONAL_DATABASE_URL=postgresql://knowledge:твой_пароль@127.0.0.1:5432/knowledge_personal?sslmode=disable
+DATABASE_URL=postgresql://knowledge:твой_пароль@127.0.0.1:5432/knowledge_base?sslmode=disable
+```
+
+4. Убедись, что в `docker-compose.personal.yml` не поднимается контейнер `postgres_personal` (закомментируй или выключи его), иначе порт `5433` займёт другой инстанс.
+
+### MongoDB
+
+В штатном Docker Compose MongoDB запускается **без авторизации** (по умолчанию `auth` отключён). Создавать пользователя не нужно, если:
+
+- Mongo поднята той же `docker compose` командой;
+- она не торчит наружу (порты проброшены только на `127.0.0.1` или вообще не проброшены).
+
+Переменные окружения, которые читает бэкенд:
+
+```env
+MONGO_URL=mongodb://kg-mongo-personal:27017
+MONGO_DATABASE=knowledge_graph
+```
+
+> **Важно:** в `.env.example` переменные называются `MONGODB_URL` и `MONGODB_DATABASE`, но бэкенд ожидает именно `MONGO_URL` и `MONGO_DATABASE`. Для внешней/защищённой Mongo используй `MONGO_URL` и `MONGO_DATABASE`.
+
+#### Если MongoDB внешняя или с авторизацией
+
+1. Создай пользователя в базе:
+
+```javascript
+// подключись через mongosh
+use knowledge_graph;
+db.createUser({
+  user: "kg_user",
+  pwd: "твой_пароль",
+  roles: [
+    { role: "readWrite", db: "knowledge_graph" }
+  ]
+});
+```
+
+2. Проверь доступ:
+
+```powershell
+mongosh "mongodb://kg_user:твой_пароль@127.0.0.1:27017/knowledge_graph?authSource=knowledge_graph" --eval "db.getName()"
+```
+
+3. Запиши в `.env`:
+
+```env
+MONGO_URL=mongodb://kg_user:твой_пароль@127.0.0.1:27017/knowledge_graph?authSource=knowledge_graph
+MONGO_DATABASE=knowledge_graph
+```
+
+4. Чтобы Docker Compose не поднимал свой Mongo, закомментируй сервис `mongo` в `docker-compose.personal.yml`.
+
+### Краткая сводка
+
+| База | Внутри Docker Compose | Внешний инстанс |
+|---|---|---|
+| **PostgreSQL** | Создаётся автоматически из `.env` | Создай вручную пользователя + БД, пропиши `DATABASE_URL` / `PERSONAL_DATABASE_URL` |
+| **MongoDB** | Без авторизации, пользователь не нужен | Создай вручную, пропиши `MONGO_URL` и `MONGO_DATABASE` (не `MONGODB_URL`!) |
 
 ---
 
