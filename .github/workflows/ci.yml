@@ -220,7 +220,7 @@ jobs:
         env:
           APP_ENV: test
           POSTGRES_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: localhost:6379
           HTTP_PORT: "9091"
           GRPC_PORT: "9090"
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
