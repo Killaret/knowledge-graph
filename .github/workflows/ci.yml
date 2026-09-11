@@ -186,19 +186,11 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Apply database migrations
-        env:
-          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
-        run: |
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
-          sudo mv migrate /usr/local/bin/
-          migrate -path ../backend/migrations -database "$DATABASE_URL" up
-
       - name: Start backend for smoke tests
         env:
           APP_ENV: test
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: localhost:6379
           MONGO_URL: mongodb://localhost:27017
           REDIS_FLUSH_ON_STARTUP: "true"
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
@@ -252,18 +244,18 @@ jobs:
       - name: Run smoke tests only
         env:
           PLAYWRIGHT_DEV_SERVER: true
-          FRONTEND_URL: http://127.0.0.1:5173
-          VITE_API_TARGET: http://127.0.0.1:8080
-          VITE_GRAPH_SERVICE_URL: http://127.0.0.1:9091
+          FRONTEND_URL: http://localhost:5173
+          VITE_API_TARGET: http://localhost:8080
+          VITE_GRAPH_SERVICE_URL: http://localhost:9091
           BACKEND_URL: http://localhost:8080
           GRAPH_SERVICE_URL: http://localhost:9091
         run: npx playwright test --grep="@smoke"
 
       - name: Run smoke BDD tests
         env:
-          FRONTEND_URL: http://127.0.0.1:5173
-          VITE_API_TARGET: http://127.0.0.1:8080
-          VITE_GRAPH_SERVICE_URL: http://127.0.0.1:9091
+          FRONTEND_URL: http://localhost:5173
+          VITE_API_TARGET: http://localhost:8080
+          VITE_GRAPH_SERVICE_URL: http://localhost:9091
           BACKEND_URL: http://localhost:8080
           GRAPH_SERVICE_URL: http://localhost:9091
         run: npm run test:cucumber -- --tags="@smoke"
