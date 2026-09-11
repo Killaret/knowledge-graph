@@ -778,7 +778,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Playwright-регрессия full-viewport: реализована `frontend/tests/error-500-page.spec.ts` + `src/routes/test/500/+page.server.ts` (триггер `?trigger=500`).
 - `ApiErrorDisplay.svelte` использует `server-error` для API-ошибок с кодом `INTERNAL_ERROR`.
 - PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
-- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d` и все последующие до слияния.
+- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d`, `5acc40d`, `ff65307` и все последующие до слияния.
 
 ## 21. Открытые Dependabot PR (#21–#32), 2026-09-11
 
@@ -822,4 +822,16 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Симптом: `Smoke Tests` падает на шаге `Start backend for smoke tests` с `FATAL: SKIP_AUTH=true is only allowed when APP_ENV=test; current APP_ENV=development`.
 - Причина: в `ci.yml` smoke-тесты стартуют backend и graph-service с `SKIP_AUTH=true`, но без `APP_ENV=test`.
 - Исправление (`21f5d8d`): добавить `APP_ENV: test` в env для шагов `Start backend for smoke tests` и `Start graph-service for smoke tests`.
-- Статус: исправлено — следующий прогон CI подтверждает.
+
+**Smoke Tests: graph-service REDIS_URL в формате URL.**
+
+- Симптом: `Start graph-service for smoke tests` падает с `failed to connect to redis: dial tcp: address redis://localhost:6379: too many colons in address`.
+- Причина: graph-service ожидает `RedisURL` как `host:port`, а `ci.yml` передавал `redis://localhost:6379`.
+- Исправление (`5acc40d`): `REDIS_URL: localhost:6379` для graph-service.
+
+**Smoke Tests: Go module cache.**
+
+- Симптом: `Start backend for smoke tests` провисел более 5 минут на `go mod download`, потому что в smoke-джобе не было `actions/setup-go` и кеша.
+- Исправление (`ff65307`): добавлен `actions/setup-go@v6` с `cache-dependency-path: '**/go.sum'` в `smoke-tests`.
+
+- Статус: все вспомогательные правки в `ci.yml` вместе с `ff65307`; следующий прогон CI подтверждает.
