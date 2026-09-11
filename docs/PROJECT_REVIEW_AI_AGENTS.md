@@ -20,7 +20,7 @@
 - Система черновиков в MongoDB.
 - JWT/OAuth2-аутентификация, RBAC.
 - Геймификация (achievements).
-- i18n: русский по умолчанию, английский — через ключи.
+- i18n: английский по умолчанию (`en`), русский (`ru`) — через те же i18n-ключи.
 - Резервное копирование на Яндекс.Диск.
 
 Среды:
@@ -171,7 +171,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `src/shared/utils/i18n.ts` — barrel, реэкспортирует `formatMessage` и типы `Locale`/`MessageParams`.
 - `src/shared/utils/i18n/messages/*.ts` — ключи по доменам (`auth`, `common`, `graph`, `import`, `notes`, `profile`, `ui`) для `en` и `ru`.
 - `formatMessage(key, locale, params)`.
-- UI по умолчанию на русском, но все строки через i18n-ключи.
+- UI по умолчанию на английском, но все строки через i18n-ключи; Russian supported through the same keys.
 - `SidebarWidget.svelte` переведена на i18n-ключи.
 
 ---
@@ -753,6 +753,11 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Добавлен `frontend/src/routes/error-page.spec.ts` и `frontend/src/shared/utils/route-match.test.ts`.
 - В `+layout.svelte` исправлен критический баг публичных маршрутов: `currentPath.startsWith("/")` делал публичными **все** пути. Вынесена функция `isPublicRoute` в `shared/utils/route-match.ts`.
 - Обновлены `docs/tasks/UX-2-500-error-page.md` и `docs/AI_HANDOFF.md`; статус: на ревью у Claude Code.
+|- Добавлен Playwright-сценарий `frontend/tests/error-500-page.spec.ts` и test-only route `src/routes/test/500/+page.server.ts` (триггер `?trigger=500`) для проверки full-viewport рендера в браузере.
+|- `ApiErrorDisplay.svelte` теперь использует иллюстрацию `server-error` для API-ошибок с кодом `INTERNAL_ERROR`.
+|- Исправлены `golangci-lint` замечания в `note_handler.go` и `import_fetcher_test.go`.
+|- Восстановлен гейт форматирования: `npm ci` + `npm run format` привели 6 Svelte-файлов в соответствие с lock-версией `prettier-plugin-svelte`.
+|- Обновлена языковая политика: UI по умолчанию — English (`en`), документация — Russian; правка в `.windsurfrules`, `MASTER_PROMPT.md`, `MASTER_PROMPT_RU.md`.
 
 **Аудит обработки ошибок.**
 
@@ -769,7 +774,36 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 **Осталось / открытые вопросы.**
 
-- Язык по умолчанию: постановка и `PROJECT_REVIEW_AI_AGENTS.md` §1 говорят «русский по умолчанию», но `knowledge-graph.config.json`, `getCurrentLocale()` и `.windsurfrules` фиксируют `en` default. Нужно решение/фикс.
-- Playwright-регрессия full-viewport: требуется симулировать 500 через `load` (временный `+page.ts` в test-only route) или через mock.
-- Использовать ли `server-error` в `ApiErrorDisplay` для in-page `INTERNAL_ERROR`?
+- Решение по языку: приложение — `en` по умолчанию, документация — Russian. Зафиксировано в `.windsurfrules`, `MASTER_PROMPT.md`, `MASTER_PROMPT_RU.md`.
+- Playwright-регрессия full-viewport: реализована `frontend/tests/error-500-page.spec.ts` + `src/routes/test/500/+page.server.ts` (триггер `?trigger=500`).
+- `ApiErrorDisplay.svelte` использует `server-error` для API-ошибок с кодом `INTERNAL_ERROR`.
 - PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
+- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e` и все последующие до слияния.
+
+## 21. Открытые Dependabot PR (#21–#32), 2026-09-11
+
+Все 12 PR — реальные апгрейды, не закрыты автоматически основным. `go.mod` и `requirements.txt` на `main` до сих пор содержат старые версии.
+
+| # | Область | Зависимость | С | По | Риск | Рекомендация |
+|---|---|---|---|---|---|---|
+| #24 | backend Go | `golang.org/x/net` | 0.52.0 | 0.58.0 | Средний (0.x minor, транзитив) | Группировать с другими Go-PR; проверить `go test ./...` |
+| #30 | backend Go | `pgvector-go` | 0.2.0 | 0.4.1 | Средний (0.x, pgvector API) | Ревью changelog; тесты pgvector/integration |
+| #26 | backend Go | `go-redis/v9` | 9.14.1 | 9.22.0 | Средний (minor в рамках v9, но правила требуют v9 API) | Проверить отсутствие v8-API; `go test ./...` |
+| #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий (0.x, integration tests) | Запустить integration tests |
+| #28 | backend Go | `testcontainers-go/modules/postgres` | 0.40.0 | 0.44.0 | Средний-высокий | Запустить integration tests |
+| #25 | NLP Python | `yake` | 0.4.8 | 0.7.3 | Средний (0.x, keyword extraction) | Проверить `pytest` |
+| #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний (minor, FastAPI/Pydantic v2) | Проверить `pytest` и совместимость с FastAPI |
+| #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий (minor, модель/эмбеддинги) | Сравнить вывод embeddings; возможно, требуется пересчёт |
+| #27 | NLP Python | `python-dotenv` | 1.0.0 | 1.2.3 | Низкий | Безопасно группировать с NLP |
+| #21 | CI Actions | `actions/setup-python` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
+| #22 | CI Actions | `actions/setup-go` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
+| #23 | CI Actions | `actions/checkout` | 5 | 7 | Низкий-средний | Проверить workflow CI после merge |
+
+**Порядок действий:**
+
+1. Не закрывать все сразу — каждый PR либо мержится, либо отклоняется осознанно.
+2. Объединить по группам: Go-бэкенд (#24, #26, #28, #30, #32), NLP (#25, #27, #29, #31), GitHub Actions (#21, #22, #23).
+3. Внутри группы мержить по цепочке с `gh pr merge --rebase` или через GitHub; Dependabot предложит rebase следующих.
+4. Перед merge каждой группы — `go test ./...`, `go test -tags=integration ./...`, `pytest` (NLP), `npm run check`/`test:unit` (для Actions не нужно, но прогнать CI).
+5. `sentence-transformers` (#31) — самый рискованный; выделить отдельный раунд с замером embeddings.
+6. Действие по умолчанию: держать открытыми до следующего раунда CI/ревью, либо закрыть только явно отклонённые/устаревшие.

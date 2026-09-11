@@ -65,7 +65,7 @@
 | IMP-3: в массовом импорте нет подсказок для типов, а в ghost-форме (кнопка-призрак) неполный список типов | [`tasks/IMP-3-import-ghost-type-ux.md`](tasks/IMP-3-import-ghost-type-ux.md) | **новая** — постановка от владельца, ждёт реализации | 2026-09-10 |
 | IMP-5: массовый импорт падает на склеенных URL, портит UTF-8 при усечении и не принимает HTML-файл закладок больше 50 ссылок | [`tasks/IMP-5-import-url-splitting-and-utf8.md`](tasks/IMP-5-import-url-splitting-and-utf8.md) | **на ревью** — Devin реализовал `extractURLs`, `ImportFetcher` (charset, рунное усечение), `BuildContent`, `extractURLsFromHTML`, батчинг preview/import по `MAX_IMPORT_BATCH_SIZE=50`; Go/FE unit-тесты зелёные; Personal-стек пересобран, но живой импорт HTML не проверен из-за падения Docker Desktop | 2026-09-11 |
 | DOCKER-RECOVER: Docker Desktop и Personal-стек восстановлены; ручной бэкап volumes; VHD compact | [`docs/PROJECT_REVIEW_AI_AGENTS.md` §19.6](docs/PROJECT_REVIEW_AI_AGENTS.md) | **сделано** — Docker стартует, 19 заметок на месте, `docker_data.vhdx` 45.18→37.04 ГБ, архив `C:\Users\89209\Desktop\my items\kg-personal-volumes-2026-09-11.tar.gz` 25.8 МБ | 2026-09-11 |
-| UX-2: страница 500 ошибки отображается куском экрана, а не на весь браузер; нужен `+error.svelte` с i18n, full-viewport и кнопками | [`tasks/UX-2-500-error-page.md`](tasks/UX-2-500-error-page.md) | **реализовано — на ревью у Claude** — `+error.svelte`, i18n, иллюстрация `server-error` (разъединённый удлинитель), unit-тест, `npm run check` и `npm run test:unit` зелёные; найден и починен баг `startsWith("/")` в `+layout.svelte` | 2026-09-11 |
+| UX-2: страница 500 ошибки отображается куском экрана, а не на весь браузер; нужен `+error.svelte` с i18n, full-viewport и кнопками | [`tasks/UX-2-500-error-page.md`](tasks/UX-2-500-error-page.md) | **реализовано — на ревью у Claude** — `+error.svelte`, i18n, иллюстрация `server-error` (разъединённый удлинитель), unit-тест, `npm run check` и `npm run test:unit` зелёные; найден и починен баг `startsWith("/")` в `+layout.svelte`; добавлен Playwright-сценарий `error-500-page.spec.ts` + `src/routes/test/500`; `ApiErrorDisplay` для `INTERNAL_ERROR` рисует `server-error`; восстановлен `npm run format:check`; backend `golangci-lint` чистый | 2026-09-11 |
 
 | UX-1: связи заметок нельзя создать из правого меню; нельзя связать уже существующие заметки; при удалении/изменении заметки канвас на время полностью пропадает | [`tasks/UX-1-link-creation-and-canvas-refresh.md`](tasks/UX-1-link-creation-and-canvas-refresh.md) | **новая** — постановка от владельца, ждёт обсуждения и приоритета | 2026-09-10 |
 | IMP-4: массовый импорт должен запускать тот же конвейер `RefreshRecommendations`, что и ручное/букмарклетное создание; Java `source-text-handler` нуждается в batch-методе создания заметок и проверкой, что рекомендации пересчитываются | [`tasks/IMP-4-import-recommendations-and-java-batch.md`](tasks/IMP-4-import-recommendations-and-java-batch.md), [`tasks/IMP-4-claude-review.md`](tasks/IMP-4-claude-review.md), [`TZ-Java-source-text-handler-2026-08-30.md`](TZ-Java-source-text-handler-2026-08-30.md) | **на ревью у Claude и владельца** — Devin вручную заполнил `note_recommendations` (108) и `links` (18) семантическими top-1/6 связями, вернул `GetSuggestions` и `GetGraph`; добавил `GammaLinkGenerator` с лимитом исходящей степени (≤2) и тесты; `FindSimilarNotes` теперь возвращает нормализованный [0,1] score; Java-specific endpoint (`POST /api/v1/import/java/batch`) удалён по решению владельца; сейчас на ревью: должен ли Java использовать существующий `import/bookmarks`, generic `import/batch`, ручное создание связей, dedup и pipeline постобработки | 2026-09-11 |
@@ -102,7 +102,7 @@
 
 | ~~Решение владельца: проверки локально~~ — воплощено постановкой CI-3 | [`tasks/CI-3-local-check-runner.md`](tasks/CI-3-local-check-runner.md) | принято | 2026-09-07 |
 | ~~Никто не смотрел на CI.~~ Правило внесено в обе копии `/kg-work` и применяется | — | **принято** | 2026-09-08 |
-|| UX-2: ревью 500-страницы и аудита обработки ошибок | [`tasks/UX-2-500-error-page.md`](tasks/UX-2-500-error-page.md), [`frontend/src/routes/+error.svelte`](../frontend/src/routes/+error.svelte) | **ждёт ревью** — Devin реализовал `+error.svelte`, иллюстрацию `server-error`, unit-тест, починил баг `startsWith("/")`; нужно решение по языку по умолчанию и Playwright-регрессии | 2026-09-11 |
+|| UX-2: ревью 500-страницы и аудита обработки ошибок | [`tasks/UX-2-500-error-page.md`](tasks/UX-2-500-error-page.md), [`frontend/src/routes/+error.svelte`](../frontend/src/routes/+error.svelte) | **ждёт ревью** — Devin реализовал `+error.svelte`, иллюстрацию `server-error`, unit-тест, починил баг `startsWith("/")`; решение по языку (UI `en`, документация `ru`), Playwright-регрессия добавлена, `ApiErrorDisplay` для `INTERNAL_ERROR` теперь `server-error`, форматирование и backend линт восстановлены; ревьюер должен просмотреть **все коммиты в окне 2026-09-11**, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e` и последующие | 2026-09-11 |
 
 ## На человеке
 
@@ -116,7 +116,8 @@
 | Решить TLS-терминацию и сертификаты для nginx (вне AUD-5) | [`BACKLOG.md`](BACKLOG.md), TD-TLS | **решено: отложено**, записано в бэклог | 2026-09-07 |
 | `.github/CODEOWNERS` — ссылается на несуществующую команду | — | **отменено владельцем** — файл удалён | 2026-09-07 |
 | Отключить MCP-коннекторы в настройках claude.ai | — | **снято с доски** — настройка аккаунта, репозитория не касается | 2026-09-07 |
-| Удалить каталог `.kilo/` | — | **сделано** | 2026-09-07 |
+| Удалить каталог `.kilo/`
+|| DEPENDABOT-1: решение по 12 открытым Dependabot PR (#21–#32) | см. `PROJECT_REVIEW_AI_AGENTS.md` §20 | **ждёт решения владельца** — все PR реальные апгрейды, не закрыты основным; Devin разделил по риску и подготовил рекомендации | 2026-09-11 | | — | **сделано** | 2026-09-07 |
 
 ---
 
@@ -127,6 +128,7 @@
 - `ARGOS_REFERENCE_BRANCH` переводится на `main` после починки A-1.
 - Мастер-промпты остаются самодостаточными копиями; консистентность обеспечивается правилом синхронизации.
 - **Рабочий язык AI-документов — русский**, английские дубликаты для них не требуются.
+- **Язык приложения по умолчанию — английский (`en`)**, Russian (`ru`) поддерживается через i18n-ключи; пользователь может переключиться на Russian в UI. Авторитетная продуктовая/API/архитектурная документация — на русском по умолчанию, английские переводы могут поддерживаться параллельно.
 
 **Решение по `SKIP_AUTH` и визуальным эталонам, 2026-09-06.**
 
