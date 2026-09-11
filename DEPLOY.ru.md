@@ -20,6 +20,15 @@
     - [MongoDB](#mongodb)
       - [Если MongoDB внешняя или с авторизацией](#если-mongodb-внешняя-или-с-авторизацией)
     - [Краткая сводка](#краткая-сводка)
+    - [Redis](#redis)
+      - [Redis с паролем (внешний инстанс)](#redis-с-паролем-внешний-инстанс)
+  - [Сервисы: что и как настраивать](#сервисы-что-и-как-настраивать)
+    - [Backend и Worker](#backend-и-worker)
+    - [Graph service](#graph-service)
+      - [Внутренний токен graph-service](#внутренний-токен-graph-service)
+    - [Frontend](#frontend)
+    - [nginx](#nginx)
+    - [Backup scheduler](#backup-scheduler)
   - [NLP-модель и `huggingface_cache`](#nlp-модель-и-huggingface_cache)
     - [Вариант А — с интернетом](#вариант-а--с-интернетом)
     - [Вариант Б — без интернета](#вариант-б--без-интернета)
@@ -31,13 +40,30 @@
   - [Порты и URL после старта](#порты-и-url-после-старта)
   - [Проверка, что всё поднялось](#проверка-что-всё-поднялось)
   - [Первая регистрация и вход](#первая-регистрация-и-вход)
-  - [Частые проблемы](#частые-проблемы)
+  - [Дополнительная конфигурация: OAuth, SMTP, ресурсы](#дополнительная-конфигурация-oauth-smtp-ресурсы)
+    - [OAuth через Яндекс](#oauth-через-яндекс)
+    - [SMTP для сброса пароля](#smtp-для-сброса-пароля)
+    - [Ресурсы Docker Desktop](#ресурсы-docker-desktop)
+  - [Полный чек-лист развёртывания](#полный-чек-лист-развёртывания)
+    - [1. Окружение](#1-окружение)
+    - [2. NLP-модель](#2-nlp-модель)
+    - [3. Запуск](#3-запуск)
+    - [4. Первый пользователь](#4-первый-пользователь)
+    - [5. Бэкап (опционально)](#5-бэкап-опционально)
+  - [Частые проблемы по сервисам](#частые-проблемы-по-сервисам)
     - [`vitest is not recognized` / фронтенд не собирается локально](#vitest-is-not-recognized--фронтенд-не-собирается-локально)
     - [NLP не стартует: `Model not found`](#nlp-не-стартует-model-not-found)
     - [Фронт пишет `Could not load knowledge-graph.config.json`](#фронт-пишет-could-not-load-knowledge-graphconfigjson)
     - [Связи в карточке заметки не отображаются](#связи-в-карточке-заметки-не-отображаются)
     - [E2E падает с `ERR_CONNECTION_REFUSED http://localhost:5173`](#e2e-падает-с-err_connection_refused-httplocalhost5173)
     - [E2E берёт старый `auth` из другого пути](#e2e-берёт-старый-auth-из-другого-пути)
+    - [Бэкенд не стартует: `migrations failed`](#бэкенд-не-стартует-migrations-failed)
+    - [Graph service падает при старте](#graph-service-падает-при-старте)
+    - [Worker висит без обработки](#worker-висит-без-обработки)
+    - [PostgreSQL: `password authentication failed`](#postgresql-password-authentication-failed)
+    - [MongoDB: `connection refused`](#mongodb-connection-refused)
+    - [Backup: `BACKUP_YANDEX_TOKEN not set`](#backup-backup_yandex_token-not-set)
+    - [Всё стартует, но фронт пустой / белый экран](#всё-стартует-но-фронт-пустой--белый-экран)
   - [Обновление кода](#обновление-кода)
   - [Перенос Personal-данных на другую машину](#перенос-personal-данных-на-другую-машину)
     - [Через SQL-бэкап (рекомендуется)](#через-sql-бэкап-рекомендуется)
@@ -225,6 +251,196 @@ MONGO_DATABASE=knowledge_graph
 | **PostgreSQL** | Создаётся автоматически из `.env` | Создай вручную пользователя + БД, пропиши `DATABASE_URL` / `PERSONAL_DATABASE_URL` |
 | **MongoDB** | Без авторизации, пользователь не нужен | Создай вручную, пропиши `MONGO_URL` и `MONGO_DATABASE` (не `MONGODB_URL`!) |
 
+### Redis
+
+Redis в Docker Compose поднимается **без пароля**. Бэкенд и graph-service подключаются по `REDIS_URL`:
+
+```env
+REDIS_URL=redis:6379
+PERSONAL_REDIS_URL=redis_personal:6379
+```
+
+> Для Personal используется `PERSONAL_REDIS_URL`. Если переменная пустая, graph-service падает на дефолт `redis:6379`, поэтому лучше прописать явно.
+
+#### Redis с паролем (внешний инстанс)
+
+1. В `redis.conf` включи:
+
+```
+requirepass твой_пароль
+```
+
+2. В `.env`:
+
+```env
+PERSONAL_REDIS_URL=redis://:твой_пароль@127.0.0.1:6379/0
+REDIS_URL=redis://:твой_пароль@127.0.0.1:6379/0
+```
+
+3. Проверь:
+
+```powershell
+redis-cli -h 127.0.0.1 -a "твой_пароль" ping
+```
+
+4. Закомментируй сервис `redis` в `docker-compose.personal.yml`.
+
+---
+
+## Сервисы: что и как настраивать
+
+### Backend и Worker
+
+Бэкенд и воркер — один и тот же Go-бинарник, но с разными `CMD`:
+
+- `kg-backend-personal` — HTTP API (`./server`).
+- `kg-worker-personal` — фоновая обработка (`./worker`).
+
+Что должен получить каждый из `.env`:
+
+```env
+# Базы
+DATABASE_URL=postgresql://...        # для dev
+PERSONAL_DATABASE_URL=postgresql://... # для personal
+REDIS_URL=redis://...
+PERSONAL_REDIS_URL=redis://...
+MONGO_URL=mongodb://...
+MONGO_DATABASE=knowledge_graph
+
+# Безопасность
+JWT_SECRET=твой_секрет
+
+# Graph service
+GRAPH_SERVICE_URL=http://graph-service-personal:9091
+GRAPH_SERVICE_INTERNAL_TOKEN=        # если настроен, см. ниже
+
+# NLP
+NLP_SERVICE_URL=http://nlp-personal:5000
+NLP_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
+
+# Опционально
+SKIP_AUTH=false
+BACKUP_ENABLED=true
+```
+
+**Проверка бэкенда:**
+
+```powershell
+curl http://127.0.0.1:18085/health
+```
+
+**Проверка воркера:**
+
+Воркер не открывает порт. Смотри логи:
+
+```powershell
+docker logs -f kg-worker-personal
+```
+
+Ожидаемое: `worker started`, `asynq: ready`, обработка задач без `connection refused`.
+
+### Graph service
+
+Graph service — отдельный Go-микросервис. Он читает связи из PostgreSQL и кэширует раскладки в Redis. Чтобы запросы с JWT проходили, у него должен быть тот же `JWT_SECRET`, что и у бэкенда.
+
+Обязательные переменные:
+
+```env
+JWT_SECRET=твой_секрет
+POSTGRES_URL=postgresql://personal:change_me_personal@postgres_personal:5432/knowledge_personal?sslmode=disable
+REDIS_URL=redis://redis_personal:6379/0
+NLP_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
+```
+
+> На практике compose задаёт `POSTGRES_URL` из `PERSONAL_DATABASE_URL`, а `REDIS_URL` из `PERSONAL_REDIS_URL`.
+
+**Проверка:**
+
+```powershell
+curl http://127.0.0.1:9092/health
+```
+
+**Если карточка заметки не показывает связи** — почисти кэш:
+
+```powershell
+docker exec -i kg-redis-personal redis-cli --scan --pattern "graph-service:*" | ForEach-Object { docker exec -i kg-redis-personal redis-cli del $_ }
+```
+
+#### Внутренний токен graph-service
+
+`GRAPH_SERVICE_INTERNAL_TOKEN` — опциональный shared secret между бэкендом и graph-service. Если задан:
+
+- Бэкенд зовёт graph-service с заголовком `X-Internal-Auth`.
+- Graph-service проверяет его и доверяет `X-User-Id`.
+- В `.env` фронтенда он не нужен, потому что браузер не ходит напрямую в graph-service.
+
+Для старта можно оставить пустым. В production — задать 32+ случайных символа.
+
+### Frontend
+
+Фронтенд собирается в Docker и отдаётся через nginx. На этапе сборки bake-ятся переменные:
+
+```env
+VITE_API_URL=/api
+VITE_GRAPH_SERVICE_URL=/graph-service
+VITE_API_TARGET=http://backend_personal:8080
+GRAPH_SERVICE_URL=http://graph-service-personal:9091
+GRAPH_SERVICE_INTERNAL_TOKEN=        # только для SSR
+```
+
+> Обычно не требует правки в `.env`. Меняй, только если поднимаешь фронтенд локально (`npm run dev`) или меняешь URL бэкенда.
+
+**Проверка:**
+
+```powershell
+curl -s http://127.0.0.1:18084 | head
+```
+
+Ожидаем: HTML с `__data`.
+
+### nginx
+
+nginx служит единым шлюзом. Конфиг монтируется из `nginx.personal.conf`. Меняй его, только если:
+
+- переносишь стек на другие порты;
+- добавляешь новые `location` / заголовки безопасности.
+
+Порт `18082` — API/бэкенд.  
+Порт `18084` — фронтенд.
+
+**Проверка:**
+
+```powershell
+curl http://127.0.0.1:18082/health
+curl http://127.0.0.1:18084
+```
+
+### Backup scheduler
+
+По умолчанию выключен в `docker-compose.personal.yml`? Проверь, включён ли сервис. Если включён, он бэкапит Postgres по cron.
+
+Базовые переменные:
+
+```env
+BACKUP_ENABLED=true
+BACKUP_LOCAL_PATH=./backups
+BACKUP_SCHEDULE=0 23 * * 0
+BACKUP_RETENTION_DAYS=14
+```
+
+Для облачного бэкапа на Yandex:
+
+```powershell
+$env:BACKUP_YANDEX_TOKEN = "your_oauth_token"
+docker compose -f docker-compose.personal.yml up -d backup_scheduler
+```
+
+Локальный бэкап вручную:
+
+```powershell
+.\scripts\devops\backup-personal.ps1 -Mode daily
+```
+
 ---
 
 ## NLP-модель и `huggingface_cache`
@@ -369,7 +585,105 @@ docker compose -f docker-compose.personal.yml ps
 
 ---
 
-## Частые проблемы
+## Дополнительная конфигурация: OAuth, SMTP, ресурсы
+
+### OAuth через Яндекс
+
+Если хочешь вход через Яндекс:
+
+1. Создай приложение в [Yandex OAuth](https://oauth.yandex.ru/).
+2. В `.env`:
+
+```env
+YANDEX_CLIENT_ID=твой_client_id
+YANDEX_CLIENT_SECRET=твой_client_secret
+PKCE_ENABLED=true
+```
+
+3. Пересобери backend: `docker compose -f docker-compose.personal.yml up -d --build backend_personal`.
+4. URL редиректа в Яндексе: `http://127.0.0.1:18084/auth/yandex/callback`.
+
+### SMTP для сброса пароля
+
+Для production и для Personal-стека с внешним доступом:
+
+```env
+SMTP_HOST=smtp.yandex.ru
+SMTP_PORT=587
+SMTP_USER=your@yandex.ru
+SMTP_PASSWORD=app_password
+SMTP_FROM=your@yandex.ru
+```
+
+> Gmail требует "App Password"; для теста можно оставить пустым — сброс пароля не будет работать.
+
+### Ресурсы Docker Desktop
+
+Открой **Settings → Resources → WSL integration**. Рекомендуется:
+
+- **Memory**: минимум 6 ГБ, лучше 8–12 ГБ.
+- **Swap**: 1–2 ГБ.
+- **Disk image location**: на SSD.
+- **WSL integration**: включена для дистрибутива, из которого запускаешь Docker.
+
+Если стек падает по OOM, увеличь лимиты или снизь `RECOMMENDATION_TOP_N` и `GRAPH_MAX_LIMIT` в `knowledge-graph.config.json`.
+
+---
+
+## Полный чек-лист развёртывания
+
+Распечатай/скопируй и отмечай галочками:
+
+### 1. Окружение
+
+- [ ] Docker Desktop + WSL2 установлены и запущены.
+- [ ] Репозиторий склонирован: `git clone ... && cd knowledge-graph && git checkout ai-agents`.
+- [ ] `.env` создан из `.env.example`.
+- [ ] `JWT_SECRET` заполнен (32+ символов).
+- [ ] Пароли PostgreSQL (`POSTGRES_PASSWORD`, `PERSONAL_POSTGRES_PASSWORD`) заполнены.
+- [ ] `MONGO_URL` и `MONGO_DATABASE` заполнены (если внешняя Mongo).
+- [ ] `REDIS_URL` / `PERSONAL_REDIS_URL` заполнены (если внешний Redis).
+- [ ] `CORS_ALLOWED_ORIGINS` включает `http://127.0.0.1:18084` и `http://localhost:18084`.
+
+### 2. NLP-модель
+
+- [ ] Папка `huggingface_cache` на месте.
+- [ ] Модель `paraphrase-multilingual-MiniLM-L12-v2` скачана (папка `models--sentence-transformers--...` внутри).
+
+### 3. Запуск
+
+- [ ] `docker compose -f docker-compose.personal.yml up -d --build`.
+- [ ] Все контейнеры `Up (healthy)`:
+  - `kg-postgres-personal`
+  - `kg-redis-personal`
+  - `kg-mongo-personal`
+  - `kg-nlp-personal`
+  - `kg-graph-service-personal`
+  - `kg-backend-personal`
+  - `kg-worker-personal`
+  - `kg-frontend-personal`
+  - `kg-nginx-personal`
+- [ ] `curl http://127.0.0.1:18085/health` → OK.
+- [ ] `curl http://127.0.0.1:9092/health` → OK.
+- [ ] `curl http://127.0.0.1:5001/health` → OK.
+- [ ] `curl http://127.0.0.1:18084` → HTML.
+
+### 4. Первый пользователь
+
+- [ ] Открыт `http://127.0.0.1:18084`.
+- [ ] Регистрация прошла, в базе появилась запись в `users`.
+- [ ] Создана первая заметка.
+- [ ] Через 5–30 секунд в заметке появились рекомендации.
+
+### 5. Бэкап (опционально)
+
+- [ ] `BACKUP_ENABLED=true`.
+- [ ] Папка `./backups` существует.
+- [ ] Тестовый ручной бэкап: `.\scripts\devops\backup-personal.ps1`.
+
+---
+
+## Частые проблемы по сервисам
 
 ### `vitest is not recognized` / фронтенд не собирается локально
 
@@ -410,6 +724,73 @@ $env:FRONTEND_URL = "http://127.0.0.1:3002"
 ### E2E берёт старый `auth` из другого пути
 
 Запускай из `frontend/`. Относительные пути `tests/setup/.auth/` разрешаются от каталога процесса.
+
+### Бэкенд не стартует: `migrations failed`
+
+- Проверь `DATABASE_URL` / `PERSONAL_DATABASE_URL`.
+- Убедись, что Postgres отвечает:
+
+```powershell
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT 1;"
+```
+
+- Если схема сильно устарела, можно удалить только dev-базу, но **НЕ** Personal-данные.
+
+### Graph service падает при старте
+
+- Проверь `POSTGRES_URL` и `REDIS_URL` внутри контейнера:
+
+```powershell
+docker logs -f kg-graph-service-personal
+```
+
+- Частая ошибка: `JWT_SECRET` пустой → `unauthorized` на все приватные endpoint.
+
+### Worker висит без обработки
+
+- Проверь логи: `docker logs -f kg-worker-personal`.
+- Убедись, что Redis видит очередь:
+
+```powershell
+docker exec -i kg-redis-personal redis-cli llen asynq:{default}
+```
+
+Если очередь растёт, а воркер не забирает — проверь `ASYNQ_CONCURRENCY` и `REDIS_URL`.
+
+### PostgreSQL: `password authentication failed`
+
+- В `.env` и в `docker-compose.personal.yml` разные пароли? Они должны совпадать.
+- Если менял пароль в `.env`, но том `pgdata_personal` уже был создан со старым, нужно либо поменять пароль через psql, либо удалить том (с бэкапом) и пересоздать.
+
+### MongoDB: `connection refused`
+
+- Убедись, что `MONGO_URL` указывает на правильный хост. Внутри Docker — `mongodb://kg-mongo-personal:27017`, снаружи — `mongodb://127.0.0.1:27018`.
+- Проверь, что Mongo поднялся: `docker ps | grep mongo`.
+
+### Backup: `BACKUP_YANDEX_TOKEN not set`
+
+- Либо задай токен в окружении, либо отключи облако:
+
+```env
+BACKUP_CLOUD_ENABLED=false
+```
+
+- Проверь, что папка `backups` доступна контейнеру:
+
+```powershell
+docker exec -i kg-backup-scheduler ls -la /backups
+```
+
+### Всё стартует, но фронт пустой / белый экран
+
+- Логи фронтенда: `docker logs -f kg-frontend-personal`.
+- Проверь, что `knowledge-graph.config.json` смонтирован:
+
+```powershell
+docker exec -i kg-frontend-personal cat /app/knowledge-graph.config.json | head
+```
+
+- Пересобери фронтенд: `docker compose -f docker-compose.personal.yml up -d --build frontend-personal`.
 
 ---
 
