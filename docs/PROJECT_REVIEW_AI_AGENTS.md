@@ -778,7 +778,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Playwright-регрессия full-viewport: реализована `frontend/tests/error-500-page.spec.ts` + `src/routes/test/500/+page.server.ts` (триггер `?trigger=500`).
 - `ApiErrorDisplay.svelte` использует `server-error` для API-ошибок с кодом `INTERNAL_ERROR`.
 - PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
-- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0` и все последующие до слияния.
+- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d` и все последующие до слияния.
 
 ## 21. Открытые Dependabot PR (#21–#32), 2026-09-11
 
@@ -807,3 +807,19 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 4. Перед merge каждой группы — `go test ./...`, `go test -tags=integration ./...`, `pytest` (NLP), `npm run check`/`test:unit` (для Actions не нужно, но прогнать CI).
 5. `sentence-transformers` (#31) — самый рискованный; выделить отдельный раунд с замером embeddings.
 6. Действие по умолчанию: держать открытыми до следующего раунда CI/ревью, либо закрыть только явно отклонённые/устаревшие.
+
+## 22. Правки CI под PR #36, 2026-09-11
+
+**NLP: таймаут из-за nvidia-колёс.**
+
+- Симптом: `Core Checks / NLP Service Checks` падала по таймауту 10 минут, скачивая `torch==2.14.0` + `nvidia_cudnn` 553 МБ + `nvidia_cusparselt` 170 МБ + `nvidia_nccl` 216 МБ и др.
+- Причина: `pip install -r requirements.txt` в `_core-checks.yml` брал последний `torch` с PyPI (CUDA-версия), тогда как `Dockerfile` всегда использует CPU-индекс.
+- Исправление (`ff32ee0`): заменить `pip install -r requirements.txt` на `pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple -r requirements.txt` и увеличить `timeout-minutes` до 20.
+- Результат: `NLP Service Checks` стала проходить за ~1 минуту.
+
+**Smoke Tests: `SKIP_AUTH` без `APP_ENV=test`.**
+
+- Симптом: `Smoke Tests` падает на шаге `Start backend for smoke tests` с `FATAL: SKIP_AUTH=true is only allowed when APP_ENV=test; current APP_ENV=development`.
+- Причина: в `ci.yml` smoke-тесты стартуют backend и graph-service с `SKIP_AUTH=true`, но без `APP_ENV=test`.
+- Исправление (`21f5d8d`): добавить `APP_ENV: test` в env для шагов `Start backend for smoke tests` и `Start graph-service for smoke tests`.
+- Статус: исправлено — следующий прогон CI подтверждает.
