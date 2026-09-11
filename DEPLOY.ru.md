@@ -98,6 +98,14 @@
     - [Быстрое решение: сменить порты в `.env`](#быстрое-решение-сменить-порты-в-env)
     - [Если запущены сразу несколько стеков](#если-запущены-сразу-несколько-стеков)
     - [Проверка](#проверка)
+  - [Бэкап, восстановление и проверка](#бэкап-восстановление-и-проверка)
+    - [Рекомендуемая стратегия](#рекомендуемая-стратегия)
+    - [SQL-бэкап](#sql-бэкап)
+    - [Восстановление PostgreSQL из SQL-бэкапа](#восстановление-postgresql-из-sql-бэкапа)
+    - [Дамп Docker-томов](#дамп-docker-томов)
+    - [Восстановление из дампа томов](#восстановление-из-дампа-томов)
+    - [Smoke-тест после восстановления](#smoke-тест-после-восстановления)
+    - [Хранение бэкапов](#хранение-бэкапов)
   - [Что не надо трогать](#что-не-надо-трогать)
   - [Связанные документы](#связанные-документы)
 
@@ -1602,6 +1610,125 @@ Dev, Personal и Test могут работать одновременно, но
 
 ```powershell
 docker ps --format "table {{.Names}}\t{{.Ports}}"
+```
+
+---
+
+## Бэкап, восстановление и проверка
+
+### Рекомендуемая стратегия
+
+- **Раз в день** — автоматический SQL-бэкап PostgreSQL (`backup-scheduler`).
+- **Перед обновлением** — ручной `pre-upgrade`.
+- **Раз в неделю** — полный дамп Docker-томов на внешний диск.
+- **После восстановления** — smoke-тест.
+
+### SQL-бэкап
+
+```powershell
+.\scripts\devops\backup-personal.ps1 -Mode daily
+```
+
+Файл появится в `./backups/backup-personal-daily-<timestamp>.sql.gz`.
+
+Внутри бэкапа:
+
+```sql
+-- public schema + data
+-- pg_dump -F p --no-owner
+```
+
+Проверь размер:
+
+```powershell
+Get-ChildItem .\backups | Sort-Object Length -Descending | Select-Object -First 5
+```
+
+### Восстановление PostgreSQL из SQL-бэкапа
+
+1. Останови стек:
+
+```powershell
+docker compose -f docker-compose.personal.yml down
+```
+
+2. (Опционально) пересоздай том, если он повреждён:
+
+```powershell
+docker volume rm pgdata_personal
+```
+
+> Делай это только если уверен, что бэкап рабочий.
+
+3. Запусти только PostgreSQL:
+
+```powershell
+docker compose -f docker-compose.personal.yml up -d postgres_personal
+```
+
+4. Скопируй и распакуй бэкап:
+
+```powershell
+docker cp .\backups\backup-personal-daily-....sql.gz kg-postgres-personal:/tmp/backup.sql.gz
+docker exec -i kg-postgres-personal gunzip -c /tmp/backup.sql.gz | psql -U personal -d knowledge_personal
+```
+
+5. Проверь:
+
+```powershell
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT COUNT(*) FROM notes;"
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT COUNT(*) FROM users;"
+```
+
+6. Запусти остальной стек:
+
+```powershell
+docker compose -f docker-compose.personal.yml up -d
+```
+
+### Дамп Docker-томов
+
+Полный образ томов Personal:
+
+```powershell
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+docker run --rm -v pgdata_personal:/data -v "${PWD}:/backup" alpine tar czf /backup/pgdata_personal_$timestamp.tar.gz -C / data
+docker run --rm -v redisdata_personal:/data -v "${PWD}:/backup" alpine tar czf /backup/redisdata_personal_$timestamp.tar.gz -C / data
+docker run --rm -v mongodbdata_personal:/data -v "${PWD}:/backup" alpine tar czf /backup/mongodbdata_personal_$timestamp.tar.gz -C / data
+```
+
+### Восстановление из дампа томов
+
+```powershell
+docker run --rm -v pgdata_personal:/data -v "${PWD}:/backup" alpine sh -c "cd / && tar xzf /backup/pgdata_personal_....tar.gz"
+docker run --rm -v redisdata_personal:/data -v "${PWD}:/backup" alpine sh -c "cd / && tar xzf /backup/redisdata_personal_....tar.gz"
+docker run --rm -v mongodbdata_personal:/data -v "${PWD}:/backup" alpine sh -c "cd / && tar xzf /backup/mongodbdata_personal_....tar.gz"
+```
+
+### Smoke-тест после восстановления
+
+```powershell
+# 1. Все контейнеры Up (healthy)
+docker compose -f docker-compose.personal.yml ps
+
+# 2. Health endpoints
+foreach ($p in 18082,18084,18085,9092,5001) { curl "http://127.0.0.1:$p/health" }
+
+# 3. Login + note count
+curl -X POST http://127.0.0.1:18082/api/v1/auth/login -H "Content-Type: application/json" -d '{"email":"you@example.com","password":"..."}'
+curl http://127.0.0.1:18082/api/v1/notes
+```
+
+### Хранение бэкапов
+
+- Держи как минимум 3 последних SQL-бэкапа.
+- Копируй `backups/` на внешний диск / Yandex Disk.
+- Для Yandex:
+
+```env
+BACKUP_CLOUD_ENABLED=true
+BACKUP_CLOUD_PROVIDER=yandex
+BACKUP_YANDEX_TOKEN=   # через env, не через .env
 ```
 
 ---

@@ -1532,6 +1532,125 @@ docker ps --format "table {{.Names}}\t{{.Ports}}"
 
 ---
 
+## Backup, restore, and verification
+
+### Recommended strategy
+
+- **Daily** — automatic PostgreSQL SQL backup (`backup-scheduler`).
+- **Before each update** — manual `pre-upgrade`.
+- **Weekly** — full Docker volume dump to an external drive.
+- **After restore** — smoke test.
+
+### SQL backup
+
+```powershell
+.\scripts\devops\backup-personal.ps1 -Mode daily
+```
+
+The file appears in `./backups/backup-personal-daily-<timestamp>.sql.gz`.
+
+The backup contains:
+
+```sql
+-- public schema + data
+-- pg_dump -F p --no-owner
+```
+
+Check the size:
+
+```powershell
+Get-ChildItem .\backups | Sort-Object Length -Descending | Select-Object -First 5
+```
+
+### Restoring PostgreSQL from SQL backup
+
+1. Stop the stack:
+
+```powershell
+docker compose -f docker-compose.personal.yml down
+```
+
+2. (Optional) recreate the volume if it is damaged:
+
+```powershell
+docker volume rm pgdata_personal
+```
+
+> Only do this if you are sure the backup is valid.
+
+3. Start only PostgreSQL:
+
+```powershell
+docker compose -f docker-compose.personal.yml up -d postgres_personal
+```
+
+4. Copy and unpack the backup:
+
+```powershell
+docker cp .\backups\backup-personal-daily-....sql.gz kg-postgres-personal:/tmp/backup.sql.gz
+docker exec -i kg-postgres-personal gunzip -c /tmp/backup.sql.gz | psql -U personal -d knowledge_personal
+```
+
+5. Verify:
+
+```powershell
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT COUNT(*) FROM notes;"
+docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "SELECT COUNT(*) FROM users;"
+```
+
+6. Start the rest of the stack:
+
+```powershell
+docker compose -f docker-compose.personal.yml up -d
+```
+
+### Docker volume dump
+
+Full image of Personal volumes:
+
+```powershell
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+docker run --rm -v pgdata_personal:/data -v "${PWD}:/backup" alpine tar czf /backup/pgdata_personal_$timestamp.tar.gz -C / data
+docker run --rm -v redisdata_personal:/data -v "${PWD}:/backup" alpine tar czf /backup/redisdata_personal_$timestamp.tar.gz -C / data
+docker run --rm -v mongodbdata_personal:/data -v "${PWD}:/backup" alpine tar czf /backup/mongodbdata_personal_$timestamp.tar.gz -C / data
+```
+
+### Restoring from a volume dump
+
+```powershell
+docker run --rm -v pgdata_personal:/data -v "${PWD}:/backup" alpine sh -c "cd / && tar xzf /backup/pgdata_personal_....tar.gz"
+docker run --rm -v redisdata_personal:/data -v "${PWD}:/backup" alpine sh -c "cd / && tar xzf /backup/redisdata_personal_....tar.gz"
+docker run --rm -v mongodbdata_personal:/data -v "${PWD}:/backup" alpine sh -c "cd / && tar xzf /backup/mongodbdata_personal_....tar.gz"
+```
+
+### Smoke test after restore
+
+```powershell
+# 1. All containers Up (healthy)
+docker compose -f docker-compose.personal.yml ps
+
+# 2. Health endpoints
+foreach ($p in 18082,18084,18085,9092,5001) { curl "http://127.0.0.1:$p/health" }
+
+# 3. Login + note count
+curl -X POST http://127.0.0.1:18082/api/v1/auth/login -H "Content-Type: application/json" -d '{"email":"you@example.com","password":"..."}'
+curl http://127.0.0.1:18082/api/v1/notes
+```
+
+### Backup storage
+
+- Keep at least the last 3 SQL backups.
+- Copy `backups/` to an external drive / Yandex Disk.
+- For Yandex:
+
+```env
+BACKUP_CLOUD_ENABLED=true
+BACKUP_CLOUD_PROVIDER=yandex
+BACKUP_YANDEX_TOKEN=   # via env, not .env
+```
+
+---
+
 ## Do not touch
 
 - **Do not delete** Personal named volumes `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal` without a backup.
