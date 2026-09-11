@@ -1443,6 +1443,95 @@ But **always** back up first and check `CHANGELOG.md` / `docs/AI_HANDOFF.md` for
 
 ---
 
+## Port conflicts
+
+If `docker compose up` fails with `Bind for 0.0.0.0:18082 failed: port is already allocated`, the port is taken. First, find out by what.
+
+### Windows
+
+```powershell
+# Find PID
+netstat -ano | findstr 18082
+# or
+Get-Process -Id (Get-NetTCPConnection -LocalPort 18082).OwningProcess
+
+# Make sure it is not your Personal stack
+Get-Process -Id <PID>
+```
+
+### Linux / macOS
+
+```bash
+lsof -i :18082
+ss -ltnp | grep 18082
+```
+
+### What may own the port
+
+- A previously started Dev/Personal/Test stack.
+- Another Docker container.
+- A local service (IIS, SQL Server, PostgreSQL, Redis, Mongo).
+- Antivirus / VPN / corporate proxy.
+
+### Quick fix: change ports in `.env`
+
+Find the port variables in `.env` and `docker-compose.personal.yml`:
+
+```env
+PERSONAL_API_PORT=18085
+PERSONAL_VITE_API_URL=http://localhost:18085
+```
+
+and in `docker-compose.personal.yml`:
+
+```yaml
+nginx:
+  ports:
+    - "18082:80"       # API
+    - "18084:8080"     # frontend
+backend:
+  ports:
+    - "18085:8080"     # backend direct
+postgres:
+  ports:
+    - "5433:5432"
+redis:
+  ports:
+    - "16380:6379"
+mongo:
+  ports:
+    - "27018:27017"
+graph-service:
+  ports:
+    - "9092:9091"
+nlp:
+  ports:
+    - "5001:5000"
+```
+
+For example, change `18082` → `28082`, `18084` → `28084`, `18085` → `28085`, `5433` → `15433`, `16380` → `26380`, `27018` → `37018`, `9092` → `19092`, `5001` → `15001`.
+
+> Important: change ports in both `.env` and `docker-compose.personal.yml`, otherwise `VITE_API_URL` / `PERSONAL_VITE_API_URL` will point to the wrong place.
+
+After changing:
+
+```powershell
+docker compose -f docker-compose.personal.yml down
+docker compose -f docker-compose.personal.yml up -d --build
+```
+
+### Running multiple stacks at the same time
+
+Dev, Personal, and Test can run simultaneously, but each needs its own port range. The project already separates them. If you changed ports manually, check the table at the top of this doc and make sure there are no duplicates.
+
+### Check
+
+```powershell
+docker ps --format "table {{.Names}}\t{{.Ports}}"
+```
+
+---
+
 ## Do not touch
 
 - **Do not delete** Personal named volumes `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal` without a backup.

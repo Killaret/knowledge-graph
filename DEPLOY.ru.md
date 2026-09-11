@@ -86,6 +86,18 @@
   - [Перенос Personal-данных на другую машину](#перенос-personal-данных-на-другую-машину)
     - [Через SQL-бэкап (рекомендуется)](#через-sql-бэкап-рекомендуется)
     - [Через дамп Docker-томов](#через-дамп-docker-томов)
+  - [Обновление между релизами](#обновление-между-релизами)
+    - [Безопасный процесс обновления](#безопасный-процесс-обновления)
+    - [Миграции базы данных](#миграции-базы-данных)
+    - [Если миграция не применилась](#если-миграция-не-применилась)
+    - [Обновление с релиза на релиз (main)](#обновление-с-релиза-на-релиз-main)
+  - [Конфликты портов](#конфликты-портов)
+    - [Windows](#windows)
+    - [Linux / macOS](#linux--macos)
+    - [Что может занимать порт](#что-может-занимать-порт)
+    - [Быстрое решение: сменить порты в `.env`](#быстрое-решение-сменить-порты-в-env)
+    - [Если запущены сразу несколько стеков](#если-запущены-сразу-несколько-стеков)
+    - [Проверка](#проверка)
   - [Что не надо трогать](#что-не-надо-трогать)
   - [Связанные документы](#связанные-документы)
 
@@ -1502,6 +1514,95 @@ docker compose -f docker-compose.personal.yml up -d --build
 ```
 
 Но **перед этим** всегда — бэкап и проверка `CHANGELOG.md` / `docs/AI_HANDOFF.md` на ломающие изменения.
+
+---
+
+## Конфликты портов
+
+Если при `docker compose up` появляется `Bind for 0.0.0.0:18082 failed: port is already allocated`, порт занят. Сначала выясни, кто.
+
+### Windows
+
+```powershell
+# Найди PID
+netstat -ano | findstr 18082
+# или
+Get-Process -Id (Get-NetTCPConnection -LocalPort 18082).OwningProcess
+
+# Убедись, что это не твой Personal
+Get-Process -Id <PID>
+```
+
+### Linux / macOS
+
+```bash
+lsof -i :18082
+ss -ltnp | grep 18082
+```
+
+### Что может занимать порт
+
+- Ранее запущенный Dev/Personal/Test-стек.
+- Другой Docker-контейнер.
+- Локальный сервис (IIS, SQL Server, PostgreSQL, Redis, Mongo).
+- Antivirus / VPN / corporate proxy.
+
+### Быстрое решение: сменить порты в `.env`
+
+Найди переменные портов в `.env` и `docker-compose.personal.yml`:
+
+```env
+PERSONAL_API_PORT=18085
+PERSONAL_VITE_API_URL=http://localhost:18085
+```
+
+и в `docker-compose.personal.yml`:
+
+```yaml
+nginx:
+  ports:
+    - "18082:80"       # API
+    - "18084:8080"     # frontend
+backend:
+  ports:
+    - "18085:8080"     # backend direct
+postgres:
+  ports:
+    - "5433:5432"
+redis:
+  ports:
+    - "16380:6379"
+mongo:
+  ports:
+    - "27018:27017"
+graph-service:
+  ports:
+    - "9092:9091"
+nlp:
+  ports:
+    - "5001:5000"
+```
+
+Замени, например, `18082` → `28082`, `18084` → `28084`, `18085` → `28085`, `5433` → `15433`, `16380` → `26380`, `27018` → `37018`, `9092` → `19092`, `5001` → `15001.
+
+> Важно: смени порты в обоих файлах (`.env` и `docker-compose.personal.yml`), иначе `VITE_API_URL` / `PERSONAL_VITE_API_URL` уедет.
+
+После смены:
+
+```powershell
+docker compose -f docker-compose.personal.yml down
+docker compose -f docker-compose.personal.yml up -d --build
+```
+
+### Если запущены сразу несколько стеков
+
+Dev, Personal и Test могут работать одновременно, но каждому нужен свой набор портов. Сейчас в проекте они уже разнесены. Если ты менял порты вручную, проверь таблицу в начале документа и убедись, что нет дублей.
+
+### Проверка
+
+```powershell
+docker ps --format "table {{.Names}}\t{{.Ports}}"
+```
 
 ---
 
