@@ -3,7 +3,5 @@
  * public route prefixes. A route "/" only matches the exact "/" path.
  */
 export function isPublicRoute(currentPath: string, publicRoutes: string[]): boolean {
-  return publicRoutes.some(
-    (route) => currentPath === route || currentPath.startsWith(`${route}/`)
-  );
+  return publicRoutes.some((route) => currentPath === route || currentPath.startsWith(`${route}/`));
 }

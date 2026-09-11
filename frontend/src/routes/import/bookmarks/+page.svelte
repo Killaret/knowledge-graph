@@ -118,7 +118,8 @@
       } catch (e) {
         status = "error";
         errorMessage = await formatBackendError(e, t("import.error"));
-        if (import.meta.env.DEV) console.error(`Preview batch ${i + 1}/${batches.length} error:`, e);
+        if (import.meta.env.DEV)
+          console.error(`Preview batch ${i + 1}/${batches.length} error:`, e);
         return;
       }
     }

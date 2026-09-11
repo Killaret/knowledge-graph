@@ -6,11 +6,12 @@
 
   const locale = getCurrentLocale();
 
-  const illustrationType = $page.status === 404
-    ? "404"
-    : $page.status >= 500 && $page.status < 600
-      ? "server-error"
-      : "error";
+  const illustrationType =
+    $page.status === 404
+      ? "404"
+      : $page.status >= 500 && $page.status < 600
+        ? "server-error"
+        : "error";
 
   function t(key: string, params?: Record<string, string | number>) {
     return formatMessage(key, locale, params);
@@ -123,7 +124,9 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   .btn:hover {

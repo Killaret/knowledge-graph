@@ -73,7 +73,13 @@
   $effect(() => {
     const currentPath = $page.url.pathname;
 
-    if (isInitialized() && !isLoading() && !isPublicRoute(currentPath, publicRoutes) && !isAuthenticated() && !isSkipAuth) {
+    if (
+      isInitialized() &&
+      !isLoading() &&
+      !isPublicRoute(currentPath, publicRoutes) &&
+      !isAuthenticated() &&
+      !isSkipAuth
+    ) {
       const returnUrl = encodeURIComponent(currentPath);
       goto(`/auth/login?redirect=${returnUrl}`);
     }

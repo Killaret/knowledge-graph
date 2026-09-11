@@ -26,23 +26,17 @@ describe("Error 500 page", () => {
   it("displays the 500 title and message", () => {
     render(ErrorPage);
     expect(screen.getByText("Internal Server Error")).toBeInTheDocument();
-    expect(
-      screen.getByText("Something went wrong. We already know about it.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Something went wrong. We already know about it.")).toBeInTheDocument();
   });
 
   it("has refresh and go home buttons", () => {
     render(ErrorPage);
-    expect(
-      screen.getByRole("button", { name: "Refresh page" })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Refresh page" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Go home" })).toBeInTheDocument();
   });
 
   it("shows a server-error illustration for 500", () => {
     render(ErrorPage);
-    expect(
-      screen.getByRole("img", { name: "Server error illustration" })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Server error illustration" })).toBeInTheDocument();
   });
 });
