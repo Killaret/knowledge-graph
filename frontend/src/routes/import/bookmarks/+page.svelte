@@ -308,8 +308,7 @@
         id="import-list"
         bind:value={input}
         rows="10"
-        placeholder="Example page | https://example.com\nhttps://another.example.com"
-      ></textarea>
+        placeholder="Example page | https://example.com\nhttps://another.example.com"></textarea>
 
       <label class="extract-toggle">
         <input type="checkbox" bind:checked={extractContent} />
