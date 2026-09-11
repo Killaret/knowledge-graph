@@ -1796,6 +1796,82 @@ docker logs -t --tail 50 kg-graph-service-personal
 
 ---
 
+## Hardening and security
+
+### Secrets
+
+- `JWT_SECRET` — at least 32 random characters. Do not use `change_me_*`.
+- `POSTGRES_PASSWORD` / `PERSONAL_POSTGRES_PASSWORD` — strong, not committed.
+- `GRAPH_SERVICE_INTERNAL_TOKEN` — enable if backend and graph-service are on the same network.
+- `BACKUP_YANDEX_TOKEN` — pass via env, not `.env`.
+- `SMTP_PASSWORD` — use App Password, not the main password.
+
+```powershell
+# generate JWT_SECRET
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 } | ForEach-Object { [byte]$_ }))
+```
+
+### SKIP_AUTH
+
+`SKIP_AUTH=true` **only** for local testing. For Personal and production:
+
+```env
+SKIP_AUTH=false
+```
+
+### CORS
+
+In production, specify exact origins:
+
+```env
+CORS_ALLOWED_ORIGINS=https://example.com,https://app.example.com
+```
+
+Do not leave `http://localhost:*` in production.
+
+### HTTPS
+
+- Local can use HTTP.
+- In production always HTTPS + HSTS + CSP.
+- See `Production: HTTPS and SSL` section.
+
+### Network access
+
+- Do not expose Postgres/Redis/Mongo ports externally.
+- In `docker-compose.personal.yml` use `127.0.0.1:5433:5432`, not `5433:5432`.
+- nginx is the only public entry point.
+
+### Docker
+
+- Update base images (`FROM ...`) regularly.
+- Run containers as non-root where possible:
+
+```yaml
+services:
+  nlp:
+    user: "1000:1000"
+```
+
+- Limit resources:
+
+```yaml
+services:
+  backend:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+```
+
+### Backups and integrity
+
+- Backups to a different disk.
+- Periodically test restore on a test stack.
+- Encrypt sensitive backup tokens.
+
+---
+
 ## Do not touch
 
 - **Do not delete** Personal named volumes `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal` without a backup.

@@ -123,6 +123,14 @@
     - [PostgreSQL](#postgresql-1)
     - [Redis](#redis-2)
     - [MongoDB](#mongodb-2)
+  - [Харднинг и безопасность](#харднинг-и-безопасность)
+    - [Секреты](#секреты)
+    - [SKIP\_AUTH](#skip_auth)
+    - [CORS](#cors)
+    - [HTTPS](#https)
+    - [Сетевой доступ](#сетевой-доступ)
+    - [Docker](#docker)
+    - [Бэкапы и целостность](#бэкапы-и-целостность)
   - [Что не надо трогать](#что-не-надо-трогать)
   - [Связанные документы](#связанные-документы)
 
@@ -1892,6 +1900,82 @@ docker logs -t --tail 50 kg-graph-service-personal
 |---|---|---|
 | `Waiting for connections` | Всё норм. | — |
 | `Unrecognized option: --auth` | Возможна опечатка в compose. | Проверь `docker-compose.personal.yml`. |
+
+---
+
+## Харднинг и безопасность
+
+### Секреты
+
+- `JWT_SECRET` — минимум 32 случайных символа. Не используй `change_me_*`.
+- `POSTGRES_PASSWORD` / `PERSONAL_POSTGRES_PASSWORD` — сложные, не в коммитах.
+- `GRAPH_SERVICE_INTERNAL_TOKEN` — включи, если backend и graph-service в одной сети.
+- `BACKUP_YANDEX_TOKEN` — передавай через env, не в `.env`.
+- `SMTP_PASSWORD` — используй App Password, не основной пароль.
+
+```powershell
+# сгенерировать JWT_SECRET
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 } | ForEach-Object { [byte]$_ }))
+```
+
+### SKIP_AUTH
+
+`SKIP_AUTH=true` **только** для локального теста. В Personal и production:
+
+```env
+SKIP_AUTH=false
+```
+
+### CORS
+
+В продакшене указывай точные origin:
+
+```env
+CORS_ALLOWED_ORIGINS=https://example.com,https://app.example.com
+```
+
+Не оставляй `http://localhost:*` в продакшене.
+
+### HTTPS
+
+- Локально можно HTTP.
+- В продакшене всегда HTTPS + HSTS + CSP.
+- См. раздел `Production: HTTPS и SSL`.
+
+### Сетевой доступ
+
+- Не выставяй порты Postgres/Redis/Mongo наружу.
+- В `docker-compose.personal.yml` `127.0.0.1:5433:5432`, а не `5433:5432`.
+- nginx — единственный публичный вход.
+
+### Docker
+
+- Обновляй базовые образы (`FROM ...`) регулярно.
+- Запускай контейнеры не от root, где возможно:
+
+```yaml
+services:
+  nlp:
+    user: "1000:1000"
+```
+
+- Ограничивай ресурсы:
+
+```yaml
+services:
+  backend:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+```
+
+### Бэкапы и целостность
+
+- Бэкапы на другой диск.
+- Периодически проверяй восстановление на тестовом стеке.
+- Шифруй чувствительные backup-токены.
 
 ---
 
