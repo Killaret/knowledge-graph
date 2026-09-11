@@ -18,6 +18,7 @@ import (
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/cache/cachetest"
 	"knowledge-graph/internal/domain/note"
+	contextkeys "knowledge-graph/internal/shared/context"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -301,6 +302,9 @@ func TestDeleteBatchNotes(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/notes/batch", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
+	// SEC-1: this router has no auth at all, so the batch ownership check
+	// would refuse creatorless notes. Exercise it under the test bypass.
+	req = req.WithContext(context.WithValue(req.Context(), contextkeys.SkipAuthKey, true))
 
 	w := httptest.NewRecorder()
 

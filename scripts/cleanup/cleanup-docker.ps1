@@ -1,211 +1,327 @@
 # Docker Cleanup Script for Knowledge Graph (Windows with WSL2)
 # Removes dangling images, stopped containers, unused networks, and build cache
-# Optionally compresses WSL2 disk for efficient storage
-# Usage: .\cleanup-docker.ps1 [-Full] [-RemoveVolumes] [-WslOptimize]
-# Note: -WslOptimize requires admin rights (diskpart). Hyper-V is NOT required.
+# Optionally compresses the Docker WSL2 disk
+# Usage: .\cleanup-docker.ps1 [-Full] [-RemoveVolumes] [-WslOptimize] [-DryRun]
+#
+# Statuses and the exit code are honest: every step registers its real
+# $LASTEXITCODE, the script exits non-zero when any step failed, and a failed
+# step prints the command's stderr. -DryRun previews each step and changes
+# nothing. Steps that can touch volumes (6, 7) refuse without a fresh
+# non-empty Personal-stack backup — the rule lives in
+# scripts/devops/check-personal-backup.ps1 and backup-policy.env, the same
+# policy the guard-personal-data.py hook enforces.
 
 param(
     [switch]$Full = $false,
     [switch]$RemoveVolumes = $false,
-    [switch]$WslOptimize = $false
+    [switch]$WslOptimize = $false,
+    [switch]$DryRun = $false
 )
 
 $ErrorActionPreference = "Continue"
 
-Write-Host "🧹 Knowledge Graph Docker Cleanup" -ForegroundColor Cyan
-Write-Host "$(Get-Date -Format 'HH:mm:ss') Starting cleanup..." -ForegroundColor Gray
+. (Join-Path $PSScriptRoot "..\testing\lib\phase-tracking.ps1")
+$script:SnapshotDir = $null
+$BackupCheck = Join-Path $PSScriptRoot "..\devops\check-personal-backup.ps1"
 
-function Write-Status {
-    param([string]$Message, [string]$Status = "INFO")
-    $color = switch ($Status) {
-        "SUCCESS" { "Green" }
-        "WARNING" { "Yellow" }
-        "ERROR" { "Red" }
-        default { "Cyan" }
+Write-Host "Knowledge Graph Docker Cleanup" -ForegroundColor Cyan
+Write-Host "$(Get-Date -Format 'HH:mm:ss') Starting cleanup$(if ($DryRun) { ' (dry-run)' })..." -ForegroundColor Gray
+
+function Invoke-DockerStep {
+    # Runs one docker command, registers its real exit code, and prints the
+    # captured output on failure so there is something to fix.
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][scriptblock]$Command
+    )
+    $output = & $Command 2>&1
+    $code = $LASTEXITCODE
+    if ($code -ne 0 -and $output) {
+        $output | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
     }
-    Write-Host "  [$Status] $Message" -ForegroundColor $color
+    Register-Phase $Name -ExitCode $code
+    return $code
 }
 
 # 1. Stop all containers
-Write-Host "`n1️⃣ Stopping containers..." -ForegroundColor Cyan
-try {
-    $running = docker ps -q 2>$null
-    if ($running) {
-        docker stop $running 2>$null | Out-Null
-        Write-Status "Stopped running containers" "SUCCESS"
-    } else {
-        Write-Status "No running containers" "INFO"
-    }
-} catch {
-    Write-Status "Failed to stop containers" "WARNING"
+Write-Host "`n1. Stopping containers..." -ForegroundColor Cyan
+$running = @(docker ps -q 2>&1)
+if ($LASTEXITCODE -ne 0) {
+    $running | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+    Register-Phase "stop-containers" -ExitCode $LASTEXITCODE
+} elseif (-not $running) {
+    Register-Phase "stop-containers" -Skipped -Reason "no running containers"
+} elseif ($DryRun) {
+    Write-Host "  Would stop $($running.Count) container(s):" -ForegroundColor Yellow
+    $running | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+    Register-Phase "stop-containers" -Skipped -Reason "dry-run"
+} else {
+    $code = Invoke-DockerStep "stop-containers" { docker stop $running }
 }
 
 # 2. Remove dangling images
-Write-Host "`n2️⃣ Removing dangling images..." -ForegroundColor Cyan
-try {
-    docker image prune -f 2>$null | Out-Null
-    Write-Status "Dangling images removed" "SUCCESS"
-} catch {
-    Write-Status "Failed to remove dangling images" "WARNING"
+Write-Host "`n2. Removing dangling images..." -ForegroundColor Cyan
+if ($DryRun) {
+    $dangling = @(docker images -f "dangling=true" -q 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        $dangling | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+        Register-Phase "prune-dangling-images" -ExitCode $LASTEXITCODE
+    } else {
+        Write-Host "  Would remove $($dangling.Count) dangling image(s)" -ForegroundColor Yellow
+        $dangling | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+        Register-Phase "prune-dangling-images" -Skipped -Reason "dry-run"
+    }
+} else {
+    $code = Invoke-DockerStep "prune-dangling-images" { docker image prune -f }
 }
 
 # 3. Remove stopped containers
-Write-Host "`n3️⃣ Removing stopped containers..." -ForegroundColor Cyan
-try {
-    docker container prune -f 2>$null | Out-Null
-    Write-Status "Stopped containers removed" "SUCCESS"
-} catch {
-    Write-Status "Failed to remove containers" "WARNING"
+Write-Host "`n3. Removing stopped containers..." -ForegroundColor Cyan
+if ($DryRun) {
+    $stopped = @(docker ps -aq --filter "status=exited" --filter "status=created" --filter "status=dead" 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        $stopped | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+        Register-Phase "prune-stopped-containers" -ExitCode $LASTEXITCODE
+    } else {
+        Write-Host "  Would remove $($stopped.Count) stopped container(s)" -ForegroundColor Yellow
+        $stopped | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+        Register-Phase "prune-stopped-containers" -Skipped -Reason "dry-run"
+    }
+} else {
+    $code = Invoke-DockerStep "prune-stopped-containers" { docker container prune -f }
 }
 
 # 4. Remove unused networks
-Write-Host "`n4️⃣ Removing unused networks..." -ForegroundColor Cyan
-try {
-    docker network prune -f 2>$null | Out-Null
-    Write-Status "Unused networks removed" "SUCCESS"
-} catch {
-    Write-Status "Failed to remove networks" "WARNING"
+Write-Host "`n4. Removing unused networks..." -ForegroundColor Cyan
+if ($DryRun) {
+    $networks = docker network ls --format "{{.Name}}" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        $networks | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+        Register-Phase "prune-networks" -ExitCode $LASTEXITCODE
+    } else {
+        Write-Host "  Would remove unused networks. Current networks:" -ForegroundColor Yellow
+        $networks | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+        Register-Phase "prune-networks" -Skipped -Reason "dry-run"
+    }
+} else {
+    $code = Invoke-DockerStep "prune-networks" { docker network prune -f }
 }
 
 # 5. Remove build cache
-Write-Host "`n5️⃣ Clearing Docker build cache..." -ForegroundColor Cyan
-try {
-    docker builder prune -f 2>$null | Out-Null
-    Write-Status "Build cache cleared" "SUCCESS"
-} catch {
-    Write-Status "Failed to clear build cache" "WARNING"
+Write-Host "`n5. Clearing Docker build cache..." -ForegroundColor Cyan
+if ($DryRun) {
+    $df = docker system df 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        $df | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+        Register-Phase "prune-build-cache" -ExitCode $LASTEXITCODE
+    } else {
+        $df | Where-Object { $_ -match 'Build Cache' } | ForEach-Object { Write-Host "  Would clear: $_" -ForegroundColor Yellow }
+        Register-Phase "prune-build-cache" -Skipped -Reason "dry-run"
+    }
+} else {
+    $code = Invoke-DockerStep "prune-build-cache" { docker builder prune -f }
 }
 
-# 6. Volumes are preserved by default. They are only removed with -RemoveVolumes,
-# and even then only anonymous dangling volumes are eligible.
-Write-Host "`n6️⃣ Volume cleanup..." -ForegroundColor Cyan
-try {
-    if (-not $RemoveVolumes) {
-        Write-Status "Volume cleanup skipped (default safe mode)" "INFO"
+# 6. Volumes are preserved by default. With -RemoveVolumes only anonymous
+# dangling volumes are eligible; personal-named and protected-labeled
+# volumes are always skipped. A fresh non-empty backup is required first.
+Write-Host "`n6. Volume cleanup..." -ForegroundColor Cyan
+if (-not $RemoveVolumes) {
+    Register-Phase "volume-cleanup" -Skipped -Reason "default safe mode"
+} else {
+    if ($DryRun) {
+        Write-Host "  (dry-run: nothing will be removed)" -ForegroundColor Yellow
+        & $BackupCheck
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  A real -RemoveVolumes run would stop here" -ForegroundColor Yellow
+        }
     } else {
-        $protectedVolumes = @(docker volume ls --filter "label=com.knowledgegraph.protected=true" --format "{{.Name}}" 2>$null)
-        $danglingVolumes = @(docker volume ls --filter "dangling=true" --format "{{.Name}}" 2>$null)
-        $removedVolumes = 0
-
+        & $BackupCheck
+        if ($LASTEXITCODE -ne 0) {
+            Register-Phase "volume-cleanup" -ExitCode 1
+        }
+    }
+    if ($DryRun -or $LASTEXITCODE -eq 0) {
+        $protectedVolumes = @(docker volume ls --filter "label=com.knowledgegraph.protected=true" --format "{{.Name}}" 2>&1)
+        $lsCode = $LASTEXITCODE
+        $danglingVolumes = @(docker volume ls --filter "dangling=true" --format "{{.Name}}" 2>&1)
+        if ($LASTEXITCODE -ne 0) { $lsCode = $LASTEXITCODE }
+        if ($lsCode -ne 0) {
+            $protectedVolumes + $danglingVolumes | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+            Register-Phase "volume-cleanup" -ExitCode $lsCode
+        } else {
+        $eligible = @()
+        $kept = @()
         foreach ($volume in $danglingVolumes) {
             $isAnonymous = $volume -match '^[0-9a-f]{64}$'
             $isPersonal = $volume -match 'personal'
             $isProtected = $protectedVolumes -contains $volume
-
             if (-not $isAnonymous -or $isPersonal -or $isProtected) {
-                continue
-            }
-
-            docker volume rm $volume 2>$null | Out-Null
-            if ($LASTEXITCODE -eq 0) {
-                $removedVolumes++
+                $kept += $volume
+            } else {
+                $eligible += $volume
             }
         }
-
-        Write-Status "Removed $removedVolumes anonymous dangling volumes" "SUCCESS"
+        if ($DryRun) {
+            Write-Host "  Would remove $($eligible.Count) anonymous dangling volume(s):" -ForegroundColor Yellow
+            $eligible | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+            Write-Host "  Kept (named / personal / protected): $($kept.Count)" -ForegroundColor Gray
+            Register-Phase "volume-cleanup" -Skipped -Reason "dry-run"
+        } else {
+            $removedVolumes = 0
+            $failedVolumes = 0
+            foreach ($volume in $eligible) {
+                $rmOutput = docker volume rm $volume 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    $removedVolumes++
+                } else {
+                    $failedVolumes++
+                    $rmOutput | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+                }
+            }
+            Write-Host "  Removed $removedVolumes anonymous dangling volume(s)$(if ($failedVolumes) { ", $failedVolumes failed" })" -ForegroundColor Gray
+            Register-Phase "volume-cleanup" -ExitCode $(if ($failedVolumes -gt 0) { 1 } else { 0 })
+        }
+        }
     }
-} catch {
-    Write-Status "Failed to process volumes" "WARNING"
 }
 
-# 7. Full cleanup mode (optional; volumes are still not removed)
+# 7. Full cleanup mode. NOTE: step 1 stops every container and step 3
+# removes all stopped ones, so by this point NO container remains and
+# `docker system prune -af` treats every image on the machine as unused —
+# the price is the whole local image store, not just project layers.
 if ($Full) {
-    Write-Host "`n7️⃣ Full cleanup mode (removing ALL unused images, not volumes)..." -ForegroundColor Cyan
-    try {
-        docker system prune -af 2>$null | Out-Null
-        Write-Status "Full system cleanup completed" "SUCCESS"
-    } catch {
-        Write-Status "Full cleanup completed with warnings" "WARNING"
+    Write-Host "`n7. Full cleanup mode (removing ALL unused images, not volumes)..." -ForegroundColor Cyan
+    $images = @(docker images -q 2>&1)
+    $imgCode = $LASTEXITCODE
+    if ($imgCode -ne 0) {
+        $images | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+        Register-Phase "full-cleanup" -ExitCode $imgCode
+    } else {
+    $dfBefore = docker system df 2>$null
+    Write-Host "  Cost: $($images.Count) image(s) will be removed (no containers remain after steps 1+3)" -ForegroundColor Yellow
+    $dfBefore | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+    if ($DryRun) {
+        Register-Phase "full-cleanup" -Skipped -Reason "dry-run"
+    } else {
+        & $BackupCheck
+        if ($LASTEXITCODE -ne 0) {
+            Register-Phase "full-cleanup" -ExitCode 1
+        } else {
+            $code = Invoke-DockerStep "full-cleanup" { docker system prune -af }
+        }
     }
+    }
+} else {
+    Register-Phase "full-cleanup" -Skipped -Reason "not requested"
 }
 
-# 8. WSL2 optimization (optional)
-# Uses diskpart to compact the VHD - requires admin rights, but NOT Hyper-V.
+# 8. WSL2 optimization (optional). Uses diskpart to compact the VHD —
+# requires admin rights, but NOT Hyper-V.
 if ($WslOptimize) {
-    Write-Host "`n8️⃣ Optimizing WSL2 disk..." -ForegroundColor Cyan
+    Write-Host "`n8. Optimizing WSL2 disk..." -ForegroundColor Cyan
+
+    # diskpart compacts a VHD only with elevated rights; without them the
+    # process does not even start, which is an exception — not an exit code —
+    # so a missing admin check would report success having done nothing.
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
     $wsl_check = wsl --list 2>$null
-    if ($wsl_check) {
-        Write-Status "Shutting down WSL..." "INFO"
-        wsl --shutdown 2>$null
-        Start-Sleep -Seconds 5
-        # Force kill any leftover WSL/Docker processes that may lock the VHD
-        $wslProcs = Get-Process | Where-Object { $_.ProcessName -like "*wsl*" -or $_.ProcessName -like "*vmmem*" -or $_.ProcessName -like "*docker*" }
-        if ($wslProcs) {
-            Write-Status "Stopping leftover WSL/Docker processes..." "INFO"
-            $wslProcs | Stop-Process -Force -ErrorAction SilentlyContinue
-            Start-Sleep -Seconds 3
-        }
-        Write-Status "WSL shut down successfully" "SUCCESS"
+    if (-not $isAdmin) {
+        Register-Phase "optimize-disk" -Skipped -Reason "requires an elevated shell (run as administrator)"
+    } elseif (-not $wsl_check) {
+        Register-Phase "optimize-disk" -Skipped -Reason "WSL not found"
+    } else {
+        # Only the Docker Desktop VHD is a valid target; the disk lives
+        # under %LOCALAPPDATA%\Docker\wsl. Anything else is not ours.
+        $vhdx_file = Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'Docker\wsl') -Filter *.vhdx -Recurse -ErrorAction SilentlyContinue |
+            Sort-Object Length -Descending | Select-Object -First 1
 
-        # Find ALL VHDs and pick the largest one (docker_data.vhdx is the real target,
-        # not the small main\ext4.vhdx utility disk)
-        $allVhds = @()
-        $allVhds += Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'Docker\wsl') -Filter *.vhdx -Recurse -ErrorAction SilentlyContinue
-        $allVhds += Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'Packages') -Filter 'ext4.vhdx' -Recurse -ErrorAction SilentlyContinue
-        $vhdx_file = $allVhds | Sort-Object Length -Descending | Select-Object -First 1
-
-        if ($vhdx_file) {
+        if (-not $vhdx_file) {
+            Register-Phase "optimize-disk" -Skipped -Reason "Docker WSL2 VHD not found under $env:LOCALAPPDATA\Docker\wsl"
+        } else {
             $old_size = [math]::Round($vhdx_file.Length / 1GB, 2)
-            Write-Status "Found WSL2 disk: $($vhdx_file.FullName) ($old_size GB)" "INFO"
+            Write-Host "  Target VHD: $($vhdx_file.FullName) ($old_size GB)" -ForegroundColor Gray
 
-            # Verify file is not locked before diskpart runs
-            $fileLocked = $true
-            try {
-                $stream = [System.IO.File]::Open($vhdx_file.FullName, 'Open', 'ReadWrite', 'None')
-                $stream.Close()
-                $fileLocked = $false
-            } catch {
-                Write-Status "VHD is still locked: $($_.Exception.Message)" "ERROR"
-            }
+            if ($DryRun) {
+                Write-Host "  Would shut down WSL and compact this disk" -ForegroundColor Yellow
+                Register-Phase "optimize-disk" -Skipped -Reason "dry-run"
+            } else {
+                Write-Host "  Shutting down WSL..." -ForegroundColor Gray
+                wsl --shutdown 2>$null
 
-            if (-not $fileLocked) {
-                $diskpartScript = @"
+                # Wait for the VHD to be released. Never kill processes by
+                # name: the Personal stack's volumes live inside this VM,
+                # and force-killing it leaves the filesystem dirty.
+                $fileLocked = $true
+                for ($i = 0; $i -lt 30 -and $fileLocked; $i++) {
+                    Start-Sleep -Seconds 2
+                    try {
+                        $stream = [System.IO.File]::Open($vhdx_file.FullName, 'Open', 'ReadWrite', 'None')
+                        $stream.Close()
+                        $fileLocked = $false
+                    } catch {
+                        $fileLocked = $true
+                    }
+                }
+
+                if ($fileLocked) {
+                    Register-Phase "optimize-disk" -ExitCode 1
+                    Write-Host "    VHD still locked after 60s — refusing to compact. Close Docker Desktop and retry." -ForegroundColor Red
+                } else {
+                    $diskpartScript = @"
 select vdisk file="$($vhdx_file.FullName)"
 attach vdisk readonly
 compact vdisk
 detach vdisk
 exit
 "@
-                $scriptPath = Join-Path $env:TEMP 'kg_diskpart_compress.txt'
-                $diskpartScript | Out-File -FilePath $scriptPath -Encoding ASCII
-                Write-Status "Compacting VHD via diskpart..." "INFO"
-                try {
-                    & diskpart /s $scriptPath 2>&1 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
-                    $new_size = [math]::Round((Get-Item $vhdx_file.FullName).Length / 1GB, 2)
-                    $saved = [math]::Round($old_size - $new_size, 2)
-                    if ($saved -gt 0) {
-                        Write-Status "VHD compressed: $old_size GB -> $new_size GB (saved: $saved GB)" "SUCCESS"
-                    } else {
-                        Write-Status "VHD already optimized: $old_size GB -> $new_size GB" "INFO"
+                    $scriptPath = Join-Path $env:TEMP 'kg_diskpart_compress.txt'
+                    $diskpartScript | Out-File -FilePath $scriptPath -Encoding ASCII
+                    # A failed launch (no elevation) raises an exception and
+                    # never sets $LASTEXITCODE — handle both failure shapes.
+                    $code = 0
+                    try {
+                        $output = & diskpart /s $scriptPath 2>&1
+                        if ($null -eq $LASTEXITCODE -or $LASTEXITCODE -ne 0) {
+                            $code = if ($null -eq $LASTEXITCODE) { 1 } else { $LASTEXITCODE }
+                        }
+                        $output | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+                    } catch {
+                        $code = 1
+                        Write-Host "    diskpart failed to start: $($_.Exception.Message)" -ForegroundColor DarkGray
                     }
-                } catch {
-                    Write-Status "diskpart failed: $($_.Exception.Message)" "ERROR"
-                }
-                Remove-Item $scriptPath -ErrorAction SilentlyContinue
-            }
-        } else {
-            Write-Status "WSL2 VHD file not found" "WARNING"
-        }
+                    Remove-Item $scriptPath -ErrorAction SilentlyContinue
+                    if ($code -eq 0) {
+                        $new_size = [math]::Round((Get-Item $vhdx_file.FullName).Length / 1GB, 2)
+                        Write-Host "  VHD: $old_size GB -> $new_size GB" -ForegroundColor Gray
+                    }
+                    Register-Phase "optimize-disk" -ExitCode $code
 
-        Write-Status "Restarting WSL..." "INFO"
-        wsl -e ls /home 2>$null | Out-Null
-        Write-Status "WSL restarted" "SUCCESS"
-    } else {
-        Write-Status "WSL not found" "WARNING"
+                    Write-Host "  Restarting WSL..." -ForegroundColor Gray
+                    wsl -e ls /home 2>$null | Out-Null
+                }
+            }
+        }
     }
+} else {
+    Register-Phase "optimize-disk" -Skipped -Reason "not requested"
 }
 
 # Show status
-Write-Host "`n📊 Docker system status:" -ForegroundColor Cyan
+Write-Host "`nDocker system status:" -ForegroundColor Cyan
 docker system df 2>$null | Out-String | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
 
-Write-Host "`n✅ Cleanup completed!" -ForegroundColor Green
-Write-Host "$(Get-Date -Format 'HH:mm:ss') Done." -ForegroundColor Gray
+$scriptFailed = Test-AnyFailed
+Write-FinalSummary -Success (-not $scriptFailed)
 
-Write-Host "`nℹ️  Usage:" -ForegroundColor Cyan
-Write-Host "  .\cleanup-docker.ps1                  # Basic cleanup; preserves all volumes" -ForegroundColor Gray
-Write-Host "  .\cleanup-docker.ps1 -Full            # Remove all unused images; still preserves volumes" -ForegroundColor Gray
-Write-Host "  .\cleanup-docker.ps1 -RemoveVolumes   # Remove only anonymous dangling volumes" -ForegroundColor Gray
-Write-Host "  .\cleanup-docker.ps1 -WslOptimize     # Include WSL2 disk optimization" -ForegroundColor Gray
+Write-Host "Usage:" -ForegroundColor Cyan
+Write-Host "  .\cleanup-docker.ps1                    # Basic cleanup; preserves all volumes" -ForegroundColor Gray
+Write-Host "  .\cleanup-docker.ps1 -DryRun            # Preview every step, change nothing" -ForegroundColor Gray
+Write-Host "  .\cleanup-docker.ps1 -Full              # Remove all unused images; still preserves volumes" -ForegroundColor Gray
+Write-Host "  .\cleanup-docker.ps1 -RemoveVolumes     # Remove only anonymous dangling volumes" -ForegroundColor Gray
+Write-Host "  .\cleanup-docker.ps1 -WslOptimize       # Include WSL2 disk optimization" -ForegroundColor Gray
 Write-Host "  .\cleanup-docker.ps1 -Full -WslOptimize # Full image cleanup + WSL optimization" -ForegroundColor Gray
+
+if ($scriptFailed) { exit 1 }
+exit 0

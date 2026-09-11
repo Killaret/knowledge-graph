@@ -73,6 +73,7 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
 - JWT-валидация только в middleware, не в хендлерах.
 - Rate limiting обязателен на всех write-эндпоинтах (POST/PUT/DELETE).
 - Валидация input — go-playground/validator.
+- Публичные прокси обнуляют `X-Internal-Auth` и `X-User-Id`; делегирование по user-header включается явно и только во внутренней сети сервисов.
 - Не пишите код, который раскрывает или логирует секреты.
 
 ## Языковая и документационная политика
@@ -99,6 +100,7 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
 | Go backend unit | `cd backend && go test ./...` | Target 70% coverage, min 60% |
 | Go backend integration | `cd backend && go test -tags=integration ./...` | testcontainers-go |
 | Frontend unit | `cd frontend && npm run test:unit` | Vitest; target 70% coverage |
+| Локальные core checks | `.\scripts\testing\check-all.ps1 [-Quick]` / `./scripts/testing/check-all.sh [--quick]` | Повторяет `_core-checks.yml`; недоступные инструменты явно помечаются `[SKIP]` |
 | E2E | `cd frontend && npm run test` | Playwright; только изолированный test stack |
 | BDD | `cd frontend && npm run test:bdd` | Cucumber; только изолированный test stack |
 | NLP | `cd nlp-service && pytest tests/ -v` | pytest |
@@ -152,6 +154,20 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
 - Не угадывайте URL, секреты или содержимое файлов. Проверяйте инструментами или чтением.
 - Не давайте конкретных временных оценок работ.
 - Если запрос неоднозначен, изучите кодовую базу, затем задайте сфокусированный уточняющий вопрос.
+
+### Проверка находки
+
+Поиск находит кандидата. Он его никогда не подтверждает. Прежде чем
+сообщить о находке — или принять чужую — действуйте по разделу
+«Verifying a Finding» в `.windsurfrules`:
+
+- Читайте окружающий контекст, а не строку совпадения. Попадание в список
+  «так делать нельзя», в пример кода или в датированную запись журнала —
+  не дефект, а количество вхождений — не доказательство.
+- Где утверждение о поведении — предпочитайте исполнение: запустите
+  команду, дёрните эндпоинт, посмотрите в базу.
+- Проверьте и негативный случай: пустой результат поиска может означать
+  неверный паттерн, а не чистый код.
 
 ## Приоритет
 

@@ -196,7 +196,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 - **Dev**: backend 9000, nginx API 18080, nginx frontend 18081, graph-service 9091.
 - **Personal**: backend direct 18085, nginx API 18082, nginx frontend 18084, graph-service 9092.
-- **Test**: frontend 3002, backend 18083, graph-service gRPC 19090 / HTTP 19091, postgres 15434, redis 16381, mongo 27019, nlp 15002.
+- **Test**: frontend 3002, backend 18083, nginx public perimeter 18086, graph-service gRPC 19090 / HTTP 19091, postgres 15434, redis 16381, mongo 27019, nlp 15002.
 
 ### Volumes
 
@@ -207,6 +207,8 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ### Nginx
 
 - `nginx.conf` и `nginx.personal.conf` — gateway с проксированием `/api` и `/graph-service/api`.
+- Публичный graph-service proxy обнуляет `X-Internal-Auth` и `X-User-Id`; делегирование пользователя по внутреннему токену включается отдельно через `GRAPH_SERVICE_TRUST_USER_HEADER` только внутри Docker-сети.
+- Оба nginx ограничивают тело запроса 10 MiB, скрывают версию и выставляют `nosniff`, `SAMEORIGIN`, `strict-origin-when-cross-origin`.
 
 ---
 
@@ -220,6 +222,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 | E2E             | `cd frontend && npm run test`                   | Playwright                       | —                   |
 | BDD             | `cd frontend && npm run test:bdd`               | Cucumber                         | —                   |
 | NLP             | `cd nlp-service && pytest`                      | pytest                           | —                   |
+| Local core checks | `.\scripts\testing\check-all.ps1 [-Quick]`    | PowerShell/Bash + shared manifest | CI-equivalent phases |
 | Full regression | `.\scripts\testing\run-full-test-cycle.ps1`     | PowerShell + Docker + Playwright | —                   |
 | Stacks identity | `.\scripts\ci\check-stacks-identity.ps1`        | PowerShell                       | —                   |
 
@@ -620,6 +623,69 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 - Повторная верификация Claude Code на живом стенде и пересборка официальных baseline Argos (`ARGOS_REFERENCE_BRANCH=main`).
 
+## 19. Ручной пересчёт рекомендаций и обнаруженные риски (2026-09-11)
+
+### 19.1 Почему не работали рекомендации и граф
+
+- `note_recommendations` и `links` были пусты после массового импорта.
+- `embed-recompute -post` ставит задачи `RefreshRecommendations`/`RecalculateLinkWeights`, но `RefreshService.RefreshRecommendations` делает BFS по `links`. Без `links` кандидатов нет.
+- `note_links_closure` — materialized view на основе `links`. Без `links` view пуст, graph-service тоже не находит связей.
+- Семантический fallback (`FindSimilarNotes` по `note_embeddings`) работает, но не сохраняет результаты в `note_recommendations` и не создаёт `links`.
+
+### 19.2 Ручное семантическое заполнение
+
+- SQL `seed_semantic_safe.sql` заполнил 108 `note_recommendations` (топ-6 по косинусному сходству) и 18 `links` (топ-1, `link_type='related'`, `source_type='gamma'`).
+- `REFRESH MATERIALIZED VIEW note_links_closure` — 28 строк.
+- Живое API вернуло рекомендации и граф.
+- Обнаружен баг: precomputed-ветка `GetSuggestions` не подгружала `title`. Исправлен в `backend/internal/interfaces/api/notehandler/note_handler.go` и покрыт тестами.
+
+### 19.3 Docker Desktop — авария и анализ
+
+**Простое объяснение, почему упала БД (и Docker):**
+
+- Я вручную вставил 108 связей (`links`) — по 6 исходящих на каждую заметку.
+- `note_links_closure` — это materialized view с рекурсивным CTE, который перебирает **все простые пути** между заметками до глубины 10.
+- Средняя исходящая степень 6 означает: на глубине 5 — `6^5` = 7776 путей, на глубине 10 — десятки миллионов.
+- PostgreSQL не справился с перебором, `psql` завис, WSL VM завис. Я принудительно остановил `wsl -t docker-desktop`.
+- После аварийного останова Docker VM пошёл в `read-only file system`, и Docker Desktop перестал стартовать (`docker ps` → `Docker Desktop is unable to start`).
+
+**Вывод:** проблема не в общем количестве связей, а в **высокой исходящей степени одного узла** (6 исходящих) в рекурсивном view. Если ограничить исходящую степень 1–2 связями на заметку, `note_links_closure` строится за миллисекунды. Поэтому `GammaLinkGenerator` лимитирует исходящую степень `MaxGammaOutDegree` (по умолчанию 2).
+
+**Детали:**
+
+- 108 связей, топ-6 семантических соседей на заметку → ~5.7 исходящих на узел.
+- `REFRESH MATERIALIZED VIEW note_links_closure` вызвал экспоненциальный взрыв числа простых путей.
+- **Урок:** `note_links_closure` не безопасен для плотных графов. Нужно либо ограничивать исходящую степень гамма-связей (`links` с `source_type='gamma'`) до 2 или меньше, либо переделывать view.
+
+### 19.4 Java source-text-handler / batch API — на ревью
+
+- Java-сервис обрабатывает URL/документ, чанкует, чистит контент, извлекает язык и формирует `title`/`content`.
+- Java-specific endpoint `POST /api/v1/import/java/batch` был реализован, а затем удалён по решению владельца. Сейчас на ревью: `docs/tasks/IMP-4-claude-review.md`.
+- Вопросы ревью:
+  - должен ли Java использовать существующий `POST /api/v1/import/bookmarks`;
+  - или нужен generic `POST /api/v1/import/batch` (без `java` в имени);
+  - какие операции доступны Java: batch create, single create, no delete/edit;
+  - как реализовать ручное создание связей между заметками (backend `POST /api/v1/links` уже есть, но frontend UI, судя по `UX-1`, не позволяет);
+  - dedup по `external_id` и индекс в `metadata`;
+  - pipeline постобработки с `GammaLinkGenerator` и `note_links_closure`.
+- Предполагаемое тело generic batch:
+  ```json
+  {
+    "request_id": "uuid",
+    "items": [
+      {"title": "...", "content": "...", "type": "unknown", "source_url": "...", "external_id": "...", "metadata": {...}}
+    ]
+  }
+  ```
+- Гамма-связи (`GammaLinkGenerator`) будут интегрированы в worker после ревью; сейчас сервис готов и покрыт тестами.
+
+### 19.5 Нужные тесты
+
+- Юнит: `GammaLinkGenerator` не создаёт больше `MaxGammaOutDegree` связей, пропускает self-loops, не дублирует `(source, target, link_type)` — реализовано, `go test ./internal/application/recommendation` зелёное.
+- Интеграция: `REFRESH MATERIALIZED VIEW note_links_closure` с плотным графом (6 связей на узел) отменяется по `statement_timeout` или не завершается в разумное время — доказательство уязвимости.
+- Интеграция: `REFRESH MATERIALIZED VIEW` с разреженным графом (≤2 связи на узел) завершается <1s.
+- E2E/контракт: `POST /notes/batch` возвращает `data[].id`, `import_task_id` и признак постобработки.
+
 ## 18. AUD-4: контракт входа через Яндекс (2026-09-06)
 
 **Что сделано.**
@@ -648,3 +714,31 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 **Осталось.**
 
 - Повторная проверка Claude Code на живом тест-стеке и, при необходимости, реальным `YANDEX_CLIENT_ID`/`YANDEX_CLIENT_SECRET` (callback остаётся вне зоны задачи).
+
+### 19.6 Docker Desktop / Personal recovery (2026-09-11)
+
+**Что произошло.**
+
+- Падение Docker/WSL из-за `note_links_closure` (см. §19.3) оставило Docker Desktop в состоянии `unable to start`.
+- `wsl -t docker-desktop` и аварийные попытки привели к тому, что WSL-дистрибутив `docker-desktop` не стартовал с ошибкой `Wsl/Service/CreateInstance/E_FAIL`.
+- Диск D: был заполнен: `D:\Docker\wsl\disk\docker_data.vhdx` (45.18 ГБ) — активный Docker WSL-диск, данные Personal-стека внутри. Docker не мог стартовать из-за `There is not enough space on the disk` при копировании main-дистрибутива.
+- `C:\Users\...\AppData\Local\Docker\wsl` оказался junction → `D:\Docker\wsl`, поэтому все Docker-данные живут на D:.
+
+**Что сделано.**
+
+- Ручной бэкап Personal-данных:
+  - Архив: `C:\Users\89209\Desktop\my items\kg-personal-volumes-2026-09-11.tar.gz` (25.8 МБ).
+  - В архиве: `knowledge-graph_pgdata_personal/_data`, `knowledge-graph_redisdata_personal`, `knowledge-graph_mongodbdata_personal`.
+  - Проверка: `tar -tzf` показал 1589 записей, `pgdata_personal/_data` на месте.
+- `wsl --unregister docker-desktop` — убран битый системный дистрибутив (данные не тронуты).
+- `e2fsck -fy /dev/sde` — исправлены мелкие ошибки файловой системы VHDX (free blocks / free inodes count).
+- `fstrim` + `diskpart compact vdisk` — уменьшили `docker_data.vhdx` с 45.18 ГБ до 37.04 ГБ, освободив ~8.1 ГБ на D:.
+- Docker Desktop запущен, Personal- и test-стеки поднялись.
+- Проверка данных: `SELECT COUNT(*) FROM notes` в `knowledge_personal` вернуло 19 — заметки на месте.
+
+**Осталось / риски.**
+
+- `D:\Docker\wsl\disk\docker_data.vhdx.backup` (8.41 ГБ, 22.08) — старый бэкап VHDX. Можно удалить после проверки свежего архива.
+- `D:\Docker\wsl\main\ext4.vhdx.old` (100 МБ) — старый системный дистрибутив; можно удалить.
+- После старта стеков `kg-nlp-personal` и `kg-nlp-test` находятся в `health: starting` — нужно дождаться full healthy, прежде чем тестировать рекомендации.
+- Для перестраховки стоит сделать `pg_dump`-бэкап через `backup-personal.ps1` после восстановления, чтобы свежий `.sql.gz` дополнил VHDX-архив.

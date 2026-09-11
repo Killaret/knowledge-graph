@@ -1,7 +1,7 @@
 /**
  * Pure helper functions for the graph canvas renderer.
  */
-import { applyHueShift } from "$shared/utils/variation";
+import { applyHueShift } from "$shared/lib/graph/helpers";
 import type { SimulationNode } from "./types";
 
 /**

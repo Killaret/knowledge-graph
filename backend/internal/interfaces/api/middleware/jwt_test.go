@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultJWTConfig(t *testing.T) {
@@ -321,6 +322,80 @@ func TestJWTAuth(t *testing.T) {
 			assert.Equal(t, tt.wantStatus, w.Code)
 		})
 	}
+}
+
+// TestJWTAuthSkipGETPaths pins PUB-1: the two anonymous exemptions apply to
+// GET only, so writes on the same route template still meet the 401 barrier.
+func TestJWTAuthSkipGETPaths(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	jwtManager := auth.NewJWTManager("test-secret", 24*3600, 7*24*3600)
+	config := DefaultJWTConfig(jwtManager, nil)
+
+	router := gin.New()
+	router.Use(JWTAuth(config))
+	marker := func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"message": "ok"}) }
+	router.GET("/api/v1/notes/search", marker)
+	router.GET("/api/v1/notes/:id", marker)
+	router.PUT("/api/v1/notes/:id", marker)
+	router.DELETE("/api/v1/notes/:id", marker)
+	router.GET("/api/v1/notes/:id/links", marker)
+
+	notePath := "/api/v1/notes/" + uuid.New().String()
+
+	tests := []struct {
+		name       string
+		method     string
+		path       string
+		wantStatus int
+	}{
+		{"anonymous GET note by id", http.MethodGet, notePath, http.StatusOK},
+		{"anonymous GET search", http.MethodGet, "/api/v1/notes/search", http.StatusOK},
+		{"anonymous PUT on the same template", http.MethodPut, notePath, http.StatusUnauthorized},
+		{"anonymous DELETE on the same template", http.MethodDelete, notePath, http.StatusUnauthorized},
+		{"anonymous GET on a different template", http.MethodGet, notePath + "/links", http.StatusUnauthorized},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, tt.path, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			assert.Equal(t, tt.wantStatus, w.Code)
+		})
+	}
+
+	// A token on a GET-exempt route must still be validated: an owner
+	// reading his own private note would otherwise be treated as anonymous.
+	t.Run("valid token on exempt GET keeps identity", func(t *testing.T) {
+		userID := uuid.New()
+		identityRouter := gin.New()
+		identityRouter.Use(JWTAuth(config))
+		identityRouter.GET("/api/v1/notes/:id", func(c *gin.Context) {
+			id, exists := GetUserID(c)
+			if !exists || id != userID {
+				c.JSON(http.StatusTeapot, gin.H{"error": "identity lost"})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"message": "ok"})
+		})
+
+		pair, err := jwtManager.GenerateTokenPair(userID, "owner", "user")
+		require.NoError(t, err)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/notes/"+uuid.New().String(), nil)
+		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+		w := httptest.NewRecorder()
+		identityRouter.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("invalid token on exempt GET is rejected", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/notes/"+uuid.New().String(), nil)
+		req.Header.Set("Authorization", "Bearer not-a-token")
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
 }
 
 func TestJWTAuthSwaggerPath(t *testing.T) {

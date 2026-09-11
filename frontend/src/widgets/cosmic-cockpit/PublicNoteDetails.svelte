@@ -77,7 +77,12 @@
 <div class="public-note-details" data-testid="public-note-details">
   <div class="details-header">
     <h2 class="details-title">{t("publicNoteDetail.title")}</h2>
-    <IconButton variant="ghost" size="sm" onClick={() => onClose?.()} title={t("noteSidePanel.closeAria")}>
+    <IconButton
+      variant="ghost"
+      size="sm"
+      onClick={() => onClose?.()}
+      title={t("noteSidePanel.closeAria")}
+    >
       ✕
     </IconButton>
   </div>
@@ -89,12 +94,7 @@
           <span class="type-icon" title={noteType.description}>{noteType.emoji}</span>
           <h3 class="title">{note.title}</h3>
         </div>
-        <Chip
-          size="sm"
-          color={noteType.toCSSColor()}
-          borderColor={noteType.toCSSColor()}
-          glow
-        >
+        <Chip size="sm" color={noteType.toCSSColor()} borderColor={noteType.toCSSColor()} glow>
           {getNoteTypeLabel(note.type)}
         </Chip>
       </div>
@@ -127,7 +127,9 @@
                   <span class="type-icon--sm">{getNoteTypeIcon(item.type)}</span>
                   {item.title}
                 </span>
-                <span class="weight">{t("note.linkWeight", { weight: item.weight.toFixed(1) })}</span>
+                <span class="weight"
+                  >{t("note.linkWeight", { weight: item.weight.toFixed(1) })}</span
+                >
               </li>
             {/each}
           </ul>

@@ -290,9 +290,12 @@ jobs:
     needs: [full-tests]
     timeout-minutes: 25
     env:
-      SKIP_AUTH: "true"
+      # Visual baselines are built without the auth bypass: the anonymous
+      # project sees the real anonymous state, the authorized project a real
+      # session. See docs/tasks/VIS-1-split-visual-baselines.md.
+      SKIP_AUTH: "false"
       FRONTEND_URL: http://localhost:3002
-      ARGOS_REFERENCE_BRANCH: ai-agents
+      ARGOS_REFERENCE_BRANCH: main
     steps:
       - uses: actions/checkout@v5
 
@@ -317,13 +320,13 @@ jobs:
       - name: Seed visual fixture
         run: |
           chmod +x scripts/testing/seed-test-data.sh
-          NOTE_COUNT=20 LINK_COUNT=10 SEED=42 NLP_WAIT_SECONDS=120 scripts/testing/seed-test-data.sh
+          NOTE_COUNT=20 LINK_COUNT=10 SEED=42 PUBLIC_PERCENT=50 NLP_WAIT_SECONDS=120 scripts/testing/seed-test-data.sh
 
       - name: Run visual tests with Argos
         working-directory: ./frontend
         env:
           ARGOS_TOKEN: ${{ secrets.ARGOS_TOKEN }}
-        run: npx playwright test --project=visual
+        run: npx playwright test --project=visual --project=visual-real-auth
 
       - name: Upload debug artifacts
         if: always()

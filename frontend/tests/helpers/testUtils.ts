@@ -141,7 +141,9 @@ export async function clickFilterChip(page: Page, filter: string): Promise<void>
  */
 export async function fillSearchInput(page: Page, query: string): Promise<void> {
   // Try the top bar search input first, then fall back to the dedicated search page input.
-  const searchInput = page.locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]').first();
+  const searchInput = page
+    .locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]')
+    .first();
   await expect(searchInput).toBeVisible({ timeout: 5000 });
   await searchInput.fill(query);
   await searchInput.dispatchEvent("input");
@@ -151,7 +153,9 @@ export async function fillSearchInput(page: Page, query: string): Promise<void> 
  * Submit the active search input (the top bar no longer has a separate search button)
  */
 export async function clickSearchButton(page: Page): Promise<void> {
-  const searchInput = page.locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]').first();
+  const searchInput = page
+    .locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]')
+    .first();
   await searchInput.press("Enter");
   await page.waitForTimeout(300);
 }

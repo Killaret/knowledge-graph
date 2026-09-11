@@ -47,7 +47,7 @@ How to write new ones: `docs/AI_AGENT_PROTOCOL.md`, section «Как писат�
 
 1. Read `.windsurfrules`, `docs/AI_HANDOFF.md`, and `docs/AI_AGENT_PROTOCOL.md` first; then read relevant subsystem documentation.
 2. Update `docs/AI_HANDOFF.md` when handing off or taking over a task.
-3. Search the codebase before deciding on an implementation.
+3. Search the codebase before deciding on an implementation. A search locates a candidate, it never confirms one: read the surrounding context (a hit inside a "do not do this" list or a dated journal entry is not a defect), prefer execution for claims about behaviour, and check the negative case — an empty result may mean a bad pattern, not clean code. See "Verifying a Finding" in `.windsurfrules`.
 4. Follow existing constructors, dependency injection, error handling, and test patterns.
 5. Add a regression test for every discovered defect.
 6. Run the narrowest relevant verification first, then the required subsystem checks.
@@ -71,13 +71,18 @@ How to write new ones: `docs/AI_AGENT_PROTOCOL.md`, section «Как писат�
 
 - The NLP embedding model is preloaded during FastAPI lifespan startup through `ensure_model_loaded()`; `/health` verifies readiness.
 - Dev host gateway is `http://127.0.0.1:18080`; backend direct is `http://127.0.0.1:9000`.
-- Test frontend is `http://127.0.0.1:3002`; backend is `http://127.0.0.1:18083`; NLP is `http://127.0.0.1:15002`.
+- Test frontend is `http://127.0.0.1:3002`; backend is `http://127.0.0.1:18083`; nginx public perimeter is `http://127.0.0.1:18086`; NLP is `http://127.0.0.1:15002`.
 - Personal volumes contain live user data and must never be deleted without explicit approval and the required backup procedure.
+- Browser-facing proxies strip `X-Internal-Auth` and `X-User-Id`; graph-service user-header delegation is opt-in on internal networks.
 - E2E and BDD tests run only against `docker-compose.test.yml`; stop dev and personal stacks first.
 
 ## Common Commands
 
 ```powershell
+# Local core checks
+.\scripts\testing\check-all.ps1
+.\scripts\testing\check-all.ps1 -Quick
+
 # Backend
 cd backend; go test ./...
 cd backend; go test -tags=integration ./...

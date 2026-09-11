@@ -43,6 +43,15 @@ func applyNoteScope(db *gorm.DB, userID uuid.UUID) *gorm.DB {
 		}
 	}
 
+	// A verified identity scopes to its own notes — including the seeded test
+	// user who legitimately owns notes as uuid.Nil. Only a request without a
+	// verified identity (anonymous) is limited to public notes.
+	if db.Statement != nil && db.Statement.Context != nil {
+		if authed, _ := db.Statement.Context.Value(contextkeys.AuthenticatedKey).(bool); authed {
+			return db.Where("creator_id = ?", userID.String())
+		}
+	}
+
 	if userID == uuid.Nil {
 		return db.Where("is_public = ?", true)
 	}

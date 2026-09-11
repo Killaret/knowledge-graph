@@ -86,6 +86,10 @@ services:
       dockerfile: ./backend/Dockerfile
       target: server
     container_name: kg-test-backend
+    networks:
+      default:
+        aliases:
+          - kg-backend
     ports:
       - "127.0.0.1:18083:8080"
     environment:
@@ -129,6 +133,10 @@ services:
       context: .
       dockerfile: ./services/graph-service/Dockerfile
     container_name: kg-test-graph-service
+    networks:
+      default:
+        aliases:
+          - kg-graph-service
     ports:
       - "127.0.0.1:19090:9090"
       - "127.0.0.1:19091:9091"
@@ -139,6 +147,8 @@ services:
       GRPC_PORT: "9090"
       EVENT_CHANNEL: graph:events
       GRAPH_FULL_LIMIT: "500"
+      GRAPH_SERVICE_INTERNAL_TOKEN: ${GRAPH_SERVICE_INTERNAL_TOKEN:-test-internal-token}
+      GRAPH_SERVICE_TRUST_USER_HEADER: "true"
       NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
       APP_ENV: test
       SKIP_AUTH: ${SKIP_AUTH:-true}
@@ -194,6 +204,26 @@ services:
       resources:
         limits:
           memory: 512M
+
+  nginx-test:
+    image: nginx:alpine
+    container_name: kg-test-nginx
+    ports:
+      - "127.0.0.1:18086:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend-test:
+        condition: service_healthy
+      graph-service-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
   worker-test:
     build:

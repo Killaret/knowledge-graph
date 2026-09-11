@@ -1,11 +1,13 @@
 package middleware
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
 
 	"knowledge-graph/internal/auth"
+	contextkeys "knowledge-graph/internal/shared/context"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -20,12 +22,17 @@ const (
 
 // JWTConfig holds JWT middleware configuration
 type JWTConfig struct {
-	JWTManager  *auth.JWTManager
-	TokenStore  auth.TokenStore
-	SkipPaths   []string
-	HeaderName  string
-	TokenLookup string
-	CookieName  string
+	JWTManager *auth.JWTManager
+	TokenStore auth.TokenStore
+	SkipPaths  []string
+	// SkipGETPaths are route templates exempt only for GET requests: other
+	// methods on the same template still require a token. Needed because
+	// SkipPaths matches c.FullPath() regardless of method — adding
+	// /api/v1/notes/:id there would also exempt PUT and DELETE.
+	SkipGETPaths []string
+	HeaderName   string
+	TokenLookup  string
+	CookieName   string
 }
 
 // DefaultJWTConfig returns default JWT configuration
@@ -49,6 +56,14 @@ func DefaultJWTConfig(jwtManager *auth.JWTManager, tokenStore auth.TokenStore) *
 			"/health",
 			"/swagger/*any",
 			"/openapi.yaml",
+		},
+		SkipGETPaths: []string{
+			// PUB-1: anonymous visitors may read a public note and search
+			// public notes. RequireNoteAccess still conceals private notes
+			// with 404, and applyNoteScope limits anonymous search results
+			// to public notes.
+			"/api/v1/notes/:id",
+			"/api/v1/notes/search",
 		},
 	}
 }
@@ -74,6 +89,18 @@ func JWTAuth(config *JWTConfig) gin.HandlerFunc {
 		// Extract token
 		token, err := extractToken(c, config)
 		if err != nil {
+			// Without credentials the GET-only exemptions let anonymous
+			// readers through. A request that DOES carry a token is still
+			// validated — otherwise an authenticated owner would lose his
+			// identity and read his own private note as a stranger (404).
+			if c.Request.Method == http.MethodGet {
+				for _, path := range config.SkipGETPaths {
+					if c.FullPath() == path {
+						c.Next()
+						return
+					}
+				}
+			}
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "missing or malformed token"})
 			c.Abort()
 			return
@@ -102,10 +129,13 @@ func JWTAuth(config *JWTConfig) gin.HandlerFunc {
 			return
 		}
 
-		// Set context values
+		// Set context values. The request-context flag marks a verified
+		// identity so the data layer can tell the seeded uuid.Nil user apart
+		// from an anonymous request.
 		c.Set(ContextUserIDKey, claims.UserID)
 		c.Set(ContextRoleKey, claims.Role)
 		c.Set(ContextLoginKey, claims.Login)
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), contextkeys.AuthenticatedKey, true))
 
 		// Set full claims for logging middleware
 		c.Set("token_claims", map[string]interface{}{

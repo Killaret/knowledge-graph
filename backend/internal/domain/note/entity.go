@@ -143,6 +143,15 @@ func (n *Note) IsPublic() bool {
 	return n.isPublic
 }
 
+// IsOwnedBy reports whether userID matches the note's creator. It is a
+// pure id comparison: callers MUST combine it with an "identity present"
+// check — anonymous callers carry uuid.Nil, and the seeded test user of
+// the test stack legitimately authenticates as uuid.Nil (migration 019),
+// so Nil-vs-Nil alone cannot mean "not owned".
+func (n *Note) IsOwnedBy(userID uuid.UUID) bool {
+	return n.creatorID != nil && *n.creatorID == userID
+}
+
 func (n *Note) SetCreatorID(creatorID uuid.UUID) {
 	n.creatorID = &creatorID
 	n.updatedAt = time.Now()
