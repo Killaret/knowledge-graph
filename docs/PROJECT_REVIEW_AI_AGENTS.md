@@ -848,3 +848,25 @@ interfaces/api/  → Gin handlers, middleware, DTOs
   - `FRONTEND_URL`, `VITE_API_TARGET`, `VITE_GRAPH_SERVICE_URL` и BDD-URL переключены на `localhost`.
 
 - Статус: все вспомогательные правки в `ci.yml`; следующий прогон CI подтверждает.
+
+**Smoke Tests: отсутствует тестовый пользователь после миграции 029.**
+
+|- Симптом: после исправления миграций Playwright-создание заметок падает с `Failed to save note`; в логе Postgres `insert or update on table "notes" violates foreign key constraint "notes_creator_id_fkey"` для `creator_id=00000000-0000-0000-0000-000000000000`.
+|- Причина: миграция `029_remove_test_user.up.sql` удаляет zero-UUID пользователя, созданного `019_add_test_user.up.sql`; `skip_auth` middleware всё ещё использует этот ID, а сидер `backend/cmd/seed` не запускался в smoke-джобе.
+|- Исправление (`5f0f6b8`): после подъёма backend запустить `go run ./cmd/seed` с `APP_ENV=test` и `SEED_TEST_USER_PASSWORD` до начала тестов.
+|- Результат: 49 Playwright smoke-тестов и 43 BDD-шага (5 сценариев) проходят.
+
+**Smoke Tests: BDD-сценарии проходят, но шаг зависает на выходе.**
+
+|- Симптом: `Run smoke BDD tests` отрапортовал `5 scenarios (5 passed), 43 steps (43 passed), 0m49.839s`, но процесс не завершился и джоба ушла в timeout/cancel.
+|- Причина: `frontend/tests/features/support/hooks.ts` запускает Vite dev-сервер сам, а `devServer.kill` не убивает дочерний процесс Vite; процесс остаётся висеть, GitHub Actions не переходит к следующему шагу.
+|- Исправление (`c7f4786`):
+  - выделить отдельный шаг `Start frontend dev server for smoke tests` с `npm run dev &` и дождаться `http://localhost:5173`;
+  - `PLAYWRIGHT_DEV_SERVER=true` + `webServer.reuseExistingServer: true` заставляют Playwright переиспользовать уже поднятый Vite, а не стартовать новый;
+  - `test:cucumber` видит готовый сервер и не стартует собственный, поэтому завершается сразу после отчёта;
+  - `SKIP_AUTH: "true"` добавлен в env `Run smoke BDD tests`, чтобы `hooks.ts` инжектировал `__SKIP_AUTH__`.
+|- Результат: `Smoke Tests` проходит за ~5m35s; полный CI run `34642092163` — success (все 9 джоб).
+
+**Итог CI-4:**
+
+|- PR #36 run `34642092163` — `conclusion: success`, все Core Checks и Smoke Tests зелёные; Playwright 49 passed/2 skipped, BDD 5 scenarios/43 steps passed.
