@@ -294,7 +294,7 @@ cd frontend && npm run check    # svelte-check
 | Куда идёт проект | [`ROADMAP.md`](ROADMAP.md), [`docs/BACKLOG.md`](docs/BACKLOG.md), [`docs/IDEAS.md`](docs/IDEAS.md) |
 | Что уже выпущено | [`CHANGELOG.md`](CHANGELOG.md) |
 | Архитектура | [`docs/architecture/README.md`](docs/architecture/README.md), [`docs/ARCHITECTURE_SUMMARY.md`](docs/ARCHITECTURE_SUMMARY.md) |
-| Развёртывание и конфигурация | [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md), [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md), [`docs/DOCKER.md`](docs/DOCKER.md) |
+| Развёртывание и конфигурация | [`DEPLOY.ru.md`](DEPLOY.ru.md) · [`DEPLOY.md`](DEPLOY.md), [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md), [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md), [`docs/DOCKER.md`](docs/DOCKER.md) |
 | Тестирование | [`docs/TESTING.md`](docs/TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md), [`docs/ARGOS.md`](docs/ARGOS.md) |
 | Резервное копирование | [`docs/BACKUP.md`](docs/BACKUP.md) |
 | Авторизация graph-service | [`docs/GRAPH_SERVICE_AUTH.md`](docs/GRAPH_SERVICE_AUTH.md) |

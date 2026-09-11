@@ -294,7 +294,7 @@ Directory index: [`docs/README.md`](docs/README.md).
 | Where the project is going | [`ROADMAP.md`](ROADMAP.md), [`docs/BACKLOG.md`](docs/BACKLOG.md), [`docs/IDEAS.md`](docs/IDEAS.md) |
 | What shipped | [`CHANGELOG.md`](CHANGELOG.md) |
 | Architecture | [`docs/architecture/README.md`](docs/architecture/README.md), [`docs/ARCHITECTURE_SUMMARY.md`](docs/ARCHITECTURE_SUMMARY.md) |
-| Deployment and configuration | [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md), [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md), [`docs/DOCKER.md`](docs/DOCKER.md) |
+| Deployment and configuration | [`DEPLOY.md`](DEPLOY.md) · [`DEPLOY.ru.md`](DEPLOY.ru.md), [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md), [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md), [`docs/DOCKER.md`](docs/DOCKER.md) |
 | API contract | [`docs/API_EN.md`](docs/API_EN.md), [`backend/openAPI.yaml`](backend/openAPI.yaml) |
 | Testing | [`docs/TESTING.md`](docs/TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md), [`docs/ARGOS.md`](docs/ARGOS.md) |
 | Backup | [`docs/BACKUP.md`](docs/BACKUP.md) |
