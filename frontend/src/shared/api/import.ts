@@ -55,6 +55,8 @@ export interface ImportOptions {
   extract_content?: boolean;
 }
 
+export const MAX_IMPORT_BATCH_SIZE = 50;
+
 /**
  * Create a note from a captured web page (bookmarklet flow).
  */

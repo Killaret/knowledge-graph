@@ -2,12 +2,14 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { extractURLs, extractURLsFromHTML, chunk } from "$shared/utils/extract-urls";
   import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
   import { useRequireAuth } from "$shared/composables/auth";
   import {
     previewBookmarks,
     createBookmarksImport,
     getImportStatus,
+    MAX_IMPORT_BATCH_SIZE,
     type ImportItem,
     type ImportPreviewItem,
     type ImportTaskStatus,
@@ -18,6 +20,26 @@
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
+
+  async function formatBackendError(e: unknown, fallback: string): Promise<string> {
+    const base = e instanceof Error ? e.message : String(e);
+
+    const httpError = e as { response?: Response } | undefined;
+    if (!httpError?.response) return base || fallback;
+
+    try {
+      const body = (await httpError.response.clone().json()) as {
+        message?: string;
+        details?: { message?: string }[];
+      };
+      if (body.details?.[0]?.message) return body.details[0].message;
+      if (body.message) return body.message;
+    } catch {
+      const text = await httpError.response.clone().text();
+      if (text) return text;
+    }
+    return base || fallback;
+  }
 
   const noteTypes = [
     "star",
@@ -45,7 +67,7 @@
   let extractContent = $state(false);
   let dragOver = $state(false);
   let previewItems = $state<ImportPreviewItem[]>([]);
-  let taskId = $state<string | null>(null);
+  let taskIds = $state<string[]>([]);
   let taskStatus = $state<ImportTaskStatus | null>(null);
   let errorMessage = $state("");
   let pollInterval = $state<ReturnType<typeof setInterval> | null>(null);
@@ -63,47 +85,18 @@
     status = "idle";
   });
 
-  function parseLine(line: string): ImportItem | null {
-    line = line.trim();
-    if (!line || line.startsWith("#")) return null;
-
-    const sepIdx = line.indexOf("|");
-    if (sepIdx > 0) {
-      const title = line.slice(0, sepIdx).trim();
-      const url = line.slice(sepIdx + 1).trim();
-      return { title, url };
-    }
-
-    return { title: line, url: line };
-  }
-
   function parseInput(): ImportItem[] {
-    const items: ImportItem[] = [];
-    const seen = new Set<string>();
-    for (const line of input.split("\n")) {
-      const it = parseLine(line);
-      if (!it) continue;
-      if (seen.has(it.url)) continue;
-      seen.add(it.url);
-      items.push(it);
-    }
-    return items;
+    return extractURLs(input).map((it) => ({
+      title: it.title,
+      url: it.url,
+    }));
   }
 
   function parseBookmarksHTML(html: string): ImportItem[] {
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const links = doc.querySelectorAll("a[href]");
-    const items: ImportItem[] = [];
-    const seen = new Set<string>();
-    links.forEach((a) => {
-      const url = a.getAttribute("href");
-      const title = a.textContent?.trim() || url || "";
-      if (!url) return;
-      if (seen.has(url)) return;
-      seen.add(url);
-      items.push({ title, url });
-    });
-    return items;
+    return extractURLsFromHTML(html).map((it) => ({
+      title: it.title,
+      url: it.url,
+    }));
   }
 
   async function buildPreview() {
@@ -115,15 +108,22 @@
     }
 
     status = "loading";
-    try {
-      const res = await previewBookmarks(items, { extract_content: extractContent });
-      previewItems = res.items;
-      status = "preview";
-    } catch (e) {
-      status = "error";
-      errorMessage = t("import.error");
-      if (import.meta.env.DEV) console.error("Preview error:", e);
+    previewItems = [];
+
+    const batches = chunk(items, MAX_IMPORT_BATCH_SIZE);
+    for (let i = 0; i < batches.length; i++) {
+      try {
+        const res = await previewBookmarks(batches[i], { extract_content: extractContent });
+        previewItems = [...previewItems, ...res.items];
+      } catch (e) {
+        status = "error";
+        errorMessage = await formatBackendError(e, t("import.error"));
+        if (import.meta.env.DEV) console.error(`Preview batch ${i + 1}/${batches.length} error:`, e);
+        return;
+      }
     }
+
+    status = "preview";
   }
 
   function removeItem(index: number) {
@@ -155,25 +155,63 @@
     }
 
     status = "importing";
-    try {
-      const res = await createBookmarksImport(items);
-      taskId = res.task_id;
-      pollStatus();
-    } catch (e) {
-      status = "error";
-      errorMessage = t("import.error");
-      if (import.meta.env.DEV) console.error("Import error:", e);
+    taskIds = [];
+
+    const batches = chunk(items, MAX_IMPORT_BATCH_SIZE);
+    for (let i = 0; i < batches.length; i++) {
+      try {
+        const res = await createBookmarksImport(batches[i]);
+        taskIds = [...taskIds, res.task_id];
+      } catch (e) {
+        status = "error";
+        errorMessage = await formatBackendError(e, t("import.error"));
+        if (import.meta.env.DEV) console.error(`Import batch ${i + 1}/${batches.length} error:`, e);
+        return;
+      }
     }
+
+    pollStatus();
+  }
+
+  function mergeStatuses(statuses: ImportTaskStatus[]): ImportTaskStatus {
+    const progress = statuses.reduce(
+      (acc, s) => ({
+        total: acc.total + s.progress.total,
+        processed: acc.processed + s.progress.processed,
+        created: acc.created + s.progress.created,
+        skipped: acc.skipped + s.progress.skipped,
+        failed: acc.failed + s.progress.failed,
+      }),
+      { total: 0, processed: 0, created: 0, skipped: 0, failed: 0 }
+    );
+
+    const allFinal = statuses.every((s) => s.status === "done" || s.status === "failed");
+    const anyFailed = statuses.some((s) => s.status === "failed");
+
+    let overallStatus: ImportTaskStatus["status"] = "pending";
+    if (allFinal) {
+      overallStatus = anyFailed ? "failed" : "done";
+    } else if (statuses.some((s) => s.status === "processing")) {
+      overallStatus = "processing";
+    }
+
+    return {
+      task_id: statuses.map((s) => s.task_id).join(","),
+      status: overallStatus,
+      progress,
+    };
   }
 
   function pollStatus() {
-    if (!taskId) return;
+    if (taskIds.length === 0) return;
     if (pollInterval) clearInterval(pollInterval);
 
     const load = async () => {
       try {
-        taskStatus = await getImportStatus(taskId!);
-        if (taskStatus?.status === "done" || taskStatus?.status === "failed") {
+        const statuses = await Promise.all(taskIds.map((id) => getImportStatus(id)));
+        taskStatus = mergeStatuses(statuses);
+
+        if (taskStatus.status === "done" || taskStatus.status === "failed") {
           status = "done";
           if (pollInterval) clearInterval(pollInterval);
         }
@@ -227,7 +265,7 @@
     status = "idle";
     input = "";
     previewItems = [];
-    taskId = null;
+    taskIds = [];
     taskStatus = null;
     errorMessage = "";
     if (pollInterval) clearInterval(pollInterval);
@@ -405,8 +443,8 @@
           : t("import.processing")}
       </h2>
 
-      {#if taskId}
-        <p class="task-id">{t("import.taskAccepted", { task_id: taskId })}</p>
+      {#if taskIds.length > 0}
+        <p class="task-id">{t("import.taskAccepted", { task_id: taskIds.join(", ") })}</p>
       {/if}
 
       {#if taskStatus}

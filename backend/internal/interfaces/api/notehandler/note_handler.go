@@ -276,7 +276,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 type bookmarkletRequest struct {
 	Title string `json:"title" binding:"required,max=200"`
-	URL   string `json:"url"   binding:"required,url,max=2048"`
+	URL   string `json:"url"   binding:"required,url,max=16384"`
 	Text  string `json:"text"  binding:"max=50000"`
 	Type  string `json:"type"  binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 }
@@ -285,22 +285,6 @@ type bookmarkletResponse struct {
 	NoteID string `json:"note_id"`
 	Title  string `json:"title"`
 	Type   string `json:"type"`
-}
-
-const maxBookmarkletContent = 10000
-
-// buildBookmarkletContent creates Markdown body with title, URL and selected text.
-// It truncates text so the total length does not exceed the domain Content limit.
-func buildBookmarkletContent(title, url, text string) string {
-	prefix := fmt.Sprintf("## [%s](%s)\n\n", title, url)
-	remaining := maxBookmarkletContent - len(prefix)
-	if remaining < 0 {
-		remaining = 0
-	}
-	if len(text) > remaining {
-		text = text[:remaining]
-	}
-	return prefix + text
 }
 
 // Bookmarklet creates a note from a captured web page.
@@ -338,7 +322,7 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		noteType = "asteroid"
 	}
 
-	content := buildBookmarkletContent(req.Title, req.URL, req.Text)
+	content := importer.BuildContent(req.Title, req.URL, req.Text)
 
 	title, err := note.NewTitle(req.Title)
 	if err != nil {
@@ -412,8 +396,8 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 // --- Mass bookmark import handlers ---
 
 type importItem struct {
-	Title string `json:"title" binding:"max=200"`
-	URL   string `json:"url"   binding:"required,url,max=2048"`
+	Title string `json:"title" binding:"max=1000"`
+	URL   string `json:"url"   binding:"required,url,max=16384"`
 	Text  string `json:"text"  binding:"max=50000"`
 	Type  string `json:"type"  binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 }
@@ -1101,8 +1085,13 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 				GeneratedAt: recs[0].UpdatedAt,
 			}
 			for _, rec := range recs {
+				title := ""
+				if noteEntity, err := h.repo.FindByID(ctx, rec.RecommendedNoteID); err == nil && noteEntity != nil {
+					title = noteEntity.Title().String()
+				}
 				suggestionsResp.Suggestions = append(suggestionsResp.Suggestions, Suggestion{
 					NoteID: rec.RecommendedNoteID.String(),
+					Title:  title,
 					Score:  rec.Score,
 				})
 			}
@@ -1142,15 +1131,20 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		if err == nil && len(neighbors) > 0 {
 			suggestions := make([]Suggestion, 0, len(neighbors))
 			for _, n := range neighbors {
+				title := ""
+				if noteEntity, err := h.repo.FindByID(ctx, n.NoteID); err == nil && noteEntity != nil {
+					title = noteEntity.Title().String()
+				}
 				suggestions = append(suggestions, Suggestion{
 					NoteID: n.NoteID.String(),
+					Title:  title,
 					Score:  n.Score,
 				})
 			}
 
 			c.Header("X-Recommendations-Source", "semantic")
 			c.Header("X-Recommendations-Stale", "true")
-			c.JSON(200, SuggestionsResponse{Suggestions: suggestions})
+			c.JSON(200, SuggestionsResponse{Suggestions: suggestions, GeneratedAt: time.Now()})
 			h.enqueueRefreshWithDelay(noteID)
 			return
 		}

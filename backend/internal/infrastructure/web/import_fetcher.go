@@ -4,14 +4,20 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"knowledge-graph/internal/shared/textutil"
 	"net/http"
 	"strings"
 	"time"
 
 	"golang.org/x/net/html"
+	"golang.org/x/net/html/charset"
 )
 
-const maxFetchBodySize = 1 << 20 // 1 MiB
+const (
+	maxFetchBodySize = 1 << 20 // 1 MiB
+	maxTitleRunes    = 200
+	maxTextRunes     = 5000
+)
 
 // ImportFetcher fetches a web page and extracts a readable title and text.
 // It is a production implementation of importer.ContentExtractor.
@@ -52,8 +58,16 @@ func (f *ImportFetcher) Extract(ctx context.Context, rawURL string) (string, str
 		return "", "", fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
 
-	body := io.LimitReader(resp.Body, maxFetchBodySize)
-	doc, err := html.Parse(body)
+	lr := io.LimitReader(resp.Body, maxFetchBodySize)
+
+	// Convert to UTF-8 based on the declared Content-Type or a <meta charset>
+	// declaration. If detection fails, fall back to reading the body as-is.
+	reader, err := charset.NewReader(lr, resp.Header.Get("Content-Type"))
+	if err != nil {
+		reader = lr
+	}
+
+	doc, err := html.Parse(reader)
 	if err != nil {
 		return "", "", err
 	}
@@ -64,10 +78,14 @@ func (f *ImportFetcher) Extract(ctx context.Context, rawURL string) (string, str
 	if title == "" {
 		title = rawURL
 	}
-	text = cleanText(text)
-	if len(text) > 5000 {
-		text = text[:5000]
-	}
+
+	// Sanitize so we never pass an invalid UTF-8 string further up.
+	title = textutil.SanitizeUTF8(cleanText(title))
+	text = textutil.SanitizeUTF8(cleanText(text))
+
+	// Truncate without splitting multi-byte runes.
+	title = textutil.TruncateToMaxRunes(title, maxTitleRunes)
+	text = textutil.TruncateToMaxRunes(text, maxTextRunes)
 
 	return title, text, nil
 }

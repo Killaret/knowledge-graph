@@ -774,10 +774,12 @@ func TestGetNote_FindByIDError(t *testing.T) {
 func TestGetSuggestions_Precomputed(t *testing.T) {
 	h, repo, _, recRepo, _, _ := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
+	rec := newTestNote(t, "Rec", "Content", "planet")
 
 	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("FindByID", mock.Anything, rec.ID()).Return(rec, nil)
 	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{
-		{NoteID: n.ID(), RecommendedNoteID: uuid.New(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
+		{NoteID: n.ID(), RecommendedNoteID: rec.ID(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
 	}, nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions", "")
@@ -793,10 +795,12 @@ func TestGetSuggestions_Precomputed(t *testing.T) {
 func TestGetSuggestions_PrecomputedStale(t *testing.T) {
 	h, repo, tq, recRepo, _, _ := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
+	rec := newTestNote(t, "Rec", "Content", "planet")
 
 	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("FindByID", mock.Anything, rec.ID()).Return(rec, nil)
 	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{
-		{NoteID: n.ID(), RecommendedNoteID: uuid.New(), Score: 0.9, UpdatedAt: time.Now().Add(-time.Hour)},
+		{NoteID: n.ID(), RecommendedNoteID: rec.ID(), Score: 0.9, UpdatedAt: time.Now().Add(-time.Hour)},
 	}, nil)
 	tq.On("EnqueueRefreshRecommendations", mock.Anything, n.ID(), mock.AnythingOfType("time.Duration")).Return(nil)
 
@@ -814,10 +818,12 @@ func TestGetSuggestions_PrecomputedStale(t *testing.T) {
 func TestGetSuggestions_LimitParam(t *testing.T) {
 	h, repo, _, recRepo, _, _ := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
+	rec := newTestNote(t, "Rec", "Content", "planet")
 
 	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("FindByID", mock.Anything, rec.ID()).Return(rec, nil)
 	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 2).Return([]recommendation.Recommendation{
-		{NoteID: n.ID(), RecommendedNoteID: uuid.New(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
+		{NoteID: n.ID(), RecommendedNoteID: rec.ID(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
 	}, nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions?limit=2", "")
@@ -830,7 +836,7 @@ func TestGetSuggestions_LimitParam(t *testing.T) {
 }
 
 func TestGetSuggestions_SemanticFallback(t *testing.T) {
-	h, _, tq, recRepo, embRepo, _ := setupUnitHandler(t)
+	h, repo, tq, recRepo, embRepo, _ := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
 	similarID := uuid.New()
 
@@ -838,6 +844,7 @@ func TestGetSuggestions_SemanticFallback(t *testing.T) {
 	embRepo.On("FindSimilarNotes", mock.Anything, n.ID(), 5).Return([]recommendation.SimilarNote{
 		{NoteID: similarID, Score: 0.85},
 	}, nil)
+	repo.On("FindByID", mock.Anything, similarID).Return(newTestNote(t, "Similar", "Body", "planet"), nil)
 	tq.On("EnqueueRefreshRecommendations", mock.Anything, n.ID(), mock.AnythingOfType("time.Duration")).Return(nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions", "")
@@ -849,6 +856,7 @@ func TestGetSuggestions_SemanticFallback(t *testing.T) {
 	assert.Equal(t, "semantic", w.Header().Get("X-Recommendations-Source"))
 	assert.Equal(t, "true", w.Header().Get("X-Recommendations-Stale"))
 	assert.Contains(t, w.Body.String(), similarID.String())
+	assert.Contains(t, w.Body.String(), "Similar")
 	tq.AssertExpectations(t)
 }
 
