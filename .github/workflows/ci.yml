@@ -209,12 +209,12 @@ jobs:
           cd ../backend
           go mod download
           go run ./cmd/server &
-          for i in {1..30}; do
+          for i in {1..90}; do
             if curl -s http://localhost:8080/health > /dev/null 2>&1; then
               echo "✅ Backend is ready!"
               break
             fi
-            echo "Waiting for backend... attempt $i/30"
+            echo "Waiting for backend... attempt $i/90"
             sleep 2
           done
           if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
@@ -236,12 +236,12 @@ jobs:
           cd ../services/graph-service
           go mod download
           go run ./cmd/server &
-          for i in {1..30}; do
+          for i in {1..90}; do
             if curl -s http://127.0.0.1:9091/health > /dev/null 2>&1; then
               echo "✅ Graph-service is ready!"
               break
             fi
-            echo "Waiting for graph-service... attempt $i/30"
+            echo "Waiting for graph-service... attempt $i/90"
             sleep 2
           done
           if ! curl -s http://127.0.0.1:9091/health > /dev/null 2>&1; then
