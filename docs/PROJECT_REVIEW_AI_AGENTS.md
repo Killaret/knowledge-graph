@@ -742,3 +742,34 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `D:\Docker\wsl\main\ext4.vhdx.old` (100 МБ) — старый системный дистрибутив; можно удалить.
 - После старта стеков `kg-nlp-personal` и `kg-nlp-test` находятся в `health: starting` — нужно дождаться full healthy, прежде чем тестировать рекомендации.
 - Для перестраховки стоит сделать `pg_dump`-бэкап через `backup-personal.ps1` после восстановления, чтобы свежий `.sql.gz` дополнил VHDX-архив.
+
+## 20. UX-2: 500-страница и аудит обработки ошибок (2026-09-11)
+
+**Что сделано.**
+
+- Добавлен `frontend/src/routes/+error.svelte`: full-viewport (`position: fixed; inset: 0; z-index: 900`), Cosmic Cockpit фон, i18n (`error.500.*`, `error.unknown.*`), кнопки «Обновить» и «На главную», dev-only stack trace.
+- Добавлен новый тип `server-error` в `frontend/src/components/atoms/StateIllustration.svelte`: космическая иллюстрация разъединённого удлинителя с искрой.
+- `+error.svelte` выбирает иллюстрацию по статусу: `404` → `404`, `5xx` → `server-error`, остальное → `error`.
+- Добавлен `frontend/src/routes/error-page.spec.ts` и `frontend/src/shared/utils/route-match.test.ts`.
+- В `+layout.svelte` исправлен критический баг публичных маршрутов: `currentPath.startsWith("/")` делал публичными **все** пути. Вынесена функция `isPublicRoute` в `shared/utils/route-match.ts`.
+- Обновлены `docs/tasks/UX-2-500-error-page.md` и `docs/AI_HANDOFF.md`; статус: на ревью у Claude Code.
+
+**Аудит обработки ошибок.**
+
+- SvelteKit route-ошибки (`load`/SSR) перехватываются `+error.svelte` (full-screen, i18n).
+- API-ошибки в страницах graph, import, notes, search, home показываются **локально** (`StateIllustration`, `ApiErrorDisplay`) — не перекрывают весь экран.
+- `GraphPageShell` и `GraphCanvas` ловят ошибки загрузки/рендера и показывают внутри canvas-области.
+- `hooks.server.ts` проксирует `/api/v1/*` на backend; 500 от backend возвращаются клиенту как JSON, а не как route-ошибка.
+
+**Результаты верификации.**
+
+- `npm run check` — 0 ошибок, 0 предупреждений.
+- `npm run test:unit` — 112 файлов, 1014 тестов passed.
+- `npx vitest run src/routes/error-page.spec.ts src/shared/utils/route-match.test.ts` — passed.
+
+**Осталось / открытые вопросы.**
+
+- Язык по умолчанию: постановка и `PROJECT_REVIEW_AI_AGENTS.md` §1 говорят «русский по умолчанию», но `knowledge-graph.config.json`, `getCurrentLocale()` и `.windsurfrules` фиксируют `en` default. Нужно решение/фикс.
+- Playwright-регрессия full-viewport: требуется симулировать 500 через `load` (временный `+page.ts` в test-only route) или через mock.
+- Использовать ли `server-error` в `ApiErrorDisplay` для in-page `INTERNAL_ERROR`?
+- PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
