@@ -208,6 +208,7 @@ jobs:
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
           GRAPH_SERVICE_URL: http://localhost:9091
           SKIP_AUTH: "true"
+          SEED_TEST_USER_PASSWORD: "test-password-123!"
         run: |
           cd ../backend
           go mod download
@@ -224,6 +225,9 @@ jobs:
             echo "❌ Backend failed to start"
             exit 1
           fi
+          echo "Seeding test user..."
+          go run ./cmd/seed
+          echo "✅ Test user seeded"
 
       - name: Start graph-service for smoke tests
         env:
