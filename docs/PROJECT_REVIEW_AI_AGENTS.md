@@ -778,7 +778,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Playwright-регрессия full-viewport: реализована `frontend/tests/error-500-page.spec.ts` + `src/routes/test/500/+page.server.ts` (триггер `?trigger=500`).
 - `ApiErrorDisplay.svelte` использует `server-error` для API-ошибок с кодом `INTERNAL_ERROR`.
 - PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
-- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a` и все последующие до слияния.
+- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0` и все последующие до слияния.
 
 ## 21. Открытые Dependabot PR (#21–#32), 2026-09-11
 

@@ -190,6 +190,7 @@ jobs:
 
       - name: Start backend for smoke tests
         env:
+          APP_ENV: test
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
           REDIS_URL: redis://localhost:6379
           MONGO_URL: mongodb://localhost:27017
@@ -217,6 +218,7 @@ jobs:
 
       - name: Start graph-service for smoke tests
         env:
+          APP_ENV: test
           POSTGRES_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
           REDIS_URL: redis://localhost:6379
           HTTP_PORT: "9091"
