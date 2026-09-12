@@ -118,7 +118,8 @@
       } catch (e) {
         status = "error";
         errorMessage = await formatBackendError(e, t("import.error"));
-        if (import.meta.env.DEV) console.error(`Preview batch ${i + 1}/${batches.length} error:`, e);
+        if (import.meta.env.DEV)
+          console.error(`Preview batch ${i + 1}/${batches.length} error:`, e);
         return;
       }
     }
@@ -307,8 +308,7 @@
         id="import-list"
         bind:value={input}
         rows="10"
-        placeholder="Example page | https://example.com\nhttps://another.example.com"
-      ></textarea>
+        placeholder="Example page | https://example.com\nhttps://another.example.com"></textarea>
 
       <label class="extract-toggle">
         <input type="checkbox" bind:checked={extractContent} />

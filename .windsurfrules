@@ -284,7 +284,7 @@ After completing any task that changes behavior, configuration, architecture, Do
   - [`ROADMAP.md`](ROADMAP.md) — scope and roadmap. One page; detailed plans live in [`docs/BACKLOG.md`](docs/BACKLOG.md).
   - [`knowledge-graph.config.json`](knowledge-graph.config.json) — new configuration options (default values, schema).
   - [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md) — environment variables and config reference.
-- Authoritative docs are in English; Russian translations may be added alongside.
+- Authoritative product, API, and architecture documentation is in Russian by default; English translations may be maintained alongside.
 - User-facing runtime content uses the configured locale through i18n keys; the committed default is English (`en`) with Russian (`ru`) support.
 - Do not create standalone docs to describe changes; update existing project docs instead.
 
@@ -333,7 +333,7 @@ The committed default locale is English (`en`); Russian (`ru`) is supported thro
 - All UI strings, toasts, labels, placeholders, errors, and tooltips must use i18n keys.
 - Code identifiers, variable names, commit messages, and API error codes must be in English.
 - User-created note titles and bodies may use any language.
-- Authoritative product, API, and architecture documentation is in English; Russian translations may be maintained alongside it.
+- Authoritative product, API, and architecture documentation is in Russian by default; English translations may be maintained alongside.
 - **AI working documents are maintained in Russian** and are authoritative in that language: `docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`. No English counterpart is required for them. `.devin/prompts/MASTER_PROMPT.md` stays English for English-language chats.
 
 ---

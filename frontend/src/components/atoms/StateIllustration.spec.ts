@@ -10,6 +10,7 @@ describe("StateIllustration", () => {
     ["offline", "Offline illustration"],
     ["no-links", "No links illustration"],
     ["no-results", "No results illustration"],
+    ["server-error", "Server error illustration"],
   ] as const)("renders %s illustration with accessible label", (type, label) => {
     render(StateIllustration, { props: { type } });
     expect(screen.getByRole("img", { name: label })).toBeInTheDocument();
