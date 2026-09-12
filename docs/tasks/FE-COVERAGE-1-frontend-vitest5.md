@@ -131,6 +131,27 @@ npm run test:coverage
   - Основные непокрытые области: `src/routes/**` (38% statements, 30% branches), `src/features/home-page/home-page.svelte.ts` (81.5% statements, 55.5% branches), `src/widgets/notes/NoteCard.svelte` (71% statements, 56% branches), `src/widgets/quick-capture/QuickCaptureWidget.svelte` (93% statements, 87% branches, 4 оставшиеся ветки), `src/widgets/graph-canvas/GraphCanvas.svelte` (81% statements, 60% branches), `src/widgets/auth/AuthCard.svelte` (81% statements, 50% branches).
 - Блокер: statements/functions на расстоянии < 1 pp от порога, но branch coverage остаётся значительно ниже 70%. Без тестирования оставшихся Svelte-компонентов и/или `src/routes/**` (или исключения route-файлов из unit-знаменателя) `npm run test:coverage` не пройдёт.
 
+## Прогресс 2026-09-12 (пятая партия)
+
+- `npm run test:unit -- --run`: 1179/1179 passed.
+- `npm run check`: 0 errors, 0 warnings.
+- `npm run lint`: 0 errors, 3 pre-existing warnings.
+- `npm run test:coverage`:
+  - lines: 73.83% ✓ (was 73.11%)
+  - statements: 69.98% (was 69.37%)
+  - functions: 70% ✓ (was 69.25%)
+  - branches: 61.5% (was 60.83%)
+- Добавлено/расширено:
+  - `frontend/src/shared/utils/graphUtils.test.ts` — `filterValidLinks` для string/number/object endpoint и неизвестных узлов.
+  - `frontend/src/features/home-page/home-page.svelte.test.ts` — доведено до 23 тестов: `createChildDefaultType`, ошибки `createNote`, `createLink`, `deleteNote` (delete-confirm), `deleteNotesBatch`, `restoreNote`, `updateGraphWithDelta` без изменений.
+  - `frontend/src/widgets/notes/NoteCard.spec.ts` — доведено до 19 тестов: tooltip edit/delete, keyboard Enter/Space, `goto` fallback, highlight query, public/keyword indicators.
+  - `frontend/src/widgets/auth/AuthCard.spec.ts` — доведено до 8 тестов: отсутствие subtitle, клик по логотипу (WeltallProtocol), ошибка загрузки фонового графа.
+- Оставшийся зазор:
+  - statements не хватает 0.02 pp.
+  - branches не хватает 8.5 pp.
+  - Основные непокрытые области: `src/routes/**` (38% statements, 30% branches, особенно `+page.svelte` 37% branches, `+layout.svelte` 0%), `src/widgets/graph-canvas/GraphCanvas.svelte` (81% statements, 60% branches), `src/widgets/graph-3d-viewer/Graph3DViewer.svelte` (82% statements, 71% branches), `src/widgets/cosmic-cockpit/CockpitPanel.svelte` (85% statements, 77% branches), `src/widgets/quick-capture/QuickCaptureWidget.svelte` (93% statements, 87% branches), `src/features/home-page/home-page.svelte.ts` (85.5% statements, 68.18% branches).
+- Блокер: statements/functions на пороге или выше, но branch coverage по-прежнему на 8.5 pp ниже 70%. Следующий эффективный шаг — либо тестировать `src/routes/+page.svelte`/`+layout.svelte` с моками тяжёлых компонентов, либо решение Claude Code/владельца об исключении `src/routes/**` и `hooks.server.ts` из unit-знаменателя.
+
 ## Зависимости
 
 - Блокирует мерж PR #63 (`frontend-test` job в CI).

@@ -118,6 +118,7 @@ describe("Home Page State", () => {
     graphStore.selectedNodeId = null;
     vi.useFakeTimers({ shouldAdvanceTime: true });
     window.confirm = vi.fn().mockReturnValue(true);
+    window.alert = vi.fn();
   });
 
   afterEach(() => {
@@ -361,5 +362,99 @@ describe("Home Page State", () => {
     homePage.resetCreateChildParent();
     await homePage.handleNoteCreated({ id: "solo", title: "Solo" } as any);
     expect(linksApi.createLink).not.toHaveBeenCalled();
+
+    expect(homePage.createChildDefaultType).toBeUndefined();
+  });
+
+  it("suggests child default type from parent", async () => {
+    const homePage = await getHomePage();
+
+    homePage.handleCreateChildNote({ id: "p1", title: "Parent", type: "star" });
+    expect(homePage.createChildDefaultType).toBeDefined();
+  });
+
+  it("handles note create error", async () => {
+    vi.mocked(notesApi.createNote).mockRejectedValue(new Error("create fail"));
+
+    const homePage = await getHomePage();
+
+    await homePage.handleNoteCreate({ title: "Bad", content: "body", type: "star" });
+    expect(notesApi.createNote).toHaveBeenCalled();
+  });
+
+  it("handles child link create error", async () => {
+    vi.mocked(linksApi.createLink).mockRejectedValue(new Error("link fail"));
+
+    const homePage = await getHomePage();
+
+    homePage.handleCreateChildNote({ id: "p1", title: "Parent", type: "star" });
+    await homePage.handleNoteCreated({ id: "child", title: "Child" } as any);
+
+    expect(linksApi.createLink).toHaveBeenCalled();
+    expect(homePage.createChildParent).toBeNull();
+  });
+
+  it("handles delete confirm error", async () => {
+    vi.mocked(notesApi.deleteNote).mockRejectedValue(new Error("delete fail"));
+
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    homePage.handleDeleteRequest("n1");
+    await homePage.handleDeleteConfirm();
+
+    expect(notesApi.deleteNote).toHaveBeenCalledWith("n1");
+  });
+
+  it("handles batch delete error", async () => {
+    vi.mocked(notesApi.deleteNotesBatch).mockRejectedValue(new Error("batch fail"));
+
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    homePage.toggleSelectionMode();
+    homePage.handleNoteSelect(homePage.allNotes[0], true);
+    await homePage.handleBatchDelete();
+
+    expect(notesApi.deleteNotesBatch).toHaveBeenCalled();
+  });
+
+  it("handles undo restore error", async () => {
+    vi.mocked(notesApi.restoreNote).mockRejectedValue(new Error("restore fail"));
+
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    const note = homePage.allNotes[0];
+    await homePage.handleNoteDelete(note);
+    await homePage.handleUndoRestore();
+
+    expect(notesApi.restoreNote).toHaveBeenCalledWith(note.id);
+  });
+
+  it("skips graph update when delta has no changes", async () => {
+    vi.mocked(preloadService.hasPreloadedData).mockReturnValue(true);
+    vi.mocked(preloadService.updateGraphWithDelta).mockResolvedValue({
+      added_nodes: [],
+      updated_nodes: [],
+      removed_nodes: [],
+      added_links: [],
+      removed_links: [],
+    } as any);
+    vi.mocked(preloadService.getPreloadedGraph).mockReturnValue({
+      nodes: [{ id: "n1" }],
+      links: [],
+      hash: "hash1",
+    } as any);
+
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    const graphBefore = homePage.graphData;
+    homePage.handleDeleteRequest("n1");
+    await homePage.handleDeleteConfirm();
+
+    expect(preloadService.updateGraphWithDelta).toHaveBeenCalled();
+    expect(homePage.graphData).toBe(graphBefore);
   });
 });

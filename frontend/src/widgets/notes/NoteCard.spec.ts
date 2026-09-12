@@ -172,4 +172,87 @@ describe("NoteCard", () => {
     expect(options.content).not.toContain('data-action="edit"');
     expect(options.content).not.toContain('data-action="delete"');
   });
+
+  it("calls onEdit and onDelete from tooltip buttons", async () => {
+    const onEdit = vi.fn();
+    const onDelete = vi.fn();
+    render(NoteCard, {
+      props: {
+        note: createNote(),
+        onEdit,
+        onDelete,
+        keywords: ["alpha", "beta"],
+        linkCount: 7,
+      },
+    });
+
+    await waitFor(() => expect(tippy).toHaveBeenCalled());
+
+    const [, options] = vi.mocked(tippy).mock.calls[0] as [unknown, { onShown: (i: { popper: HTMLElement }) => void }];
+    const popper = document.createElement("div");
+    popper.innerHTML = `
+      <button data-action="view">view</button>
+      <button data-action="edit">edit</button>
+      <button data-action="delete">delete</button>
+    `;
+    options.onShown({ popper });
+
+    const editBtn = popper.querySelector('[data-action="edit"]') as HTMLElement;
+    const deleteBtn = popper.querySelector('[data-action="delete"]') as HTMLElement;
+
+    await fireEvent.click(editBtn);
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ title: "Test Note Title" }));
+
+    await fireEvent.click(deleteBtn);
+    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ title: "Test Note Title" }));
+  });
+
+  it("navigates to note on click when no onClick provided", async () => {
+    const { goto } = await import("$app/navigation");
+    render(NoteCard, { props: { note: createNote() } });
+
+    const card = document.querySelector(".note-card");
+    await fireEvent.click(card!);
+
+    expect(goto).toHaveBeenCalledWith("/notes/123e4567-e89b-12d3-a456-426614174000");
+  });
+
+  it("handles Enter and Space keys", async () => {
+    const onClick = vi.fn();
+    render(NoteCard, { props: { note: createNote(), onClick } });
+
+    const card = document.querySelector(".note-card") as HTMLElement;
+    await fireEvent.keyDown(card, { key: "Enter" });
+    expect(onClick).toHaveBeenCalled();
+
+    onClick.mockClear();
+    await fireEvent.keyDown(card, { key: " " });
+    expect(onClick).toHaveBeenCalled();
+  });
+
+  it("highlights query in title and content", () => {
+    const note = createNote({ title: "Highlighted title", content: "Highlighted content" });
+    render(NoteCard, { props: { note, highlightQuery: "highlight" } });
+
+    const title = screen.getByTestId("note-title");
+    const content = screen.getByTestId("note-content");
+
+    expect(title.innerHTML).toContain("<mark>");
+    expect(content.innerHTML).toContain("<mark>");
+  });
+
+  it("shows public and keyword indicators", async () => {
+    const note = createNote({ is_public: true, type: "comet" });
+    const { container } = render(NoteCard, {
+      props: { note, keywords: ["tag1", "tag2"], linkCount: 3 },
+    });
+
+    expect(container.querySelector(".note-card__public")).toBeInTheDocument();
+
+    await waitFor(() => expect(tippy).toHaveBeenCalled());
+
+    const [, options] = vi.mocked(tippy).mock.calls[0] as [unknown, { content: string }];
+    expect(options.content).toContain("tag1");
+    expect(options.content).toContain('data-action="view"');
+  });
 });

@@ -394,7 +394,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
    - `ky` v1.7+ адаптирован: хуки принимают state-объект (`{ request }` / `{ request, response }`), `prefixUrl` заменён на `prefix`.
    - Моки Vitest 5 приведены к конструируемым `function`-реализациям (`ResizeObserver`, `THREE.WebGLRenderer` и др.).
    - `npm run lint`, `npm run check`, `npm run test:unit` — зелёные (1172 тестов), но `npm run test:coverage` падает: statements 69.37%, functions 69.25%, branches 60.83% (порог 70%); `lines` прошёл — 73.11%.
-   - FE-COVERAGE-1: покрыты API (`notes.ts`, `links.ts`, `sharing.ts`), `client.ts`, `graph.svelte.ts`, `auth.svelte.test.ts` (updateUserInfo/SKIP_AUTH), `overlay.svelte`, `CockpitNoteDetails`, `CockpitPanel`, `FloatingAuthPanel`, `QuickCaptureWidget` (18 тестов) и `home-page.svelte.ts` (16 тестов). `lines` 73.11% прошёл. statements/functions на 0.63/0.75 pp от 70%, branches на 9.17 pp. Основной зазор — `src/routes/**`, `home-page.svelte.ts`, `NoteCard.svelte`, `GraphCanvas.svelte`, `AuthCard.svelte`, `QuickCaptureWidget.svelte`.
+   - FE-COVERAGE-1: покрыты API (`notes.ts`, `links.ts`, `sharing.ts`), `client.ts`, `graph.svelte.ts`, `auth.svelte.test.ts` (updateUserInfo/SKIP_AUTH), `overlay.svelte`, `CockpitNoteDetails`, `CockpitPanel`, `FloatingAuthPanel`, `QuickCaptureWidget` (18 тестов), `home-page.svelte.ts` (23 теста), `NoteCard` (19 тестов), `AuthCard` (8 тестов), `graphUtils`. `lines` 73.83% и `functions` 70% прошли. statements 69.98% (на 0.02 pp ниже 70%), branches 61.5% (на 8.5 pp ниже 70%). Основной зазор — `src/routes/**` (`+page.svelte`, `+layout.svelte`), `GraphCanvas.svelte`, `Graph3DViewer.svelte`, `CockpitPanel.svelte`, `QuickCaptureWidget.svelte`, остатки `home-page.svelte.ts`.
 
 ---
 
@@ -421,7 +421,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **Фаза:** Alpha → Beta.
 - **Стабильность:** критических проблем нет.
 - **Регрессионное тестирование:** 11/14 частей пройдено.
-- **Покрытие тестами:** 1172 frontend unit-тестов проходят, `lines` 73.11% прошёл; statements 69.37%, functions 69.25%, branches 60.83% всё ещё ниже 70% — в работе FE-COVERAGE-1. Backend unit-тесты — все проходят.
+- **Покрытие тестами:** 1179 frontend unit-тестов проходят, `lines` 73.83% и `functions` 70% прошли; statements 69.98%, branches 61.5% всё ещё ниже 70% — в работе FE-COVERAGE-1. Backend unit-тесты — все проходят.
 - **Готовность к production:** ожидает финальных проверок (E2E, интеграция, CI/CD).
 
 ### Текущий фокус — уже выполнено
