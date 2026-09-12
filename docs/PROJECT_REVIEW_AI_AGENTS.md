@@ -801,7 +801,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 ## 21. Dependabot PR — итоговая разборка (#21–#32, #38–#40, #56–#63, #68, #70–#77), 2026-09-12
 
-Все Dependabot-PR обработаны, кроме **#25**. Замёржены: #21–#23, #24, #26, #27, #28, #29, #30, #31, #38, #56, #57, #60, #61, #62, #63. Закрыты как дублирующие/устаревшие: #32 (дублирует #28), #39, #40, #58, #59 (вошли в консолидированный PR #68). После фикса CI (PR #78) пришла новая волна Dependabot-PR: #70–#77 и **#79** (`nltk`) — все смержены. **#25** (`yake`) — отклонён в пользу замены на `keybert` (MIT) с лемматизацией.
+Все Dependabot-PR обработаны, кроме **#25**. Замёржены: #21–#23, #24, #26, #27, #28, #29, #30, #31, #38, #56, #57, #60, #61, #62, #63. Закрыты как дублирующие/устаревшие: #32 (дублирует #28), #39, #40, #58, #59 (вошли в консолидированный PR #68). После фикса CI (PR #78) пришла новая волна Dependabot-PR: #70–#77 и **#79** (`nltk`) — все смержены. **#85** (`go_modules`) — смержен. **#25** (`yake`) — отклонён в пользу замены на `keybert` (MIT) с лемматизацией.
 
 | # | Область | Зависимость | С | По | Риск | Итог |
 |---|---|---|---|---|---|---|
@@ -837,6 +837,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 || #75 | frontend npm | `svelte` | 5.55.5 | 5.57.0 | Средний | ✅ замёржен |
 || #76 | root npm | `brace-expansion` | 1.1.14 | 1.1.18 | Низкий | ✅ замёржен |
 || #77 | root npm | `postcss` | 8.5.14 | 8.5.28 | Низкий | ✅ замёржен |
+|| #85 | backend Go | `go_modules` (`edwards25519`, `moby/go-archive`, `quic-go`) | — | — | Средний-высокий | ✅ замёржен — закрыты алерты GHSA-hfg8-hc9c-6c3h, GHSA-vvgj-x9jq-8cj9, GHSA-fw7p-63qq-7hpr |
 || #79 | NLP Python | `nltk` | 3.8.1 | 3.10.3 | Средний | ✅ замёржен — `allow-ghsas: GHSA-8mgp-746c-j5xp` принят и задокументирован; см. [`tasks/DEPENDABOT-79-nltk-vulnerability.md`](tasks/DEPENDABOT-79-nltk-vulnerability.md) |
 
 **Порядок действий (выполнен):**
@@ -848,7 +849,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 5. ✅ NLP (#56, #27, #29, #31); #79 смержен; #25 отклонён — будет замена на `keybert` с лемматизацией.
 6. ✅ Graph-service (#38, #57, #60, #61) — squash-merge; конфликтующие #39/#40/#58/#59 объединены в PR #68 и смержены.
 7. ✅ CI fix (PR #78) — починен запуск Core Checks (`permissions:`, `environment:` для `run-name`, `smoke` env, `needs` для smoke).
-8. ✅ Новая волна Dependabot (#70–#77) и #79 (`nltk`) — все смержены после фикса CI.
+8. ✅ Новая волна Dependabot (#70–#77), #79 (`nltk`) и #85 (`go_modules`) — все смержены после фикса CI.
 
 **Следующий шаг:**
 - **#25** (`yake`): отклонён — вместо обновления `yake` до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ). PR #25 закрыт, `yake` остаётся 0.4.8. Подробности: [`tasks/DEPENDABOT-25-yake-license.md`](tasks/DEPENDABOT-25-yake-license.md), [`tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md`](tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md).
@@ -955,6 +956,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 || #75 | frontend npm | `svelte` | 5.55.5 | 5.57.0 | ✅ замёржен |
 || #76 | root npm | `brace-expansion` | 1.1.14 | 1.1.18 | ✅ замёржен |
 || #77 | root npm | `postcss` | 8.5.14 | 8.5.28 | ✅ замёржен |
+|| #85 | backend Go | `go_modules` (`edwards25519`, `moby/go-archive`, `quic-go`) | — | — | ✅ замёржен — закрыты GHSA-hfg8-hc9c-6c3h, GHSA-vvgj-x9jq-8cj9, GHSA-fw7p-63qq-7hpr |
 || #79 | NLP Python | `nltk` | 3.8.1 | 3.10.3 | ✅ замёржен — `allow-ghsas: GHSA-8mgp-746c-j5xp` |
 
 - Каждый PR был обновлён до актуального `main` и прогнан с фиксом CI.
