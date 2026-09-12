@@ -1,5 +1,18 @@
 # SECURITY-1: настройки GitHub, Dependabot и порядок чинить security-алерты
 
+## Статус (2026-09-12)
+
+| Этап | Статус | Примечание |
+|---|---|---|
+| Branch ruleset `main` | ✅ активен | Ruleset ID `23024343`, target `main`, 1 approval, status checks, block force-push/deletion |
+| `.github/dependabot.yml` | ✅ обновлён | Убраны blanket-major-игноры, добавлены `services/graph-service` и root `npm`, группировка |
+| Workflow permissions | ✅ добавлен `permissions:` | `_core-checks.yml`, `frontend-tests.yml`, `ci.yml`, `security.yml` ограничены `contents: read` (+ `actions: write` где нужно) |
+| #50 SSRF | ✅ принят риск | Dismissed в CodeQL как `won't fix` по решению владельца |
+| #51 weak hashing | 🔄 на ревью | API-ключи перешли на Argon2id; токен `id:secret`, хранится Argon2-хеш; тесты проходят; ожидает мёрджа и повторного скана CodeQL |
+| #49 cookie Secure | ⏳ в очереди |  |
+| #52/#53 front-end sanitization | ⏳ в очереди |  |
+| #54 workflow permissions | 🔄 на ревью | Добавлены `permissions:`, но CodeQL скан ещё не перезапущен на `main` |
+
 ## Цель
 После включения Dependency graph, Dependabot alerts, CodeQL и Secret Protection появился пул задач по безопасности. Этот файл — порядок настройки и фикса, чтобы Claude и Devin не теряли контекст.
 
@@ -93,8 +106,13 @@
 
 ### Этап 3: CodeQL fixes
 1. **#49** — cookie `Secure` in `auth/handler.go`.
-2. **#50** — SSRF in `import_fetcher.go`.
-3. **#51** — weak hashing in `apikey.go` / `user/handler.go`.
+2. **#50** — SSRF in `import_fetcher.go` — ✅ dismissed как `won't fix` по решению владельца.
+3. **#51** — weak hashing in `apikey.go` / `user/handler.go` — 🔄 реализовано на ветке `security/findings`:
+   - `user/handler.go:CreateAPIKey` теперь хеширует секрет API-ключа через `auth.HashPassword` (Argon2id).
+   - `middleware/apikey.go` принимает токен формата `<id>:<secret>`, ищет ключ по `id`, проверяет `secret` через `auth.VerifyPassword`.
+   - `APIKeyRepository.FindActiveByHash` заменён на `FindActiveByID`; репозиторий и интерфейс обновлены.
+   - Добавлены unit-тесты на валидный, невалидный и malformed токен.
+   - ⚠️ Это **breaking change** для существующих API-ключей: старые SHA-256-хеши не проверятся, ключи нужно пересоздать. Формат токена изменился с `uuid` на `uuid:secret`.
 4. **#52** — `extract-urls.ts` sanitization.
 5. **#53** — `check-core-workflow-sync.mjs` escaping.
 

@@ -385,6 +385,8 @@ interfaces/api/  → Gin handlers, middleware, DTOs
    - **#44–#48** — Dependabot alerts по манифестам (`backend/go.mod`, `services/graph-service/go.mod`, `package-lock.json`, `frontend/package-lock.json`, `nlp-service/requirements.txt`). Всего 148 алертов: 16 critical, 74 high, 49 medium, 9 low.
    - **#49–#54** — CodeQL alerts (cookie Secure, SSRF в `import_fetcher.go`, weak hashing, `extract-urls.ts`, `check-core-workflow-sync.mjs`, workflow permissions).
 
+   **Состояние 2026-09-12:** ruleset `main` активен (ID `23024343`), blanket-major-игноры убраны из `dependabot.yml`, `services/graph-service` и root `npm` добавлены, `permissions:` добавлены в `_core-checks.yml`, `frontend-tests.yml`, `ci.yml`, `security.yml`. #50 dismissed как `won't fix`. #51 (API-key Argon2id) реализован на ветке `security/findings`, проходят unit-тесты, ждёт мёрджа и повторного скана CodeQL.
+
 ---
 
 ## 12. Ключевые файлы для быстрого старта

@@ -27,9 +27,9 @@ import (
 // NoteHandlerSemanticIntegrationTestSuite verifies the note-card
 // "semantically similar" fallback against a real pgvector database.
 // This is a regression test for two defects found manually:
-//   1. SQL alias mismatch in EmbeddingRepository.FindSimilarNotes
-//      ("similarity" alias while GORM expected "score").
-//   2. Missing title lookup in the semantic fallback of GetSuggestions.
+//  1. SQL alias mismatch in EmbeddingRepository.FindSimilarNotes
+//     ("similarity" alias while GORM expected "score").
+//  2. Missing title lookup in the semantic fallback of GetSuggestions.
 type NoteHandlerSemanticIntegrationTestSuite struct {
 	suite.Suite
 	db            *gorm.DB
