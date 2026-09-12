@@ -799,49 +799,47 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
 - Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d`, `5acc40d`, `ff65307`, `af2f957`, `49c4e67` и все последующие до слияния.
 
-## 21. Открытые Dependabot PR (#21–#32, #38–#40, #56–#63), 2026-09-12
+## 21. Dependabot PR — итоговая разборка (#21–#32, #38–#40, #56–#63, #68), 2026-09-12
 
-Всего 23 Dependabot PR. Замёржены: #21–#23, #24, #26, #28, #30, #62. #32 закрыт как дублирующий #28. #63 заблокирован. Остаются #25, #27, #29, #31, #38–#40, #56–#61.
+Все Dependabot-PR обработаны. Замёржены: #21–#23, #24, #26, #27, #28, #29, #30, #31, #38, #56, #57, #60, #61, #62, #63. Закрыты как дублирующие/устаревшие: #32 (дублирует #28), #39, #40, #58, #59 (вошли в консолидированный PR #68). Остаётся **#25** (`yake`) — блокер по лицензии, требует решения владельца.
 
-| # | Область | Зависимость | С | По | Риск | Рекомендация |
+| # | Область | Зависимость | С | По | Риск | Итог |
 |---|---|---|---|---|---|---|
 | #21 | CI Actions | `actions/setup-python` | 6 | 7 | Низкий | ✅ замёржен |
 | #22 | CI Actions | `actions/setup-go` | 6 | 7 | Низкий | ✅ замёржен |
 | #23 | CI Actions | `actions/checkout` | 5 | 7 | Низкий | ✅ замёржен |
 | #62 | root npm | grouped (7 updates) | — | — | Средний | ✅ замёржен |
-| #63 | frontend npm | grouped (17 updates) | — | — | Средний-высокий | ❌ заблокирован: `eslint` 10 peer conflict + `jsdom@30` требует Node ≥22.22.2; нужен fix или исключить `eslint` major |
+| #63 | frontend npm | grouped (17 updates) | — | — | Средний-высокий | ✅ замёржен после фиксов `eslint`/`jsdom`/покрытия; `test:unit` 1381/1381, `test:coverage` lines 83.62%, branches 70.04% |
 | #24 | backend Go | `golang.org/x/net` | 0.52.0 | 0.58.0 | Средний | ✅ замёржен (merge-конфликт go.mod разрешён, `go test -p 1 ./...` pass) |
 | #26 | backend Go | `go-redis/v9` | 9.14.1 | 9.22.0 | Средний | ✅ замёржен |
 | #28 | backend Go | `testcontainers-go/modules/postgres` | 0.40.0 | 0.44.0 | Средний-высокий | ✅ замёржен (разрешён конфликт go.mod, `go test -p 1 ./...` pass) |
 | #30 | backend Go | `pgvector-go` | 0.2.0 | 0.4.1 | Средний | ✅ замёржен (разрешён конфликт go.mod, `go test -p 1 ./...` pass) |
-| #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий | ❌ закрыт как дублирующий #28 (testcontainers-go уже обновлён до 0.44.0) |
-| #56 | NLP Python | `httpx` | 0.25.2 | 0.28.1 | Низкий-средний | `pytest`; FastAPI/httpx совместимость |
-| #25 | NLP Python | `yake` | 0.4.8 | 0.7.3 | Средний | `pytest`; keyword extraction |
-| #27 | NLP Python | `python-dotenv` | 1.0.0 | 1.2.3 | Низкий | Безопасно группировать с NLP |
-| #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний | `pytest`; FastAPI/Pydantic v2 |
-| #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий | Сравнить вывод embeddings; возможно, пересчёт |
-| #57 | graph-service | `go-redis/v9` | 9.5.5 | 9.22.0 | Средний | Проверить v9 API; `go test` в `services/graph-service` |
-| #58 | graph-service | `testcontainers-go/modules/postgres` | 0.35.0 | 0.44.0 | Средний-высокий | Запустить graph-service integration |
-| #59 | graph-service | `testcontainers-go` | 0.35.0 | 0.44.0 | Средний-высокий | Запустить graph-service integration |
-| #60 | graph-service | `testify` | 1.11.1 | 1.12.1 | Низкий | `go test` в `services/graph-service` |
-| #61 | graph-service | `protobuf` | 1.34.2 | 1.36.12 | Средний | Проверить gRPC/protobuf совместимость |
-| #38 | graph-service | `pgx/v5` | 5.7.2 | 5.9.2 | Средний | `go test` в `services/graph-service`; проверить pgvector |
-| #39 | graph-service | `grpc` | 1.67.0 | 1.83.2 | Средний-высокий | Запустить graph-service integration; проверить совместимость с backend |
-| #40 | graph-service | `containerd` | 1.7.18 | 1.7.35 | Средний | Transitive; пересобрать образ graph-service |
+| #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий | ❌ закрыт как дублирующий #28 |
+| #56 | NLP Python | `httpx` | 0.25.2 | 0.28.1 | Низкий-средний | ✅ замёржен |
+| #25 | NLP Python | `yake` | 0.4.8 | 0.7.3 | Средний | ❌ открыт / **заблокирован** по лицензии `AGPL-3.0-only AND AGPL-3.0-or-later AND LGPL-3.0-or-later` |
+| #27 | NLP Python | `python-dotenv` | 1.0.0 | 1.2.3 | Низкий | ✅ замёржен |
+| #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний | ✅ замёржен |
+| #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий | ✅ замёржен; пересчёт embeddings не потребовался |
+| #57 | graph-service | `go-redis/v9` | 9.5.5 | 9.22.0 | Средний | ✅ замёржен |
+| #60 | graph-service | `testify` | 1.11.1 | 1.12.1 | Низкий | ✅ замёржен |
+| #61 | graph-service | `protobuf` | 1.34.2 | 1.36.12 | Средний | ✅ замёржен |
+| #38 | graph-service | `pgx/v5` | 5.7.2 | 5.9.2 | Средний | ✅ замёржен |
+| #68 | graph-service | консолидированный PR (#39/#40/#58/#59) | — | — | Средний-высокий | ✅ замёржен; обновлены `grpc`, `containerd`, `testcontainers-go`, `moby/go-archive v0.3.3` (fix GHSA-hfg8-hc9c-6c3h / CVE-2026-17106); в `allow-licenses` добавлен `LicenseRef-scancode-google-patent-license-golang` |
+| #39 | graph-service | `grpc` | 1.67.0 | 1.83.2 | Средний-высокий | ❌ закрыт — вошёл в #68 |
+| #40 | graph-service | `containerd` | 1.7.18 | 1.7.35 | Средний | ❌ закрыт — вошёл в #68 |
+| #58 | graph-service | `testcontainers-go/modules/postgres` | 0.35.0 | 0.44.0 | Средний-высокий | ❌ закрыт — вошёл в #68 |
+| #59 | graph-service | `testcontainers-go` | 0.35.0 | 0.44.0 | Средний-высокий | ❌ закрыт — вошёл в #68 |
 
-**Порядок действий:**
+**Порядок действий (выполнен):**
 
-1. Не закрывать все сразу — каждый PR либо мержится, либо отклоняется осознанно.
-2. Объединить по группам, от низкого к высокому риску:
-   - **CI Actions** (#21–#23) — ✅ мёрж.
-   - **Root npm** (#62) — ✅ мёрж; **frontend npm** (#63) — нужен fix `eslint`/`jsdom`.
-   - **Go-бэкенд** (#24, #26, #28, #30) — ✅ мёрж; #32 закрыт.
-   - **Graph-service** (#57–#61, #38–#40) — следующая очередь.
-   - **NLP** (#25, #27, #29, #31, #56); #31 отдельно из-за embeddings.
-3. Внутри группы мержить по цепочке с `gh pr merge --rebase` или через GitHub; Dependabot предложит rebase следующих.
-4. Перед merge каждой группы — `go test ./...` и `go test -tags=integration ./...` (backend), `go test ./...` в `services/graph-service` (graph-service), `pytest` (NLP), `npm run check`/`test:unit` (frontend/Actions — CI достаточно).
-5. `sentence-transformers` (#31) — самый рискованный; выделить отдельный раунд с замером embeddings.
-6. Действие по умолчанию: держать открытыми до следующего раунда CI/ревью, либо закрыть только явно отклонённые/устаревшие.
+1. ✅ CI Actions (#21–#23) — squash-merge.
+2. ✅ Root npm (#62) — squash-merge.
+3. ✅ Frontend npm (#63) — fixed `eslint`/`jsdom`/coverage, squash-merge.
+4. ✅ Backend Go (#24, #26, #28, #30); #32 закрыт.
+5. ✅ NLP (#56, #27, #29, #31); #25 открыт, требует решения по лицензии.
+6. ✅ Graph-service (#38, #57, #60, #61) — squash-merge; конфликтующие #39/#40/#58/#59 объединены в PR #68 и смержены.
+
+**Следующий шаг:** решить судьбу **#25** (`yake`): либо добавить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action`, либо оставить `yake 0.4.8` и закрыть PR.
 
 ## 22. Правки CI под PR #36, 2026-09-11
 

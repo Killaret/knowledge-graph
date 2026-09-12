@@ -140,14 +140,11 @@ describe("detectDeviceCapabilities browser path", () => {
       }),
     } as unknown as WebGLRenderingContext;
 
-    vi.stubGlobal(
-      "document",
-      {
-        createElement: vi.fn().mockReturnValue({
-          getContext: vi.fn((type: string) => (type === "webgl" ? gl : null)),
-        }),
-      }
-    );
+    vi.stubGlobal("document", {
+      createElement: vi.fn().mockReturnValue({
+        getContext: vi.fn((type: string) => (type === "webgl" ? gl : null)),
+      }),
+    });
   }
 
   it("detects high-end desktop GPU", () => {
@@ -209,14 +206,11 @@ describe("detectDeviceCapabilities browser path", () => {
   });
 
   it("falls back to medium when WebGL is unavailable", () => {
-    vi.stubGlobal(
-      "document",
-      {
-        createElement: vi.fn().mockReturnValue({
-          getContext: vi.fn().mockReturnValue(null),
-        }),
-      }
-    );
+    vi.stubGlobal("document", {
+      createElement: vi.fn().mockReturnValue({
+        getContext: vi.fn().mockReturnValue(null),
+      }),
+    });
     vi.stubGlobal("window", { ...window, innerWidth: 1920, devicePixelRatio: 1 });
 
     const caps = detectDeviceCapabilities();
