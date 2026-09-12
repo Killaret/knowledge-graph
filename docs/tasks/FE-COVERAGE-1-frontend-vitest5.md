@@ -208,11 +208,12 @@ npm run test:coverage
 | [#31](https://github.com/Killaret/knowledge-graph/pull/31) | **MERGED** | sentence-transformers 2.2.2 → 2.7.0. |
 | [#29](https://github.com/Killaret/knowledge-graph/pull/29) | **MERGED** | pydantic 2.5.2 → 2.13.5. |
 | [#27](https://github.com/Killaret/knowledge-graph/pull/27) | **MERGED** | python-dotenv 1.0.0 → 1.2.3. |
-| [#38](https://github.com/Killaret/knowledge-graph/pull/38) | **REBASED / CI PENDING** | pgx/v5 5.7.2 → 5.9.2, `go mod tidy` выполнен. |
-| [#39](https://github.com/Killaret/knowledge-graph/pull/39) | **CONFLICTING** | grpc 1.67.0 → 1.83.2, требует ручного rebase. |
-| [#40](https://github.com/Killaret/knowledge-graph/pull/40) | **CONFLICTING** | containerd 1.7.18 → 1.7.35, требует ручного rebase. |
-| [#58](https://github.com/Killaret/knowledge-graph/pull/58) | **UNSTABLE / MERGEABLE** | testcontainers-go/modules/postgres, Dependency Review. |
-| [#59](https://github.com/Killaret/knowledge-graph/pull/59) | **UNSTABLE / MERGEABLE** | testcontainers-go, Dependency Review. |
-| [#25](https://github.com/Killaret/knowledge-graph/pull/25) | **REBASED / FAILING** | yake 0.4.8 → 0.7.3, **Dependency Review fails по лицензии** `yake 0.7.3` = `AGPL-3.0-only AND AGPL-3.0-or-later AND LGPL-3.0-or-later`; [allow-licenses](https://github.com/Killaret/knowledge-graph/actions/runs/34708560386/job/103593000574#step:4:12) не включает AGPL/LGPL. |
+| [#38](https://github.com/Killaret/knowledge-graph/pull/38) | **MERGED** | pgx/v5 5.7.2 → 5.9.2, вошёл в `main` отдельно. |
+| [#39](https://github.com/Killaret/knowledge-graph/pull/39) | **CLOSED** | grpc 1.67.0 → 1.83.2, вошёл в консолидированный PR #68. |
+| [#40](https://github.com/Killaret/knowledge-graph/pull/40) | **CLOSED** | containerd 1.7.18 → 1.7.35, вошёл в консолидированный PR #68. |
+| [#58](https://github.com/Killaret/knowledge-graph/pull/58) | **CLOSED** | testcontainers-go/modules/postgres 0.35.0 → 0.44.0, вошёл в консолидированный PR #68. |
+| [#59](https://github.com/Killaret/knowledge-graph/pull/59) | **CLOSED** | testcontainers-go 0.35.0 → 0.44.0, вошёл в консолидированный PR #68. |
+| [#68](https://github.com/Killaret/knowledge-graph/pull/68) | **MERGED** | Консолидированный PR: graph-service deps + `github.com/moby/go-archive v0.3.3` (fix GHSA-hfg8-hc9c-6c3h / CVE-2026-17106). Добавлен `LicenseRef-scancode-google-patent-license-golang` в `allow-licenses`. |
+| [#25](https://github.com/Killaret/knowledge-graph/pull/25) | **OPEN / BLOCKED** | yake 0.4.8 → 0.7.3, **Dependency Review fails по лицензии** `yake 0.7.3` = `AGPL-3.0-only AND AGPL-3.0-or-later AND LGPL-3.0-or-later`; [allow-licenses](https://github.com/Killaret/knowledge-graph/actions/runs/34708560386/job/103593000574#step=4:12) не включает AGPL/LGPL. |
 
-**Блокер #25:** чтобы смержить `yake 0.7.3`, надо либо включить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action`, либо отказаться от обновления `yake`.
+**Блокер #25:** чтобы смержить `yake 0.7.3`, надо либо включить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action` (решение владельца по лицензионной политике), либо отказаться от обновления `yake`.

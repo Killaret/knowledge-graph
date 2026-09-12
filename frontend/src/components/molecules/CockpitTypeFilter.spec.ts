@@ -4,7 +4,13 @@ import CockpitTypeFilter from "./CockpitTypeFilter.svelte";
 
 describe("CockpitTypeFilter", () => {
   const filters = [
-    { id: "all", label: "All", emoji: "🔎", description: "Show all notes", example: "note, bookmark" },
+    {
+      id: "all",
+      label: "All",
+      emoji: "🔎",
+      description: "Show all notes",
+      example: "note, bookmark",
+    },
     { id: "note", label: "Notes", emoji: "📝" },
     { id: "bookmark", label: "Bookmarks", emoji: "📑", example: "https://example.com" },
   ];
