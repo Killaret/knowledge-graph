@@ -51,7 +51,12 @@ describe("GraphTopBar", () => {
   it("shows layout provider toggle only in 3d view", () => {
     const onToggleLayoutProvider = vi.fn();
     const { rerender } = render(GraphTopBar, {
-      props: { isAuthenticated: true, currentView: "graph", layoutProvider: "d3", onToggleLayoutProvider },
+      props: {
+        isAuthenticated: true,
+        currentView: "graph",
+        layoutProvider: "d3",
+        onToggleLayoutProvider,
+      },
     });
 
     expect(screen.queryByTestId("layout-provider-d3")).not.toBeInTheDocument();

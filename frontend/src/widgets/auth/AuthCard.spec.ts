@@ -147,9 +147,7 @@ describe("AuthCard", () => {
 
     render(AuthCard, { props: { title: "Login", showIcon: true } });
 
-    await waitFor(() =>
-      expect(getGraphWithPreload).toHaveBeenCalledWith(100)
-    );
+    await waitFor(() => expect(getGraphWithPreload).toHaveBeenCalledWith(100));
     expect(consoleWarn).toHaveBeenCalled();
 
     consoleWarn.mockRestore();

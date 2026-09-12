@@ -266,7 +266,18 @@ describe("PreloadService (real)", () => {
 
   it("returns preloaded achievements when fresh and null when expired", () => {
     (PreloadService as any).preloadedAchievements = {
-      achievements: [{ id: "a1", code: "first", title: "First", description: "", icon: "⭐", points: 1, earned: false, is_hidden: false }],
+      achievements: [
+        {
+          id: "a1",
+          code: "first",
+          title: "First",
+          description: "",
+          icon: "⭐",
+          points: 1,
+          earned: false,
+          is_hidden: false,
+        },
+      ],
       timestamp: Date.now(),
       ttl: 5 * 60 * 1000,
     };
@@ -284,7 +295,18 @@ describe("PreloadService (real)", () => {
       ttl: 5 * 60 * 1000,
     };
     (PreloadService as any).preloadedAchievements = {
-      achievements: [{ id: "a1", code: "first", title: "First", description: "", icon: "⭐", points: 1, earned: false, is_hidden: false }],
+      achievements: [
+        {
+          id: "a1",
+          code: "first",
+          title: "First",
+          description: "",
+          icon: "⭐",
+          points: 1,
+          earned: false,
+          is_hidden: false,
+        },
+      ],
       timestamp: Date.now(),
       ttl: 5 * 60 * 1000,
     };
@@ -323,7 +345,9 @@ describe("PreloadService (real)", () => {
   it("skips authenticated preload when an in-flight auth preload is already non-public", async () => {
     let resolveAuth: (value: any) => void = () => {};
     mockAuth.isAuthenticated.mockReturnValue(true);
-    mockGraphApi.getFullGraphData.mockImplementationOnce(() => new Promise((r) => (resolveAuth = r)));
+    mockGraphApi.getFullGraphData.mockImplementationOnce(
+      () => new Promise((r) => (resolveAuth = r))
+    );
 
     const auth1 = PreloadService.preloadAuthenticatedGraph();
     const auth2 = PreloadService.preloadAuthenticatedGraph();
