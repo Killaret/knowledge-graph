@@ -102,10 +102,11 @@ func (h *Handler) setAuthCookies(c *gin.Context, accessToken, refreshToken strin
 
 // clearAuthCookies clears the auth cookies.
 func (h *Handler) clearAuthCookies(c *gin.Context) {
+	secure := isSecureRequest(c)
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie(accessTokenCookieName, "", -1, "/", "", false, true)
+	c.SetCookie(accessTokenCookieName, "", -1, "/", "", secure, true)
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie(refreshTokenCookieName, "", -1, "/", "", false, true)
+	c.SetCookie(refreshTokenCookieName, "", -1, "/", "", secure, true)
 }
 
 // RegisterRequest represents a registration request

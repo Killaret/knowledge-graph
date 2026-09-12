@@ -5,18 +5,15 @@
 
 ## Что человек должен настроить в UI GitHub
 
-### 1. Branch protection for `main`
-- `Settings → Branches → Add rule`
-- Branch name pattern: `main`
-- Включить:
-  - `Require a pull request before merging`
-  - `Require approvals: 1`
+### 1. Branch ruleset for `main` — статус
+- Ruleset `main` создан и активен.
+- **Но `Target branches` пустой**: нужно нажать `Add target → Include by pattern: main`, иначе правило не применяется.
+- Проверить, что включены:
+  - `Require a pull request before merging` (1 approval)
   - `Dismiss stale PR approvals when new commits are pushed`
-  - `Require status checks to pass before merging` (выбрать `Core Checks`, `Smoke Tests`, `Frontend Tests`, `Security Audit`)
-  - `Require conversation resolution before merging`
-  - `Include administrators` (если хотим строго)
-  - `Do not allow bypass the above settings`
-  - `Restrict pushes that create files larger than 100MB` / `Block force pushes`
+  - `Require status checks to pass before merging`
+  - `Block force pushes`
+  - `Restrict deletions`
 
 ### 2. Dependabot rules (Security → Dependabot → Rules)
 - `Dismiss low-impact alerts for development-scoped dependencies` — оставить включённым.
@@ -71,6 +68,13 @@
 ```
 
 Также стоит убрать или ослабить `ignore` major-обновлений в `/frontend`, `/backend`, `/nlp-service`, чтобы security-патчи не прятались.
+
+## Решения владельца
+
+- **Ignore major version updates** в `.github/dependabot.yml` — убираем. Major-обновления разрешены, но мёрджатся вручную.
+- **#51 weak hashing** — переходим на **Argon2**.
+- **#50 SSRF в `import_fetcher.go`** — принимаем риск, ограничивать URL не нужно. Добавить комментарий/ADR: фича предназначена для загрузки произвольных публичных URL, current threat model не требует ограничений.
+- **Grouped security updates** — включить.
 
 ## Порядок чинить security-алерты и CodeQL
 

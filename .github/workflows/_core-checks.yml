@@ -3,6 +3,10 @@ name: Core Checks (Reusable)
 on:
   workflow_call:
 
+permissions:
+  contents: read
+  actions: write
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
