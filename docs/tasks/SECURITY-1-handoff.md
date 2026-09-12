@@ -117,8 +117,12 @@
 5. **#53** — `check-core-workflow-sync.mjs` escaping — ✅ реализовано: threshold экранируется перед вставкой в RegExp.
 
 ### Этап 4: верификация
-- После каждого PR: `go test ./...`, `npm run test:unit`, `npm run lint`, `npm audit`, `go list -m -u all`.
-- Перед мёрджем: `gh pr checks --watch` и `check-all` локально.
+- ✅ Focused backend tests: `go test ./internal/auth/... ./internal/domain/user/... ./internal/infrastructure/db/postgres/... ./internal/interfaces/api/middleware/... ./internal/interfaces/api/handlers/user/...` — зелёные.
+- ✅ Full backend tests с `-p 1` (Windows-лимит памяти): `go test -p 1 ./...` — зелёные.
+- ✅ Frontend unit test `extract-urls.test.ts` — 13/13 зелёные.
+- ✅ Frontend `npm run lint` — зелёные (только pre-existing warnings).
+- ✅ `check-core-workflow-sync.mjs` — `Workflow sync OK: 16 local phases match 16 CI steps.`
+- ⏳ Перед мёрджем: `gh pr checks --watch` и `check-all` локально.
 
 ## Ссылки
 - `docs/PROJECT_REVIEW_AI_AGENTS.md` §11 — общая сводка.
