@@ -158,7 +158,17 @@ describe("Search page", () => {
   it("handles pagination", async () => {
     const { page } = await import("$app/stores");
     mockSearchNotes.mockResolvedValue({
-      data: [{ id: "n1", title: "Note", content: "c", created_at: new Date().toISOString(), updated_at: new Date().toISOString(), metadata: { type: "star" }, type: "star" }],
+      data: [
+        {
+          id: "n1",
+          title: "Note",
+          content: "c",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          metadata: { type: "star" },
+          type: "star",
+        },
+      ],
       total: 3,
       totalPages: 3,
     });
@@ -218,7 +228,17 @@ describe("Search page", () => {
     const { page } = await import("$app/stores");
     mockIsAuthenticated.mockReturnValue(false);
     mockSearchNotes.mockResolvedValue({
-      data: [{ id: "n1", title: "Note", content: "c", created_at: new Date().toISOString(), updated_at: new Date().toISOString(), metadata: { type: "star" }, type: "star" }],
+      data: [
+        {
+          id: "n1",
+          title: "Note",
+          content: "c",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          metadata: { type: "star" },
+          type: "star",
+        },
+      ],
       total: 1,
       totalPages: 1,
     });
