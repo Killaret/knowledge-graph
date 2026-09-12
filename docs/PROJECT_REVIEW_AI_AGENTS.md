@@ -790,9 +790,9 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
 - Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d`, `5acc40d`, `ff65307`, `af2f957`, `49c4e67` и все последующие до слияния.
 
-## 21. Открытые Dependabot PR (#21–#32), 2026-09-11
+## 21. Открытые Dependabot PR (#21–#32, #38–#40), 2026-09-12
 
-Все 12 PR — реальные апгрейды, не закрыты автоматически основным. `go.mod` и `requirements.txt` на `main` до сих пор содержат старые версии.
+Всего 15 открытых Dependabot PR. #33 (frontend group), #34 (deploy docs), #35/#36 (UX-2) — замёржены. #37 не существует. `go.mod`, `requirements.txt`, `services/graph-service/go.mod` на `main` до сих пор содержат старые версии.
 
 | # | Область | Зависимость | С | По | Риск | Рекомендация |
 |---|---|---|---|---|---|---|
@@ -808,13 +808,16 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 | #21 | CI Actions | `actions/setup-python` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
 | #22 | CI Actions | `actions/setup-go` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
 | #23 | CI Actions | `actions/checkout` | 5 | 7 | Низкий-средний | Проверить workflow CI после merge |
+| #38 | graph-service | `pgx/v5` | 5.7.2 | 5.9.2 | Средний (pgx API, graph-service) | Запустить `go test` в `services/graph-service`; проверить gRPC/pgvector |
+| #39 | graph-service | `grpc` | 1.67.0 | 1.83.2 | Средний-высокий (minor, транспорт gRPC) | Запустить graph-service integration; проверить совместимость с backend |
+| #40 | graph-service | `containerd` | 1.7.18 | 1.7.35 | Средний (transitive, container runtime) | Группировать с #39; пересобрать образ graph-service |
 
 **Порядок действий:**
 
 1. Не закрывать все сразу — каждый PR либо мержится, либо отклоняется осознанно.
-2. Объединить по группам: Go-бэкенд (#24, #26, #28, #30, #32), NLP (#25, #27, #29, #31), GitHub Actions (#21, #22, #23).
+2. Объединить по группам: Go-бэкенд (#24, #26, #28, #30, #32), graph-service (#38, #39, #40), NLP (#25, #27, #29, #31), GitHub Actions (#21, #22, #23).
 3. Внутри группы мержить по цепочке с `gh pr merge --rebase` или через GitHub; Dependabot предложит rebase следующих.
-4. Перед merge каждой группы — `go test ./...`, `go test -tags=integration ./...`, `pytest` (NLP), `npm run check`/`test:unit` (для Actions не нужно, но прогнать CI).
+4. Перед merge каждой группы — `go test ./...` и `go test -tags=integration ./...` (backend), `go test ./...` в `services/graph-service` (graph-service), `pytest` (NLP), `npm run check`/`test:unit` (frontend/Actions — CI достаточно).
 5. `sentence-transformers` (#31) — самый рискованный; выделить отдельный раунд с замером embeddings.
 6. Действие по умолчанию: держать открытыми до следующего раунда CI/ревью, либо закрыть только явно отклонённые/устаревшие.
 
