@@ -103,10 +103,7 @@ describe("zoom-pan", () => {
 
   it("ignores nodes without x/y", () => {
     const transform = { x: 0, y: 0, k: 1 };
-    const simNodes = [
-      { id: "n1" },
-      { id: "n2" },
-    ];
+    const simNodes = [{ id: "n1" }, { id: "n2" }];
 
     resetViewToCenter(transform, 800, 600, simNodes as any);
 

@@ -131,7 +131,8 @@ describe("Home Page State", () => {
   async function getHomePage(): Promise<HomePageState> {
     render(TestHomePageHost);
     await waitFor(() => {
-      const state = (globalThis as unknown as { __TEST_HOME_PAGE?: HomePageState }).__TEST_HOME_PAGE;
+      const state = (globalThis as unknown as { __TEST_HOME_PAGE?: HomePageState })
+        .__TEST_HOME_PAGE;
       expect(state).toBeDefined();
     });
     return (globalThis as unknown as { __TEST_HOME_PAGE: HomePageState }).__TEST_HOME_PAGE;
@@ -309,7 +310,10 @@ describe("Home Page State", () => {
       links: [],
       hash: "h2",
     } as any);
-    vi.mocked(notesApi.getNotes).mockResolvedValue([...mockNotes, { id: "new", title: "New", type: "star" } as any]);
+    vi.mocked(notesApi.getNotes).mockResolvedValue([
+      ...mockNotes,
+      { id: "new", title: "New", type: "star" } as any,
+    ]);
 
     const homePage = await getHomePage();
     await waitFor(() => expect(homePage.loading).toBe(false));

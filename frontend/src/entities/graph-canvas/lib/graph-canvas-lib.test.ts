@@ -69,23 +69,50 @@ describe("fog", () => {
     const ctx = createCtx();
     const off = { ...defaultFogRenderParams(), enabled: false };
     drawFog(ctx as any, 100, 100, off);
-    const firstPerson = { ...defaultFogRenderParams(), enabled: true, mode: "first-person" as const };
+    const firstPerson = {
+      ...defaultFogRenderParams(),
+      enabled: true,
+      mode: "first-person" as const,
+    };
     drawFog(ctx as any, 100, 100, firstPerson);
     expect(ctx.fillRect).not.toHaveBeenCalled();
   });
 
   it("draws atmospheric and adaptive fog", () => {
     const ctx = createCtx();
-    const atmospheric = { ...defaultFogRenderParams(), enabled: true, mode: "atmospheric" as const, centerX: 50, centerY: 50, radius: 30, feather: 10, color: "rgba(0,0,0,0.5)" };
+    const atmospheric = {
+      ...defaultFogRenderParams(),
+      enabled: true,
+      mode: "atmospheric" as const,
+      centerX: 50,
+      centerY: 50,
+      radius: 30,
+      feather: 10,
+      color: "rgba(0,0,0,0.5)",
+    };
     drawFog(ctx as any, 100, 100, atmospheric);
-    const adaptive = { ...defaultFogRenderParams(), enabled: true, mode: "adaptive" as const, centerX: 50, centerY: 50, radius: 30, feather: 10, color: "rgba(0,0,0,0.5)" };
+    const adaptive = {
+      ...defaultFogRenderParams(),
+      enabled: true,
+      mode: "adaptive" as const,
+      centerX: 50,
+      centerY: 50,
+      radius: 30,
+      feather: 10,
+      color: "rgba(0,0,0,0.5)",
+    };
     drawFog(ctx as any, 100, 100, adaptive);
     expect(ctx.fillRect).toHaveBeenCalled();
   });
 
   it("draws nothing when the clear radius is non-positive", () => {
     const ctx = createCtx();
-    const p = { ...defaultFogRenderParams(), enabled: true, mode: "atmospheric" as const, radius: 0 };
+    const p = {
+      ...defaultFogRenderParams(),
+      enabled: true,
+      mode: "atmospheric" as const,
+      radius: 0,
+    };
     drawFog(ctx as any, 100, 100, p);
     expect(ctx.fillRect).not.toHaveBeenCalled();
   });
@@ -98,12 +125,16 @@ describe("fog", () => {
 
     const firstPerson = defaultFogRenderParams();
     firstPerson.mode = "first-person";
-    expect(createFogVisibilitySet([nodeA, nodeB], [link], 100, 100, transform, firstPerson).size).toBe(2);
+    expect(
+      createFogVisibilitySet([nodeA, nodeB], [link], 100, 100, transform, firstPerson).size
+    ).toBe(2);
 
     const off = defaultFogRenderParams();
     off.mode = "off";
     off.enabled = true;
-    expect(createFogVisibilitySet([nodeA, nodeB], [link], 100, 100, transform, off).size).toBeGreaterThanOrEqual(0);
+    expect(
+      createFogVisibilitySet([nodeA, nodeB], [link], 100, 100, transform, off).size
+    ).toBeGreaterThanOrEqual(0);
 
     const adaptive = defaultFogRenderParams();
     adaptive.mode = "adaptive";
