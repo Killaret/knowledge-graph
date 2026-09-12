@@ -248,7 +248,7 @@ jobs:
   nlp-checks:
     name: NLP Service Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: ./nlp-service
@@ -263,7 +263,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          # CPU-only torch index avoids the multi-gigabyte nvidia wheels that
+          # exceed the 10-minute job timeout on GitHub-hosted runners.
+          pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple -r requirements.txt
           pip install pytest pytest-asyncio
 
       - name: Check requirements exist

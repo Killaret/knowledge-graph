@@ -50,8 +50,7 @@
     name="content"
     placeholder={t("note.contentPlaceholderWiki")}
     bind:value={content}
-    rows="15"
-  ></textarea>
+    rows="15"></textarea>
   <button type="submit" disabled={saving}
     >{saving ? t("noteEditor.saving") : t("noteEditor.create")}</button
   >
