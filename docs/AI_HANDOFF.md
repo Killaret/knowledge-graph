@@ -119,7 +119,7 @@
 | Отключить MCP-коннекторы в настройках claude.ai | — | **снято с доски** — настройка аккаунта, репозитория не касается | 2026-09-07 |
 | DEPENDABOT-1: решение по 12 открытым Dependabot PR (#21–#32) | см. `PROJECT_REVIEW_AI_AGENTS.md` §20 | **ждёт решения владельца** — все PR реальные апгрейды, не закрыты основным; Devin разделил по риску и подготовил рекомендации | 2026-09-11 |
 | Удалить каталог `.kilo/` | — | **сделано** | 2026-09-07 |
-| **SECURITY-1:** настроить GitHub-защиту репозитория и решить по рискам; подробный порядок в `docs/tasks/SECURITY-1-handoff.md` | [`docs/tasks/SECURITY-1-handoff.md`](tasks/SECURITY-1-handoff.md), issues #41–#54 | **в работе** — ruleset `main` активен (ID `23024343`), Dependabot.yml обновлён, workflow permissions добавлены, #49 dismissed (mitigated), #50 dismissed, #51/#52/#53 реализованы, #54 ждёт повторного CodeQL-скана | 2026-09-12 |
+| **SECURITY-1:** настроить GitHub-защиту репозитория и решить по рискам; подробный порядок в `docs/tasks/SECURITY-1-handoff.md` | [`docs/tasks/SECURITY-1-handoff.md`](tasks/SECURITY-1-handoff.md), issues #41–#54 | **на ревью** — PR #55 (`security/findings`) создан: #51 Argon2id, #52/#53 front-end sanitization, #49 dismissed mitigated; #54 workflow permissions ждёт скана после мёрджа; остаётся review/merge + Dependabot PR | 2026-09-12 |
 
 ---
 

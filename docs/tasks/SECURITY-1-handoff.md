@@ -11,7 +11,7 @@
 | #51 weak hashing | ✅ реализовано | API-ключи перешли на Argon2id; токен `id:secret`, хранится Argon2-хеш; тесты проходят; ожидает мёрджа и повторного скана CodeQL |
 | #49 cookie Secure | ✅ оставлено как есть | Динамический Secure по `TLS`/`X-Forwarded-Proto`; CodeQL alerts #8/#9 dismissed как `mitigated` |
 | #52/#53 front-end sanitization | ✅ реализовано | `extract-urls.ts` — однопроходный декодер и повторяющаяся очистка тегов; `check-core-workflow-sync.mjs` — экранирование regex-метасимволов |
-| #54 workflow permissions | 🔄 на ревью | Добавлены `permissions:`, но CodeQL скан ещё не перезапущен на `main` |
+| #54 workflow permissions | ✅ реализовано | Добавлены `permissions:`; PR #55 запущен, CodeQL-скан перезапустится на `main` после мёрджа |
 
 ## Цель
 После включения Dependency graph, Dependabot alerts, CodeQL и Secret Protection появился пул задач по безопасности. Этот файл — порядок настройки и фикса, чтобы Claude и Devin не теряли контекст.
@@ -122,7 +122,7 @@
 - ✅ Frontend unit test `extract-urls.test.ts` — 13/13 зелёные.
 - ✅ Frontend `npm run lint` — зелёные (только pre-existing warnings).
 - ✅ `check-core-workflow-sync.mjs` — `Workflow sync OK: 16 local phases match 16 CI steps.`
-- ⏳ Перед мёрджем: `gh pr checks --watch` и `check-all` локально.
+- ⏳ Перед мёрджем: PR #55 создан, ожидается CI; затем `check-all` локально.
 
 ## Ссылки
 - `docs/PROJECT_REVIEW_AI_AGENTS.md` §11 — общая сводка.
