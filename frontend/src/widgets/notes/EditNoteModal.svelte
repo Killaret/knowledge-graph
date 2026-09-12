@@ -155,8 +155,7 @@
           placeholder={contentPlaceholder}
           rows="6"
           disabled={saving}
-          data-testid="edit-content-input"
-        ></textarea>
+          data-testid="edit-content-input"></textarea>
       </div>
 
       <div class="modal-footer">

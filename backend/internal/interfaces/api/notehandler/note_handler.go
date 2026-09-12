@@ -929,7 +929,7 @@ func (h *Handler) DeleteBatch(c *gin.Context) {
 				apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
 				return
 			}
-			if n != nil && !(authed && n.IsOwnedBy(userID)) {
+			if n != nil && (!authed || !n.IsOwnedBy(userID)) {
 				apicommon.NotFound(c, "Note")
 				return
 			}

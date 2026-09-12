@@ -39,7 +39,10 @@ function cleanUrl(raw: string): string {
 }
 
 function stripHtmlTags(raw: string): string {
-  return raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  return raw
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function extractUrlsFrom(text: string): string[] {
