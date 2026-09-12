@@ -393,8 +393,8 @@ interfaces/api/  → Gin handlers, middleware, DTOs
    - Из группы Dependabot исключены/откачены: `eslint` до `^9.39.5`, `@eslint/js` до `^9.22.0`, `typescript` до `^5.9.3` (ESLint 10 и TS 7 несовместимы с `eslint-plugin-jsx-a11y` и SvelteKit).
    - `ky` v1.7+ адаптирован: хуки принимают state-объект (`{ request }` / `{ request, response }`), `prefixUrl` заменён на `prefix`.
    - Моки Vitest 5 приведены к конструируемым `function`-реализациям (`ResizeObserver`, `THREE.WebGLRenderer` и др.).
-   - `npm run lint`, `npm run check`, `npm run test:unit` — зелёные (1113 тестов), но `npm run test:coverage` падает: statements 66.1%, functions 65.12%, branches 57.57% (порог 70%); `lines` прошёл — 70.00%.
-   - FE-COVERAGE-1: подняты API (`notes.ts`, `links.ts`, `sharing.ts`), `client.ts`, `graph.svelte.ts`, `auth.svelte.test.ts` (updateUserInfo/SKIP_AUTH) и компонент `overlay.svelte`. `lines` достиг 70.00% и прошёл. Оставшийся зазор в statements/functions/branches сосредоточен в `home-page.svelte.ts`, Svelte-компонентах (`CockpitPanel`, `CockpitNoteDetails`) и `src/routes/**`; `auth-init.svelte.test.ts` удалён, его сценарии перекрыты `auth.svelte.test.ts`.
+   - `npm run lint`, `npm run check`, `npm run test:unit` — зелёные (1172 тестов), но `npm run test:coverage` падает: statements 69.37%, functions 69.25%, branches 60.83% (порог 70%); `lines` прошёл — 73.11%.
+   - FE-COVERAGE-1: покрыты API (`notes.ts`, `links.ts`, `sharing.ts`), `client.ts`, `graph.svelte.ts`, `auth.svelte.test.ts` (updateUserInfo/SKIP_AUTH), `overlay.svelte`, `CockpitNoteDetails`, `CockpitPanel`, `FloatingAuthPanel`, `QuickCaptureWidget` (18 тестов) и `home-page.svelte.ts` (16 тестов). `lines` 73.11% прошёл. statements/functions на 0.63/0.75 pp от 70%, branches на 9.17 pp. Основной зазор — `src/routes/**`, `home-page.svelte.ts`, `NoteCard.svelte`, `GraphCanvas.svelte`, `AuthCard.svelte`, `QuickCaptureWidget.svelte`.
 
 ---
 
@@ -421,7 +421,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **Фаза:** Alpha → Beta.
 - **Стабильность:** критических проблем нет.
 - **Регрессионное тестирование:** 11/14 частей пройдено.
-- **Покрытие тестами:** 1113 frontend unit-тестов проходят, `lines` 70.00% прошёл; statements 66.1%, functions 65.12%, branches 57.57% всё ещё ниже 70% — в работе FE-COVERAGE-1. Backend unit-тесты — все проходят.
+- **Покрытие тестами:** 1172 frontend unit-тестов проходят, `lines` 73.11% прошёл; statements 69.37%, functions 69.25%, branches 60.83% всё ещё ниже 70% — в работе FE-COVERAGE-1. Backend unit-тесты — все проходят.
 - **Готовность к production:** ожидает финальных проверок (E2E, интеграция, CI/CD).
 
 ### Текущий фокус — уже выполнено

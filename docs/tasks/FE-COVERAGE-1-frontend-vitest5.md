@@ -108,6 +108,29 @@ npm run test:unit -- --run
 npm run test:coverage
 ```
 
+## Прогресс 2026-09-12 (четвёртая партия)
+
+- `npm run test:unit -- --run`: 1172/1172 passed.
+- `npm run check`: 0 errors, 0 warnings.
+- `npm run lint`: 0 errors, 3 pre-existing warnings.
+- `npm run test:coverage`:
+  - lines: 73.11% ✓
+  - statements: 69.37% (was 66.1%)
+  - functions: 69.25% (was 65.12%)
+  - branches: 60.83% (was 57.57%)
+- Добавлено/расширено:
+  - `frontend/src/widgets/cosmic-cockpit/CockpitNoteDetails.test.ts` — 15+ тестов на загрузку, редактирование, удаление, ссылки, время, навигацию.
+  - `frontend/src/widgets/cosmic-cockpit/CockpitPanel.spec.ts` — 24 теста на collapse/expand, drag, hover, pin, keyboard, reduced-motion.
+  - `frontend/src/widgets/floating-auth-panel/FloatingAuthPanel.spec.ts` — drag, close, tab, pointer, cleanup.
+  - `frontend/src/widgets/quick-capture/QuickCaptureWidget.spec.ts` — расширен до 18 тестов: docked-режим, submit, пустой ввод, ошибки, Ctrl/Meta+Enter, Escape, backdrop, readonly-ответ, success.
+  - `frontend/src/features/home-page/home-page.svelte.test.ts` — 16 тестов на `createHomePageState`: публичный граф, ошибки загрузки, delta-обновление, toggle layout, ошибка layout, batch-delete, child-note; + `__tests__/TestHomePageHost.svelte`.
+- Оставшийся зазор:
+  - statements не хватает 0.63 pp.
+  - functions не хватает 0.75 pp.
+  - branches не хватает 9.17 pp.
+  - Основные непокрытые области: `src/routes/**` (38% statements, 30% branches), `src/features/home-page/home-page.svelte.ts` (81.5% statements, 55.5% branches), `src/widgets/notes/NoteCard.svelte` (71% statements, 56% branches), `src/widgets/quick-capture/QuickCaptureWidget.svelte` (93% statements, 87% branches, 4 оставшиеся ветки), `src/widgets/graph-canvas/GraphCanvas.svelte` (81% statements, 60% branches), `src/widgets/auth/AuthCard.svelte` (81% statements, 50% branches).
+- Блокер: statements/functions на расстоянии < 1 pp от порога, но branch coverage остаётся значительно ниже 70%. Без тестирования оставшихся Svelte-компонентов и/или `src/routes/**` (или исключения route-файлов из unit-знаменателя) `npm run test:coverage` не пройдёт.
+
 ## Зависимости
 
 - Блокирует мерж PR #63 (`frontend-test` job в CI).

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/svelte";
+import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/svelte";
 import FloatingAuthPanel from "./FloatingAuthPanel.svelte";
+import { login } from "$shared/stores/auth.svelte";
 
 // Mock navigation
 vi.mock("$app/navigation", () => ({
@@ -16,6 +17,8 @@ vi.mock("$shared/stores/auth.svelte", () => ({
   error: vi.fn().mockReturnValue(null),
   isAuthenticated: vi.fn().mockReturnValue(false),
 }));
+
+
 
 describe("FloatingAuthPanel", () => {
   const baseProps = {
@@ -120,5 +123,37 @@ describe("FloatingAuthPanel", () => {
 
     const registerTab = await screen.findByTestId("floating-auth-tab-register");
     expect(registerTab).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("drags the panel by the header and clamps position to viewport", async () => {
+    render(FloatingAuthPanel, { props: baseProps });
+
+    const header = screen.getByTestId("floating-auth-drag-handle");
+    fireEvent.pointerDown(header, { clientX: 50, clientY: 50, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 200, clientY: 200, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+
+    const panel = screen.getByTestId("floating-auth-panel");
+    expect(panel.getAttribute("style")).toContain("translate(150px, 150px)");
+  });
+
+  it("calls onClose and onSuccess after a successful login", async () => {
+    vi.mocked(login).mockResolvedValueOnce(true);
+
+    const { container } = render(FloatingAuthPanel, { props: baseProps });
+
+    const loginInput = container.querySelector("#login") as HTMLInputElement;
+    const passwordInput = container.querySelector("#password") as HTMLInputElement;
+
+    await fireEvent.input(loginInput, { target: { value: "user" } });
+    await fireEvent.input(passwordInput, { target: { value: "secret" } });
+
+    const submit = screen.getByRole("button", { name: /(Sign in|Войти)/i });
+    await fireEvent.click(submit);
+
+    await waitFor(() => {
+      expect(baseProps.onClose).toHaveBeenCalled();
+      expect(baseProps.onSuccess).toHaveBeenCalled();
+    });
   });
 });
