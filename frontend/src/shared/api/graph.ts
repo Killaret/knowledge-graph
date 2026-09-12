@@ -162,7 +162,7 @@ function getGraphApi() {
   }
 
   return ky.create({
-    prefixUrl: baseUrl,
+    prefix: baseUrl,
     timeout: 30000,
     credentials: "include",
     retry: {
@@ -170,7 +170,7 @@ function getGraphApi() {
     },
     hooks: {
       beforeRequest: [
-        (request) => {
+        ({ request }) => {
           const token = accessToken();
           if (token) {
             request.headers.set("Authorization", `Bearer ${token}`);
@@ -178,7 +178,7 @@ function getGraphApi() {
         },
       ],
       afterResponse: [
-        async (request, options, response) => {
+        async ({ request, response }) => {
           if (response.status !== 401) return response;
           if (request.headers.get("X-Graph-Retry")) return response;
 

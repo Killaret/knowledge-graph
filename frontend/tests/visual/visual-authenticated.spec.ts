@@ -159,7 +159,8 @@ test.describe("Visual Regression - authenticated @visual", { tag: "@visual" }, (
     } catch (e) {
       if ((await errorOverlay.count()) > 0) {
         throw new Error(
-          "3D scene failed to initialize: graph-3d-error overlay is shown (WebGL unavailable or init failed)"
+          "3D scene failed to initialize: graph-3d-error overlay is shown (WebGL unavailable or init failed)",
+          { cause: e }
         );
       }
       throw e;

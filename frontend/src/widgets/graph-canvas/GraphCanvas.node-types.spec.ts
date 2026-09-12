@@ -143,11 +143,13 @@ describe("GraphCanvas - Node Type Rendering", () => {
       shadowColor: "",
     });
 
-    global.ResizeObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-      unobserve: vi.fn(),
-    }));
+    global.ResizeObserver = vi.fn().mockImplementation(function () {
+      return {
+        observe: vi.fn(),
+        disconnect: vi.fn(),
+        unobserve: vi.fn(),
+      };
+    });
 
     vi.stubGlobal(
       "requestAnimationFrame",
