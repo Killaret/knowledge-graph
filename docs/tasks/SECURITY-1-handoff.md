@@ -113,8 +113,8 @@
    - `APIKeyRepository.FindActiveByHash` заменён на `FindActiveByID`; репозиторий и интерфейс обновлены.
    - Добавлены unit-тесты на валидный, невалидный и malformed токен.
    - ⚠️ Это **breaking change** для существующих API-ключей: старые SHA-256-хеши не проверятся, ключи нужно пересоздать. Формат токена изменился с `uuid` на `uuid:secret`.
-4. **#52** — `extract-urls.ts` sanitization.
-5. **#53** — `check-core-workflow-sync.mjs` escaping.
+4. **#52** — `extract-urls.ts` sanitization — ✅ реализовано: HTML-сущности декодируются однопроходным парсером (без двойного unescape), теги удаляются повторяющейся заменой.
+5. **#53** — `check-core-workflow-sync.mjs` escaping — ✅ реализовано: threshold экранируется перед вставкой в RegExp.
 
 ### Этап 4: верификация
 - После каждого PR: `go test ./...`, `npm run test:unit`, `npm run lint`, `npm audit`, `go list -m -u all`.
