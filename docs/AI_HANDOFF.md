@@ -117,7 +117,7 @@
 | Решить TLS-терминацию и сертификаты для nginx (вне AUD-5) | [`BACKLOG.md`](BACKLOG.md), TD-TLS | **решено: отложено**, записано в бэклог | 2026-09-07 |
 | `.github/CODEOWNERS` — ссылается на несуществующую команду | — | **отменено владельцем** — файл удалён | 2026-09-07 |
 | Отключить MCP-коннекторы в настройках claude.ai | — | **снято с доски** — настройка аккаунта, репозитория не касается | 2026-09-07 |
-| DEPENDABOT-1: решение по 15 Dependabot PR (#21–#32, #38–#40) | см. `PROJECT_REVIEW_AI_AGENTS.md` §20 | **ждёт решения владельца** — 15 открытых PR; #33–#36, #38? не существуют/замёржены; группировка по риску ниже | 2026-09-12 |
+| DEPENDABOT-1: решение по Dependabot PR (#21–#32, #38–#40, #56–#63) | см. `PROJECT_REVIEW_AI_AGENTS.md` §20 | **ждёт решения владельца** — 23 открытых Dependabot PR; появились grouped #62/#63 и новые #56–#61; группировка по риску ниже | 2026-09-12 |
 | Удалить каталог `.kilo/` | — | **сделано** | 2026-09-07 |
 | **SECURITY-1:** настроить GitHub-защиту репозитория и решить по рискам; подробный порядок в `docs/tasks/SECURITY-1-handoff.md` | [`docs/tasks/SECURITY-1-handoff.md`](tasks/SECURITY-1-handoff.md), issues #41–#54 | **на ревью** — PR #55 (`security/findings`) создан: #51 Argon2id, #52/#53 front-end sanitization, #49 dismissed mitigated; #54 workflow permissions ждёт скана после мёрджа; остаётся review/merge + Dependabot PR | 2026-09-12 |
 
