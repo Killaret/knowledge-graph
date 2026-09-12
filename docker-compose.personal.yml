@@ -256,7 +256,7 @@ services:
     image: postgres:16-alpine
     container_name: kg-backup-scheduler
     volumes:
-      - ./backups:/backups
+      - "C:/Users/89209/Desktop/my items:/backups"
       - ./scripts/devops:/scripts:ro
       - ./knowledge-graph.config.json:/config/config.json:ro
     environment:
