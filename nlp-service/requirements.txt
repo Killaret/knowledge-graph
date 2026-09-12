@@ -4,6 +4,6 @@ sentence-transformers==2.7.0
 pydantic==2.13.5
 python-dotenv==1.2.3
 yake==0.4.8
-nltk==3.8.1
+nltk==3.10.3
 huggingface-hub==0.23.0
 httpx==0.28.1
