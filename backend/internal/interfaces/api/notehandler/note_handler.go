@@ -587,6 +587,18 @@ func (h *Handler) ImportBatch(c *gin.Context) {
 			continue
 		}
 
+		if item.ID != "" {
+			existing, err := h.repo.FindByID(c.Request.Context(), n.ID())
+			if err != nil {
+				failedNotes = append(failedNotes, batchItemError{Index: i, Message: apicommon.MsgFailedFetchNote})
+				continue
+			}
+			if existing != nil {
+				failedNotes = append(failedNotes, batchItemError{Index: i, Field: "id", Message: "note with this id already exists"})
+				continue
+			}
+		}
+
 		if err := h.repo.Save(c.Request.Context(), n); err != nil {
 			failedNotes = append(failedNotes, batchItemError{Index: i, Message: apicommon.MsgFailedSaveNote})
 			continue
