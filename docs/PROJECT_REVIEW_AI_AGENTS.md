@@ -801,7 +801,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 ## 21. Dependabot PR — итоговая разборка (#21–#32, #38–#40, #56–#63, #68, #70–#77), 2026-09-12
 
-Все Dependabot-PR обработаны, кроме **#25**. Замёржены: #21–#23, #24, #26, #27, #28, #29, #30, #31, #38, #56, #57, #60, #61, #62, #63. Закрыты как дублирующие/устаревшие: #32 (дублирует #28), #39, #40, #58, #59 (вошли в консолидированный PR #68). После фикса CI (PR #78) пришла новая волна Dependabot-PR: #70–#77 — все смержены. Остаётся **#25** (`yake`) — блокер по лицензии, требует решения владельца.
+Все Dependabot-PR обработаны, кроме **#25** и **#79**. Замёржены: #21–#23, #24, #26, #27, #28, #29, #30, #31, #38, #56, #57, #60, #61, #62, #63. Закрыты как дублирующие/устаревшие: #32 (дублирует #28), #39, #40, #58, #59 (вошли в консолидированный PR #68). После фикса CI (PR #78) пришла новая волна Dependabot-PR: #70–#77 — все смержены. Остаётся **#25** (`yake`) — блокер по лицензии; **#79** (`nltk` 3.8.1 → 3.10.3) — заблокирован high severity GHSA-8mgp-746c-j5xp, требует решения владельца.
 
 | # | Область | Зависимость | С | По | Риск | Итог |
 |---|---|---|---|---|---|---|
@@ -837,6 +837,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 || #75 | frontend npm | `svelte` | 5.55.5 | 5.57.0 | Средний | ✅ замёржен |
 || #76 | root npm | `brace-expansion` | 1.1.14 | 1.1.18 | Низкий | ✅ замёржен |
 || #77 | root npm | `postcss` | 8.5.14 | 8.5.28 | Низкий | ✅ замёржен |
+|| #79 | NLP Python | `nltk` | 3.8.1 | 3.10.3 | Средний | ❌ открыт / **заблокирован** GHSA-8mgp-746c-j5xp (path traversal в model-artifact APIs, high severity) |
 
 **Порядок действий (выполнен):**
 
@@ -849,7 +850,9 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 7. ✅ CI fix (PR #78) — починен запуск Core Checks (`permissions:`, `environment:` для `run-name`, `smoke` env, `needs` для smoke).
 8. ✅ Новая волна Dependabot (#70–#77) — все смержены после фикса CI.
 
-**Следующий шаг:** решить судьбу **#25** (`yake`): либо добавить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action`, либо оставить `yake 0.4.8` и закрыть PR.
+**Следующий шаг:**
+- **#25** (`yake`): либо добавить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action`, либо оставить `yake 0.4.8` и закрыть PR.
+- **#79** (`nltk` 3.8.1 → 3.10.3): Dependency Review падает на GHSA-8mgp-746c-j5xp (high severity). Варианты: закрыть PR без обновления, разрешить конкретный GHSA через `allow-ghsas`, либо дождаться исправленного релиза `nltk`.
 
 ## 22. Правки CI под PR #36, 2026-09-11
 
@@ -952,6 +955,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 || #75 | frontend npm | `svelte` | 5.55.5 | 5.57.0 | ✅ замёржен |
 || #76 | root npm | `brace-expansion` | 1.1.14 | 1.1.18 | ✅ замёржен |
 || #77 | root npm | `postcss` | 8.5.14 | 8.5.28 | ✅ замёржен |
+|| #79 | NLP Python | `nltk` | 3.8.1 | 3.10.3 | ❌ открыт — GHSA-8mgp-746c-j5xp (high severity) |
 
 - Каждый PR был обновлён до актуального `main` и прогнан с фиксом CI.
 - Все checks (`Analyze`, `Core Checks`, `Dependency Review`, `Frontend Security Audit`, `test`, `Smoke Tests`) — зелёные.
@@ -959,6 +963,6 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 **Состояние на 2026-09-12.**
 
-- Открытых Dependabot-PR больше нет, кроме **#25** (`yake` 0.4.8 → 0.7.3), заблокированного лицензиями `AGPL-3.0-only AND AGPL-3.0-or-later AND LGPL-3.0-or-later`.
+- Открытые Dependabot-PR: **#25** (`yake` 0.4.8 → 0.7.3), заблокирован лицензиями `AGPL-3.0-only AND AGPL-3.0-or-later AND LGPL-3.0-or-later`; **#79** (`nltk` 3.8.1 → 3.10.3), заблокирован GHSA-8mgp-746c-j5xp (high severity).
 - Frontend coverage после всех обновлений: **1381/1381 unit-тестов passed**, lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04% — выше 70%.
 - `npm run check` — 0 errors, 0 warnings; `npm run lint` — 0 errors, 9 pre-existing warnings.
