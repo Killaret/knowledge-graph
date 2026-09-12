@@ -89,6 +89,14 @@ export const en: Record<string, string> = {
   "nav.logout": "Log out",
   "nav.logoutShort": "L",
   "nav.guestUser": "Guest",
+  // Error page
+  "error.500.title": "Internal Server Error",
+  "error.500.message": "Something went wrong. We already know about it.",
+  "error.500.retry": "Refresh page",
+  "error.500.goHome": "Go home",
+  "error.unknown.title": "Error {{status}}",
+  "error.unknown.message": "An unexpected error occurred.",
+  "error.devHint": "Dev mode: details below.",
 };
 
 export const ru: Record<string, string> = {
@@ -179,4 +187,12 @@ export const ru: Record<string, string> = {
   "nav.logout": "Выйти",
   "nav.logoutShort": "В",
   "nav.guestUser": "Пользователь",
+  // Error page
+  "error.500.title": "Внутренняя ошибка сервера",
+  "error.500.message": "Что-то пошло не так. Мы уже знаем об этом.",
+  "error.500.retry": "Обновить страницу",
+  "error.500.goHome": "На главную",
+  "error.unknown.title": "Ошибка {{status}}",
+  "error.unknown.message": "Произошла непредвиденная ошибка.",
+  "error.devHint": "Dev-режим: подробности ниже.",
 };

@@ -200,6 +200,16 @@ try {
         Write-Host "  WARNING: Backend integration tests failed (exit code $backendIntegrationExit); continuing" -ForegroundColor Yellow
     }
 
+    Write-Host "  Running graph-service integration tests (requires Linux/WSL Docker)..." -ForegroundColor Yellow
+    Set-Location $repoDir\services\graph-service
+    go test -tags=integration -p=1 -count=1 ./...
+    $graphIntegrationExit = $LASTEXITCODE
+    Set-Location $repoDir
+    Register-Phase -Name "Graph-service integration tests" -ExitCode $graphIntegrationExit
+    if ($graphIntegrationExit -ne 0) {
+        Write-Host "  WARNING: Graph-service integration tests failed (exit code $graphIntegrationExit); continuing" -ForegroundColor Yellow
+    }
+
 
     # Step 10: Backend API Verification
     Write-Host "`n[Step 10/28] Backend API Verification..." -ForegroundColor Yellow

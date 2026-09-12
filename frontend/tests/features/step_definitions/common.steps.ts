@@ -233,7 +233,7 @@ When(
     // Filter chips now live in the top bar type dropdown
     const dropdownToggle = this.page.locator('[data-testid="type-dropdown-toggle"]').first();
     await expect(dropdownToggle).toBeVisible({ timeout: 5000 });
-    const panel = this.page.locator('.dropdown-panel').first();
+    const panel = this.page.locator(".dropdown-panel").first();
     const isOpen = await panel.isVisible().catch(() => false);
     if (!isOpen) {
       await dropdownToggle.click();
@@ -248,7 +248,9 @@ When(
 
 When("I type {string} in the search input", async function (this: ITestWorld, searchText: string) {
   // Top bar search on home/graph, dedicated input on /search
-  const searchInput = this.page.locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]').first();
+  const searchInput = this.page
+    .locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]')
+    .first();
   await expect(searchInput).toBeVisible({ timeout: 5000 });
   await searchInput.fill(searchText);
   await searchInput.press("Enter"); // Trigger search
@@ -256,7 +258,9 @@ When("I type {string} in the search input", async function (this: ITestWorld, se
 });
 
 When("I clear the search input", async function (this: ITestWorld) {
-  const searchInput = this.page.locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]').first();
+  const searchInput = this.page
+    .locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]')
+    .first();
   await searchInput.clear();
   await this.page.waitForTimeout(300);
 });
@@ -491,7 +495,7 @@ Then("the count badge should show the correct number", async function (this: ITe
   await dropdownToggle.click();
   await this.page.waitForTimeout(300);
 
-  const activeChip = this.page.locator('.dropdown-item.active, .filter-chip.active').first();
+  const activeChip = this.page.locator(".dropdown-item.active, .filter-chip.active").first();
   await expect(activeChip).toBeVisible({ timeout: 5000 });
 
   const countText = await activeChip.textContent();
@@ -650,7 +654,7 @@ When("I click the {string} filter chip", async function (this: ITestWorld, filte
   // Filter chips now live in the top bar type dropdown
   const dropdownToggle = this.page.locator('[data-testid="type-dropdown-toggle"]').first();
   await expect(dropdownToggle).toBeVisible({ timeout: 5000 });
-  const panel = this.page.locator('.dropdown-panel').first();
+  const panel = this.page.locator(".dropdown-panel").first();
   const isOpen = await panel.isVisible().catch(() => false);
   if (!isOpen) {
     await dropdownToggle.click();

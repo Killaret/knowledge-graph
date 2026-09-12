@@ -249,6 +249,30 @@ func TestCreateNote(t *testing.T) {
 
 ---
 
+## Verifying a Finding (MANDATORY)
+
+A search locates a candidate. It never confirms one.
+
+`grep`, `Select-String` and file-name matching answer "where does this string
+appear", which is not the same question as "is this true". A hit inside a
+"do not do this" list, inside a code example, or inside a dated journal entry
+looks identical to a real defect. So does a miss caused by a bad pattern.
+
+Before reporting a finding, or accepting someone else's:
+
+- **read the surrounding context**, not the matching line — a count of
+  occurrences is not evidence;
+- **prefer execution** where the claim is about behaviour: run the command,
+  hit the endpoint, look at the database;
+- **check the negative case too** — a search returning nothing may mean the
+  pattern is wrong, not that the code is clean.
+
+This rule exists because it was broken repeatedly on 2026-09-08: three
+"findings" reported from occurrence counts turned out to be a prohibition
+list, a documented section, and a port belonging to a different stack.
+
+---
+
 ## Documentation (MANDATORY)
 
 After completing any task that changes behavior, configuration, architecture, Docker stack, or environment variables:
@@ -257,10 +281,10 @@ After completing any task that changes behavior, configuration, architecture, Do
   - [`.windsurfrules`](.windsurfrules) — project conventions and rules.
   - [`docs/PROJECT_REVIEW_AI_AGENTS.md`](docs/PROJECT_REVIEW_AI_AGENTS.md) — AI knowledge transfer and current state.
   - [`docs/BACKUP.md`](docs/BACKUP.md), [`docs/TESTING.md`](docs/TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md) — subsystem docs.
-  - [`ROADMAP.md`](ROADMAP.md) / [`ROADMAP.ru.md`](ROADMAP.ru.md) — scope and roadmap.
+  - [`ROADMAP.md`](ROADMAP.md) — scope and roadmap. One page; detailed plans live in [`docs/BACKLOG.md`](docs/BACKLOG.md).
   - [`knowledge-graph.config.json`](knowledge-graph.config.json) — new configuration options (default values, schema).
   - [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md) — environment variables and config reference.
-- Authoritative docs are in English; Russian translations may be added alongside.
+- Authoritative product, API, and architecture documentation is in Russian by default; English translations may be maintained alongside.
 - User-facing runtime content uses the configured locale through i18n keys; the committed default is English (`en`) with Russian (`ru`) support.
 - Do not create standalone docs to describe changes; update existing project docs instead.
 
@@ -273,6 +297,7 @@ After completing any task that changes behavior, configuration, architecture, Do
 - Rate limiting **required** on all write endpoints (POST/PUT/DELETE)
 - All secrets via environment variables only
 - Input validation with go-playground/validator
+- Browser-facing proxies MUST strip internal trust headers (`X-Internal-Auth`, `X-User-Id`); user-header delegation is opt-in and restricted to internal service networks
 
 **Review checklist** — walk it whenever a change touches authentication, authorization, input handling, or transport. Recovered from the retired `.koda` skill set; the only part of it worth keeping.
 
@@ -308,7 +333,7 @@ The committed default locale is English (`en`); Russian (`ru`) is supported thro
 - All UI strings, toasts, labels, placeholders, errors, and tooltips must use i18n keys.
 - Code identifiers, variable names, commit messages, and API error codes must be in English.
 - User-created note titles and bodies may use any language.
-- Authoritative product, API, and architecture documentation is in English; Russian translations may be maintained alongside it.
+- Authoritative product, API, and architecture documentation is in Russian by default; English translations may be maintained alongside.
 - **AI working documents are maintained in Russian** and are authoritative in that language: `docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`. No English counterpart is required for them. `.devin/prompts/MASTER_PROMPT.md` stays English for English-language chats.
 
 ---
@@ -336,7 +361,7 @@ CMD ["/server"]
 **Port mapping:**
 - Dev: nginx API:18080, nginx frontend:18081, backend:9000, graph-service gRPC:9090 / HTTP:9091
 - Personal: backend direct:18085, nginx API/gateway:18082, nginx frontend:18084, graph-service:9092
-- Test: frontend:3002, backend:18083, graph-service:19091 (gRPC 19090), postgres:15434, redis:16381, mongo:27019, nlp:15002
+- Test: frontend:3002, backend:18083, nginx public perimeter:18086, graph-service:19091 (gRPC 19090), postgres:15434, redis:16381, mongo:27019, nlp:15002
 
 **Volume names:**
 - Dev named volumes: `postgres_data`, `redis_data`, `mongodb_data`; HuggingFace cache uses the `./huggingface_cache` bind mount
@@ -373,9 +398,15 @@ CMD ["/server"]
 .\scripts\testing\test.ps1 integration                       # Backend integration tests
 .\scripts\testing\test.ps1 all                                # All test layers
 
+# Local equivalent of the reusable Core Checks workflow
+.\scripts\testing\check-all.ps1                  # Full local checks
+.\scripts\testing\check-all.ps1 -Quick           # Skip integration checks, report [SKIP]
+./scripts/testing/check-all.sh [--quick]          # Linux/macOS
+
 # Backend
 cd backend && go test ./...                          # Unit tests
 cd backend && go test -tags=integration ./...        # Integration tests
+cd services/graph-service && go test -tags=integration -p=1 -count=1 ./...  # Graph-service integration tests
 cd backend && go build ./cmd/server                  # Build
 
 # Frontend

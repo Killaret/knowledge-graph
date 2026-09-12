@@ -30,6 +30,13 @@ PRUNE_PATTERNS = (
 )
 
 # Commands that destroy volumes belonging to the Personal stack specifically.
+#
+# Known bypass this guard cannot see: scripts/cleanup/cleanup-docker.ps1 and
+# cleanup-docker.sh run `docker volume rm` / `docker system prune` inside a
+# script file, so the hook payload (`pwsh -File cleanup-docker.ps1 ...`) does
+# not match any pattern. That path is guarded inside the script itself via
+# scripts/devops/check-personal-backup.{ps1,sh} — the check must live where
+# the deletion happens, because the hook only sees agent commands.
 PERSONAL_PATTERNS = (
     re.compile(r"\bdocker\s+volume\s+rm\b"),
     re.compile(r"\bdown\b.*(?:\s-v\b|--volumes\b)"),
@@ -37,7 +44,26 @@ PERSONAL_PATTERNS = (
 )
 
 BACKUP_GLOBS = ("backup-personal-*", "personal-volumes-raw-*")
-MAX_AGE_HOURS = float(os.environ.get("KG_BACKUP_MAX_AGE_HOURS", "24"))
+
+
+def _max_age_hours() -> float:
+    """Freshness threshold for a usable backup, in hours.
+
+    Single source of truth: backup-policy.env next to this script; the
+    KG_BACKUP_MAX_AGE_HOURS environment variable overrides it per run.
+    """
+    env_value = os.environ.get("KG_BACKUP_MAX_AGE_HOURS")
+    if env_value:
+        return float(env_value)
+    policy = Path(__file__).resolve().parent / "backup-policy.env"
+    if policy.is_file():
+        for line in policy.read_text().splitlines():
+            if line.strip().startswith("KG_BACKUP_MAX_AGE_HOURS"):
+                return float(line.split("=", 1)[1].strip())
+    return 24.0
+
+
+MAX_AGE_HOURS = _max_age_hours()
 
 
 def repo_root() -> Path:

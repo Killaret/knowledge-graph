@@ -10,6 +10,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"knowledge-graph/internal/config"
+	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
 	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
@@ -59,6 +60,7 @@ func setupRouter(
 	jwtConfig *middleware.JWTConfig,
 	apiKeyConfig *middleware.APIKeyConfig,
 	skipAuthConfig *middleware.SkipAuthConfig,
+	noteRepo note.Repository,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -135,18 +137,25 @@ func setupRouter(
 		v1.GET("/users/me/settings/galactic_mode", settingsHandler.GetGalacticMode)
 		v1.POST("/users/me/settings/galactic_mode/toggle", writeLimiter, settingsHandler.ToggleGalacticMode)
 
+		// SEC-1: object-level authorization on every /notes/:id route.
+		// Read allows the owner and, for public notes, any caller; write is
+		// owner-only. Refusals answer 404 so a foreign private note is
+		// indistinguishable from a missing one.
+		noteRead := middleware.RequireNoteAccess(noteRepo, middleware.NoteAccessRead)
+		noteWrite := middleware.RequireNoteAccess(noteRepo, middleware.NoteAccessWrite)
+
 		// Share routes
-		v1.POST("/notes/:id/share", writeLimiter, shareHandler.ShareNote)
-		v1.POST("/notes/:id/share-link", writeLimiter, shareHandler.CreateShareLink)
-		v1.GET("/notes/:id/shares", shareHandler.ListNoteShares)
-		v1.DELETE("/notes/:id/shares/:shareId", writeLimiter, shareHandler.RevokeShare)
+		v1.POST("/notes/:id/share", writeLimiter, noteWrite, shareHandler.ShareNote)
+		v1.POST("/notes/:id/share-link", writeLimiter, noteWrite, shareHandler.CreateShareLink)
+		v1.GET("/notes/:id/shares", noteWrite, shareHandler.ListNoteShares)
+		v1.DELETE("/notes/:id/shares/:shareId", writeLimiter, noteWrite, shareHandler.RevokeShare)
 		v1.DELETE("/share-links/:id", writeLimiter, shareHandler.RevokeShareLink)
 		v1.GET("/share/:token", shareHandler.AccessSharedNote)
 
 		// Draft routes (only if MongoDB is configured)
 		if draftHandler != nil {
-			v1.POST("/notes/:id/draft", writeLimiter, draftHandler.SaveDraft)
-			v1.GET("/notes/:id/draft", draftHandler.GetDraft)
+			v1.POST("/notes/:id/draft", writeLimiter, noteWrite, draftHandler.SaveDraft)
+			v1.GET("/notes/:id/draft", noteWrite, draftHandler.GetDraft)
 			v1.POST("/drafts/:draft_id/sync", writeLimiter, draftHandler.SyncDraft)
 			v1.POST("/drafts/:draft_id/resolve", writeLimiter, draftHandler.ResolveConflict)
 			v1.DELETE("/drafts/:draft_id", writeLimiter, draftHandler.DeleteDraft)
@@ -164,25 +173,25 @@ func setupRouter(
 		v1.POST("/import/bookmarks/preview", writeLimiter, noteHandler.ImportBookmarksPreview)
 		v1.POST("/import/bookmarks", writeLimiter, noteHandler.ImportBookmarks)
 		v1.GET("/import/:task_id/status", noteHandler.ImportBookmarksStatus)
-		v1.GET("/notes/:id", cacheControlMiddleware(60), noteHandler.Get)
-		v1.PUT("/notes/:id", writeLimiter, noteHandler.Update)
-		v1.POST("/notes/:id/publish", writeLimiter, noteHandler.Publish)
-		v1.POST("/notes/:id/unpublish", writeLimiter, noteHandler.Unpublish)
-		v1.DELETE("/notes/:id", writeLimiter, noteHandler.Delete)
+		v1.GET("/notes/:id", cacheControlMiddleware(60), noteRead, noteHandler.Get)
+		v1.PUT("/notes/:id", writeLimiter, noteWrite, noteHandler.Update)
+		v1.POST("/notes/:id/publish", writeLimiter, noteWrite, noteHandler.Publish)
+		v1.POST("/notes/:id/unpublish", writeLimiter, noteWrite, noteHandler.Unpublish)
+		v1.DELETE("/notes/:id", writeLimiter, noteWrite, noteHandler.Delete)
 		v1.POST("/notes/batch", writeLimiter, noteHandler.DeleteBatch)
-		v1.POST("/notes/:id/restore", writeLimiter, noteHandler.Restore)
-		v1.GET("/notes/:id/suggestions", cacheControlMiddleware(60), noteHandler.GetSuggestions)
+		v1.POST("/notes/:id/restore", writeLimiter, noteWrite, noteHandler.Restore)
+		v1.GET("/notes/:id/suggestions", cacheControlMiddleware(60), noteRead, noteHandler.GetSuggestions)
 		v1.GET("/notes", cacheControlMiddleware(60), noteHandler.List)
 		v1.GET("/notes/search", cacheControlMiddleware(30), noteHandler.Search)
 
 		v1.POST("/links", writeLimiter, linkHandler.Create)
 		v1.GET("/links/:id", linkHandler.Get)
 		v1.PUT("/links/:id", writeLimiter, linkHandler.Update)
-		v1.GET("/notes/:id/links", linkHandler.GetByNote)
+		v1.GET("/notes/:id/links", noteRead, linkHandler.GetByNote)
 		v1.DELETE("/links/:id", writeLimiter, linkHandler.Delete)
-		v1.DELETE("/notes/:id/links", writeLimiter, linkHandler.DeleteByNote)
+		v1.DELETE("/notes/:id/links", writeLimiter, noteWrite, linkHandler.DeleteByNote)
 
-		v1.GET("/notes/:id/graph", cacheControlMiddleware(300), graphHandler.GetGraph)
+		v1.GET("/notes/:id/graph", cacheControlMiddleware(300), noteRead, graphHandler.GetGraph)
 		v1.GET("/graph/all", cacheControlMiddleware(300), graphHandler.GetFullGraph)
 		v1.GET("/graph/analytics", cacheControlMiddleware(300), graphHandler.GetAnalytics)
 		v1.GET("/me/graph/cached", cacheControlMiddleware(60), graphHandler.GetCachedGraph)
@@ -194,9 +203,9 @@ func setupRouter(
 		v1.GET("/tags/:id", tagHandler.Get)
 		v1.PUT("/tags/:id", writeLimiter, tagHandler.Update)
 		v1.DELETE("/tags/:id", writeLimiter, tagHandler.Delete)
-		v1.POST("/notes/:id/tags", writeLimiter, tagHandler.AddTagToNote)
-		v1.DELETE("/notes/:id/tags/:tagId", writeLimiter, tagHandler.RemoveTagFromNote)
-		v1.GET("/notes/:id/tags", tagHandler.GetTagsByNote)
+		v1.POST("/notes/:id/tags", writeLimiter, noteWrite, tagHandler.AddTagToNote)
+		v1.DELETE("/notes/:id/tags/:tagId", writeLimiter, noteWrite, tagHandler.RemoveTagFromNote)
+		v1.GET("/notes/:id/tags", noteRead, tagHandler.GetTagsByNote)
 
 		// Backup routes
 		v1.POST("/backup/cloud", writeLimiter, backupHandler.TriggerCloudBackup)

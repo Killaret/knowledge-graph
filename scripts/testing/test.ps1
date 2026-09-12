@@ -22,6 +22,10 @@ switch ($Target) {
         Write-Host "Running backend integration tests (requires Linux/WSL Docker)..." -ForegroundColor Cyan
         Set-Location "$root\backend"
         go test -tags=integration ./... -count=1 -p=1
+
+        Write-Host "Running graph-service integration tests (requires Linux/WSL Docker)..." -ForegroundColor Cyan
+        Set-Location "$root\services\graph-service"
+        go test -tags=integration ./... -count=1 -p=1
     }
     'e2e' {
         Write-Host "Running frontend E2E tests..." -ForegroundColor Cyan

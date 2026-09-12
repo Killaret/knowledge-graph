@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/text/encoding/charmap"
 )
 
 func TestImportFetcher_Extract(t *testing.T) {
@@ -110,4 +113,60 @@ func statusServer(status int) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(status)
 	})
+}
+
+func TestImportFetcher_Extract_CharsetConversion(t *testing.T) {
+	// A page encoded in windows-1251 that contains Cyrillic text.
+	htmlBody := `<html><head><title>Полное руководство по IDOR</title></head><body><p>Уязвимости</p></body></html>`
+	encoded, err := charmap.Windows1251.NewEncoder().String(htmlBody)
+	require.NoError(t, err)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=windows-1251")
+		_, _ = w.Write([]byte(encoded))
+	}))
+	defer srv.Close()
+
+	f := NewImportFetcherWithClient(srv.Client())
+	title, text, err := f.Extract(context.Background(), srv.URL)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Полное руководство по IDOR", title)
+	assert.Contains(t, text, "Уязвимости")
+	assert.True(t, utf8.ValidString(title))
+	assert.True(t, utf8.ValidString(text))
+}
+
+func TestImportFetcher_Extract_RuneSafeTextTruncation(t *testing.T) {
+	// 6000 multi-byte Cyrillic runes. Old code would truncate by bytes and
+	// split a rune, producing invalid UTF-8.
+	longText := strings.Repeat("ы", 6000)
+	body := fmt.Sprintf(`<html><head><title>Title</title></head><body><p>%s</p></body></html>`, longText)
+
+	srv := httptest.NewServer(simpleHTMLServer(body))
+	defer srv.Close()
+
+	f := NewImportFetcherWithClient(srv.Client())
+	title, text, err := f.Extract(context.Background(), srv.URL)
+	require.NoError(t, err)
+
+	assert.Equal(t, "Title", title)
+	assert.True(t, utf8.ValidString(text))
+	assert.LessOrEqual(t, utf8.RuneCountInString(text), 5000)
+}
+
+func TestImportFetcher_Extract_TruncatesLongTitle(t *testing.T) {
+	// 110 Cyrillic runes exceed the 200-rune title limit.
+	longTitle := strings.Repeat("ы", 250)
+	body := fmt.Sprintf(`<html><head><title>%s</title></head><body><p>text</p></body></html>`, longTitle)
+
+	srv := httptest.NewServer(simpleHTMLServer(body))
+	defer srv.Close()
+
+	f := NewImportFetcherWithClient(srv.Client())
+	title, _, err := f.Extract(context.Background(), srv.URL)
+	require.NoError(t, err)
+
+	assert.True(t, utf8.ValidString(title))
+	assert.LessOrEqual(t, utf8.RuneCountInString(title), 200)
 }

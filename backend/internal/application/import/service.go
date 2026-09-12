@@ -18,6 +18,7 @@ import (
 	"knowledge-graph/internal/application/common"
 	dcache "knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/note"
+	"knowledge-graph/internal/shared/textutil"
 
 	"github.com/google/uuid"
 	"golang.org/x/net/html"
@@ -95,16 +96,16 @@ func NewService(repo note.Repository, cache dcache.CacheClient, taskQueue common
 
 // BuildContent creates Markdown body with title, URL and selected text,
 // matching the bookmarklet format used by NoteHandler.
+// It keeps the result under the domain Content limit and never splits a
+// multi-byte UTF-8 rune.
 func BuildContent(title, urlStr, text string) string {
 	prefix := fmt.Sprintf("## [%s](%s)\n\n", title, urlStr)
 	remaining := maxContentLen - len(prefix)
-	if remaining < 0 {
-		remaining = 0
+	if remaining <= 0 {
+		// Extremely long title+URL combination; keep a valid, truncated prefix.
+		return textutil.TruncateToMaxBytes(prefix, maxContentLen)
 	}
-	if len(text) > remaining {
-		text = text[:remaining]
-	}
-	return prefix + text
+	return prefix + textutil.TruncateToMaxBytes(text, remaining)
 }
 
 // IsAllowedURL returns true for public http(s) URLs that are safe to fetch.

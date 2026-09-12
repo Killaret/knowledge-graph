@@ -260,7 +260,12 @@
       />
     </CockpitPanel>
 
-    <CockpitPanel position="right" size={panelSizes.right} title="Details" onClose={() => handleNodeSelect(null)}>
+    <CockpitPanel
+      position="right"
+      size={panelSizes.right}
+      title="Details"
+      onClose={() => handleNodeSelect(null)}
+    >
       <CockpitRightPanel
         nodeId={selectedNodeId}
         isAuthenticated={true}

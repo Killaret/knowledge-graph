@@ -56,16 +56,12 @@ describe("createFogState", () => {
     simulateFps(state, 15); // low fps
     updateUntil(
       state,
-      () =>
-        state.snapshot.mode === "adaptive" &&
-        state.snapshot.radius <= FOG.radius_min + 50,
+      () => state.snapshot.mode === "adaptive" && state.snapshot.radius <= FOG.radius_min + 50,
       200
     );
     updateUntil(
       state,
-      () =>
-        state.snapshot.mode === "first-person" &&
-        state.snapshot.radius >= FOG.radius_max - 50,
+      () => state.snapshot.mode === "first-person" && state.snapshot.radius >= FOG.radius_max - 50,
       200,
       null,
       true
@@ -80,9 +76,7 @@ describe("createFogState", () => {
     simulateFps(state, 15);
     updateUntil(
       state,
-      () =>
-        state.snapshot.mode === "adaptive" &&
-        state.snapshot.radius <= FOG.radius_min + 50,
+      () => state.snapshot.mode === "adaptive" && state.snapshot.radius <= FOG.radius_min + 50,
       200
     );
     expect(state.snapshot.mode).toBe("adaptive" satisfies FogMode);
@@ -94,18 +88,14 @@ describe("createFogState", () => {
     simulateFps(state, 15);
     updateUntil(
       state,
-      () =>
-        state.snapshot.mode === "adaptive" &&
-        state.snapshot.radius <= FOG.radius_min + 50,
+      () => state.snapshot.mode === "adaptive" && state.snapshot.radius <= FOG.radius_min + 50,
       200
     );
 
     simulateFps(state, 60);
     updateUntil(
       state,
-      () =>
-        state.snapshot.mode === "atmospheric" &&
-        state.snapshot.radius >= FOG.radius_max - 50,
+      () => state.snapshot.mode === "atmospheric" && state.snapshot.radius >= FOG.radius_max - 50,
       200
     );
     expect(state.snapshot.mode).toBe("atmospheric" satisfies FogMode);
@@ -141,9 +131,7 @@ describe("createFogState", () => {
     simulateFps(state, 10);
     updateUntil(
       state,
-      () =>
-        state.snapshot.mode === "adaptive" &&
-        state.snapshot.radius <= FOG.radius_min + 50,
+      () => state.snapshot.mode === "adaptive" && state.snapshot.radius <= FOG.radius_min + 50,
       200
     );
     expect(state.showWarning).toBe(true);
@@ -152,9 +140,7 @@ describe("createFogState", () => {
     simulateFps(state, 60);
     updateUntil(
       state,
-      () =>
-        state.snapshot.mode === "atmospheric" &&
-        state.snapshot.radius >= FOG.radius_max - 50,
+      () => state.snapshot.mode === "atmospheric" && state.snapshot.radius >= FOG.radius_max - 50,
       200
     );
     expect(state.showWarning).toBe(false);

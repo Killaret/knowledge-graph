@@ -1,0 +1,26 @@
+# Devin Config for Knowledge Graph
+
+defaultSkill: knowledge-graph
+
+skills:
+  - name: knowledge-graph
+    path: .devin/skills/knowledge-graph/SKILL.md
+    enabled: true
+    priority: 1
+  - name: kg-work
+    path: .devin/skills/kg-work/SKILL.md
+    enabled: true
+    priority: 2
+
+rules:
+  - Read .windsurfrules first
+  - Read docs/AI_HANDOFF.md and docs/AI_AGENT_PROTOCOL.md on every session start
+  - Always run relevant tests after code changes
+  - Follow existing patterns in the codebase
+
+hooks:
+  on_start:
+    - read .windsurfrules
+    - read .devin/skills/knowledge-graph/SKILL.md
+    - read docs/AI_HANDOFF.md
+    - read docs/AI_AGENT_PROTOCOL.md
