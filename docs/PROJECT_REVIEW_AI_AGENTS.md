@@ -377,6 +377,14 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 4. **Устаревшие ссылки на `src/shared/three/`**
    Основные ссылки в `.windsurfrules` и документах исправлены, но в `docs/3d-archive/` остаётся старая иерархия (архив, не production).
 
+5. **Security alerts после включения Dependency graph / CodeQL**
+   После включения Dependency graph, Dependabot alerts и CodeQL появился пул задач, вынесенных в отдельные issues:
+   - **#41** — очередь на review Dependabot PR.
+   - **#42** — review настроек безопасности GitHub (`main` branch protection, workflow permissions, CODEOWNERS, visibility).
+   - **#43** — review `.github/dependabot.yml` (добавить `services/graph-service` и root npm, правила группировки/ignore).
+   - **#44–#48** — Dependabot alerts по манифестам (`backend/go.mod`, `services/graph-service/go.mod`, `package-lock.json`, `frontend/package-lock.json`, `nlp-service/requirements.txt`). Всего 148 алертов: 16 critical, 74 high, 49 medium, 9 low.
+   - **#49–#54** — CodeQL alerts (cookie Secure, SSRF в `import_fetcher.go`, weak hashing, `extract-urls.ts`, `check-core-workflow-sync.mjs`, workflow permissions).
+
 ---
 
 ## 12. Ключевые файлы для быстрого старта
