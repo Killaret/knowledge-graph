@@ -20,7 +20,7 @@
 - Система черновиков в MongoDB.
 - JWT/OAuth2-аутентификация, RBAC.
 - Геймификация (achievements).
-- i18n: русский по умолчанию, английский — через ключи.
+- i18n: английский по умолчанию (`en`), русский (`ru`) — через те же i18n-ключи.
 - Резервное копирование на Яндекс.Диск.
 
 Среды:
@@ -171,7 +171,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `src/shared/utils/i18n.ts` — barrel, реэкспортирует `formatMessage` и типы `Locale`/`MessageParams`.
 - `src/shared/utils/i18n/messages/*.ts` — ключи по доменам (`auth`, `common`, `graph`, `import`, `notes`, `profile`, `ui`) для `en` и `ru`.
 - `formatMessage(key, locale, params)`.
-- UI по умолчанию на русском, но все строки через i18n-ключи.
+- UI по умолчанию на английском, но все строки через i18n-ключи; Russian supported through the same keys.
 - `SidebarWidget.svelte` переведена на i18n-ключи.
 
 ---
@@ -742,3 +742,131 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `D:\Docker\wsl\main\ext4.vhdx.old` (100 МБ) — старый системный дистрибутив; можно удалить.
 - После старта стеков `kg-nlp-personal` и `kg-nlp-test` находятся в `health: starting` — нужно дождаться full healthy, прежде чем тестировать рекомендации.
 - Для перестраховки стоит сделать `pg_dump`-бэкап через `backup-personal.ps1` после восстановления, чтобы свежий `.sql.gz` дополнил VHDX-архив.
+
+## 20. UX-2: 500-страница и аудит обработки ошибок (2026-09-11)
+
+**Что сделано.**
+
+- Добавлен `frontend/src/routes/+error.svelte`: full-viewport (`position: fixed; inset: 0; z-index: 900`), Cosmic Cockpit фон, i18n (`error.500.*`, `error.unknown.*`), кнопки «Обновить» и «На главную», dev-only stack trace.
+- Добавлен новый тип `server-error` в `frontend/src/components/atoms/StateIllustration.svelte`: космическая иллюстрация разъединённого удлинителя с искрой.
+- `+error.svelte` выбирает иллюстрацию по статусу: `404` → `404`, `5xx` → `server-error`, остальное → `error`.
+- Добавлен `frontend/src/routes/error-page.spec.ts` и `frontend/src/shared/utils/route-match.test.ts`.
+- В `+layout.svelte` исправлен критический баг публичных маршрутов: `currentPath.startsWith("/")` делал публичными **все** пути. Вынесена функция `isPublicRoute` в `shared/utils/route-match.ts`.
+- Обновлены `docs/tasks/UX-2-500-error-page.md` и `docs/AI_HANDOFF.md`; статус: на ревью у Claude Code.
+|- Добавлен Playwright-сценарий `frontend/tests/error-500-page.spec.ts` и test-only route `src/routes/test/500/+page.server.ts` (триггер `?trigger=500`) для проверки full-viewport рендера в браузере.
+|- `ApiErrorDisplay.svelte` теперь использует иллюстрацию `server-error` для API-ошибок с кодом `INTERNAL_ERROR`.
+|- Исправлены `golangci-lint` замечания в `note_handler.go` и `import_fetcher_test.go`.
+|- Восстановлен гейт форматирования: `npm ci` + `npm run format` привели 6 Svelte-файлов в соответствие с lock-версией `prettier-plugin-svelte`.
+|- Обновлена языковая политика: UI по умолчанию — English (`en`), документация — Russian; правка в `.windsurfrules`, `MASTER_PROMPT.md`, `MASTER_PROMPT_RU.md`.
+
+**Аудит обработки ошибок.**
+
+- SvelteKit route-ошибки (`load`/SSR) перехватываются `+error.svelte` (full-screen, i18n).
+- API-ошибки в страницах graph, import, notes, search, home показываются **локально** (`StateIllustration`, `ApiErrorDisplay`) — не перекрывают весь экран.
+- `GraphPageShell` и `GraphCanvas` ловят ошибки загрузки/рендера и показывают внутри canvas-области.
+- `hooks.server.ts` проксирует `/api/v1/*` на backend; 500 от backend возвращаются клиенту как JSON, а не как route-ошибка.
+
+**Результаты верификации.**
+
+- `npm run check` — 0 ошибок, 0 предупреждений.
+- `npm run test:unit` — 112 файлов, 1014 тестов passed.
+- `npx vitest run src/routes/error-page.spec.ts src/shared/utils/route-match.test.ts` — passed.
+
+**Осталось / открытые вопросы.**
+
+- Решение по языку: приложение — `en` по умолчанию, документация — Russian. Зафиксировано в `.windsurfrules`, `MASTER_PROMPT.md`, `MASTER_PROMPT_RU.md`.
+- Playwright-регрессия full-viewport: реализована `frontend/tests/error-500-page.spec.ts` + `src/routes/test/500/+page.server.ts` (триггер `?trigger=500`).
+- `ApiErrorDisplay.svelte` использует `server-error` для API-ошибок с кодом `INTERNAL_ERROR`.
+- PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
+- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d`, `5acc40d`, `ff65307`, `af2f957`, `49c4e67` и все последующие до слияния.
+
+## 21. Открытые Dependabot PR (#21–#32), 2026-09-11
+
+Все 12 PR — реальные апгрейды, не закрыты автоматически основным. `go.mod` и `requirements.txt` на `main` до сих пор содержат старые версии.
+
+| # | Область | Зависимость | С | По | Риск | Рекомендация |
+|---|---|---|---|---|---|---|
+| #24 | backend Go | `golang.org/x/net` | 0.52.0 | 0.58.0 | Средний (0.x minor, транзитив) | Группировать с другими Go-PR; проверить `go test ./...` |
+| #30 | backend Go | `pgvector-go` | 0.2.0 | 0.4.1 | Средний (0.x, pgvector API) | Ревью changelog; тесты pgvector/integration |
+| #26 | backend Go | `go-redis/v9` | 9.14.1 | 9.22.0 | Средний (minor в рамках v9, но правила требуют v9 API) | Проверить отсутствие v8-API; `go test ./...` |
+| #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий (0.x, integration tests) | Запустить integration tests |
+| #28 | backend Go | `testcontainers-go/modules/postgres` | 0.40.0 | 0.44.0 | Средний-высокий | Запустить integration tests |
+| #25 | NLP Python | `yake` | 0.4.8 | 0.7.3 | Средний (0.x, keyword extraction) | Проверить `pytest` |
+| #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний (minor, FastAPI/Pydantic v2) | Проверить `pytest` и совместимость с FastAPI |
+| #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий (minor, модель/эмбеддинги) | Сравнить вывод embeddings; возможно, требуется пересчёт |
+| #27 | NLP Python | `python-dotenv` | 1.0.0 | 1.2.3 | Низкий | Безопасно группировать с NLP |
+| #21 | CI Actions | `actions/setup-python` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
+| #22 | CI Actions | `actions/setup-go` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
+| #23 | CI Actions | `actions/checkout` | 5 | 7 | Низкий-средний | Проверить workflow CI после merge |
+
+**Порядок действий:**
+
+1. Не закрывать все сразу — каждый PR либо мержится, либо отклоняется осознанно.
+2. Объединить по группам: Go-бэкенд (#24, #26, #28, #30, #32), NLP (#25, #27, #29, #31), GitHub Actions (#21, #22, #23).
+3. Внутри группы мержить по цепочке с `gh pr merge --rebase` или через GitHub; Dependabot предложит rebase следующих.
+4. Перед merge каждой группы — `go test ./...`, `go test -tags=integration ./...`, `pytest` (NLP), `npm run check`/`test:unit` (для Actions не нужно, но прогнать CI).
+5. `sentence-transformers` (#31) — самый рискованный; выделить отдельный раунд с замером embeddings.
+6. Действие по умолчанию: держать открытыми до следующего раунда CI/ревью, либо закрыть только явно отклонённые/устаревшие.
+
+## 22. Правки CI под PR #36, 2026-09-11
+
+**NLP: таймаут из-за nvidia-колёс.**
+
+- Симптом: `Core Checks / NLP Service Checks` падала по таймауту 10 минут, скачивая `torch==2.14.0` + `nvidia_cudnn` 553 МБ + `nvidia_cusparselt` 170 МБ + `nvidia_nccl` 216 МБ и др.
+- Причина: `pip install -r requirements.txt` в `_core-checks.yml` брал последний `torch` с PyPI (CUDA-версия), тогда как `Dockerfile` всегда использует CPU-индекс.
+- Исправление (`ff32ee0`): заменить `pip install -r requirements.txt` на `pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple -r requirements.txt` и увеличить `timeout-minutes` до 20.
+- Результат: `NLP Service Checks` стала проходить за ~1 минуту.
+
+**Smoke Tests: `SKIP_AUTH` без `APP_ENV=test`.**
+
+- Симптом: `Smoke Tests` падает на шаге `Start backend for smoke tests` с `FATAL: SKIP_AUTH=true is only allowed when APP_ENV=test; current APP_ENV=development`.
+- Причина: в `ci.yml` smoke-тесты стартуют backend и graph-service с `SKIP_AUTH=true`, но без `APP_ENV=test`.
+- Исправление (`21f5d8d`): добавить `APP_ENV: test` в env для шагов `Start backend for smoke tests` и `Start graph-service for smoke tests`.
+
+**Smoke Tests: graph-service REDIS_URL в формате URL.**
+
+- Симптом: `Start graph-service for smoke tests` падает с `failed to connect to redis: dial tcp: address redis://localhost:6379: too many colons in address`.
+- Причина: graph-service ожидает `RedisURL` как `host:port`, а `ci.yml` передавал `redis://localhost:6379`.
+- Исправление (`5acc40d`): `REDIS_URL: localhost:6379` для graph-service.
+
+**Smoke Tests: Go module cache.**
+
+- Симптом: `Start backend for smoke tests` провисел более 5 минут на `go mod download`, потому что в smoke-джобе не было `actions/setup-go` и кеша.
+- Исправление (`ff65307`): добавлен `actions/setup-go@v6` с `cache-dependency-path: '**/go.sum'` в `smoke-tests`.
+
+**Smoke Tests: мало времени на компиляцию сервисов.**
+
+- Симптом: сервис падает по таймауту опроса `health` (30 попыток × 2 сек = 60 сек), потому что `go run` компилирует из исходников дольше минуты.
+- Исправление (`af2f957`): увеличить цикл ожидания backend и graph-service до 90 попыток (до 3 минут).
+
+**Smoke Tests: конфликт миграций, Redis URL и frontend URL.**
+
+- Симптом: backend при `SKIP_AUTH=true` не мог поднять Redis (`redis://localhost:6379: too many colons in address`), не применял `019_add_test_user` из-за ручного `migrate up` + собственного `RunMigrations`, регистрация возвращала 500, а 49 тестов палили с `ERR_CONNECTION_REFUSED` на `http://127.0.0.1:5173`.
+- Исправление (`49c4e67`):
+  - убрать ручной `Apply database migrations` из smoke-тестов, чтобы backend сам применил SQL-миграции;
+  - `REDIS_URL: localhost:6379` для backend smoke;
+  - `FRONTEND_URL`, `VITE_API_TARGET`, `VITE_GRAPH_SERVICE_URL` и BDD-URL переключены на `localhost`.
+
+- Статус: все вспомогательные правки в `ci.yml`; следующий прогон CI подтверждает.
+
+**Smoke Tests: отсутствует тестовый пользователь после миграции 029.**
+
+|- Симптом: после исправления миграций Playwright-создание заметок падает с `Failed to save note`; в логе Postgres `insert or update on table "notes" violates foreign key constraint "notes_creator_id_fkey"` для `creator_id=00000000-0000-0000-0000-000000000000`.
+|- Причина: миграция `029_remove_test_user.up.sql` удаляет zero-UUID пользователя, созданного `019_add_test_user.up.sql`; `skip_auth` middleware всё ещё использует этот ID, а сидер `backend/cmd/seed` не запускался в smoke-джобе.
+|- Исправление (`5f0f6b8`): после подъёма backend запустить `go run ./cmd/seed` с `APP_ENV=test` и `SEED_TEST_USER_PASSWORD` до начала тестов.
+|- Результат: 49 Playwright smoke-тестов и 43 BDD-шага (5 сценариев) проходят.
+
+**Smoke Tests: BDD-сценарии проходят, но шаг зависает на выходе.**
+
+|- Симптом: `Run smoke BDD tests` отрапортовал `5 scenarios (5 passed), 43 steps (43 passed), 0m49.839s`, но процесс не завершился и джоба ушла в timeout/cancel.
+|- Причина: `frontend/tests/features/support/hooks.ts` запускает Vite dev-сервер сам, а `devServer.kill` не убивает дочерний процесс Vite; процесс остаётся висеть, GitHub Actions не переходит к следующему шагу.
+|- Исправление (`c7f4786`):
+  - выделить отдельный шаг `Start frontend dev server for smoke tests` с `npm run dev &` и дождаться `http://localhost:5173`;
+  - `PLAYWRIGHT_DEV_SERVER=true` + `webServer.reuseExistingServer: true` заставляют Playwright переиспользовать уже поднятый Vite, а не стартовать новый;
+  - `test:cucumber` видит готовый сервер и не стартует собственный, поэтому завершается сразу после отчёта;
+  - `SKIP_AUTH: "true"` добавлен в env `Run smoke BDD tests`, чтобы `hooks.ts` инжектировал `__SKIP_AUTH__`.
+|- Результат: `Smoke Tests` проходит за ~5m35s; полный CI run `34642092163` — success (все 9 джоб).
+
+**Итог CI-4:**
+
+|- PR #36 run `34642092163` — `conclusion: success`, все Core Checks и Smoke Tests зелёные; Playwright 49 passed/2 skipped, BDD 5 scenarios/43 steps passed.

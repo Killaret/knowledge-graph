@@ -123,7 +123,7 @@ func TestImportFetcher_Extract_CharsetConversion(t *testing.T) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=windows-1251")
-		w.Write([]byte(encoded))
+		_, _ = w.Write([]byte(encoded))
 	}))
 	defer srv.Close()
 
