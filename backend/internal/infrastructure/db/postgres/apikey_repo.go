@@ -84,11 +84,11 @@ func (r *APIKeyRepository) Revoke(ctx context.Context, keyID, userID uuid.UUID) 
 	return result.RowsAffected > 0, nil
 }
 
-// FindActiveByHash returns the active API key with the given hash.
-func (r *APIKeyRepository) FindActiveByHash(ctx context.Context, hash string) (*user.APIKey, error) {
+// FindActiveByID returns the active API key with the given ID.
+func (r *APIKeyRepository) FindActiveByID(ctx context.Context, keyID uuid.UUID) (*user.APIKey, error) {
 	var model APIKeyModel
 	err := r.db.WithContext(ctx).
-		Where("key_hash = ? AND is_active = ?", hash, true).
+		Where("id = ? AND is_active = ?", keyID, true).
 		First(&model).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

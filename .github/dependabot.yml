@@ -22,10 +22,6 @@ updates:
       frontend-dependencies:
         patterns:
           - "*"
-    ignore:
-      # Ignore major version updates for stability
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
 
   # Backend dependencies (Go)
   - package-ecosystem: "gomod"
@@ -42,10 +38,6 @@ updates:
     labels:
       - "dependencies"
       - "backend"
-    ignore:
-      # Ignore major version updates for stability
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
 
   # NLP Service dependencies (Python)
   - package-ecosystem: "pip"
@@ -62,10 +54,48 @@ updates:
     labels:
       - "dependencies"
       - "nlp"
-    ignore:
-      # Ignore major version updates for stability
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+
+  # Graph Service dependencies (Go)
+  - package-ecosystem: "gomod"
+    directory: "/services/graph-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "knowledge-graph-maintainers"
+    assignees:
+      - "knowledge-graph-maintainers"
+    labels:
+      - "dependencies"
+      - "graph-service"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # Root package.json / package-lock.json
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "knowledge-graph-maintainers"
+    assignees:
+      - "knowledge-graph-maintainers"
+    labels:
+      - "dependencies"
+      - "root"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      root-dependencies:
+        patterns:
+          - "*"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
