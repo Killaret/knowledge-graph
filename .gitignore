@@ -51,6 +51,7 @@ go.work
 !.devin/prompts/
 !.devin/prompts/**
 !.devin/config.json
+!.devin/config.yml
 *.swp
 *.swo
 *~

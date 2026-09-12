@@ -571,18 +571,46 @@ func TestDeleteNote_DeleteError(t *testing.T) {
 
 func TestDeleteBatchNotes_Success(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
-	id1 := uuid.New()
-	id2 := uuid.New()
+	owner := uuid.New()
+	n1 := newTestNote(t, "T1", "C1", "star")
+	n2 := newTestNote(t, "T2", "C2", "star")
+	n1.SetCreatorID(owner)
+	n2.SetCreatorID(owner)
 
+	repo.On("FindByID", mock.Anything, n1.ID()).Return(n1, nil)
+	repo.On("FindByID", mock.Anything, n2.ID()).Return(n2, nil)
 	repo.On("DeleteBatch", mock.Anything, mock.AnythingOfType("[]uuid.UUID")).Return(nil)
 
-	body := fmt.Sprintf(`{"ids":["%s","%s"]}`, id1, id2)
-	w, c := newContext(t, http.MethodPost, "/notes/batch", body)
+	body := fmt.Sprintf(`{"ids":["%s","%s"]}`, n1.ID(), n2.ID())
+	w, c := newContext(t, http.MethodPost, "/notes/batch", body, owner)
 	h.DeleteBatch(c)
 	_ = w
 
 	assert.Equal(t, http.StatusNoContent, c.Writer.Status())
 	repo.AssertExpectations(t)
+}
+
+// SEC-1: a batch containing a foreign note must be refused wholesale —
+// nothing is deleted, and the answer is 404 rather than a leak.
+func TestDeleteBatchNotes_ForeignNote(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	owner := uuid.New()
+	stranger := uuid.New()
+	mine := newTestNote(t, "mine", "C", "star")
+	theirs := newTestNote(t, "theirs", "C", "star")
+	mine.SetCreatorID(owner)
+	theirs.SetCreatorID(stranger)
+
+	repo.On("FindByID", mock.Anything, mine.ID()).Return(mine, nil)
+	repo.On("FindByID", mock.Anything, theirs.ID()).Return(theirs, nil)
+
+	body := fmt.Sprintf(`{"ids":["%s","%s"]}`, mine.ID(), theirs.ID())
+	w, c := newContext(t, http.MethodPost, "/notes/batch", body, owner)
+	h.DeleteBatch(c)
+	_ = w
+
+	assert.Equal(t, http.StatusNotFound, c.Writer.Status())
+	repo.AssertNotCalled(t, "DeleteBatch")
 }
 
 func TestDeleteBatchNotes_InvalidBody(t *testing.T) {
@@ -622,6 +650,8 @@ func TestDeleteBatchNotes_RepoError(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 	id := uuid.New()
 
+	// The id resolves to nothing — missing ids keep their no-op semantics.
+	repo.On("FindByID", mock.Anything, id).Return(nil, nil)
 	repo.On("DeleteBatch", mock.Anything, mock.AnythingOfType("[]uuid.UUID")).Return(assert.AnError)
 
 	body := fmt.Sprintf(`{"ids":["%s"]}`, id)
@@ -744,10 +774,12 @@ func TestGetNote_FindByIDError(t *testing.T) {
 func TestGetSuggestions_Precomputed(t *testing.T) {
 	h, repo, _, recRepo, _, _ := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
+	rec := newTestNote(t, "Rec", "Content", "planet")
 
 	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("FindByID", mock.Anything, rec.ID()).Return(rec, nil)
 	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{
-		{NoteID: n.ID(), RecommendedNoteID: uuid.New(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
+		{NoteID: n.ID(), RecommendedNoteID: rec.ID(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
 	}, nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions", "")
@@ -763,10 +795,12 @@ func TestGetSuggestions_Precomputed(t *testing.T) {
 func TestGetSuggestions_PrecomputedStale(t *testing.T) {
 	h, repo, tq, recRepo, _, _ := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
+	rec := newTestNote(t, "Rec", "Content", "planet")
 
 	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("FindByID", mock.Anything, rec.ID()).Return(rec, nil)
 	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{
-		{NoteID: n.ID(), RecommendedNoteID: uuid.New(), Score: 0.9, UpdatedAt: time.Now().Add(-time.Hour)},
+		{NoteID: n.ID(), RecommendedNoteID: rec.ID(), Score: 0.9, UpdatedAt: time.Now().Add(-time.Hour)},
 	}, nil)
 	tq.On("EnqueueRefreshRecommendations", mock.Anything, n.ID(), mock.AnythingOfType("time.Duration")).Return(nil)
 
@@ -784,10 +818,12 @@ func TestGetSuggestions_PrecomputedStale(t *testing.T) {
 func TestGetSuggestions_LimitParam(t *testing.T) {
 	h, repo, _, recRepo, _, _ := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
+	rec := newTestNote(t, "Rec", "Content", "planet")
 
 	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("FindByID", mock.Anything, rec.ID()).Return(rec, nil)
 	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 2).Return([]recommendation.Recommendation{
-		{NoteID: n.ID(), RecommendedNoteID: uuid.New(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
+		{NoteID: n.ID(), RecommendedNoteID: rec.ID(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
 	}, nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions?limit=2", "")
@@ -800,7 +836,7 @@ func TestGetSuggestions_LimitParam(t *testing.T) {
 }
 
 func TestGetSuggestions_SemanticFallback(t *testing.T) {
-	h, _, tq, recRepo, embRepo, _ := setupUnitHandler(t)
+	h, repo, tq, recRepo, embRepo, _ := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
 	similarID := uuid.New()
 
@@ -808,6 +844,7 @@ func TestGetSuggestions_SemanticFallback(t *testing.T) {
 	embRepo.On("FindSimilarNotes", mock.Anything, n.ID(), 5).Return([]recommendation.SimilarNote{
 		{NoteID: similarID, Score: 0.85},
 	}, nil)
+	repo.On("FindByID", mock.Anything, similarID).Return(newTestNote(t, "Similar", "Body", "planet"), nil)
 	tq.On("EnqueueRefreshRecommendations", mock.Anything, n.ID(), mock.AnythingOfType("time.Duration")).Return(nil)
 
 	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions", "")
@@ -819,6 +856,7 @@ func TestGetSuggestions_SemanticFallback(t *testing.T) {
 	assert.Equal(t, "semantic", w.Header().Get("X-Recommendations-Source"))
 	assert.Equal(t, "true", w.Header().Get("X-Recommendations-Stale"))
 	assert.Contains(t, w.Body.String(), similarID.String())
+	assert.Contains(t, w.Body.String(), "Similar")
 	tq.AssertExpectations(t)
 }
 

@@ -128,8 +128,8 @@
     container_name: kg-graph-service
     
     ports:
-      - "9090:9090"
-      - "9091:9091"
+      - "127.0.0.1:9090:9090"
+      - "127.0.0.1:9091:9091"
     env_file:
       - .env
     environment:
@@ -139,6 +139,7 @@
       GRPC_PORT: 9090
       EVENT_CHANNEL: ${EVENT_CHANNEL:-graph:events}
       GRAPH_FULL_LIMIT: 500
+      GRAPH_SERVICE_TRUST_USER_HEADER: "true"
       NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
     volumes:
       - ./knowledge-graph.config.json:/app/knowledge-graph.config.json:ro

@@ -42,9 +42,7 @@ describe("Graph 3D page - auth ordering", () => {
 
   it("does not call layoutProvider.load until initAuth resolves", async () => {
     let resolveInit!: () => void;
-    initAuthMock.mockImplementation(
-      () => new Promise<void>((resolve) => (resolveInit = resolve))
-    );
+    initAuthMock.mockImplementation(() => new Promise<void>((resolve) => (resolveInit = resolve)));
 
     render(Page);
 

@@ -8,30 +8,18 @@
 
 ```
 scripts/
-├── cleanup/          # Скрипты очистки и сжатия
-├── diagnostics/      # Диагностические и проверочные скрипты
-├── testing/          # Тестовые скрипты и эксперименты
-├── utility/          # Вспомогательные скрипты
+├── backfill/         # Разовая заливка данных
+├── ci/               # Проверки и воркфлоу CI
+├── cleanup/          # Скрипты очистки
 ├── database/         # Скрипты для работы с базой данных
-└── docs/             # Документация скриптов
+├── devops/           # Бэкапы, стражи, проверки политик
+└── testing/          # Тест-стек, регрессионные прогоны
 ```
 
 **Cleanup скрипты:**
-- `diskpart_compress_admin.ps1` - VHDX сжатие через DiskPart (основной)
-- `clean_and_compress_lunix.ps1` - Сжатие lunix образов
-- `cleanup_and_compress.ps1` - Полная очистка и сжатие
-- `cleanup-docker.ps1` - Очистка Docker + опциональное сжатие VHD через diskpart (без Hyper-V)
-
-**Diagnostics скрипты:**
-- `check_all_vhdx.ps1` - Проверка размеров VHDX файлов
-- `check_disk_lock.ps1` - Проверка блокировок диска
-- `check_file_lock.ps1` - Проверка блокировки файла
-- `find_docker.ps1` - Поиск Docker процессов
-
-**Utility скрипты:**
-- `stop_docker.ps1` - Остановка Docker
-- `force_stop_docker.ps1` - Принудительная остановка Docker
-- `fix_vhdx_attributes.ps1` - Исправление атрибутов VHDX
+- `cleanup-docker.ps1` / `cleanup-docker.sh` - Очистка Docker + опциональное сжатие VHD через diskpart (`-WslOptimize`, требует прав администратора; без Hyper-V)
+- `cleanup-logs.ps1` / `cleanup-logs.sh` - Очистка логов и старых снапшотов тестов
+- `cleanup-test-artifacts.py` - Очистка артефактов тестовых прогонов
 
 ## 🚀 Команды запуска и разработки
 
@@ -43,28 +31,28 @@ npm run lint:backend               # Линтинг backend Go кода
 npm run format                     # Форматирование frontend кода
 npm run build-config               # Сборка конфигурации
 npm run test                       # Запуск unit тестов
-npm run clean:lunix                # Очистка и компрессия lunix (PowerShell)
-npm run clean:lunix:dry            # Очистка lunix (dry run, PowerShell)
-npm run clean:lunix:sh             # Очистка и компрессия lunix (bash)
-npm run clean:lunix:sh:dry         # Очистка lunix (dry run, bash)
+npm run clean:logs                 # Очистка логов и старых снапшотов
+npm run clean:logs:dry             # То же в режиме предпросмотра
+npm run clean:test-artifacts       # Очистка артефактов тестов
+npm run clean:test-artifacts:dry   # То же в режиме предпросмотра
 ```
 
 ### Makefile команды
 ```bash
-make clean-lunix                   # Очистка и компрессия lunix (PowerShell с Compact.exe)
-make clean-lunix-sh                # Очистка и компрессия lunix (bash)
-make clean-lunix-dry               # Очистка lunix (dry run, PowerShell)
-make clean-lunix-sh-dry            # Очистка lunix (dry run, bash)
+make clean-logs                    # Очистка логов и старых снапшотов
+make clean-logs-dry                # То же в режиме предпросмотра
 ```
 
 ### Docker cleanup и оптимизация диска
 ```bash
-npm run clean:lunix                # Поиск и сжатие всех lunix образов (Compact.exe)
-npm run clean:lunix:vhd            # Поиск и сжатие с Optimize-VHD (требует Hyper-V)
-npm run clean:lunix:dry            # Dry run для проверки что будет сжато
-npm run clean:lunix:sh             # Bash версия для Linux/WSL
-npm run clean:lunix:sh:dry         # Bash dry run
+.\scripts\cleanup\cleanup-docker.ps1              # Базовая очистка; тома сохраняются
+.\scripts\cleanup\cleanup-docker.ps1 -DryRun      # Предпросмотр: что уйдёт, ничего не удаляется
+.\scripts\cleanup\cleanup-docker.ps1 -Full        # Удалить ВСЕ неиспользуемые образы; тома сохраняются
+.\scripts\cleanup\cleanup-docker.ps1 -WslOptimize # + сжатие VHD WSL2 — требует запуск от администратора
+bash scripts/cleanup/cleanup-docker.sh            # То же на Linux/macOS: флаги -f, -o, -n|--dry-run
 ```
+
+Скрипт завершается ненулевым кодом, если хоть один шаг не удался — `[PASS]` печатается только при реальном успехе. Шаги, способные тронуть тома (`-RemoveVolumes`, `-Full`), отказываются без свежего непустого бэкапа Personal-стека.
 
 ## 🎨 Frontend команды
 
@@ -76,12 +64,27 @@ npm run build                      # Production сборка
 npm run preview                    # Предпросмотр production сборки
 ```
 
+### Единая локальная проверка Core Checks
+
+```powershell
+.\scripts\testing\check-all.ps1          # Все локально доступные проверки
+.\scripts\testing\check-all.ps1 -Quick   # Интеграционные явно помечаются [SKIP]
+```
+
+```bash
+./scripts/testing/check-all.sh
+./scripts/testing/check-all.sh --quick
+```
+
+Команда повторяет пять джоб `_core-checks.yml`. Недоступные инструменты не скрываются: каждая такая фаза получает `[SKIP]` с причиной, а итог помечается `COMPLETE WITH SKIPS`.
+
 ### Проверка кода
 ```bash
 cd frontend
 npm run check                      # Проверка типов SvelteKit
 npm run check:watch                # Проверка типов в watch режиме
-npm run lint                       # ESLint linting с авто-фиксом
+npm run lint                       # ESLint проверка (без изменения файлов)
+npm run lint:fix                   # ESLint с авто-фиксом
 npm run format                     # Prettier форматирование
 npm run format:check               # Проверка форматирования
 ```
@@ -300,124 +303,46 @@ npm run format && cd backend && golangci-lint run --fix
 
 ### Cleanup
 ```bash
-# Очистка временных файлов и docker образов
-npm run clean:lunix                # PowerShell с Compact.exe (рекомендуется)
-npm run clean:lunix:vhd            # PowerShell с Optimize-VHD (Hyper-V)
-npm run clean:lunix:sh            # Bash версия
-make clean-lunix                  # Через Makefile
+# Очистка логов и старых снапшотов тестов
+npm run clean:logs                 # или make clean-logs
+npm run clean:logs:dry             # предпросмотр без удаления
+
+# Очистка артефактов тестовых прогонов
+npm run clean:test-artifacts
+npm run clean:test-artifacts:dry   # предпросмотр без удаления
 ```
 
-### Docker cleanup оптимизация
-**Исправленные функции:**
-- 🔍 **Поиск нескольких файлов:** Теперь находит все lunix файлы в разных директориях
-- 📁 **Поддержка директорий:** Можно указать путь к директории для поиска всех lunix файлов
-- 💾 **Compact.exe:** Использует встроенную утилиту Windows для сжатия (без Hyper-V)
-- 🗜️ **Optimize-VHD:** Опциональное сжатие VHD (требует Hyper-V)
-- ⚡ **Sparse файлы:** Автоматическое включение sparse атрибута для оптимизации диска
-- 🔄 **Множественные файлы:** Обрабатывает все найденные файлы, а не только первый
-- 💿 **DiskPart VHDX:** Сжатие VHDX файлов Docker WSL2 через diskpart vdisk
+### Docker cleanup и сжатие VHDX WSL2
 
-**Примеры:**
-```bash
-# Поиск и сжатие всех lunix образов с Compact.exe
-npm run clean:lunix
+Скрипт `cleanup-docker` — единственный поддерживаемый способ. Он честно рапортует об отказах: ненулевой код выхода, если хоть один шаг не удался.
 
-# Сжатие с Optimize-VHD (если есть Hyper-V)
-npm run clean:lunix:vhd
+**Флаги `cleanup-docker.ps1`** (у `.sh` аналоги: `-f`, `-o`, `--remove-volumes`, `-n|--dry-run`):
 
-# Проверка что будет сжато без выполнения
-npm run clean:lunix:dry
+- без флагов — остановка контейнеров, dangling-образы, остановленные контейнеры, сети, кэш сборки; **тома не трогаются**;
+- `-DryRun` — предпросмотр: печатает, что ушло бы, и ничего не меняет;
+- `-Full` — дополнительно `docker system prune -af`: **все** образы без исключения (после шагов 1–3 контейнеров не остаётся, поэтому неиспользуемыми считаются все); тома по-прежнему не трогаются;
+- `-RemoveVolumes` — удаляет только анонимные (64-hex) dangling-тома; именованные, `*personal*` и помеченные `protected` сохраняются всегда;
+- `-WslOptimize` — сжатие `docker_data.vhdx` через diskpart. **Требует запуск от администратора** — без повышения шаг помечается `[SKIP]` с причиной; процессы WSL/Docker при этом не убиваются: скрипт ждёт освобождения файла и отказывается с сообщением, если он остался заблокированным.
 
-# Сжатие всех файлов в конкретной директории
-.\scripts\cleanup\clean_and_compress_lunix.ps1 -ImagePath "D:\images\" -Compress -Force
+**Защита томов.** Шаги, способные тронуть тома (`-RemoveVolumes`, `-Full`), отказываются без свежего непустого бэкапа Personal-стека (`backups/backup-personal-*`, порог — `scripts/devops/backup-policy.env`). Политика та же, что у хука `guard-personal-data.py`.
 
-# Принудительное сжатие без запросов подтверждения
-.\scripts\cleanup\clean_and_compress_lunix.ps1 -Search -Compress -UseCompact -Force
-```
+**Порядок и периодичность:**
 
-### Сжатие VHDX Docker WSL2 (рекомендуемый метод)
-Для максимальной экономии дискового пространства используйте **DiskPart VHDX сжатие**:
+1. Обычный прогон раз в неделю или когда `docker system df` показывает большой reclaimable-кэш сборки:
+   ```powershell
+   .\scripts\cleanup\cleanup-docker.ps1 -DryRun   # посмотреть цену
+   .\scripts\cleanup\cleanup-docker.ps1           # выполнить
+   ```
+2. Компактизация VHD — редко и только **после** обычной очистки: diskpart возвращает Windows лишь то, что уже освобождено внутри диска. Признак «пора»: файл `docker_data.vhdx` заметно больше суммы из `docker system df`.
+   ```powershell
+   # из терминала, запущенного от администратора
+   .\scripts\cleanup\cleanup-docker.ps1 -WslOptimize
+   ```
+   Сжимается только диск Docker (`%LOCALAPPDATA%\Docker\wsl`); диски других дистрибутивов WSL не выбираются.
 
-**🎉 Результаты:** Сжатие docker_data.vhdx с 38.98GB до 7.80GB (**31.18GB экономия, 80% reduction**)
-
-**Автоматический скрипт с разблокировкой:**
-```bash
-# С автоматической остановкой WSL и разблокировкой файла (требует админа)
-.\scripts\cleanup\diskpart_compress_admin.ps1
-
-# Или через единый cleanup-скрипт (очистка Docker + сжатие VHD в одном):
-.\scripts\cleanup\cleanup-docker.ps1 -Full -WslOptimize
-```
-
-**Или через npm:**
-```bash
-npm run clean:docker:vhdx
-```
-
-**Ручной метод (максимальный контроль):**
-```powershell
-# 1. Остановка WSL
-wsl --shutdown
-
-# 2. Принудительная остановка WSL процессов
-Get-Process | Where-Object { $_.ProcessName -like "*wsl*" -or $_.ProcessName -like "*vmmem*" } | Stop-Process -Force
-
-# 3. Проверка разблокировки файла
-.\scripts\diagnostics\check_file_lock.ps1
-
-# 4. Сжатие VHDX через diskpart (run as admin)
-diskpart
-# В diskpart:
-select vdisk file="C:\Users\89209\AppData\Local\Docker\wsl\disk\docker_data.vhdx"
-attach vdisk readonly
-compact vdisk
-detach vdisk
-exit
-
-# 5. Перезапуск WSL
-wsl
-```
-
-**Оптимальный workflow для максимального эффекта:**
-```bash
-# Единая команда (требует права админа, Hyper-V НЕ нужен):
-.\scripts\cleanup\cleanup-docker.ps1 -Full -WslOptimize
-#   - останавливает контейнеры
-#   - очищает dangling images, build cache, stopped containers, unused networks
-#   - удаляет ВСЕ неиспользуемые образы (system prune -af), но не трогает volumes
-#   - останавливает WSL и убивает leftover процессы
-#   - находит самый большой .vhdx и сжимает через diskpart
-#   - перезапускает WSL
-
-# Или по шагам:
-# 1. Запустить Docker (если не запущен)
-# 2. Очистка Docker (без volumes)
-docker system prune -a --force
-# 3. Остановить контейнеры
-docker compose down
-# 4. Полностью остановить Docker Desktop
-# 5. Запустить сжатие
-.\scripts\cleanup\diskpart_compress_admin.ps1
-# 6. Перезапустить Docker Desktop
-```
-
-**Проверка результатов и диагностика:**
-```powershell
-# Проверка размеров VHDX файлов
-.\scripts\diagnostics\check_all_vhdx.ps1
-
-# Проверка что блокирует файл
-.\scripts\diagnostics\check_disk_lock.ps1
-
-# Простая проверка блокировки
-.\scripts\diagnostics\check_file_lock.ps1
-```
-
-**Примечание:**
-- Автоматический скрипт обрабатывает остановку WSL и разблокировку файла
-- VHDX файл блокируется процессами WSL (vmmemWSL, wsl, wslhost)
-- Для максимального эффекта сначала очистите Docker образы
-- Требует прав администратора для работы с diskpart
+**Чего не делать:**
+- не убивать `vmmem*`/`wsl*`/`docker*` через `Stop-Process -Force` — в этой VM лежат тома Personal-стека, форсированное завершение оставляет ФС грязной;
+- не запускать `docker system prune --volumes` и `docker volume prune` — `docker system df` помечает тома Personal-стека как «reclaimable», потому что их контейнеры остановлены.
 
 ## 📝 Документация
 

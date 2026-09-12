@@ -125,6 +125,16 @@ describe("ApiErrorDisplay", () => {
     expect(screen.getByRole("img", { name: "404 illustration" })).toBeInTheDocument();
   });
 
+  it("automatically renders a server-error illustration for INTERNAL_ERROR", () => {
+    const serverError: ErrorResponse = {
+      code: "INTERNAL_ERROR",
+      message: "Something went wrong on our side",
+    };
+
+    render(ApiErrorDisplay, { props: { error: serverError } });
+    expect(screen.getByRole("img", { name: "Server error illustration" })).toBeInTheDocument();
+  });
+
   it("renders custom illustrationType when provided", () => {
     render(ApiErrorDisplay, {
       props: { error: mockError, illustrationType: "offline" },

@@ -2,7 +2,7 @@
 # Source this file before using register_phase / write_final_summary / test_any_failed.
 #
 # PHASE_RESULTS is an associative array:
-#   Name -> "skip" or numeric exit code
+#   Name -> "skip|reason" or numeric exit code
 #
 # The main script sets SNAPSHOT_DIR so write_final_summary can report the
 # snapshot location without each call site passing it.
@@ -21,14 +21,19 @@ register_phase() {
     local name="$1"
     local code="${2:-0}"
     local skipped="${3:-0}"
+    local reason="${4:-}"
 
     if [[ -z ${PHASE_RESULTS[$name]+_} ]]; then
         PHASE_ORDER+=("$name")
     fi
 
     if [[ "$skipped" -eq 1 && "$code" -eq 0 ]]; then
-        PHASE_RESULTS["$name"]="skip"
-        echo "  [SKIP] $name"
+        PHASE_RESULTS["$name"]="skip|$reason"
+        if [[ -n "$reason" ]]; then
+            echo "  [SKIP] $name — $reason"
+        else
+            echo "  [SKIP] $name"
+        fi
         return 0
     fi
 
@@ -46,7 +51,17 @@ write_final_summary() {
     echo ""
     echo "[Final Summary] Test cycle summary"
     echo "========================================"
-    if [[ "$success" == "true" ]]; then
+    local skipped_count=0
+    local value
+    for value in "${PHASE_RESULTS[@]}"; do
+        if [[ "$value" == skip\|* ]]; then
+            skipped_count=$((skipped_count + 1))
+        fi
+    done
+
+    if [[ "$success" == "true" && "$skipped_count" -gt 0 ]]; then
+        echo "  TEST CYCLE COMPLETE WITH SKIPS"
+    elif [[ "$success" == "true" ]]; then
         echo "  TEST CYCLE COMPLETE"
     else
         echo "  TEST CYCLE FAILED"
@@ -56,8 +71,13 @@ write_final_summary() {
 
     for name in "${PHASE_ORDER[@]}"; do
         local value="${PHASE_RESULTS[$name]}"
-        if [[ "$value" == "skip" ]]; then
-            echo "  [SKIP] $name"
+        if [[ "$value" == skip\|* ]]; then
+            local reason="${value#skip|}"
+            if [[ -n "$reason" ]]; then
+                echo "  [SKIP] $name — $reason"
+            else
+                echo "  [SKIP] $name"
+            fi
         elif [[ "$value" =~ ^[0-9]+$ ]]; then
             if [[ "$value" -eq 0 ]]; then
                 echo "  [PASS] $name"
@@ -75,8 +95,22 @@ write_final_summary() {
         echo ""
     fi
 
-    if [[ "$success" == "true" ]]; then
+    if [[ "$skipped_count" -gt 0 ]]; then
+        echo "Skipped phases: $skipped_count"
+        for name in "${PHASE_ORDER[@]}"; do
+            value="${PHASE_RESULTS[$name]}"
+            if [[ "$value" == skip\|* ]]; then
+                local reason="${value#skip|}"
+                echo "  - $name: ${reason:-no reason provided}"
+            fi
+        done
+        echo ""
+    fi
+
+    if [[ "$success" == "true" && "$skipped_count" -eq 0 ]]; then
         echo "All stacks are stable and isolated testing completed successfully."
+    elif [[ "$success" == "true" ]]; then
+        echo "No phases failed, but skipped checks require review."
     else
         echo "One or more phases failed. See details above."
     fi
@@ -85,7 +119,7 @@ write_final_summary() {
 test_any_failed() {
     local value
     for value in "${PHASE_RESULTS[@]}"; do
-        if [[ "$value" != "skip" && "$value" -ne 0 ]]; then
+        if [[ "$value" != skip\|* && "$value" -ne 0 ]]; then
             return 0
         fi
     done

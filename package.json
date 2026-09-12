@@ -28,7 +28,7 @@
   },
   "lint-staged": {
     "frontend/**/*.{svelte,ts,js}": [
-      "cd frontend && npm run lint",
+      "cd frontend && npm run lint:fix",
       "cd frontend && npm run format"
     ],
     "backend/**/*.go": [

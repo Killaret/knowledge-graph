@@ -3,11 +3,12 @@ import { argosScreenshot } from "@argos-ci/playwright";
 import { clickViewToggle, clickFilterChip } from "../helpers/testUtils";
 
 /**
- * Visual Regression Tests with Argos Playwright SDK
+ * Authenticated visual baseline — scenarios that need a real session.
  *
- * - Uses argosScreenshot for automatic stabilization and upload.
- * - Injects a seeded Math.random and __SKIP_AUTH__ before each test.
- * - Runs against the isolated test stack with seeded data.
+ * Runs in the `visual-real-auth` project: storageState comes from
+ * tests/setup/auth.setup.ts and the backend runs with SKIP_AUTH=false.
+ * Scenarios that must render for a logged-out visitor belong in
+ * visual-anonymous.spec.ts.
  */
 
 const STABLE_RENDER = "?stableRender=true";
@@ -18,16 +19,13 @@ const VIEWPORTS = [
   { width: 375, height: 667 },
 ];
 
-test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
-  test.beforeEach(async ({ page }, testInfo) => {
+test.describe("Visual Regression - authenticated @visual", { tag: "@visual" }, () => {
+  test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.addInitScript(() => {
       // Disable cockpit panel slide/resize animations so the 3D scene element
       // is stable before the element-screenshot in argosScreenshot.
-      localStorage.setItem(
-        "cockpit-settings",
-        JSON.stringify({ reducedMotion: true })
-      );
+      localStorage.setItem("cockpit-settings", JSON.stringify({ reducedMotion: true }));
 
       // Seeded Math.random for deterministic canvas / d3-force / particle output
       let seed = 12345;
@@ -37,14 +35,6 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
         return seed / m;
       };
     });
-
-    // The public baseline still uses SKIP_AUTH injection; the authorized
-    // baseline relies on the persisted storageState from tests/setup/auth.setup.ts.
-    if (testInfo.project.name !== "visual-real-auth") {
-      await page.addInitScript(() => {
-        (window as any).__SKIP_AUTH__ = true;
-      });
-    }
   });
 
   async function waitForApp(page: Page) {
@@ -59,7 +49,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
   test("Home page - default view", async ({ page }) => {
     await page.goto("/" + STABLE_RENDER);
     await waitForApp(page);
-    await argosScreenshot(page, "home-default", { fullPage: true });
+    await argosScreenshot(page, "auth-home-default", { fullPage: true });
   });
 
   test("Home page - list view", async ({ page }) => {
@@ -69,7 +59,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await clickViewToggle(page, "list");
     await page.waitForTimeout(500);
 
-    await argosScreenshot(page, "home-list-view", { fullPage: true });
+    await argosScreenshot(page, "auth-home-list-view", { fullPage: true });
   });
 
   test("Home page - with star filter", async ({ page }) => {
@@ -78,14 +68,14 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
 
     await clickFilterChip(page, "star");
 
-    await argosScreenshot(page, "home-filtered-stars", { fullPage: true });
+    await argosScreenshot(page, "auth-home-filtered-stars", { fullPage: true });
   });
 
   test("2D Graph - full view with links", async ({ page }) => {
     await page.goto("/graph" + STABLE_RENDER);
     await waitForGraph(page);
 
-    await argosScreenshot(page, "2d-graph-full", { fullPage: true });
+    await argosScreenshot(page, "auth-2d-graph-full", { fullPage: true });
   });
 
   test("2D Graph - ghost node creation form", async ({ page }) => {
@@ -95,7 +85,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await page.keyboard.press("N");
     await page.waitForTimeout(500);
 
-    await argosScreenshot(page, "2d-ghost-node-form", { fullPage: true });
+    await argosScreenshot(page, "auth-2d-ghost-node-form", { fullPage: true });
   });
 
   test("2D Graph - help modal", async ({ page }) => {
@@ -105,7 +95,7 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await page.keyboard.press("?");
     await page.waitForTimeout(500);
 
-    await argosScreenshot(page, "2d-help-modal", { fullPage: true });
+    await argosScreenshot(page, "auth-2d-help-modal", { fullPage: true });
   });
 
   test("NoteCard - selected state", async ({ page }) => {
@@ -125,13 +115,13 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await firstNote.click();
     await page.waitForTimeout(500);
 
-    await argosScreenshot(page, "notecard-selected", { fullPage: true });
+    await argosScreenshot(page, "auth-notecard-selected", { fullPage: true });
   });
 
   test("Search page", async ({ page }) => {
     await page.goto("/search" + STABLE_RENDER);
     await waitForApp(page);
-    await argosScreenshot(page, "search-page", { fullPage: true });
+    await argosScreenshot(page, "auth-search-page", { fullPage: true });
   });
 
   test("Search with query", async ({ page }) => {
@@ -142,13 +132,13 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     await expect(searchInput).toBeVisible({ timeout: 5000 });
     await page.waitForTimeout(500);
 
-    await argosScreenshot(page, "search-with-query", { fullPage: true });
+    await argosScreenshot(page, "auth-search-with-query", { fullPage: true });
   });
 
   test("Empty state", async ({ page }) => {
     await page.goto("/search?q=nonexistentquery123456789" + STABLE_RENDER);
     await waitForApp(page);
-    await argosScreenshot(page, "empty-state", { fullPage: true });
+    await argosScreenshot(page, "auth-empty-state", { fullPage: true });
   });
 
   test("3D Graph - renders 3D view", async ({ page }) => {
@@ -183,13 +173,13 @@ test.describe("Visual Regression @visual", { tag: "@visual" }, () => {
     // while the screenshot is taken, which causes Playwright's "element not
     // stable" timeout on the WebGL element.
     await scene.hover();
-    await argosScreenshot(page, "3d-graph-view", { element: scene, disableHover: false });
+    await argosScreenshot(page, "auth-3d-graph-view", { element: scene, disableHover: false });
   });
 
   test("Home responsive viewports", async ({ page }) => {
     await page.goto("/" + STABLE_RENDER);
     await waitForApp(page);
-    await argosScreenshot(page, "home-responsive", {
+    await argosScreenshot(page, "auth-home-responsive", {
       fullPage: true,
       viewports: VIEWPORTS,
     });

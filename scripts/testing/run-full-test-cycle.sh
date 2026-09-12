@@ -186,6 +186,22 @@ else
     echo "  ERROR: Failed to enter backend directory"
 fi
 
+echo "  Running graph-service integration tests (requires Linux/WSL Docker)..."
+if cd "$PROJECT_ROOT/services/graph-service"; then
+    go test -tags=integration -p=1 -count=1 ./... </dev/null
+    graph_integration_exit=$?
+    cd "$PROJECT_ROOT"
+    register_phase "Graph-service integration tests" "$graph_integration_exit"
+    if [[ $graph_integration_exit -eq 0 ]]; then
+        echo "  ✓ Graph-service integration tests completed"
+    else
+        echo "  WARNING: Graph-service integration tests failed"
+    fi
+else
+    register_phase "Graph-service integration tests" 1
+    echo "  ERROR: Failed to enter graph-service directory"
+fi
+
 # Step 10: Backend API Verification
 echo ""
 echo "[Step 10/24] Backend API Verification..."

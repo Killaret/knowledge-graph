@@ -51,7 +51,7 @@ func (s *GRPCIntegrationTestSuite) SetupSuite() {
 
 	// Create mock PostgreSQL client (placeholder)
 	// In a real integration test, this would connect to a test database
-	s.postgres = &mockPostgresClient{}
+	s.postgres = &stubPostgresClient{}
 
 	// Create gRPC server
 	s.server = grpc.NewServer()
@@ -214,10 +214,10 @@ func (s *GRPCIntegrationTestSuite) TestInvalidRequest() {
 	s.Error(err)
 }
 
-// mockPostgresClient is a mock implementation for testing
-type mockPostgresClient struct{}
+// stubPostgresClient is a mock implementation for testing
+type stubPostgresClient struct{}
 
-func (m *mockPostgresClient) GetNotes(ctx context.Context, filter db.NotesFilter) ([]*db.Note, []*db.Link, error) {
+func (m *stubPostgresClient) GetNotes(ctx context.Context, filter db.NotesFilter) ([]*db.Note, []*db.Link, error) {
 	notes := []*db.Note{
 		{ID: "note-1", Title: "Note 1"},
 		{ID: "note-2", Title: "Note 2"},
@@ -232,23 +232,23 @@ func (m *mockPostgresClient) GetNotes(ctx context.Context, filter db.NotesFilter
 	return notes, links, nil
 }
 
-func (m *mockPostgresClient) GetEmbeddings(ctx context.Context, noteIDs []string) (map[string][]float32, error) {
+func (m *stubPostgresClient) GetEmbeddings(ctx context.Context, noteIDs []string) (map[string][]float32, error) {
 	return make(map[string][]float32), nil
 }
 
-func (m *mockPostgresClient) GetNoteNeighbors(ctx context.Context, filter db.NotesFilter, noteID string, depth int) ([]*db.Neighbor, error) {
+func (m *stubPostgresClient) GetNoteNeighbors(ctx context.Context, filter db.NotesFilter, noteID string, depth int) ([]*db.Neighbor, error) {
 	return nil, nil
 }
 
-func (m *mockPostgresClient) GetShortestPath(ctx context.Context, filter db.NotesFilter, fromID, toID string) ([]string, int, float64, error) {
+func (m *stubPostgresClient) GetShortestPath(ctx context.Context, filter db.NotesFilter, fromID, toID string) ([]string, int, float64, error) {
 	return nil, 0, 0, nil
 }
 
-func (m *mockPostgresClient) GetRecommendationCandidates(ctx context.Context, filter db.NotesFilter, noteID string, depth, limit int) ([]*db.RecommendationCandidate, error) {
+func (m *stubPostgresClient) GetRecommendationCandidates(ctx context.Context, filter db.NotesFilter, noteID string, depth, limit int) ([]*db.RecommendationCandidate, error) {
 	return nil, nil
 }
 
-func (m *mockPostgresClient) RefreshClosureView(ctx context.Context) error {
+func (m *stubPostgresClient) RefreshClosureView(ctx context.Context) error {
 	return nil
 }
 

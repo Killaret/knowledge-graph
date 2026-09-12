@@ -3,7 +3,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { getVariation, applyHueShift } from "./variation";
+import { applyHueShift } from "$shared/lib/graph/helpers";
+import { getVariation } from "./variation";
 
 describe("getVariation", () => {
   it("should return deterministic results for same node ID", () => {

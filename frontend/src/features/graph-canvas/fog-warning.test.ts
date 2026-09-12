@@ -51,12 +51,7 @@ describe("fog-warning", () => {
     expect(state.kind).toBe(null);
     expect(state.dangerArmed).toBe(false);
 
-    state = updateFogWarning(
-      state,
-      DEFAULT_FOG_WARNING_HOLD_MS + 100,
-      true,
-      true
-    );
+    state = updateFogWarning(state, DEFAULT_FOG_WARNING_HOLD_MS + 100, true, true);
     expect(state.kind).toBe(null);
     expect(state.dangerArmed).toBe(false);
     expect(state.shownAt).toBe(shownAt);
@@ -75,12 +70,7 @@ describe("fog-warning", () => {
     expect(state.kind).toBe(null);
 
     // Wait for the rearm debounce; recovery arms and triggers.
-    state = updateFogWarning(
-      state,
-      falseTime + DEFAULT_FOG_WARNING_REARM_MS,
-      false,
-      true
-    );
+    state = updateFogWarning(state, falseTime + DEFAULT_FOG_WARNING_REARM_MS, false, true);
     expect(state.kind).toBe("recovery");
     expect(state.dangerShownInEpisode).toBe(true);
   });
@@ -90,12 +80,7 @@ describe("fog-warning", () => {
     state = updateFogWarning(state, 0, true, true);
     const falseTime = DEFAULT_FOG_WARNING_HOLD_MS + 1;
     state = updateFogWarning(state, falseTime, false, true);
-    state = updateFogWarning(
-      state,
-      falseTime + DEFAULT_FOG_WARNING_REARM_MS,
-      false,
-      true
-    );
+    state = updateFogWarning(state, falseTime + DEFAULT_FOG_WARNING_REARM_MS, false, true);
     expect(state.kind).toBe("recovery");
 
     state = updateFogWarning(
@@ -119,12 +104,7 @@ describe("fog-warning", () => {
     state = updateFogWarning(state, falseTime, false, true);
 
     // Back to true before the rearm debounce expires.
-    state = updateFogWarning(
-      state,
-      falseTime + DEFAULT_FOG_WARNING_REARM_MS - 1,
-      true,
-      true
-    );
+    state = updateFogWarning(state, falseTime + DEFAULT_FOG_WARNING_REARM_MS - 1, true, true);
 
     expect(state.kind).toBe(null);
     expect(state.recoveryArmed).toBe(false);
@@ -135,12 +115,7 @@ describe("fog-warning", () => {
     state = updateFogWarning(state, 0, true, true);
     const falseTime = DEFAULT_FOG_WARNING_HOLD_MS + 1;
     state = updateFogWarning(state, falseTime, false, true);
-    state = updateFogWarning(
-      state,
-      falseTime + DEFAULT_FOG_WARNING_REARM_MS,
-      false,
-      true
-    );
+    state = updateFogWarning(state, falseTime + DEFAULT_FOG_WARNING_REARM_MS, false, true);
     state = updateFogWarning(
       state,
       falseTime + DEFAULT_FOG_WARNING_REARM_MS + DEFAULT_FOG_WARNING_HOLD_MS,
@@ -151,10 +126,7 @@ describe("fog-warning", () => {
 
     state = updateFogWarning(
       state,
-      falseTime +
-        DEFAULT_FOG_WARNING_REARM_MS +
-        DEFAULT_FOG_WARNING_HOLD_MS +
-        1,
+      falseTime + DEFAULT_FOG_WARNING_REARM_MS + DEFAULT_FOG_WARNING_HOLD_MS + 1,
       true,
       true
     );

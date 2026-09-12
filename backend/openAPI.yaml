@@ -1,4 +1,6 @@
-openapi: 3.1.0
+# This file is the source of truth for the API contract. It is maintained
+# by hand; do NOT generate it from swaggo annotations.
+openapi: 3.0.3
 info:
   title: Knowledge Graph API
   version: 1.1.0
@@ -691,7 +693,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Note'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -1173,6 +1180,42 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Update link
+      tags: [Links]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLinkRequest'
+      responses:
+        '200':
+          description: Link updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
@@ -1680,6 +1723,29 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/graph/analytics:
+    get:
+      summary: Graph analytics (PageRank, clusters, top central nodes)
+      tags: [Graph]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Computed analytics for the caller's graph
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GraphAnalytics'
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -2306,6 +2372,41 @@ components:
           type: string
           description: ISO 8601 timestamp with timezone
 
+    UpdateLinkRequest:
+      type: object
+      description: At least one of link_type or weight must be provided.
+      properties:
+        link_type:
+          type: string
+          enum: [reference, dependency, related, custom, parent, child]
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    GraphAnalytics:
+      type: object
+      properties:
+        page_rank:
+          type: object
+          additionalProperties:
+            type: number
+          description: PageRank score per note ID
+        clusters:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+              format: uuid
+          description: Connected components; each cluster is a list of note IDs
+        top_centers:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Most central note IDs by PageRank
+
     CreateLinkRequest:
       type: object
       required:
@@ -2519,10 +2620,12 @@ components:
           type: string
           format: date-time
         expires_at:
-          type: [string, 'null']
+          type: string
+          nullable: true
           format: date-time
         last_used_at:
-          type: [string, 'null']
+          type: string
+          nullable: true
           format: date-time
 
     CreateAPIKeyRequest:
@@ -2589,7 +2692,8 @@ components:
           enum: [read, write]
           default: read
         expires_at:
-          type: [string, 'null']
+          type: string
+          nullable: true
           format: date-time
 
     ShareNoteResponse:
@@ -2613,7 +2717,8 @@ components:
           type: string
           format: date-time
         expires_at:
-          type: [string, 'null']
+          type: string
+          nullable: true
           format: date-time
 
     CreateShareLinkRequest:
@@ -2624,10 +2729,12 @@ components:
           enum: [read, write]
           default: read
         expires_at:
-          type: [string, 'null']
+          type: string
+          nullable: true
           format: date-time
         max_uses:
-          type: [integer, 'null']
+          type: integer
+          nullable: true
 
     ShareLinkResponse:
       type: object
@@ -2641,10 +2748,12 @@ components:
           type: string
           enum: [read, write]
         expires_at:
-          type: [string, 'null']
+          type: string
+          nullable: true
           format: date-time
         max_uses:
-          type: [integer, 'null']
+          type: integer
+          nullable: true
         created_at:
           type: string
           format: date-time

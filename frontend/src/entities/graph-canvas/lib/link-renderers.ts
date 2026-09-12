@@ -125,13 +125,7 @@ export function drawAnimatedLink(
         (hoveredNeighborIds.has(sourceId) && sourceId === hoveredNodeId) ||
         (hoveredNeighborIds.has(targetId) && targetId === hoveredNodeId)
       : false;
-  let opacity = hoveredNodeId
-    ? isHovered
-      ? 1
-      : isNeighborLink
-        ? 0.7
-        : 0.3
-    : baseOpacity;
+  let opacity = hoveredNodeId ? (isHovered ? 1 : isNeighborLink ? 0.7 : 0.3) : baseOpacity;
   const weight = link.weight ?? 0.5;
   const linkType = LinkType.fromString(link.link_type);
   const dashArray = linkType.getLineDash(weight);
@@ -192,13 +186,7 @@ export function drawLink(
     hoveredNodeId && hoveredNeighborIds
       ? hoveredNeighborIds.has(sourceId) && hoveredNeighborIds.has(targetId)
       : false;
-  const finalOpacity = hoveredNodeId
-    ? isHovered
-      ? 1
-      : isNeighborLink
-        ? 0.7
-        : 0.3
-    : opacity;
+  const finalOpacity = hoveredNodeId ? (isHovered ? 1 : isNeighborLink ? 0.7 : 0.3) : opacity;
 
   ctx.beginPath();
   drawCurvedLinkPath(ctx, sourceNode, targetNode, curveOffset);

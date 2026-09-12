@@ -2,34 +2,66 @@
 
 <div align="center">
 
-![Knowledge Graph](https://img.shields.io/badge/Knowledge-Graph-blue?style=for-the-badge)
-![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?style=for-the-badge&logo=go)
-![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?style=for-the-badge&logo=svelte)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+[![CI](https://github.com/Killaret/knowledge-graph/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/Killaret/knowledge-graph/actions/workflows/main.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)
+![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
-**База знаний с графовой структурой и интеллектуальными рекомендациями**
+**A personal knowledge base where notes form a graph you can fly through.**
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Documentation](#-documentation) • [Contributing](#-contributing)
+[Русская версия](README.ru.md) • [Quick Start](#-quick-start) • [Architecture](#️-architecture) • [Engineering](#-engineering-practices) • [Documentation](#-documentation)
+
+![3D graph view](docs/assets/a1-3d-visual-regression/3d-baseline.png)
 
 </div>
 
 ---
 
+## What it is
+
+Notes are nodes; links between them are edges. An NLP service embeds every note
+into a multilingual vector space, so related notes attract each other whether
+they were written in Russian or English. The result is rendered as a navigable
+3D scene — stars, planets, comets — or as a conventional 2D graph.
+
+Published notes form a public community graph that anyone can browse without an
+account; signing in switches the view to your own.
+
+## Provenance
+
+The project began with a problem of the author's own: notes accumulating faster
+than any structure to hold them, and no tool that treated the links between them
+as the primary object rather than an afterthought.
+
+The product model and the architecture are the author's, as is every decision in
+[`docs/architecture/decisions/`](docs/architecture/decisions/) — put forward as a
+hypothesis, worked through, argued with colleagues where that helped, then
+accepted or rejected on the merits. The rejected options are recorded next to the
+chosen ones, because they are the part that shows the reasoning. The system was
+built by the author.
+
+AI agents joined later, and they work under a written protocol: one implements,
+another reviews, never both in the same session, and neither may alter its own
+constraints. What gets built, and the criteria it is held to, are decided outside
+them.
+
+---
+
 ## ✨ Features
 
-- 🌟 **3D Visualization** — заметки как небесные тела в интерактивном космосе
-- 🔗 **Graph Structure** — перекрёстные ссылки между заметками
-- 🧠 **Smart Recommendations** — интеллектуальные рекомендации на основе NLP
-- 🎨 **Celestial Types** — звёзды, планеты, кометы, галактики для разных типов контента
-- 🔍 **Semantic Search** — полнотекстовый поиск с pgvector
-- 📝 **Draft System** — автосохранение черновиков в MongoDB
-- 🔒 **Authentication** — JWT, API keys, OAuth2 (Yandex)
-- 🎯 **Achievements** — геймификация с системой достижений
-- 🌐 **Multi-language** — поддержка русского и английского
-- 💾 **Cloud Backup** — резервное копирование на Яндекс.Диск
+- **3D visualisation** — notes as celestial bodies, with camera navigation and adaptive fog
+- **Graph structure** — typed links between notes, weighted by semantic similarity
+- **Multilingual semantics** — one embedding space for 50+ languages, so «машинное обучение» and "machine learning" sit together
+- **Semantic search** — pgvector similarity over note embeddings
+- **Recommendations** — precomputed suggestions from graph distance and semantics
+- **Public community graph** — published notes are browsable anonymously
+- **Drafts** — autosaved to MongoDB while you type
+- **Authentication** — JWT, API keys, OAuth2 (Yandex)
+- **Achievements** — lightweight gamification
+- **Cloud backup** — scheduled backup to Yandex.Disk
 
 ---
 
@@ -37,134 +69,129 @@
 
 ### Prerequisites
 
-- Docker & Docker Compose
-- (Optional) Go 1.25+, Node.js 20+, Python 3.11+, Java 17+
+Docker and Docker Compose. Everything else runs in containers; Go 1.25+,
+Node.js 20+ and Python 3.11+ are only needed to run services directly.
 
-### One-Command Start
+### Start
 
 ```bash
-# Full stack with Docker (Development)
+# Development stack
 docker compose up -d
 
-# Personal instance (different ports)
-docker compose -f docker compose.personal.yml up -d
+# Personal instance (separate ports and volumes)
+docker compose -f docker-compose.personal.yml up -d
 
-# Test stack (isolated testing environment)
-docker compose -f docker compose.test.yml up -d --build
-# Or use convenience scripts:
-.\scripts\testing\start-test.ps1    # Start test stack
-.\scripts\testing\stop-test.ps1     # Stop and destroy test stack
-.\scripts\testing\seed-test-data.ps1  # Populate with test data
+# Isolated test stack, destroyed after use
+docker compose -f docker-compose.test.yml up -d --build
 ```
 
-**Access services:**
-- **Dev Stack**: Frontend dev server http://localhost:5173, Nginx API http://localhost:18080, Nginx frontend http://localhost:18081
-- **Personal Stack**: Nginx API http://localhost:18082, Nginx frontend http://localhost:18084, Backend direct http://localhost:18085
-- **Test Stack**: Frontend http://localhost:3002, Backend http://localhost:18083 (isolated, destroyed after use)
+Convenience scripts for the test stack:
 
-### Development Mode
+```powershell
+.\scripts\testing\start-test.ps1       # start
+.\scripts\testing\seed-test-data.ps1   # populate with deterministic data
+.\scripts\testing\stop-test.ps1        # stop and destroy
+```
+
+### Where things listen
+
+| Stack | Frontend | API gateway | Notes |
+|---|---|---|---|
+| Development | http://localhost:18081 | http://localhost:18080 | Vite dev server on 5173 |
+| Personal | http://localhost:18084 | http://localhost:18082 | your real data lives here |
+| Test | http://localhost:3002 | http://localhost:18083 | isolated, disposable |
+
+Full port map: [`docs/DOCKER.md`](docs/DOCKER.md).
+
+### Running services directly
 
 ```bash
-# Backend (Go)
-cd backend && go run ./cmd/server
-
-# Frontend (Svelte)
-cd frontend && npm run dev
-
-# NLP Service (Python)
-cd nlp-service && uvicorn app.main:app --reload
+cd backend      && go run ./cmd/server
+cd frontend     && npm run dev
+cd nlp-service  && uvicorn app.main:app --reload
 ```
-
----
-
-## 📖 Table of Contents
-
-- [Architecture](#-architecture)
-- [Technology Stack](#-technology-stack)
-- [Project Structure](#-project-structure)
-- [Documentation](#-documentation)
-- [Security](#-security)
-- [AI Agents](#-ai-agents)
-- [Development](#-development)
-- [Testing](#-testing)
-- [Deployment](#-deployment)
-- [Contributing](#-contributing)
-- [License](#-license)
 
 ---
 
 ## 🏗️ Architecture
 
-### Architecture Patterns
-
-- **Clean Architecture** — разделение на Domain, Application, Infrastructure, Interfaces
-- **Domain-Driven Design (DDD)** — богатая доменная модель с Value Objects
-- **CQRS-Lite** — оптимизация чтения/записи
-- **Event-Driven** — инкрементальные обновления графа через события
-
-### High-Level Overview
+Four services behind an nginx gateway.
 
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Frontend  │    │   Backend   │    │ Graph Service│
-│  (Svelte 5) │◄──►│  (Go 1.25)  │◄──►│  (Go 1.25)  │
-└─────────────┘    └─────────────┘    └─────────────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  Nginx API   │    │ PostgreSQL  │    │   Redis     │
-│  Gateway    │    │ + pgvector  │    │ (Cache/Queue)│
-└─────────────┘    └─────────────┘    └─────────────┘
-                          │
-                          ▼
-                   ┌─────────────┐
-                   │    Redis    │
-                   │ (Cache/Queue)│
-                   └─────────────┘
+                    ┌──────────────┐
+                    │    nginx     │  gateway, CORS, security headers
+                    └──────┬───────┘
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+   ┌────────────┐   ┌────────────┐   ┌───────────────┐
+   │  Frontend  │   │  Backend   │   │ Graph Service │
+   │ SvelteKit  │──►│    Go      │──►│  Go, gRPC +   │
+   │  Svelte 5  │   │  Gin/GORM  │   │     HTTP      │
+   └────────────┘   └─────┬──────┘   └───────┬───────┘
+                          │                  │
+                ┌─────────┼──────────┐       │
+                ▼         ▼          ▼       ▼
+         ┌───────────┐ ┌──────┐ ┌───────┐ ┌─────────┐
+         │PostgreSQL │ │Redis │ │MongoDB│ │   NLP   │
+         │ +pgvector │ │cache │ │drafts │ │ FastAPI │
+         └───────────┘ └──────┘ └───────┘ └─────────┘
 ```
+
+**Backend** follows Clean Architecture — `domain`, `application`,
+`infrastructure`, `interfaces` — with the boundaries enforced by `depguard`
+rather than by convention. **Frontend** follows Feature-Sliced Design layered
+over Atomic Design, with import rules enforced by ESLint.
+
+**Graph Service** is a separate Go service computing layout and traversal over
+the note graph, with pub/sub cache invalidation. **NLP Service** produces
+embeddings and extracts keywords.
+
+Decision records: 18 ADRs in [`docs/architecture/decisions/`](docs/architecture/decisions/),
+C4 model and UML in [`docs/architecture/`](docs/architecture/README.md).
+
+---
+
+## 🔬 Engineering practices
+
+The part of this project worth reading is not the feature list.
+
+**A test is not trusted until it has been seen red.** Every guard here was
+verified by breaking the thing it guards and watching the test fail — layer
+rules, coverage gates, the note access model, the CI drift detector. A green
+suite that has never failed is indistinguishable from no suite at all.
+
+**Rules are enforced by machines, not by memory.** Architectural boundaries run
+through `depguard` and ESLint import rules. Generated configuration is
+regenerated in CI and the build fails on drift. The local check runner compares
+itself against the CI workflow and fails when they diverge. Documentation links
+and documented commands are verified on every run.
+
+**One local command mirrors CI.** `scripts/testing/check-all.ps1` runs the same
+sixteen phases the pipeline runs, reports every unavailable tool as an explicit
+skip with a reason, and exits non-zero when anything fails.
+
+**Two AI agents, separated by role.** Implementation and review never happen in
+the same session, and neither agent may write its own constraints. The protocol
+is in [`docs/AI_AGENT_PROTOCOL.md`](docs/AI_AGENT_PROTOCOL.md), the working
+board in [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md); both are kept in Russian by
+project convention.
+
+An external audit of the repository, its 22 findings and their resolution are
+recorded in [`docs/EXTERNAL_AUDIT_2026-09.md`](docs/EXTERNAL_AUDIT_2026-09.md).
 
 ---
 
 ## 💻 Technology Stack
 
-### Backend
-- **Language:** Go 1.25+
-- **Framework:** Gin + GORM
-- **Database:** PostgreSQL 16 + pgvector
-- **Cache/Queue:** Redis 7 + asynq
-- **Auth:** JWT, API Keys, OAuth2 (Yandex)
-- **Graph Service:** gRPC (microservice)
-- **Nginx:** Reverse proxy & API gateway
-
-### Frontend
-- **Framework:** SvelteKit (Svelte 5)
-- **Language:** TypeScript
-- **3D Graphics:** Three.js
-- **State:** Svelte stores
-- **Testing:** Vitest + Playwright
-
-### NLP Service
-- **Language:** Python 3.11+
-- **Framework:** FastAPI
-- **ML:** sentence-transformers, YAKE, NLTK
-
-### Infrastructure
-- **Containerization:** Docker Compose
-- **Reverse Proxy:** Nginx
-- **Monitoring:** Prometheus (planned)
-- **Backup:** Яндекс.Диск WebDAV
-
-### Proxy Architecture
-
-**Docker Environment:**
-- **Nginx** (port 18080): API gateway
-  - `/api/*` → Backend (localhost:18080)
-  - `/graph-service/api/*` → Graph Service (localhost:18080)
-
-**Development Environment:**
-- **Vite Proxy** (vite.config.ts): Dev mode proxy
-  - `/api/v1` → Backend (localhost:9000)
-  - `/graph-service/api` → Graph Service (localhost:9091)
+| Layer | Choices |
+|---|---|
+| **Backend** | Go 1.25, Gin, GORM, pgx/v5, asynq |
+| **Frontend** | SvelteKit, Svelte 5 runes, TypeScript, Three.js |
+| **Graph Service** | Go 1.25, gRPC + HTTP |
+| **NLP** | Python 3.11, FastAPI, sentence-transformers, YAKE |
+| **Data** | PostgreSQL 16 + pgvector, Redis 7, MongoDB |
+| **Infrastructure** | Docker Compose, nginx |
+| **Testing** | testify + testcontainers, Vitest, Playwright, Cucumber, Argos |
 
 ---
 
@@ -172,342 +199,128 @@ cd nlp-service && uvicorn app.main:app --reload
 
 ```
 knowledge-graph/
-├── backend/                 # Go backend (REST API, workers)
-│   ├── cmd/                # Server & Worker entry points
-│   ├── internal/           # DDD layers
-│   │   ├── domain/         # Business logic
-│   │   ├── application/    # Use cases
-│   │   ├── infrastructure/ # DB, Redis, config
-│   │   └── interfaces/     # HTTP handlers
-│   └── migrations/         # SQL migrations
-├── frontend/               # SvelteKit frontend
-│   ├── src/
-│   │   ├── lib/           # Business logic, API clients
-│   │   ├── components/    # UI components
-│   │   └── routes/        # SvelteKit pages
-│   └── tests/             # Playwright E2E tests
-├── nlp-service/           # Python NLP service (embeddings)
-├── services/
-│   └── graph-service/     # gRPC graph layout service
-├── docs/                  # Architecture, ADR, UML diagrams
-├── scripts/               # Utility scripts (cleanup, diagnostics)
-└── tests/                 # BDD tests (Cucumber + Playwright)
-```
-
----
-
-## 📚 Documentation
-
-Полный указатель по каталогу — [docs/README.md](docs/README.md).
-
-### Core Documentation
-- [🎯 Roadmap](ROADMAP.md) — куда идёт проект
-- [📋 Backlog](docs/BACKLOG.md) — детальные планы по каждому пункту роадмапа
-- [💡 Ideas](docs/IDEAS.md) — гипотезы, ещё не ставшие планами
-- [📜 Changelog](CHANGELOG.md) — что уже выпущено
-- [📐 Architecture](docs/architecture/README.md) — C4 модель, UML, ADR
-- [🚀 Deployment](docs/DEPLOYMENT_EN.md) — руководство по развертыванию
-- [⚙️ Configuration](docs/CONFIGURATION_EN.md) — настройка системы
-- [🐳 Docker](docs/DOCKER.md) — Docker деплой и архитектура контейнеров
-
-### Feature Documentation
-- [🔐 Authentication](backend/internal/auth/README.md) — система авторизации
-- [🎯 Achievements](backend/internal/application/achievement/) — геймификация
-- [💾 Backup](docs/BACKUP.md) — резервное копирование
-- [🔍 NLP Integration](docs/RECOMMENDATION_ARCHITECTURE.md) — рекомендации
-- [📱 Frontend Features](docs/FRONTEND_FEATURES.md) — double-tap zoom, responsive design
-- [🧪 Visual Regression Testing](docs/ARGOS.md) — Argos visual testing
-
-### Developer Guides
-- [🤖 AI Agents](docs/AGENTS.md) — использование AI агентов
-- [📝 Commands](COMMANDS.md) — справочник команд
-- [🧪 Testing](docs/TESTING.md) — статус и покрытие тестов
-- [🎨 Frontend Patterns](frontend/FRONTEND_PATTERNS.md) — паттерны фронтенда
-
-### Service Documentation
-- [🔄 API Errors](docs/API_ERRORS_EN.md) — формат ошибок API
-- [🗄️ Database Schema](docs/SaaS_DATABASE_SCHEMA.md) — схема БД
-
----
-
-## 🔒 Security
-
-### Dependency Protection
-- ✅ **npm ci only** in CI (never npm install)
-- ✅ **minimumReleaseAge=7** in `.npmrc`
-- ✅ **npm audit** with high severity threshold
-- ✅ **package-lock.json** controlled by CODEOWNERS
-- ✅ **Lifecycle scripts whitelist**
-
-### Automated Security
-- ✅ **Dependabot** — weekly dependency updates
-- ✅ **Dependency Review Action** — PR vulnerability scanning
-- ✅ **Daily security scans** — automated audits
-
-### GitHub & CI/CD Security
-- ✅ **CODEOWNERS** — mandatory review for dependency changes
-- ✅ **Minimal permissions** — `contents: read` for GitHub Actions
-- ✅ **Branch protection** — approval required for main/release
-- ✅ **Secret scanning** & **push protection** enabled
-
----
-
-## 🤖 AI Agents
-
-This project uses **9 specialized AI agents** for development:
-
-### Available Agents
-| Agent | Focus |
-|-------|-------|
-| **Orchestrator** | Task routing & coordination |
-| **Backend Go** | Go API, PostgreSQL, Redis |
-| **Frontend Svelte** | Svelte 5, TypeScript, UI/UX |
-| **Integration** | API contracts, DTOs, OpenAPI |
-| **Infrastructure** | Docker, containers, monitoring |
-| **DevOps** | CI/CD, deployment, backups |
-| **Performance** | Profiling, optimization, caching |
-| **Security** | Security audit, Auth/AuthZ |
-| **Testing** | Unit, integration, E2E tests |
-
-**Documentation:** See [`AGENTS_EN.md`](docs/AGENTS_EN.md) for detailed agent descriptions and guidelines.
-
----
-
-## 🛠️ Development
-
-### Setup
-
-```bash
-# Clone repository
-git clone https://github.com/Killaret/knowledge-graph.git
-cd knowledge-graph
-
-# Install dependencies
-cd backend && go mod download
-cd ../frontend && npm install
-cd ../nlp-service && pip install -r requirements.txt
-```
-
-### Local Development
-
-```bash
-# Start services with Docker
-docker compose up -d
-
-# Or run individually:
-# Backend
-cd backend && go run ./cmd/server
-
-# Frontend
-cd frontend && npm run dev
-
-# NLP Service
-cd nlp-service && uvicorn app.main:app --reload
-```
-
-### Code Quality
-
-```bash
-# Backend linting
-cd backend && golangci-lint run
-
-# Frontend linting
-cd frontend && npm run lint
-
-# Type checking
-cd frontend && npm run check
+├── backend/                  # Go API and workers
+│   ├── cmd/                  # server, worker, seed, cli, embed-recompute
+│   ├── internal/
+│   │   ├── domain/           # entities and value objects
+│   │   ├── application/      # use cases
+│   │   ├── infrastructure/   # persistence, cache, queue
+│   │   └── interfaces/       # HTTP handlers and middleware
+│   └── migrations/           # 30 SQL migrations
+├── frontend/                 # SvelteKit, Feature-Sliced Design
+│   └── src/
+│       ├── shared/           # primitives, API clients, stores
+│       ├── entities/         # domain-bound UI
+│       ├── features/         # user-facing capabilities
+│       ├── widgets/          # composed blocks
+│       ├── components/       # atoms, molecules, organisms
+│       └── routes/           # pages
+├── services/graph-service/   # graph layout and traversal
+├── nlp-service/              # embeddings and keywords
+├── docs/                     # architecture, ADRs, operations, testing
+├── scripts/                  # testing, cleanup, devops
+└── tests/                    # BDD suites
 ```
 
 ---
 
 ## 🧪 Testing
 
-### Unit Tests
+993 frontend unit tests across 109 files, 47 Go packages under test in the
+backend plus the graph service, integration tests on real containers via
+testcontainers, E2E and BDD through Playwright, and visual regression through
+Argos.
 
 ```bash
-# Backend
-cd backend && go test ./...
+# everything CI runs, locally
+.\scripts\testing\check-all.ps1
+.\scripts\testing\check-all.ps1 -Quick    # skip integration
 
-# Frontend
-cd frontend && npm run test:unit
-
-# NLP Service
+# individually
+cd backend     && go test ./...
+cd backend     && go test -tags=integration -p=1 ./...
+cd frontend    && npm run test:unit
 cd nlp-service && pytest
 ```
 
-### Integration Tests
-
-```bash
-# Backend integration
-cd backend && go test -tags=integration ./...
-
-# Frontend E2E (requires running stack)
-cd frontend && npm run test
-
-# BDD tests
-cd tests && npm run test:bdd
-```
-
-### Test Stack (Isolated Testing Environment)
-
-**⚠️ IMPORTANT:** Knowledge Graph uses an isolated testing model. The full test cycle script (`run-full-test-cycle.ps1`) automatically stops dev and personal stacks during testing to prevent resource conflicts and ensure accurate test results.
-
-For automated testing, use the dedicated test stack that is completely isolated from development and personal data:
-
-```bash
-# Full test cycle (isolated model - stops dev/personal stacks)
-.\scripts\testing\run-full-test-cycle.ps1
-
-# Manual test stack management
-.\scripts\testing\start-test.ps1    # Start test stack
-.\scripts\testing\seed-test-data.ps1  # Populate with test data
-.\scripts\testing\stop-test.ps1     # Stop and destroy test stack
-```
-
-**Test Stack Details:**
-- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 19091
-- **Database:** Separate `knowledge_test` database
-- **Volumes:** Isolated `pgdata_test`, `mongodbdata_test` (destroyed after use)
-- **Auth:** SKIP_AUTH enabled for testing
-- **Cleanup:** All data removed on `stop-test.ps1 -v`
-
-**Isolated Testing Model:**
-- Dev and personal stacks are stopped during full test cycle
-- Prevents Docker API instability from running multiple stacks
-- Ensures accurate test results on clean environment
-- Automatic state verification of dev stack before/after testing
-- Temporary snapshots are written to `scripts/testing/temp/snapshots/YYYYMMDD_HHMMSS/`
-- Visual regression screenshots are written to `frontend/argos-screenshots/`
-
-See [docs/TESTING.md](docs/TESTING.md) for complete testing documentation.
-
-### Test Coverage
-Единственный источник целевых значений — [`.windsurfrules`](.windsurfrules), раздел Testing Requirements.
-
-- **Backend:** цель 70%, объявленный минимум 60%. Фактически 67.4%. В CI порог не применяется — см. находку T-2.
-- **Frontend:** 70% по строкам, ветвям, функциям и операторам; порог применяется vitest в CI. Считается по `shared`, `features`, `components` — `widgets`, `entities` и `routes` в знаменатель не входят (находка T-3).
-- **Overall:** All tests must pass before merge
+The full regression cycle, which raises an isolated stack and tears it down
+afterwards, is documented in [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md).
 
 ---
 
-## 🚀 Deployment
+## 🔒 Security
 
-### Docker Deployment
+- Object-level authorisation on every note route: foreign private notes answer
+  `404`, so their existence is not confirmable
+- Public and internal perimeters are separated — the gateway strips internal
+  headers, and the graph service gates header trust behind an off-by-default flag
+- Private responses are `Cache-Control: private` with `Vary`
+- Access tokens are never accepted from the query string; OAuth uses PKCE `S256`
+- The test-only auth bypass refuses to start outside a test environment
+- `npm ci` only in CI, `minimumReleaseAge` in `.npmrc`, `npm audit` gating,
+  Dependabot, and dependency review on pull requests
 
-```bash
-# Production stack
-docker compose -f docker compose.prod.yml up -d
+---
 
-# Personal instance
-docker compose -f docker compose.personal.yml up -d
-
-# CI/CD testing
-docker compose -f docker compose.test.yml up -d
-```
-
-### Environment Variables
-
-See `.env.example` and `knowledge-graph.config.json` for configuration options.
-
-### Backup & Restore
+## 🛠️ Development
 
 ```bash
-# Manual backup
-./scripts/devops/backup-personal.sh
+git clone https://github.com/Killaret/knowledge-graph.git
+cd knowledge-graph
 
-# Automatic backup (configured in docker compose)
-# Back up to Яндекс.Дisk via WebDAV
+cd backend     && go mod download
+cd ../frontend && npm install
+cd ../nlp-service && pip install -r requirements.txt
 ```
+
+Code quality:
+
+```bash
+cd backend  && golangci-lint run
+cd frontend && npm run lint     # check only; npm run lint:fix to apply
+cd frontend && npm run check    # svelte-check
+```
+
+Command reference: [`COMMANDS.md`](COMMANDS.md).
+
+---
+
+## 📚 Documentation
+
+Directory index: [`docs/README.md`](docs/README.md).
+
+| Topic | Document |
+|---|---|
+| Where the project is going | [`ROADMAP.md`](ROADMAP.md), [`docs/BACKLOG.md`](docs/BACKLOG.md), [`docs/IDEAS.md`](docs/IDEAS.md) |
+| What shipped | [`CHANGELOG.md`](CHANGELOG.md) |
+| Architecture | [`docs/architecture/README.md`](docs/architecture/README.md), [`docs/ARCHITECTURE_SUMMARY.md`](docs/ARCHITECTURE_SUMMARY.md) |
+| Deployment and configuration | [`DEPLOY.md`](DEPLOY.md) · [`DEPLOY.ru.md`](DEPLOY.ru.md), [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md), [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md), [`docs/DOCKER.md`](docs/DOCKER.md) |
+| API contract | [`docs/API_EN.md`](docs/API_EN.md), [`backend/openAPI.yaml`](backend/openAPI.yaml) |
+| Testing | [`docs/TESTING.md`](docs/TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md), [`docs/ARGOS.md`](docs/ARGOS.md) |
+| Backup | [`docs/BACKUP.md`](docs/BACKUP.md) |
+| Graph service auth | [`docs/GRAPH_SERVICE_AUTH.md`](docs/GRAPH_SERVICE_AUTH.md) |
+| Recommendations | [`docs/RECOMMENDATION_ARCHITECTURE.md`](docs/RECOMMENDATION_ARCHITECTURE.md) |
 
 ---
 
 ## 🤝 Contributing
 
-### Development Workflow
+This is a personal project, but the conventions are written down and enforced:
+[`.windsurfrules`](.windsurfrules) is the single normative source for
+architecture, testing, security and language policy.
 
-1. **Fork** the repository
-2. **Create branch** (`git checkout -b feature/amazing-feature`)
-3. **Commit** changes (`git commit -m 'feat: add amazing feature'`)
-4. **Push** to branch (`git push origin feature/amazing-feature`)
-5. **Open Pull Request**
-
-### Commit Messages
-
-Follow conventional commits:
-- `feat:` new feature
-- `fix:` bug fix
-- `docs:` documentation
-- `refactor:` code refactoring
-- `test:` testing
-- `chore:` maintenance
-
-### Code Review
-
-- All PRs require approval from maintainers
-- Security changes require additional review
-- Dependency changes require CODEOWNERS approval
-
-### Project Rules
-
-- **Backend:** Clean Architecture, DDD, no globals, dependency injection
-- **Frontend:** Atomic design, Svelte 5, TypeScript strict mode
-- **Infrastructure:** Docker multi-stage builds, health checks
-- **Testing:** пороги покрытия — см. раздел Test Coverage и `.windsurfrules`
-- **Security:** Never commit secrets, use environment variables
-- **🌐 Language:** All notes, annotations, comments, UI strings, and user-facing content MUST be in English
-
-See [`AGENTS_EN.md`](docs/AGENTS_EN.md) for detailed development guidelines.
-
----
-
-## 📊 Project Status
-
-### Recent Updates
-- ✅ Fixed Playwright and svelte-check errors
-- ✅ Updated GraphDelta types for incremental updates
-- ✅ Activated anomaly rendering for unknown node types
-- ✅ Enhanced CI/CD pipeline security
-- ✅ Improved docker compose configurations
-- ✅ Added comprehensive AI agent documentation
-- ✅ Added anomaly types documentation
-
-### Current Focus
-- 🚀 Performance optimization for graph rendering
-- 🔐 Enhanced authentication and authorization
-- 🎯 Achievement system implementation
-- 🌐 Multi-language support improvements
+Two rules matter most. Documentation is updated in the same change that alters
+behaviour, not afterwards. And a search locates a candidate but never confirms
+one — findings are confirmed by reading the context or by running the thing.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+MIT — see [`LICENSE`](LICENSE).
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **Three.js** for 3D graphics
-- **Svelte** for reactive UI
-- **Gin** for Go web framework
-- **PostgreSQL + pgvector** for vector similarity search
-- **sentence-transformers** for NLP embeddings
-
----
-
-## 📞 Support
-
-- 📖 [Documentation](docs/)
-- 🐛 [Issue Tracker](https://github.com/Killaret/knowledge-graph/issues)
-- 💬 [Discussions](https://github.com/Killaret/knowledge-graph/discussions)
-- 📧 Email: (see repository contact)
-
----
-
-<div align="center">
-
-![Star](https://img.shields.io/github/stars/Killaret/knowledge-graph?style=social)
-![Fork](https://img.shields.io/github/forks/Killaret/knowledge-graph?style=social)
-![Watch](https://img.shields.io/github/watchers/Killaret/knowledge-graph?style=social)
-
-</div>
+Three.js, Svelte, Gin, PostgreSQL with pgvector, and sentence-transformers.
