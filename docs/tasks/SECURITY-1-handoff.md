@@ -8,9 +8,9 @@
 | `.github/dependabot.yml` | ✅ обновлён | Убраны blanket-major-игноры, добавлены `services/graph-service` и root `npm`, группировка |
 | Workflow permissions | ✅ добавлен `permissions:` | `_core-checks.yml`, `frontend-tests.yml`, `ci.yml`, `security.yml` ограничены `contents: read` (+ `actions: write` где нужно) |
 | #50 SSRF | ✅ принят риск | Dismissed в CodeQL как `won't fix` по решению владельца |
-| #51 weak hashing | 🔄 на ревью | API-ключи перешли на Argon2id; токен `id:secret`, хранится Argon2-хеш; тесты проходят; ожидает мёрджа и повторного скана CodeQL |
-| #49 cookie Secure | ⏳ в очереди |  |
-| #52/#53 front-end sanitization | ⏳ в очереди |  |
+| #51 weak hashing | ✅ реализовано | API-ключи перешли на Argon2id; токен `id:secret`, хранится Argon2-хеш; тесты проходят; ожидает мёрджа и повторного скана CodeQL |
+| #49 cookie Secure | ✅ оставлено как есть | Динамический Secure по `TLS`/`X-Forwarded-Proto`; CodeQL alerts #8/#9 dismissed как `mitigated` |
+| #52/#53 front-end sanitization | ✅ реализовано | `extract-urls.ts` — однопроходный декодер и повторяющаяся очистка тегов; `check-core-workflow-sync.mjs` — экранирование regex-метасимволов |
 | #54 workflow permissions | 🔄 на ревью | Добавлены `permissions:`, но CodeQL скан ещё не перезапущен на `main` |
 
 ## Цель
