@@ -119,6 +119,7 @@
 | Отключить MCP-коннекторы в настройках claude.ai | — | **снято с доски** — настройка аккаунта, репозитория не касается | 2026-09-07 |
 | DEPENDABOT-1: решение по 12 открытым Dependabot PR (#21–#32) | см. `PROJECT_REVIEW_AI_AGENTS.md` §20 | **ждёт решения владельца** — все PR реальные апгрейды, не закрыты основным; Devin разделил по риску и подготовил рекомендации | 2026-09-11 |
 | Удалить каталог `.kilo/` | — | **сделано** | 2026-09-07 |
+| **SECURITY-1:** настроить GitHub-защиту репозитория и решить по рискам; подробный порядок в `docs/tasks/SECURITY-1-handoff.md` | [`docs/tasks/SECURITY-1-handoff.md`](tasks/SECURITY-1-handoff.md), issues #41–#54 | **ждёт владельца** — `main` не защищён, `frontend-tests.yml`/`core-checks.yml` без `permissions:`, Dependabot не видит `services/graph-service` и root `package.json`; 148 Dependabot alerts + 10 CodeQL alerts разбиты по отдельным issues | 2026-09-12 |
 
 ---
 
