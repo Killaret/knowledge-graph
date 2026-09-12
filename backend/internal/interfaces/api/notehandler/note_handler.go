@@ -567,6 +567,11 @@ func (h *Handler) ImportBatch(c *gin.Context) {
 		return
 	}
 
+	if len(req.Notes) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{apicommon.NewFieldError("notes", apicommon.ReasonInvalidValue, "notes must be a non-empty array")})
+		return
+	}
+
 	var userID *uuid.UUID
 	if uid, exists := middleware.GetUserID(c); exists {
 		userID = &uid
@@ -625,13 +630,15 @@ func (h *Handler) ImportBatch(c *gin.Context) {
 
 			// Both endpoints must exist or have just been created.
 			if !createdNoteIDs[sourceID] {
-				if _, err := h.repo.FindByID(c.Request.Context(), sourceID); err != nil {
+				existing, err := h.repo.FindByID(c.Request.Context(), sourceID)
+				if err != nil || existing == nil {
 					failedLinks = append(failedLinks, batchItemError{Index: i, Field: "source_note_id", Message: apicommon.MsgSourceNotFound})
 					continue
 				}
 			}
 			if !createdNoteIDs[targetID] {
-				if _, err := h.repo.FindByID(c.Request.Context(), targetID); err != nil {
+				existing, err := h.repo.FindByID(c.Request.Context(), targetID)
+				if err != nil || existing == nil {
 					failedLinks = append(failedLinks, batchItemError{Index: i, Field: "target_note_id", Message: apicommon.MsgTargetNotFound})
 					continue
 				}

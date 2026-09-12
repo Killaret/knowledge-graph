@@ -18,6 +18,7 @@ import (
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/cache/cachetest"
 	"knowledge-graph/internal/domain/note"
+	"knowledge-graph/internal/interfaces/api/middleware"
 	contextkeys "knowledge-graph/internal/shared/context"
 
 	"github.com/gin-gonic/gin"
@@ -64,6 +65,38 @@ func setupNoteRouter() (*gin.Engine, *mockNoteRepo) {
 
 	return r, repo
 
+}
+
+func setupNoteRouterWithUser() (*gin.Engine, *mockNoteRepo, uuid.UUID) {
+	gin.SetMode(gin.TestMode)
+
+	repo := newMockNoteRepo()
+	cfg := &config.Config{
+		RecommendationTopN:                    10,
+		RecommendationFallbackSemanticEnabled: false,
+		RecommendationFallbackEnabled:         false,
+		RecommendationTaskDelaySeconds:        1,
+		PaginationDefaultLimit:                20,
+		PaginationMaxLimit:                    100,
+	}
+	cacheClient := cachetest.NewFakeCacheClient()
+	importSvc := importer.NewService(repo, cacheClient, nil, nil)
+	handler := New(repo, nil, nil, nil, 0, nil, nil, nil, cfg, nil, nil, importSvc)
+
+	userID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
+
+	r := gin.Default()
+	r.Use(func(c *gin.Context) {
+		c.Set(middleware.ContextUserIDKey, userID)
+		c.Next()
+	})
+
+	r.POST("/notes", handler.Create)
+	r.POST("/notes/batch/create", handler.CreateBatch)
+	r.POST("/notes/batch/delete", handler.DeleteBatch)
+	r.DELETE("/notes/:id", handler.Delete)
+
+	return r, repo, userID
 }
 
 func TestCreateNote(t *testing.T) {
@@ -843,5 +876,321 @@ func TestCreateBatchNotesValidationFailure(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestCreateBatchNotes_SetsCreator(t *testing.T) {
+	r, repo, userID := setupNoteRouterWithUser()
+	ctx := context.Background()
+
+	body := `{"notes":[{"title":"With Creator","content":"content","type":"star"}]}`
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", w.Code)
+	}
+
+	all, err := repo.FindAll(ctx)
+	if err != nil {
+		t.Fatalf("FindAll failed: %v", err)
+	}
+	if len(all) != 1 {
+		t.Fatalf("expected 1 note in repo, got %d", len(all))
+	}
+	if !all[0].IsOwnedBy(userID) {
+		t.Errorf("note is not owned by authenticated user")
+	}
+}
+
+func TestCreateBatchNotes_TooMany(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	notes := make([]map[string]string, 51)
+	for i := range notes {
+		notes[i] = map[string]string{"title": fmt.Sprintf("Note %d", i)}
+	}
+	bodyBytes, _ := json.Marshal(map[string]interface{}{"notes": notes})
+
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+
+	all, _ := repo.FindAll(ctx)
+	if len(all) != 0 {
+		t.Errorf("expected 0 notes in repo, got %d", len(all))
+	}
+}
+
+func TestCreateBatchNotes_InvalidType(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	body := `{"notes":[{"title":"Bad Type","content":"content","type":"invalid"}]}`
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+
+	all, _ := repo.FindAll(ctx)
+	if len(all) != 0 {
+		t.Errorf("expected 0 notes in repo, got %d", len(all))
+	}
+}
+
+func TestCreateBatchNotes_TooLongTitle(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	longTitle := ""
+	for i := 0; i < 201; i++ {
+		longTitle += "a"
+	}
+	body := fmt.Sprintf(`{"notes":[{"title":"%s","content":"content"}]}`, longTitle)
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+
+	all, _ := repo.FindAll(ctx)
+	if len(all) != 0 {
+		t.Errorf("expected 0 notes in repo, got %d", len(all))
+	}
+}
+
+func TestCreateBatchNotes_TooLongContent(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	longContent := ""
+	for i := 0; i < 50001; i++ {
+		longContent += "a"
+	}
+	body := fmt.Sprintf(`{"notes":[{"title":"T","content":"%s"}]}`, longContent)
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+
+	all, _ := repo.FindAll(ctx)
+	if len(all) != 0 {
+		t.Errorf("expected 0 notes in repo, got %d", len(all))
+	}
+}
+
+func TestCreateBatchNotes_MixedValidAndInvalid(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	body := `{"notes":[{"title":"Valid Note","content":"ok","type":"star"},{"title":"   ","content":"whitespace only"}]}`
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(context.WithValue(req.Context(), contextkeys.SkipAuthKey, true))
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", w.Code)
+	}
+
+	all, _ := repo.FindAll(ctx)
+	if len(all) != 1 {
+		t.Fatalf("expected 1 note in repo, got %d", len(all))
+	}
+	if all[0].Title().String() != "Valid Note" {
+		t.Errorf("unexpected note title: %s", all[0].Title().String())
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	data := resp["data"].(map[string]interface{})
+	created := data["notes"].([]interface{})
+	failed := data["failed"].([]interface{})
+	if len(created) != 1 {
+		t.Fatalf("expected 1 created, got %d", len(created))
+	}
+	if len(failed) != 1 {
+		t.Fatalf("expected 1 failed, got %d", len(failed))
+	}
+	failedItem := failed[0].(map[string]interface{})
+	if failedItem["index"].(float64) != 1 {
+		t.Errorf("expected failed index 1, got %v", failedItem["index"])
+	}
+}
+
+func TestCreateBatchNotes_EmptyNotes(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	body := `{"notes":[]}`
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestCreateBatchNotes_InvalidJSON(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(`invalid json`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestDeleteBatchNotes_MissingNotes(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	req := httptest.NewRequest("POST", "/notes/batch/delete", bytes.NewBufferString(`{"ids":[]}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestDeleteBatchNotes_MalformedUUID(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	req := httptest.NewRequest("POST", "/notes/batch/delete", bytes.NewBufferString(`{"ids":["not-a-uuid"]}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestDeleteBatchNotes_Owned(t *testing.T) {
+	r, repo, userID := setupNoteRouterWithUser()
+	ctx := context.Background()
+
+	title1, _ := note.NewTitle("Owned1")
+	content1, _ := note.NewContent("Content1")
+	meta1, _ := note.NewMetadata(nil)
+	n1 := note.NewNoteWithCreator(title1, content1, "star", meta1, userID)
+
+	title2, _ := note.NewTitle("Owned2")
+	content2, _ := note.NewContent("Content2")
+	meta2, _ := note.NewMetadata(nil)
+	n2 := note.NewNoteWithCreator(title2, content2, "planet", meta2, userID)
+
+	_ = repo.Save(ctx, n1)
+	_ = repo.Save(ctx, n2)
+
+	body := fmt.Sprintf(`{"ids":["%s","%s"]}`, n1.ID().String(), n2.ID().String())
+	req := httptest.NewRequest("POST", "/notes/batch/delete", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d", w.Code)
+	}
+
+	found1, _ := repo.FindByID(ctx, n1.ID())
+	found2, _ := repo.FindByID(ctx, n2.ID())
+	if found1 != nil || found2 != nil {
+		t.Error("owned notes still exist after batch delete")
+	}
+}
+
+func TestDeleteBatchNotes_ForeignNoteRoute(t *testing.T) {
+	r, repo, userID := setupNoteRouterWithUser()
+	ctx := context.Background()
+
+	foreignUserID := uuid.MustParse("33333333-3333-3333-3333-333333333333")
+
+	title, _ := note.NewTitle("Foreign")
+	content, _ := note.NewContent("Content")
+	meta, _ := note.NewMetadata(nil)
+	n := note.NewNoteWithCreator(title, content, "star", meta, foreignUserID)
+
+	titleOwned, _ := note.NewTitle("Owned")
+	contentOwned, _ := note.NewContent("Content")
+	metaOwned, _ := note.NewMetadata(nil)
+	nOwned := note.NewNoteWithCreator(titleOwned, contentOwned, "planet", metaOwned, userID)
+
+	_ = repo.Save(ctx, n)
+	_ = repo.Save(ctx, nOwned)
+
+	body := fmt.Sprintf(`{"ids":["%s","%s"]}`, n.ID().String(), nOwned.ID().String())
+	req := httptest.NewRequest("POST", "/notes/batch/delete", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", w.Code)
+	}
+
+	found, _ := repo.FindByID(ctx, nOwned.ID())
+	if found == nil {
+		t.Error("owned note was deleted even though foreign note was in the same batch")
+	}
+}
+
+func TestDeleteBatchNotes_MissingIDsNoOp(t *testing.T) {
+	r, repo, _ := setupNoteRouterWithUser()
+	ctx := context.Background()
+
+	body := fmt.Sprintf(`{"ids":["%s","%s"]}`, uuid.New().String(), uuid.New().String())
+	req := httptest.NewRequest("POST", "/notes/batch/delete", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d", w.Code)
+	}
+
+	all, _ := repo.FindAll(ctx)
+	if len(all) != 0 {
+		t.Errorf("expected repo to be empty, got %d notes", len(all))
 	}
 }
