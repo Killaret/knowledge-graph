@@ -8,7 +8,8 @@
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
 
-  type IllustrationType = "empty" | "error" | "404" | "offline" | "no-links" | "no-results";
+  type IllustrationType =
+    "empty" | "error" | "404" | "offline" | "no-links" | "no-results" | "server-error";
 
   interface Props {
     error: ErrorResponse | null;
@@ -23,7 +24,7 @@
   const errorIllustrationMap: Record<string, IllustrationType> = {
     NOT_FOUND: "404",
     VALIDATION_ERROR: "error",
-    INTERNAL_ERROR: "error",
+    INTERNAL_ERROR: "server-error",
     CONFLICT: "error",
   };
 

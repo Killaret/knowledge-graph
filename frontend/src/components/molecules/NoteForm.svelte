@@ -119,8 +119,7 @@
       placeholder={contentPlaceholder}
       rows={6}
       disabled={loading}
-      data-testid={contentTestId}
-    ></textarea>
+      data-testid={contentTestId}></textarea>
   </div>
 
   <ApiErrorDisplay {error} onClose={onCloseError} />

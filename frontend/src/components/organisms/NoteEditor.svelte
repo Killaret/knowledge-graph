@@ -173,8 +173,7 @@
           placeholder={t("noteEditor.contentPlaceholder")}
           rows="10"
           data-testid="content-input"
-          disabled={isSaving}
-        ></textarea>
+          disabled={isSaving}></textarea>
       </div>
 
       {#if noteId}

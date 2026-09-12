@@ -23,7 +23,10 @@ describe("extractURLs", () => {
 
     expect(items).toHaveLength(2);
     expect(items[0]).toEqual({ title: "Example page", url: "https://example.com" });
-    expect(items[1]).toEqual({ title: "https://another.example.com", url: "https://another.example.com" });
+    expect(items[1]).toEqual({
+      title: "https://another.example.com",
+      url: "https://another.example.com",
+    });
   });
 
   it("skips empty lines and comments", () => {

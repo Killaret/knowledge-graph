@@ -120,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [core-checks]
     if: github.event_name == 'pull_request'
-    timeout-minutes: 20
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: ./frontend
@@ -166,6 +166,23 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: '**/go.sum'
+
+      - name: Cache Go build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-smoke-${{ hashFiles('backend/go.sum', 'services/graph-service/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-smoke-
+            ${{ runner.os }}-go-
+
       - name: Cache node_modules
         uses: actions/cache@v4
         with:
@@ -180,45 +197,43 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Apply database migrations
-        env:
-          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
-        run: |
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
-          sudo mv migrate /usr/local/bin/
-          migrate -path ../backend/migrations -database "$DATABASE_URL" up
-
       - name: Start backend for smoke tests
         env:
+          APP_ENV: test
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: localhost:6379
           MONGO_URL: mongodb://localhost:27017
           REDIS_FLUSH_ON_STARTUP: "true"
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
           GRAPH_SERVICE_URL: http://localhost:9091
           SKIP_AUTH: "true"
+          SEED_TEST_USER_PASSWORD: "test-password-123!"
         run: |
           cd ../backend
           go mod download
           go run ./cmd/server &
-          for i in {1..30}; do
+          for i in {1..90}; do
             if curl -s http://localhost:8080/health > /dev/null 2>&1; then
               echo "✅ Backend is ready!"
               break
             fi
-            echo "Waiting for backend... attempt $i/30"
+            echo "Waiting for backend... attempt $i/90"
             sleep 2
           done
           if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
             echo "❌ Backend failed to start"
             exit 1
           fi
+          echo "Seeding test user..."
+          go run ./cmd/seed
+          echo "✅ Test user seeded"
 
       - name: Start graph-service for smoke tests
         env:
+          APP_ENV: test
           POSTGRES_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: localhost:6379
           HTTP_PORT: "9091"
           GRPC_PORT: "9090"
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
@@ -228,12 +243,12 @@ jobs:
           cd ../services/graph-service
           go mod download
           go run ./cmd/server &
-          for i in {1..30}; do
+          for i in {1..90}; do
             if curl -s http://127.0.0.1:9091/health > /dev/null 2>&1; then
               echo "✅ Graph-service is ready!"
               break
             fi
-            echo "Waiting for graph-service... attempt $i/30"
+            echo "Waiting for graph-service... attempt $i/90"
             sleep 2
           done
           if ! curl -s http://127.0.0.1:9091/health > /dev/null 2>&1; then
@@ -241,23 +256,47 @@ jobs:
             exit 1
           fi
 
+      - name: Start frontend dev server for smoke tests
+        env:
+          FRONTEND_URL: http://localhost:5173
+          VITE_API_TARGET: http://localhost:8080
+          VITE_GRAPH_SERVICE_URL: http://localhost:9091
+          BACKEND_URL: http://localhost:8080
+          GRAPH_SERVICE_URL: http://localhost:9091
+          SKIP_AUTH: "true"
+        run: |
+          npm run dev &
+          for i in {1..60}; do
+            if curl -s http://localhost:5173 > /dev/null 2>&1; then
+              echo "✅ Frontend dev server is ready!"
+              break
+            fi
+            echo "Waiting for frontend... attempt $i/60"
+            sleep 2
+          done
+          if ! curl -s http://localhost:5173 > /dev/null 2>&1; then
+            echo "❌ Frontend dev server failed to start"
+            exit 1
+          fi
+
       - name: Run smoke tests only
         env:
           PLAYWRIGHT_DEV_SERVER: true
-          FRONTEND_URL: http://127.0.0.1:5173
-          VITE_API_TARGET: http://127.0.0.1:8080
-          VITE_GRAPH_SERVICE_URL: http://127.0.0.1:9091
+          FRONTEND_URL: http://localhost:5173
+          VITE_API_TARGET: http://localhost:8080
+          VITE_GRAPH_SERVICE_URL: http://localhost:9091
           BACKEND_URL: http://localhost:8080
           GRAPH_SERVICE_URL: http://localhost:9091
         run: npx playwright test --grep="@smoke"
 
       - name: Run smoke BDD tests
         env:
-          FRONTEND_URL: http://127.0.0.1:5173
-          VITE_API_TARGET: http://127.0.0.1:8080
-          VITE_GRAPH_SERVICE_URL: http://127.0.0.1:9091
+          FRONTEND_URL: http://localhost:5173
+          VITE_API_TARGET: http://localhost:8080
+          VITE_GRAPH_SERVICE_URL: http://localhost:9091
           BACKEND_URL: http://localhost:8080
           GRAPH_SERVICE_URL: http://localhost:9091
+          SKIP_AUTH: "true"
         run: npm run test:cucumber -- --tags="@smoke"
 
       - name: Upload smoke test results
