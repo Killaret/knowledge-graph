@@ -85,7 +85,11 @@ describe("Import page", () => {
     await waitFor(() => {
       expect(screen.getByText(/Note "Test" created successfully/)).toBeInTheDocument();
     });
-    expect(createBookmarkletNote).toHaveBeenCalledWith({ title: "Test", url: "http://example.com", text: "hello" });
+    expect(createBookmarkletNote).toHaveBeenCalledWith({
+      title: "Test",
+      url: "http://example.com",
+      text: "hello",
+    });
   });
 
   it("shows error when import fails", async () => {

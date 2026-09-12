@@ -27,7 +27,12 @@ function createCtx() {
   };
 }
 
-function makeLink(type: string, source: string | object, target: string | object, weight = 0.5): SimulationLink {
+function makeLink(
+  type: string,
+  source: string | object,
+  target: string | object,
+  weight = 0.5
+): SimulationLink {
   return { id: "l1", source, target, link_type: type, weight } as SimulationLink;
 }
 

@@ -57,7 +57,11 @@ describe("New note page", () => {
     await waitFor(() => {
       expect(goto).toHaveBeenCalledWith("/notes/note-1");
     });
-    expect(createNote).toHaveBeenCalledWith({ title: "Test note", content: "Content", metadata: {} });
+    expect(createNote).toHaveBeenCalledWith({
+      title: "Test note",
+      content: "Content",
+      metadata: {},
+    });
   });
 
   it("shows an error when note creation fails", async () => {

@@ -53,7 +53,8 @@ describe("CockpitHUD", () => {
 
   it("renders different health color bands", () => {
     const { rerender } = render(CockpitHUD, { props: { health: 30 } });
-    const healthFill = () => screen.getByTestId("hud-health").querySelector(".health-fill") as HTMLElement;
+    const healthFill = () =>
+      screen.getByTestId("hud-health").querySelector(".health-fill") as HTMLElement;
 
     expect(healthFill().style.background).toContain("#f87171");
 
@@ -76,7 +77,9 @@ describe("CockpitHUD", () => {
     (cockpitStore as any).lastSyncAt = null;
     (cockpitStore as any).syncing = true;
     render(CockpitHUD);
-    expect(screen.getByTestId("hud-sync").querySelector(".hud-value")).toHaveTextContent(/syncing/i);
+    expect(screen.getByTestId("hud-sync").querySelector(".hud-value")).toHaveTextContent(
+      /syncing/i
+    );
   });
 
   it("displays -- for non-finite fps", () => {
