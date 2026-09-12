@@ -405,3 +405,89 @@ describe("getFullGraphData public endpoint", () => {
   });
 });
 
+describe("graph API additional branches", () => {
+  beforeEach(() => {
+    (window as { __SKIP_AUTH__?: boolean }).__SKIP_AUTH__ = true;
+    server.resetHandlers();
+  });
+
+  it("includes nocache in full graph query", async () => {
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/full", ({ request }) => {
+        const url = new URL(request.url);
+        const nocache = url.searchParams.get("nocache");
+        expect(nocache).toBe("1");
+        return HttpResponse.json({ data: { nodes: [{ id: "1" }], links: [] } });
+      })
+    );
+
+    const result = await getFullGraphData(10, undefined, true);
+    expect(result.nodes).toHaveLength(1);
+  });
+
+  it("falls back to backend on 429 for getGraphData", async () => {
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/note/1", () =>
+        HttpResponse.json({ error: "Too Many Requests" }, { status: 429 })
+      )
+    );
+
+    await expect(getGraphData("1")).rejects.toThrow();
+  });
+
+  it("falls back to backend on 408 for getFullGraphData", async () => {
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/full", () =>
+        HttpResponse.json({ error: "Timeout" }, { status: 408 })
+      )
+    );
+
+    await expect(getFullGraphData()).rejects.toThrow();
+  });
+
+  it("returns empty delta for non-object response", async () => {
+    server.use(http.get("http://localhost:9091/api/v1/graph/delta", () => HttpResponse.json("not an object")));
+
+    const result = await getGraphDelta("prev");
+    expect(result).toEqual({});
+  });
+
+  it("returns delta with current_hash", async () => {
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/delta", () =>
+        HttpResponse.json({ added_nodes: [{ id: "1" }], current_hash: "new-hash" })
+      )
+    );
+
+    const result = await getGraphDelta("prev");
+    expect(result.current_hash).toBe("new-hash");
+  });
+
+  it("handles delta load errors", async () => {
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/delta", () =>
+        HttpResponse.json({ error: "Server error" }, { status: 500 })
+      )
+    );
+
+    await expect(getGraphDelta("prev")).rejects.toThrow();
+  });
+
+  it("returns null cached graph when body has no data", async () => {
+    server.use(
+      http.get("http://localhost:8080/api/v1/me/graph/cached", () => HttpResponse.json({ meta: {} }))
+    );
+
+    const result = await getCachedGraph();
+    expect(result).toBeNull();
+  });
+
+  it("returns empty fresh graph when response data is missing", async () => {
+    server.use(http.get("http://localhost:8080/api/v1/me/graph/fresh", () => HttpResponse.json({})));
+
+    const result = await getFreshGraph();
+    expect(result.fresh.nodes).toHaveLength(0);
+    expect(result.fresh.links).toHaveLength(0);
+  });
+});
+

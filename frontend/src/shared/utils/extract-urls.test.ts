@@ -78,6 +78,38 @@ describe("extractURLs", () => {
     expect(items[0].url).toBe("https://example.com");
     expect(items[1].url).toBe("https://go.dev/doc");
   });
+
+  it("returns an empty list when no URLs are present", () => {
+    expect(extractURLs("just some text without links")).toEqual([]);
+  });
+
+  it("ignores lines that are comments or blank", () => {
+    const input = "# comment\n   \nhttps://example.com";
+
+    const items = extractURLs(input);
+
+    expect(items).toHaveLength(1);
+    expect(items[0].url).toBe("https://example.com");
+  });
+
+  it("uses the URL as title for the second and later URLs on the same line", () => {
+    const input = "Two links | https://a.com https://b.com";
+
+    const items = extractURLs(input);
+
+    expect(items).toHaveLength(2);
+    expect(items[0]).toEqual({ title: "Two links", url: "https://a.com" });
+    expect(items[1]).toEqual({ title: "https://b.com", url: "https://b.com" });
+  });
+
+  it("decodes encoded ampersands and trailing punctuation", () => {
+    const input = "https://example.com?a=1&amp;b=2);";
+
+    const items = extractURLs(input);
+
+    expect(items).toHaveLength(1);
+    expect(items[0].url).toBe("https://example.com?a=1&b=2");
+  });
 });
 
 describe("extractURLsFromHTML", () => {
@@ -124,6 +156,53 @@ describe("extractURLsFromHTML", () => {
     expect(items[0].title).toBe("Test & More");
     expect(items[0].url).toBe("https://example.com/path?foo=1&bar=2");
   });
+
+  it("decodes decimal and hexadecimal numeric entities", () => {
+    const html = `<DT><A HREF="https://example.com?q=&#x3C;&#62;&#x27;ok">&#x27; title</A>`;
+
+    const items = extractURLsFromHTML(html);
+
+    expect(items).toHaveLength(1);
+    expect(items[0].url).toBe("https://example.com?q=<>'ok");
+    expect(items[0].title).toMatch(/^' title/);
+  });
+
+  it("preserves unknown HTML entities and decodes known ones", () => {
+    const html = `<DT><A HREF="https://example.com?&amp;keep=1">&unknown; title</A>`;
+
+    const items = extractURLsFromHTML(html);
+
+    expect(items).toHaveLength(1);
+    expect(items[0].url).toBe("https://example.com?&keep=1");
+    expect(items[0].title).toContain("&unknown;");
+  });
+
+  it("falls back to raw URL when title is empty after tag stripping", () => {
+    const html = `<DT><A HREF="https://example.com/empty"><b></b><i> </i></A>`;
+
+    const items = extractURLsFromHTML(html);
+
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("https://example.com/empty");
+  });
+
+  it("skips empty HREFs and duplicates", () => {
+    const html = `<DT><A HREF="">empty</A><DT><A HREF="https://example.com">one</A><DT><A HREF="https://example.com">dup</A>`;
+
+    const items = extractURLsFromHTML(html);
+
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("one");
+  });
+
+  it("repeats tag stripping until nested tags are gone", () => {
+    const html = `<DT><A HREF="https://example.com"><b><i>Deep</b></i> title</A>`;
+
+    const items = extractURLsFromHTML(html);
+
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Deep title");
+  });
 });
 
 describe("chunk", () => {
@@ -137,5 +216,10 @@ describe("chunk", () => {
 
   it("returns empty array for non-positive size", () => {
     expect(chunk([1, 2], 0)).toEqual([]);
+    expect(chunk([1, 2], -1)).toEqual([]);
+  });
+
+  it("returns empty array for empty input", () => {
+    expect(chunk([], 2)).toEqual([]);
   });
 });

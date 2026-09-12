@@ -178,6 +178,12 @@ describe("MessageFormatter", () => {
       expect(ruGalactic.success("noteCreated", "Note")).toContain("Звезда");
     });
   });
+
+  it("returns a fallback key for unknown locale or category/key", () => {
+    const formatter = new MessageFormatter(false, "xx" as any);
+    expect(formatter.success("noteCreated", "Note")).toContain("xx");
+    expect(formatter.format("success", "missingKey" as any)).toContain("missingKey");
+  });
 });
 
 describe("GalacticLexicon", () => {

@@ -457,4 +457,98 @@ describe("Home Page State", () => {
     expect(preloadService.updateGraphWithDelta).toHaveBeenCalled();
     expect(homePage.graphData).toBe(graphBefore);
   });
+
+  it("uses response.data from a structured API error", async () => {
+    vi.mocked(loadGraph).mockRejectedValue({
+      response: { data: { code: "CUSTOM", message: "custom error" } },
+    });
+
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    expect(homePage.apiError).toEqual({ code: "CUSTOM", message: "custom error" });
+  });
+
+  it("loads an empty graph without an error", async () => {
+    vi.mocked(loadGraph).mockResolvedValue({
+      graph: { nodes: [], links: [] },
+      notes: [],
+      knowledgeCore: null,
+    } as any);
+
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    expect(homePage.allNotes).toHaveLength(0);
+    expect(homePage.graphData.nodes).toHaveLength(0);
+  });
+
+  it("silent refresh does not show loading overlay", async () => {
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    vi.mocked(loadGraph).mockResolvedValue({
+      graph: { nodes: [], links: [] },
+      notes: [],
+      knowledgeCore: null,
+    } as any);
+
+    await homePage.loadData({ silent: true });
+    expect(homePage.loading).toBe(false);
+  });
+
+  it("keeps existing graph on silent refresh when new graph is empty", async () => {
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    const existing = homePage.graphData;
+    expect(existing.nodes.length).toBeGreaterThan(0);
+
+    vi.mocked(loadGraph).mockResolvedValue({
+      graph: { nodes: [], links: [] },
+      notes: [],
+      knowledgeCore: null,
+    } as any);
+
+    await homePage.loadData({ silent: true });
+    expect(homePage.graphData).toBe(existing);
+  });
+
+  it("falls back to label for unknown type filters", async () => {
+    const homePage = await getHomePage();
+    const unknownFilter = homePage.typeFilters.find((f) => f.id === "unknown");
+    expect(unknownFilter).toBeDefined();
+    expect(unknownFilter?.label.toLowerCase()).toContain("unknown");
+  });
+
+  it("hides undo toast and clears last deleted note after timeout", async () => {
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    const note = homePage.allNotes[0];
+    await homePage.handleNoteDelete(note);
+
+    expect(homePage.showUndoToast).toBe(true);
+
+    vi.advanceTimersByTime(6600);
+
+    expect(homePage.showUndoToast).toBe(false);
+    expect(homePage.lastDeletedNote).toBeNull();
+  });
+
+  it("skips background refresh when not authenticated", async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(false);
+    vi.mocked(preloadService.hasPreloadedData).mockReturnValue(true);
+    vi.mocked(preloadService.updateGraphWithDelta).mockResolvedValue({
+      added_nodes: [{ id: "new" }],
+    } as any);
+
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    homePage.handleDeleteRequest("n1");
+    await homePage.handleDeleteConfirm();
+
+    expect(preloadService.updateGraphWithDelta).not.toHaveBeenCalled();
+  });
 });

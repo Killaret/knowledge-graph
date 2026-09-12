@@ -152,7 +152,39 @@ npm run test:coverage
   - Основные непокрытые области: `src/routes/**` (38% statements, 30% branches, особенно `+page.svelte` 37% branches, `+layout.svelte` 0%), `src/widgets/graph-canvas/GraphCanvas.svelte` (81% statements, 60% branches), `src/widgets/graph-3d-viewer/Graph3DViewer.svelte` (82% statements, 71% branches), `src/widgets/cosmic-cockpit/CockpitPanel.svelte` (85% statements, 77% branches), `src/widgets/quick-capture/QuickCaptureWidget.svelte` (93% statements, 87% branches), `src/features/home-page/home-page.svelte.ts` (85.5% statements, 68.18% branches).
 - Блокер: statements/functions на пороге или выше, но branch coverage по-прежнему на 8.5 pp ниже 70%. Следующий эффективный шаг — либо тестировать `src/routes/+page.svelte`/`+layout.svelte` с моками тяжёлых компонентов, либо решение Claude Code/владельца об исключении `src/routes/**` и `hooks.server.ts` из unit-знаменателя.
 
+## Прогресс 2026-09-12 (шестая, финальная партия)
+
+- `npm run test:unit -- --run`: **1381/1381 passed**.
+- `npm run check`: **0 errors, 0 warnings**.
+- `npm run lint`: **0 errors, 9 pre-existing warnings**.
+- `npm run test:coverage` — **все пороги 70% пройдены**:
+  - lines: **83.62%** ✓
+  - statements: **81.9%** ✓
+  - functions: **81.89%** ✓
+  - branches: **70.04%** ✓
+- Добавлено/расширено в этой партии:
+  - `frontend/src/widgets/graph-page/GraphPageShell.spec.ts` + `GraphPageShellTestWrapper.svelte` — callback wiring, auth branches, notes/nodes fallback.
+  - `frontend/src/shared/utils/deviceCapabilities.test.ts` — WebGL fallback, navigator hardwareConcurrency/deviceMemory missing.
+  - `frontend/src/shared/utils/galactic-lexicon.test.ts` — unknown locale/key fallback, all wrappers.
+  - `frontend/src/shared/utils/extract-urls.test.ts` — unknown entities, trailing punctuation.
+  - `frontend/src/widgets/notification/ToastNotification.svelte` — lifecycle and close branches (coverage driven by existing/expanded spec).
+  - `frontend/src/widgets/cosmic-cockpit/CockpitHUD.spec.ts` — sync/fps/first-person state tests.
+  - `frontend/src/entities/graph-canvas/lib/node-renderers.test.ts` — typed partial `NodeVariation` coverage.
+  - `frontend/src/routes/import/page.spec.ts` — success/error/navigation branches.
+  - `frontend/src/routes/search/page.spec.ts` — empty, results, no-results, error, pagination, negative page, anonymous.
+  - `frontend/src/routes/profile/page.spec.ts` — redirect and authenticated branches.
+  - `frontend/src/routes/notes/[id]/edit/page.spec.ts` — load, validation, update, error branches.
+  - `frontend/src/routes/notes/new/page.spec.ts` — validation, create, error branches.
+  - `frontend/src/components/organisms/ProfileEditor.spec.ts` — user mock typed, coverage unaffected.
+- Технический долг/исправления:
+  - Удалён случайный `frontend/tmp-coverage-parse.cjs`.
+  - Исправлены типы в 9 тестовых файлах и `GraphPageShellTestWrapper.svelte`, чтобы `npm run check` проходил без `// @ts-nocheck`.
+  - `GraphPageShellTestWrapper.svelte` переписан на `const` для `$props()` (lint `prefer-const`).
+- Результат:
+  - PR #63 (`dependabot/npm_and_yarn/frontend/frontend-dependencies-4186741a3c`) больше не блокируется `test`-job; `test:coverage` зелёное.
+  - Пороги не понижались, слои `src/routes/**` и `hooks.server.ts` не исключались из знаменателя.
+
 ## Зависимости
 
-- Блокирует мерж PR #63 (`frontend-test` job в CI).
-- Связан с `AUD-7b` (coverage 70%, `src/**` как знаменатель).
+- Блокировало мерж PR #63 (`frontend-test` job в CI) — **снято**.
+- Связан с `AUD-7b` (coverage 70%, `src/**` как знаменатель) — **выполнено**.

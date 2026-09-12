@@ -393,8 +393,8 @@ interfaces/api/  → Gin handlers, middleware, DTOs
    - Из группы Dependabot исключены/откачены: `eslint` до `^9.39.5`, `@eslint/js` до `^9.22.0`, `typescript` до `^5.9.3` (ESLint 10 и TS 7 несовместимы с `eslint-plugin-jsx-a11y` и SvelteKit).
    - `ky` v1.7+ адаптирован: хуки принимают state-объект (`{ request }` / `{ request, response }`), `prefixUrl` заменён на `prefix`.
    - Моки Vitest 5 приведены к конструируемым `function`-реализациям (`ResizeObserver`, `THREE.WebGLRenderer` и др.).
-   - `npm run lint`, `npm run check`, `npm run test:unit` — зелёные (1172 тестов), но `npm run test:coverage` падает: statements 69.37%, functions 69.25%, branches 60.83% (порог 70%); `lines` прошёл — 73.11%.
-   - FE-COVERAGE-1: покрыты API (`notes.ts`, `links.ts`, `sharing.ts`), `client.ts`, `graph.svelte.ts`, `auth.svelte.test.ts` (updateUserInfo/SKIP_AUTH), `overlay.svelte`, `CockpitNoteDetails`, `CockpitPanel`, `FloatingAuthPanel`, `QuickCaptureWidget` (18 тестов), `home-page.svelte.ts` (23 теста), `NoteCard` (19 тестов), `AuthCard` (8 тестов), `graphUtils`. `lines` 73.83% и `functions` 70% прошли. statements 69.98% (на 0.02 pp ниже 70%), branches 61.5% (на 8.5 pp ниже 70%). Основной зазор — `src/routes/**` (`+page.svelte`, `+layout.svelte`), `GraphCanvas.svelte`, `Graph3DViewer.svelte`, `CockpitPanel.svelte`, `QuickCaptureWidget.svelte`, остатки `home-page.svelte.ts`.
+   - `npm run lint`, `npm run check`, `npm run test:unit` — зелёные. `npm run test:coverage` — **зелёное**: lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04%, все выше порога 70%.
+   - FE-COVERAGE-1 завершён: покрыты API (`notes.ts`, `links.ts`, `sharing.ts`), `client.ts`, `graph.svelte.ts`, `auth.svelte.test.ts`, `overlay.svelte`, `CockpitNoteDetails`, `CockpitPanel`, `FloatingAuthPanel`, `QuickCaptureWidget`, `home-page.svelte.ts`, `NoteCard`, `AuthCard`, `graphUtils`, `GraphPageShell`, `deviceCapabilities`, `galactic-lexicon`, `extract-urls`, `ToastNotification`, `CockpitHUD`, `node-renderers` и route-спеки (`import`, `search`, `profile`, `notes/[id]`, `notes/[id]/edit`, `notes/new`). Также исправлены типы в 9 test-файлах и `GraphPageShellTestWrapper.svelte`, удалён `frontend/tmp-coverage-parse.cjs`. PR #63 готов к мержу.
 
 ---
 
@@ -421,7 +421,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **Фаза:** Alpha → Beta.
 - **Стабильность:** критических проблем нет.
 - **Регрессионное тестирование:** 11/14 частей пройдено.
-- **Покрытие тестами:** 1179 frontend unit-тестов проходят, `lines` 73.83% и `functions` 70% прошли; statements 69.98%, branches 61.5% всё ещё ниже 70% — в работе FE-COVERAGE-1. Backend unit-тесты — все проходят.
+- **Покрытие тестами:** 1381 frontend unit-тестов проходят, покрытие выше 70% по всем четырём метрикам: lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04% — FE-COVERAGE-1 **завершён**. PR #63 больше не блокируется `test`-job. Backend unit-тесты — все проходят.
 - **Готовность к production:** ожидает финальных проверок (E2E, интеграция, CI/CD).
 
 ### Текущий фокус — уже выполнено

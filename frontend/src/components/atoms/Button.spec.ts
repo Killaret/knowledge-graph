@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/svelte";
+import Button from "./Button.svelte";
 import ButtonTestWrapper from "./ButtonTestWrapper.svelte";
 
 describe("Button", () => {
@@ -74,6 +75,17 @@ describe("Button", () => {
     await fireEvent.click(button);
 
     expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("renders without children or onClick without error", async () => {
+    const { container } = render(Button, {
+      props: { variant: "primary", type: "button" },
+    });
+    const button = container.querySelector("button");
+    expect(button).toBeInTheDocument();
+    if (button) {
+      await fireEvent.click(button);
+    }
   });
 
   it("spreads additional props to the button element", () => {

@@ -240,4 +240,42 @@ describe("detectDeviceCapabilities browser path", () => {
     expect(caps.maxNodes).toBe(30);
     expect(caps.pixelRatio).toBe(1);
   });
+
+  it("uses navigator fallbacks when hardware info is missing", () => {
+    vi.stubGlobal("navigator", {
+      ...originalNavigator,
+      userAgent: "Mozilla/5.0",
+      hardwareConcurrency: undefined,
+      deviceMemory: undefined,
+    });
+    vi.stubGlobal("window", { ...window, innerWidth: 1920, devicePixelRatio: 1 });
+    mockWebGL("NVIDIA GeForce RTX 4090", 16384);
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.isLowPower).toBe(true);
+  });
+
+  it("falls back to medium when debug renderer info is unavailable", () => {
+    const gl = {
+      MAX_TEXTURE_SIZE: 0x0d33,
+      getExtension: vi.fn().mockReturnValue(null),
+      getParameter: vi.fn((p: number) => (p === 0x0d33 ? 8192 : 0)),
+    } as unknown as WebGLRenderingContext;
+
+    vi.stubGlobal("document", {
+      createElement: vi.fn().mockReturnValue({
+        getContext: vi.fn((type: string) => (type === "webgl" ? gl : null)),
+      }),
+    });
+    vi.stubGlobal("navigator", {
+      ...originalNavigator,
+      userAgent: "Mozilla/5.0",
+      hardwareConcurrency: 8,
+      deviceMemory: 8,
+    });
+    vi.stubGlobal("window", { ...window, innerWidth: 1920, devicePixelRatio: 1 });
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.gpuTier).toBe("medium");
+  });
 });
