@@ -34,11 +34,27 @@
   - `frontend/src/shared/utils/deviceCapabilities.test.ts` — WebGL-ветки, tiers, mobile detection.
   - `frontend/src/shared/stores/graph.svelte.test.ts` — полный обход `graphStore` (select, toggle, reset).
   - `frontend/src/entities/graph-canvas/lib/delta.test.ts` — уже существовал, покрытие подтверждено.
+
+## Прогресс 2026-09-12 (вторая партия)
+
+- `npm run test:unit -- --run`: 1101/1101 passed.
+- `npm run check`: 0 errors, 0 warnings.
+- `npm run lint`: 0 errors, 3 pre-existing warnings.
+- `npm run test:coverage`:
+  - lines: 69.85% (was 69.5%)
+  - statements: 65.98% (was 65.58%)
+  - functions: 64.95% (was 64.52%)
+  - branches: 57.47% (was 56.97%)
+- Добавлено/расширено:
+  - `frontend/src/shared/api/import.test.ts` — bookmarklet, preview, batch create, import status.
+  - `frontend/src/features/graph-ui/overlay.test.ts` — рендер overlay в разных состояниях (duplicate warning, focus mode, fog danger/recovery, undo toast, search box, help tooltip).
+  - `frontend/src/features/graph-interaction/zoom-pan.test.ts` — покрытие приведено к 100% lines.
 - Оставшийся зазор:
-  - lines не хватает 0.5 pp.
-  - functions не хватает ~5.5 pp.
-  - branches не хватает ~13 pp.
-  - Основные непокрытые области: Svelte-компоненты (`CockpitPanel.svelte`, `GraphCanvas.svelte`, `CockpitNoteDetails.svelte`, `overlay.svelte`), `src/routes/**`, `src/features/home-page/home-page.svelte.ts`, `src/shared/stores/auth.svelte.ts`, `src/shared/api/import.ts`.
+  - lines не хватает 0.15 pp.
+  - statements не хватает ~4.0 pp.
+  - functions не хватает ~5.1 pp.
+  - branches не хватает ~12.5 pp.
+  - Основные непокрытые области: `src/features/home-page/home-page.svelte.ts`, Svelte-компоненты (`CockpitPanel.svelte`, `CockpitNoteDetails.svelte`), `src/routes/**`, `src/shared/stores/auth.svelte.ts` (initAuth/login ветки), `src/shared/api/notes.ts`, `src/shared/api/links.ts`, `src/shared/api/sharing.ts`, `src/shared/utils/extract-urls.ts`.
 - Блокер: без стратегии по Svelte-компонентам и/или route-файлам 70% global по functions/branches не достигается за счёт чистой TS-логики. Требуется решение Claude Code / владельца.
 
 ## Цель

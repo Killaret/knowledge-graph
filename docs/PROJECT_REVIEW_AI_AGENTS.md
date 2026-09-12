@@ -354,7 +354,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `cd backend && go build ./cmd/server && go build ./cmd/worker && go build ./cmd/cli` — успешно.
 - `cd frontend && npm run check` — 0 errors, 0 warnings.
 - `cd frontend && npm run build` — успешно.
-- `cd frontend && npm run test:coverage` — проходил при thresholds 70% (lines 80.36%, branch 80.69%, functions 79.97%) до обновления Vitest 5. После PR #63: lines 69.5%, statements 65.58%, functions 64.52%, branches 56.97% — ниже порога 70%, но сдвинулся ближе. Без стратегии по Svelte-компонентам и `src/routes/**` 70% global не достижим.
+- `cd frontend && npm run test:coverage` — проходил при thresholds 70% (lines 80.36%, branch 80.69%, functions 79.97%) до обновления Vitest 5. После PR #63: lines 69.85%, statements 65.98%, functions 64.95%, branches 57.47% — ниже порога 70%, но сдвинулся ближе. Без стратегии по `home-page.svelte.ts`, Svelte-компонентам (`CockpitPanel`, `CockpitNoteDetails`) и `src/routes/**` 70% global не достижим.
 - `cd frontend && npm run format:check` — чисто.
 - `cd frontend && npx eslint .` — чисто.
 - `.\scripts\testing\run-full-test-cycle.ps1 -SkipManual` — exit code 0, оба режима (`skip-auth` и `real-auth`) Playwright-E2E прошли, dev/personal стеки восстановлены.
@@ -393,8 +393,8 @@ interfaces/api/  → Gin handlers, middleware, DTOs
    - Из группы Dependabot исключены/откачены: `eslint` до `^9.39.5`, `@eslint/js` до `^9.22.0`, `typescript` до `^5.9.3` (ESLint 10 и TS 7 несовместимы с `eslint-plugin-jsx-a11y` и SvelteKit).
    - `ky` v1.7+ адаптирован: хуки принимают state-объект (`{ request }` / `{ request, response }`), `prefixUrl` заменён на `prefix`.
    - Моки Vitest 5 приведены к конструируемым `function`-реализациям (`ResizeObserver`, `THREE.WebGLRenderer` и др.).
-   - `npm run lint`, `npm run check`, `npm run test:unit` — зелёные (1083 теста), но `npm run test:coverage` падает: lines 69.5%, statements 65.58%, functions 64.52%, branches 56.97% (порог 70%).
-   - FE-COVERAGE-1: поднята чистая TS-логика (`graph.ts`, `client.ts`, `deviceCapabilities.ts`, `graph.svelte.ts`). Оставшийся зазор в functions/branches сосредоточен в Svelte-компонентах и `src/routes/**`; требуется решение по знаменателю.
+   - `npm run lint`, `npm run check`, `npm run test:unit` — зелёные (1101 тест), но `npm run test:coverage` падает: lines 69.85%, statements 65.98%, functions 64.95%, branches 57.47% (порог 70%).
+   - FE-COVERAGE-1: поднята чистая TS-логика (`graph.ts`, `client.ts`, `deviceCapabilities.ts`, `graph.svelte.ts`, `import.ts`, `zoom-pan.ts`) и компонент `overlay.svelte`. Оставшийся зазор в functions/branches сосредоточен в `home-page.svelte.ts`, `auth.svelte.ts`, Svelte-компонентах (`CockpitPanel`, `CockpitNoteDetails`) и `src/routes/**`; требуется решение по знаменателю.
 
 ---
 
@@ -421,7 +421,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **Фаза:** Alpha → Beta.
 - **Стабильность:** критических проблем нет.
 - **Регрессионное тестирование:** 11/14 частей пройдено.
-- **Покрытие тестами:** 1083 frontend unit-теста проходят, но coverage ниже 70% (lines 69.5%, statements 65.58%, functions 64.52%, branches 56.97%) — в работе FE-COVERAGE-1. Backend unit-тесты — все проходят.
+- **Покрытие тестами:** 1101 frontend unit-тест проходят, но coverage ниже 70% (lines 69.85%, statements 65.98%, functions 64.95%, branches 57.47%) — в работе FE-COVERAGE-1. Backend unit-тесты — все проходят.
 - **Готовность к production:** ожидает финальных проверок (E2E, интеграция, CI/CD).
 
 ### Текущий фокус — уже выполнено
