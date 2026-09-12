@@ -188,3 +188,31 @@ npm run test:coverage
 
 - Блокировало мерж PR #63 (`frontend-test` job в CI) — **снято**.
 - Связан с `AUD-7b` (coverage 70%, `src/**` как знаменатель) — **выполнено**.
+
+## Итог 2026-09-12: PR #63 смержен
+
+- Локальные коммиты (`9f450de`..`1ab3673`) запушены в PR #63, CI перепроверен, `test`-job прошёл: https://github.com/Killaret/knowledge-graph/pull/63
+- `npm run test:unit -- --run`: **1381/1381 passed** (138 test files).
+- `npm run test:coverage`: **statements 81.9%**, **branches 70.04%**, **functions 81.89%**, **lines 83.62%** — все пороги 70% пройдены.
+- `npm run check`: **0 errors, 0 warnings**.
+- `npm run lint`: **0 errors**, 9 pre-existing warnings.
+- Корневой `npm install` убрал ложные IDE-диагностики (`@sveltejs/adapter-node`, `GraphPageShellTestWrapper.svelte` default export, `$props`).
+- Рабочее дерево чистое, пользовательские правки восстановлению не требуются.
+
+## Зависимости Dependabot — статус 11 открытых PR
+
+| PR | Статус | Действие |
+|---|---|---|
+| [#63](https://github.com/Killaret/knowledge-graph/pull/63) | **MERGED** | Смержен после фиксов покрытия. |
+| [#56](https://github.com/Killaret/knowledge-graph/pull/56) | **MERGED** | httpx 0.25.2 → 0.28.1. |
+| [#31](https://github.com/Killaret/knowledge-graph/pull/31) | **MERGED** | sentence-transformers 2.2.2 → 2.7.0. |
+| [#29](https://github.com/Killaret/knowledge-graph/pull/29) | **MERGED** | pydantic 2.5.2 → 2.13.5. |
+| [#27](https://github.com/Killaret/knowledge-graph/pull/27) | **MERGED** | python-dotenv 1.0.0 → 1.2.3. |
+| [#38](https://github.com/Killaret/knowledge-graph/pull/38) | **REBASED / CI PENDING** | pgx/v5 5.7.2 → 5.9.2, `go mod tidy` выполнен. |
+| [#39](https://github.com/Killaret/knowledge-graph/pull/39) | **CONFLICTING** | grpc 1.67.0 → 1.83.2, требует ручного rebase. |
+| [#40](https://github.com/Killaret/knowledge-graph/pull/40) | **CONFLICTING** | containerd 1.7.18 → 1.7.35, требует ручного rebase. |
+| [#58](https://github.com/Killaret/knowledge-graph/pull/58) | **UNSTABLE / MERGEABLE** | testcontainers-go/modules/postgres, Dependency Review. |
+| [#59](https://github.com/Killaret/knowledge-graph/pull/59) | **UNSTABLE / MERGEABLE** | testcontainers-go, Dependency Review. |
+| [#25](https://github.com/Killaret/knowledge-graph/pull/25) | **REBASED / FAILING** | yake 0.4.8 → 0.7.3, **Dependency Review fails по лицензии** `yake 0.7.3` = `AGPL-3.0-only AND AGPL-3.0-or-later AND LGPL-3.0-or-later`; [allow-licenses](https://github.com/Killaret/knowledge-graph/actions/runs/34708560386/job/103593000574#step:4:12) не включает AGPL/LGPL. |
+
+**Блокер #25:** чтобы смержить `yake 0.7.3`, надо либо включить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action`, либо отказаться от обновления `yake`.
