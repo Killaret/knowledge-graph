@@ -104,7 +104,9 @@ export default defineConfig({
       },
       grep: /@auth-real/,
     },
-    // Visual regression project (runs only @visual tests)
+    // Visual regression, anonymous baseline: what a logged-out visitor sees.
+    // Runs against a backend started with SKIP_AUTH=false; no storageState and
+    // no __SKIP_AUTH__ injection.
     {
       name: "visual",
       use: {
@@ -113,10 +115,9 @@ export default defineConfig({
           args: ["--disable-web-security"],
         },
       },
-      grep: /@visual/,
-      dependencies: ["setup-skip"],
+      testMatch: "**/visual/visual-anonymous.spec.ts",
     },
-    // Visual regression with real auth (authorized baseline)
+    // Visual regression, authorized baseline: scenarios that need a session.
     {
       name: "visual-real-auth",
       use: {
@@ -126,7 +127,7 @@ export default defineConfig({
           args: ["--disable-web-security"],
         },
       },
-      grep: /@visual/,
+      testMatch: "**/visual/visual-authenticated.spec.ts",
       dependencies: ["setup-auth"],
     },
   ],

@@ -15,3 +15,6 @@ pnpm-lock.yaml
 *.log
 .env
 .env.*
+
+# Local artifacts that never exist in CI checkouts
+screenshots/

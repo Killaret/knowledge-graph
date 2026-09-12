@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"knowledge-graph/internal/domain/note"
+	contextkeys "knowledge-graph/internal/shared/context"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
@@ -449,6 +450,39 @@ func TestNoteRepository_UserScoping(t *testing.T) {
 		}
 		if len(notes) != 2 {
 			t.Errorf("expected 2 notes, got %d", len(notes))
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("unfulfilled expectations: %v", err)
+		}
+	})
+
+	// The seeded test user authenticates as uuid.Nil. Once the request carries
+	// a verified identity, the scope must be his own notes — not public-only —
+	// or he would lose every private note he owns.
+	t.Run("authenticated uuid.Nil is scoped to creator_id, not public", func(t *testing.T) {
+		db, mock, cleanup := setupMockDB(t)
+		defer cleanup()
+		repo := NewNoteRepository(db, nil)
+
+		ctx := context.WithValue(context.Background(), contextkeys.AuthenticatedKey, true)
+
+		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE creator_id = \$1.*`).
+			WithArgs(uuid.Nil.String()).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE creator_id = \$1.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+			WithArgs(uuid.Nil.String(), 5, 10).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
+				AddRow(uuid.New(), "Own private", "Content", "star", `{}`, now, now))
+
+		notes, total, err := repo.List(ctx, uuid.Nil, 5, 10)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if total != 1 {
+			t.Errorf("expected total 1, got %d", total)
+		}
+		if len(notes) != 1 {
+			t.Errorf("expected 1 note, got %d", len(notes))
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("unfulfilled expectations: %v", err)

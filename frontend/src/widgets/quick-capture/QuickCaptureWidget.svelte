@@ -115,8 +115,7 @@
           <textarea
             bind:value={content}
             placeholder={t("quickCapture.placeholder")}
-            disabled={isSubmitting}
-          ></textarea>
+            disabled={isSubmitting}></textarea>
           {#if showSuccess}
             <div class="success-message">{t("quickCapture.saved")}</div>
           {/if}

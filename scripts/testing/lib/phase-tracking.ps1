@@ -18,15 +18,19 @@ function Register-Phase {
 
         [int]$ExitCode = 0,
 
-        [switch]$Skipped
+        [switch]$Skipped,
+
+        [string]$Reason = ""
     )
 
     if ($Skipped -and $ExitCode -eq 0) {
         $script:PhaseResults[$Name] = @{
             Status   = 'skip'
             ExitCode = $ExitCode
+            Reason   = $Reason
         }
-        Write-Host "  [SKIP] $Name" -ForegroundColor Yellow
+        $reasonSuffix = if ($Reason) { " — $Reason" } else { "" }
+        Write-Host "  [SKIP] $Name$reasonSuffix" -ForegroundColor Yellow
         return
     }
 
@@ -47,7 +51,10 @@ function Write-FinalSummary {
 
     Write-Host "`n[Final Summary] Test cycle summary" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
-    if ($Success) {
+    $skipped = @($script:PhaseResults.GetEnumerator() | Where-Object { $_.Value.Status -eq 'skip' })
+    if ($Success -and $skipped.Count -gt 0) {
+        Write-Host "  TEST CYCLE COMPLETE WITH SKIPS" -ForegroundColor Yellow
+    } elseif ($Success) {
         Write-Host "  TEST CYCLE COMPLETE" -ForegroundColor Green
     } else {
         Write-Host "  TEST CYCLE FAILED" -ForegroundColor Red
@@ -57,7 +64,10 @@ function Write-FinalSummary {
 
     foreach ($entry in $script:PhaseResults.GetEnumerator()) {
         switch ($entry.Value.Status) {
-            'skip'  { Write-Host "  [SKIP] $($entry.Key)" -ForegroundColor Yellow }
+            'skip'  {
+                $reasonSuffix = if ($entry.Value.Reason) { " — $($entry.Value.Reason)" } else { "" }
+                Write-Host "  [SKIP] $($entry.Key)$reasonSuffix" -ForegroundColor Yellow
+            }
             'pass'  { Write-Host "  [PASS] $($entry.Key)" -ForegroundColor Green }
             'fail'  { Write-Host "  [FAIL] $($entry.Key) (exit $($entry.Value.ExitCode))" -ForegroundColor Red }
             default { Write-Host "  [????] $($entry.Key) (status: $($entry.Value.Status))" -ForegroundColor Magenta }
@@ -70,8 +80,19 @@ function Write-FinalSummary {
         Write-Host ""
     }
 
-    if ($Success) {
+    if ($skipped.Count -gt 0) {
+        Write-Host "Skipped phases: $($skipped.Count)" -ForegroundColor Yellow
+        foreach ($entry in $skipped) {
+            $reason = if ($entry.Value.Reason) { $entry.Value.Reason } else { "no reason provided" }
+            Write-Host "  - $($entry.Key): $reason" -ForegroundColor Yellow
+        }
+        Write-Host ""
+    }
+
+    if ($Success -and $skipped.Count -eq 0) {
         Write-Host "All stacks are stable and isolated testing completed successfully." -ForegroundColor Green
+    } elseif ($Success) {
+        Write-Host "No phases failed, but skipped checks require review." -ForegroundColor Yellow
     } else {
         Write-Host "One or more phases failed. See details above." -ForegroundColor Red
     }

@@ -73,7 +73,7 @@ services:
       dockerfile: ./services/graph-service/Dockerfile
     container_name: kg-graph-service-personal
     ports:
-      - "9092:9091"
+      - "127.0.0.1:9092:9091"
     env_file:
       - .env
     environment:
@@ -82,6 +82,7 @@ services:
       HTTP_PORT: 9091
       GRPC_PORT: 9090
       EVENT_CHANNEL: ${PERSONAL_EVENT_CHANNEL:-graph:events:personal}
+      GRAPH_SERVICE_TRUST_USER_HEADER: "true"
       NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
     depends_on:
       postgres_personal:

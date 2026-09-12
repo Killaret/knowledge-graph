@@ -23,7 +23,4 @@
   });
 </script>
 
-<div
-  data-testid="graph-3d-scene"
-  class="graph-3d-container"
-></div>
+<div data-testid="graph-3d-scene" class="graph-3d-container"></div>

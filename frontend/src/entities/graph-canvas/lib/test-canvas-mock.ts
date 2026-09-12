@@ -74,7 +74,7 @@ export function createMockCanvasContext() {
   };
 
   Object.defineProperty(ctx, "globalAlpha", {
-    get: () => ((ctx as any)._globalAlpha ?? 1),
+    get: () => (ctx as any)._globalAlpha ?? 1,
     set: (value: number) => {
       (ctx as any)._globalAlpha = value;
       globalAlphas.push(value);
