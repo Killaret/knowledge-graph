@@ -71,12 +71,13 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 - JWT validation must be in middleware, not handlers.
 - Rate limiting is required on all write endpoints (POST/PUT/DELETE).
 - Input validation uses go-playground/validator.
+- Browser-facing proxies strip `X-Internal-Auth` and `X-User-Id`; user-header delegation is opt-in and restricted to internal service networks.
 - Do not write code that exposes or logs secrets.
 
 ## Language and documentation policy
 
 - Code identifiers, variable names, commit messages, and API error codes are in English.
-- Authoritative product, API, and architecture documentation is in English; Russian translations may be maintained alongside.
+- Authoritative product, API, and architecture documentation is in Russian by default; English translations may be maintained alongside.
 - AI working documents (`docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`) are maintained and authoritative in Russian; no English counterpart is required for them. For Russian-language chats, use `MASTER_PROMPT_RU.md`.
 - UI strings, labels, toasts, placeholders, errors, and tooltips use i18n keys.
 - The committed default locale is English (`en`); Russian (`ru`) is supported through the same i18n keys.
@@ -97,6 +98,7 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 | Go backend unit | `cd backend && go test ./...` | Target 70% coverage, min 60% |
 | Go backend integration | `cd backend && go test -tags=integration ./...` | testcontainers-go |
 | Frontend unit | `cd frontend && npm run test:unit` | Vitest; target 70% coverage |
+| Local core checks | `.\scripts\testing\check-all.ps1 [-Quick]` / `./scripts/testing/check-all.sh [--quick]` | Mirrors `_core-checks.yml`; skipped tools are reported explicitly |
 | E2E | `cd frontend && npm run test` | Playwright; only on isolated test stack |
 | BDD | `cd frontend && npm run test:bdd` | Cucumber; only on isolated test stack |
 | NLP | `cd nlp-service && pytest tests/ -v` | pytest |
@@ -149,6 +151,20 @@ For new AI tooling configuration (skills, prompts, rules, MCP configs, project s
 - Do not use emojis unless the user explicitly asks.
 - Do not guess URLs, secrets, or file contents. Verify with tools or file reads.
 - Do not give concrete time estimates for work.
+
+### Verifying a finding
+
+A search locates a candidate. It never confirms one. Before reporting a
+finding — or accepting someone else's — follow "Verifying a Finding" in
+`.windsurfrules`:
+
+- Read the surrounding context, not the matching line. A hit inside a
+  "do not do this" list, a code example, or a dated journal entry is not a
+  defect, and a count of occurrences is not evidence.
+- Prefer execution where the claim is about behaviour: run the command,
+  hit the endpoint, look at the database.
+- Check the negative case too: a search returning nothing may mean the
+  pattern is wrong, not that the code is clean.
 - If a request is ambiguous, search the codebase, then ask a focused clarifying question.
 
 ## Priority

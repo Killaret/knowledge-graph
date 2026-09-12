@@ -52,11 +52,11 @@ func (r *EmbeddingRepository) FindSimilarNotes(ctx context.Context, noteID uuid.
 	var results []apprec.SimilarNote
 
 	err := r.db.WithContext(ctx).Raw(`
-        SELECT e2.note_id, (1 - (e1.embedding <=> e2.embedding)) / 2.0 as similarity
+        SELECT e2.note_id, GREATEST(0.0, LEAST(1.0, 1 - (e1.embedding <=> e2.embedding))) as score
         FROM note_embeddings e1
         JOIN note_embeddings e2 ON e1.note_id != e2.note_id AND e1.model_name = e2.model_name
         WHERE e1.note_id = ? AND e1.model_name = ? AND e2.model_name = ?
-        ORDER BY similarity DESC
+        ORDER BY score DESC
         LIMIT ?
     `, noteID, r.modelName, r.modelName, limit).Scan(&results).Error
 
@@ -70,7 +70,7 @@ func (r *EmbeddingRepository) FindSimilarNotes(ctx context.Context, noteID uuid.
 type BatchSimilarNote struct {
 	SourceID uuid.UUID `gorm:"column:source_id"`
 	NoteID   uuid.UUID `gorm:"column:note_id"`
-	Score    float64   `gorm:"column:similarity"`
+	Score    float64   `gorm:"column:score"`
 }
 
 // FindSimilarNotesBatch returns similar notes for multiple note IDs (batch query).
@@ -87,11 +87,11 @@ func (r *EmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs
         SELECT DISTINCT ON (e1.note_id, e2.note_id) 
             e1.note_id as source_id,
             e2.note_id,
-            (1 - (e1.embedding <=> e2.embedding)) / 2.0 as similarity
+            GREATEST(0.0, LEAST(1.0, 1 - (e1.embedding <=> e2.embedding))) as score
         FROM note_embeddings e1
         JOIN note_embeddings e2 ON e1.note_id != e2.note_id AND e1.model_name = e2.model_name
         WHERE e1.note_id = ANY(?) AND e1.model_name = ? AND e2.model_name = ?
-        ORDER BY e1.note_id, e2.note_id, similarity DESC
+        ORDER BY e1.note_id, e2.note_id, score DESC
     `, noteIDs, r.modelName, r.modelName).Scan(&results).Error
 
 	if err != nil {

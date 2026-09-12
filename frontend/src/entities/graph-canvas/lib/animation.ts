@@ -82,9 +82,7 @@ export function updateNodeAngles(
  * caller's responsibility to throttle expensive work (e.g. skipping frames
  * while the graph is idle and stable).
  */
-export function startAnimationLoop(
-  onUpdate: (timestamp: number) => void
-): { stop: () => void } {
+export function startAnimationLoop(onUpdate: (timestamp: number) => void): { stop: () => void } {
   let animationId: number;
 
   let running = true;

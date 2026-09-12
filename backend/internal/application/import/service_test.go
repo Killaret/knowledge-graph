@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"knowledge-graph/internal/application/common"
 	"knowledge-graph/internal/domain/cache"
@@ -174,6 +175,20 @@ func TestBuildContent(t *testing.T) {
 			require.Equal(t, tt.expected, got)
 		})
 	}
+}
+
+func TestBuildContent_MultiByteDoesNotSplitRune(t *testing.T) {
+	// 6000 two-byte Cyrillic runes, plus a short prefix, exceed the 10000-byte
+	// content limit. The old byte-truncation implementation split a rune.
+	title := "Example"
+	url := "https://example.com"
+	text := strings.Repeat("ы", 6000)
+
+	got := BuildContent(title, url, text)
+
+	require.True(t, utf8.ValidString(got), "result must be valid UTF-8")
+	require.LessOrEqual(t, len(got), maxContentLen)
+	require.True(t, strings.HasPrefix(got, "## [Example](https://example.com)\n\n"))
 }
 
 func TestIsAllowedURL(t *testing.T) {

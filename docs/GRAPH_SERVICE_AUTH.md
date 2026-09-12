@@ -21,8 +21,8 @@ This document describes how authentication and authorization work in the `servic
 
 - Shared secret configured via `GRAPH_SERVICE_INTERNAL_TOKEN`.
 - Used for server-to-server calls from the main backend.
-- If `X-User-Id` header is also present, the request is scoped to that user.
-- If `X-User-Id` is missing, the request is treated as anonymous and only public notes are returned.
+- `X-User-Id` is ignored by default. It is trusted only when `GRAPH_SERVICE_TRUST_USER_HEADER=true` on an internal network whose public proxy strips both internal headers.
+- If trusted `X-User-Id` is missing, a private endpoint rejects the request unless the internal header contains a signed access token with a user ID.
 
 ### 3. `SKIP_AUTH` Mode
 
@@ -48,6 +48,10 @@ Previously, an unauthenticated request or `SKIP_AUTH` mode could result in an em
 
 - Defaults anonymous requests to `IsPublic = true` when no valid user ID is present.
 - Treats `SKIP_AUTH` as a separate trusted context that does **not** apply visibility restrictions, rather than treating it as a public-only request.
+
+## Public Perimeter
+
+The nginx browser-facing `/graph-service/` proxy always removes `X-Internal-Auth` and `X-User-Id`. Browser requests authenticate with `Authorization: Bearer`; only direct server-to-server traffic can use the internal token. The nginx listener also enforces a 10 MiB request-body limit and returns `X-Content-Type-Options`, `X-Frame-Options`, and `Referrer-Policy` security headers.
 
 ## HTTP Endpoints
 

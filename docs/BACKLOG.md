@@ -468,6 +468,24 @@ Description: Кластеризация графа и визуализация �
 ---
 ## ⚠️ Technical Debt & Research
 
+### TD-CSP-STYLES: remove the inline-style concession from the CSP
+
+**Priority:** 🟢 Low
+**Status:** ⏸️ Deferred by owner (2026-09-08)
+**Description:** The Content-Security-Policy introduced by CSP-1 carries one concession: `style-src-attr 'unsafe-inline'`, needed by 68 `style="..."` attributes in Svelte markup, 8 `style:` directives that compile to the same, and one in `src/app.html`. Attribute-level styles cannot be covered by a nonce, so the alternative was rewriting 76 places inside a security task.
+
+The concession is narrow. A style injection can distort the page and leak through background selectors, but it cannot execute code — `script-src` stays strict and is what the policy is really for.
+
+Revisit when the markup is touched for other reasons: move the values into component styles or classes, then drop the directive and confirm the CSP check still passes.
+
+### TD-TLS: TLS termination for nginx
+
+**Priority:** 🟢 Low
+**Status:** ⏸️ Deferred by owner (2026-09-07)
+**Description:** The gateway serves plain HTTP. The public perimeter itself was separated in AUD-5 — nginx strips client-supplied internal headers and graph-service gates `X-User-Id` behind an off-by-default flag — but transport is unencrypted.
+
+Deferred because the project has no domain and no public hosting, so TLS would buy nothing today. Revisit if the stack is ever exposed beyond localhost; at that point Let's Encrypt with a real domain is the option worth taking, not self-signed certificates, which only teach the browser to ignore warnings and break the E2E suite.
+
 ### TD-1: CelestialBody Auto-Assignment (MVP)
 
 **Priority:** 🟡 Medium

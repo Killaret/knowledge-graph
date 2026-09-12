@@ -35,8 +35,27 @@ This file covers July 2026 onward. Earlier history lives in the git log.
 
 - Yandex OAuth sign-in: login route and response contract.
 - 3D fog densities restored after a configuration revert had hidden the graph geometry.
+- Docker cleanup scripts reported `[SUCCESS]` and exited 0 even when Docker was down:
+  PowerShell `try/catch` never sees native exit codes. Both `cleanup-docker.ps1` and
+  `cleanup-docker.sh` now register every step's real exit code through the shared
+  phase-tracking library, print stderr on failure, and exit non-zero when any step
+  failed. Added `-DryRun`/`--dry-run` (prints what would be removed, changes
+  nothing), a fresh non-empty Personal-stack backup gate before any step that can
+  touch volumes (shared with the `guard-personal-data` hook via
+  `scripts/devops/backup-policy.env` and `check-personal-backup.*`), a visible
+  image cost before `-Full` (`prune -af` sees every image as unused once all
+  containers are gone), and a fixed `-WslOptimize` that no longer kills processes
+  by name and only compacts the Docker VHD under `%LOCALAPPDATA%\Docker\wsl`;
+  without elevation the step is skipped with an explicit reason instead of
+  reporting success, and a `diskpart` launch failure is caught as an exception.
 
 ### Security
+
+- Note access control: every `/notes/:id` route now enforces object ownership
+  (`middleware.RequireNoteAccess`). Previously any registered user could read,
+  modify and permanently delete another user's private notes by id (IDOR).
+  Foreign notes now answer `404` — including for writes — so their existence is
+  not confirmable; public notes stay readable for any caller.
 
 - OAuth token transport hardened: token removed from the query string, PKCE moved to `S256`,
   `state` validation detached from the PKCE flag.

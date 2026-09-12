@@ -20,7 +20,7 @@
 - Система черновиков в MongoDB.
 - JWT/OAuth2-аутентификация, RBAC.
 - Геймификация (achievements).
-- i18n: русский по умолчанию, английский — через ключи.
+- i18n: английский по умолчанию (`en`), русский (`ru`) — через те же i18n-ключи.
 - Резервное копирование на Яндекс.Диск.
 
 Среды:
@@ -171,7 +171,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `src/shared/utils/i18n.ts` — barrel, реэкспортирует `formatMessage` и типы `Locale`/`MessageParams`.
 - `src/shared/utils/i18n/messages/*.ts` — ключи по доменам (`auth`, `common`, `graph`, `import`, `notes`, `profile`, `ui`) для `en` и `ru`.
 - `formatMessage(key, locale, params)`.
-- UI по умолчанию на русском, но все строки через i18n-ключи.
+- UI по умолчанию на английском, но все строки через i18n-ключи; Russian supported through the same keys.
 - `SidebarWidget.svelte` переведена на i18n-ключи.
 
 ---
@@ -196,7 +196,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 - **Dev**: backend 9000, nginx API 18080, nginx frontend 18081, graph-service 9091.
 - **Personal**: backend direct 18085, nginx API 18082, nginx frontend 18084, graph-service 9092.
-- **Test**: frontend 3002, backend 18083, graph-service gRPC 19090 / HTTP 19091, postgres 15434, redis 16381, mongo 27019, nlp 15002.
+- **Test**: frontend 3002, backend 18083, nginx public perimeter 18086, graph-service gRPC 19090 / HTTP 19091, postgres 15434, redis 16381, mongo 27019, nlp 15002.
 
 ### Volumes
 
@@ -207,6 +207,8 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ### Nginx
 
 - `nginx.conf` и `nginx.personal.conf` — gateway с проксированием `/api` и `/graph-service/api`.
+- Публичный graph-service proxy обнуляет `X-Internal-Auth` и `X-User-Id`; делегирование пользователя по внутреннему токену включается отдельно через `GRAPH_SERVICE_TRUST_USER_HEADER` только внутри Docker-сети.
+- Оба nginx ограничивают тело запроса 10 MiB, скрывают версию и выставляют `nosniff`, `SAMEORIGIN`, `strict-origin-when-cross-origin`.
 
 ---
 
@@ -220,6 +222,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 | E2E             | `cd frontend && npm run test`                   | Playwright                       | —                   |
 | BDD             | `cd frontend && npm run test:bdd`               | Cucumber                         | —                   |
 | NLP             | `cd nlp-service && pytest`                      | pytest                           | —                   |
+| Local core checks | `.\scripts\testing\check-all.ps1 [-Quick]`    | PowerShell/Bash + shared manifest | CI-equivalent phases |
 | Full regression | `.\scripts\testing\run-full-test-cycle.ps1`     | PowerShell + Docker + Playwright | —                   |
 | Stacks identity | `.\scripts\ci\check-stacks-identity.ps1`        | PowerShell                       | —                   |
 
@@ -620,6 +623,69 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 - Повторная верификация Claude Code на живом стенде и пересборка официальных baseline Argos (`ARGOS_REFERENCE_BRANCH=main`).
 
+## 19. Ручной пересчёт рекомендаций и обнаруженные риски (2026-09-11)
+
+### 19.1 Почему не работали рекомендации и граф
+
+- `note_recommendations` и `links` были пусты после массового импорта.
+- `embed-recompute -post` ставит задачи `RefreshRecommendations`/`RecalculateLinkWeights`, но `RefreshService.RefreshRecommendations` делает BFS по `links`. Без `links` кандидатов нет.
+- `note_links_closure` — materialized view на основе `links`. Без `links` view пуст, graph-service тоже не находит связей.
+- Семантический fallback (`FindSimilarNotes` по `note_embeddings`) работает, но не сохраняет результаты в `note_recommendations` и не создаёт `links`.
+
+### 19.2 Ручное семантическое заполнение
+
+- SQL `seed_semantic_safe.sql` заполнил 108 `note_recommendations` (топ-6 по косинусному сходству) и 18 `links` (топ-1, `link_type='related'`, `source_type='gamma'`).
+- `REFRESH MATERIALIZED VIEW note_links_closure` — 28 строк.
+- Живое API вернуло рекомендации и граф.
+- Обнаружен баг: precomputed-ветка `GetSuggestions` не подгружала `title`. Исправлен в `backend/internal/interfaces/api/notehandler/note_handler.go` и покрыт тестами.
+
+### 19.3 Docker Desktop — авария и анализ
+
+**Простое объяснение, почему упала БД (и Docker):**
+
+- Я вручную вставил 108 связей (`links`) — по 6 исходящих на каждую заметку.
+- `note_links_closure` — это materialized view с рекурсивным CTE, который перебирает **все простые пути** между заметками до глубины 10.
+- Средняя исходящая степень 6 означает: на глубине 5 — `6^5` = 7776 путей, на глубине 10 — десятки миллионов.
+- PostgreSQL не справился с перебором, `psql` завис, WSL VM завис. Я принудительно остановил `wsl -t docker-desktop`.
+- После аварийного останова Docker VM пошёл в `read-only file system`, и Docker Desktop перестал стартовать (`docker ps` → `Docker Desktop is unable to start`).
+
+**Вывод:** проблема не в общем количестве связей, а в **высокой исходящей степени одного узла** (6 исходящих) в рекурсивном view. Если ограничить исходящую степень 1–2 связями на заметку, `note_links_closure` строится за миллисекунды. Поэтому `GammaLinkGenerator` лимитирует исходящую степень `MaxGammaOutDegree` (по умолчанию 2).
+
+**Детали:**
+
+- 108 связей, топ-6 семантических соседей на заметку → ~5.7 исходящих на узел.
+- `REFRESH MATERIALIZED VIEW note_links_closure` вызвал экспоненциальный взрыв числа простых путей.
+- **Урок:** `note_links_closure` не безопасен для плотных графов. Нужно либо ограничивать исходящую степень гамма-связей (`links` с `source_type='gamma'`) до 2 или меньше, либо переделывать view.
+
+### 19.4 Java source-text-handler / batch API — на ревью
+
+- Java-сервис обрабатывает URL/документ, чанкует, чистит контент, извлекает язык и формирует `title`/`content`.
+- Java-specific endpoint `POST /api/v1/import/java/batch` был реализован, а затем удалён по решению владельца. Сейчас на ревью: `docs/tasks/IMP-4-claude-review.md`.
+- Вопросы ревью:
+  - должен ли Java использовать существующий `POST /api/v1/import/bookmarks`;
+  - или нужен generic `POST /api/v1/import/batch` (без `java` в имени);
+  - какие операции доступны Java: batch create, single create, no delete/edit;
+  - как реализовать ручное создание связей между заметками (backend `POST /api/v1/links` уже есть, но frontend UI, судя по `UX-1`, не позволяет);
+  - dedup по `external_id` и индекс в `metadata`;
+  - pipeline постобработки с `GammaLinkGenerator` и `note_links_closure`.
+- Предполагаемое тело generic batch:
+  ```json
+  {
+    "request_id": "uuid",
+    "items": [
+      {"title": "...", "content": "...", "type": "unknown", "source_url": "...", "external_id": "...", "metadata": {...}}
+    ]
+  }
+  ```
+- Гамма-связи (`GammaLinkGenerator`) будут интегрированы в worker после ревью; сейчас сервис готов и покрыт тестами.
+
+### 19.5 Нужные тесты
+
+- Юнит: `GammaLinkGenerator` не создаёт больше `MaxGammaOutDegree` связей, пропускает self-loops, не дублирует `(source, target, link_type)` — реализовано, `go test ./internal/application/recommendation` зелёное.
+- Интеграция: `REFRESH MATERIALIZED VIEW note_links_closure` с плотным графом (6 связей на узел) отменяется по `statement_timeout` или не завершается в разумное время — доказательство уязвимости.
+- Интеграция: `REFRESH MATERIALIZED VIEW` с разреженным графом (≤2 связи на узел) завершается <1s.
+- E2E/контракт: `POST /notes/batch` возвращает `data[].id`, `import_task_id` и признак постобработки.
+
 ## 18. AUD-4: контракт входа через Яндекс (2026-09-06)
 
 **Что сделано.**
@@ -648,3 +714,159 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 **Осталось.**
 
 - Повторная проверка Claude Code на живом тест-стеке и, при необходимости, реальным `YANDEX_CLIENT_ID`/`YANDEX_CLIENT_SECRET` (callback остаётся вне зоны задачи).
+
+### 19.6 Docker Desktop / Personal recovery (2026-09-11)
+
+**Что произошло.**
+
+- Падение Docker/WSL из-за `note_links_closure` (см. §19.3) оставило Docker Desktop в состоянии `unable to start`.
+- `wsl -t docker-desktop` и аварийные попытки привели к тому, что WSL-дистрибутив `docker-desktop` не стартовал с ошибкой `Wsl/Service/CreateInstance/E_FAIL`.
+- Диск D: был заполнен: `D:\Docker\wsl\disk\docker_data.vhdx` (45.18 ГБ) — активный Docker WSL-диск, данные Personal-стека внутри. Docker не мог стартовать из-за `There is not enough space on the disk` при копировании main-дистрибутива.
+- `C:\Users\...\AppData\Local\Docker\wsl` оказался junction → `D:\Docker\wsl`, поэтому все Docker-данные живут на D:.
+
+**Что сделано.**
+
+- Ручной бэкап Personal-данных:
+  - Архив: `C:\Users\89209\Desktop\my items\kg-personal-volumes-2026-09-11.tar.gz` (25.8 МБ).
+  - В архиве: `knowledge-graph_pgdata_personal/_data`, `knowledge-graph_redisdata_personal`, `knowledge-graph_mongodbdata_personal`.
+  - Проверка: `tar -tzf` показал 1589 записей, `pgdata_personal/_data` на месте.
+- `wsl --unregister docker-desktop` — убран битый системный дистрибутив (данные не тронуты).
+- `e2fsck -fy /dev/sde` — исправлены мелкие ошибки файловой системы VHDX (free blocks / free inodes count).
+- `fstrim` + `diskpart compact vdisk` — уменьшили `docker_data.vhdx` с 45.18 ГБ до 37.04 ГБ, освободив ~8.1 ГБ на D:.
+- Docker Desktop запущен, Personal- и test-стеки поднялись.
+- Проверка данных: `SELECT COUNT(*) FROM notes` в `knowledge_personal` вернуло 19 — заметки на месте.
+
+**Осталось / риски.**
+
+- `D:\Docker\wsl\disk\docker_data.vhdx.backup` (8.41 ГБ, 22.08) — старый бэкап VHDX. Можно удалить после проверки свежего архива.
+- `D:\Docker\wsl\main\ext4.vhdx.old` (100 МБ) — старый системный дистрибутив; можно удалить.
+- После старта стеков `kg-nlp-personal` и `kg-nlp-test` находятся в `health: starting` — нужно дождаться full healthy, прежде чем тестировать рекомендации.
+- Для перестраховки стоит сделать `pg_dump`-бэкап через `backup-personal.ps1` после восстановления, чтобы свежий `.sql.gz` дополнил VHDX-архив.
+
+## 20. UX-2: 500-страница и аудит обработки ошибок (2026-09-11)
+
+**Что сделано.**
+
+- Добавлен `frontend/src/routes/+error.svelte`: full-viewport (`position: fixed; inset: 0; z-index: 900`), Cosmic Cockpit фон, i18n (`error.500.*`, `error.unknown.*`), кнопки «Обновить» и «На главную», dev-only stack trace.
+- Добавлен новый тип `server-error` в `frontend/src/components/atoms/StateIllustration.svelte`: космическая иллюстрация разъединённого удлинителя с искрой.
+- `+error.svelte` выбирает иллюстрацию по статусу: `404` → `404`, `5xx` → `server-error`, остальное → `error`.
+- Добавлен `frontend/src/routes/error-page.spec.ts` и `frontend/src/shared/utils/route-match.test.ts`.
+- В `+layout.svelte` исправлен критический баг публичных маршрутов: `currentPath.startsWith("/")` делал публичными **все** пути. Вынесена функция `isPublicRoute` в `shared/utils/route-match.ts`.
+- Обновлены `docs/tasks/UX-2-500-error-page.md` и `docs/AI_HANDOFF.md`; статус: на ревью у Claude Code.
+|- Добавлен Playwright-сценарий `frontend/tests/error-500-page.spec.ts` и test-only route `src/routes/test/500/+page.server.ts` (триггер `?trigger=500`) для проверки full-viewport рендера в браузере.
+|- `ApiErrorDisplay.svelte` теперь использует иллюстрацию `server-error` для API-ошибок с кодом `INTERNAL_ERROR`.
+|- Исправлены `golangci-lint` замечания в `note_handler.go` и `import_fetcher_test.go`.
+|- Восстановлен гейт форматирования: `npm ci` + `npm run format` привели 6 Svelte-файлов в соответствие с lock-версией `prettier-plugin-svelte`.
+|- Обновлена языковая политика: UI по умолчанию — English (`en`), документация — Russian; правка в `.windsurfrules`, `MASTER_PROMPT.md`, `MASTER_PROMPT_RU.md`.
+
+**Аудит обработки ошибок.**
+
+- SvelteKit route-ошибки (`load`/SSR) перехватываются `+error.svelte` (full-screen, i18n).
+- API-ошибки в страницах graph, import, notes, search, home показываются **локально** (`StateIllustration`, `ApiErrorDisplay`) — не перекрывают весь экран.
+- `GraphPageShell` и `GraphCanvas` ловят ошибки загрузки/рендера и показывают внутри canvas-области.
+- `hooks.server.ts` проксирует `/api/v1/*` на backend; 500 от backend возвращаются клиенту как JSON, а не как route-ошибка.
+
+**Результаты верификации.**
+
+- `npm run check` — 0 ошибок, 0 предупреждений.
+- `npm run test:unit` — 112 файлов, 1014 тестов passed.
+- `npx vitest run src/routes/error-page.spec.ts src/shared/utils/route-match.test.ts` — passed.
+
+**Осталось / открытые вопросы.**
+
+- Решение по языку: приложение — `en` по умолчанию, документация — Russian. Зафиксировано в `.windsurfrules`, `MASTER_PROMPT.md`, `MASTER_PROMPT_RU.md`.
+- Playwright-регрессия full-viewport: реализована `frontend/tests/error-500-page.spec.ts` + `src/routes/test/500/+page.server.ts` (триггер `?trigger=500`).
+- `ApiErrorDisplay.svelte` использует `server-error` для API-ошибок с кодом `INTERNAL_ERROR`.
+- PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
+- Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d`, `5acc40d`, `ff65307`, `af2f957`, `49c4e67` и все последующие до слияния.
+
+## 21. Открытые Dependabot PR (#21–#32), 2026-09-11
+
+Все 12 PR — реальные апгрейды, не закрыты автоматически основным. `go.mod` и `requirements.txt` на `main` до сих пор содержат старые версии.
+
+| # | Область | Зависимость | С | По | Риск | Рекомендация |
+|---|---|---|---|---|---|---|
+| #24 | backend Go | `golang.org/x/net` | 0.52.0 | 0.58.0 | Средний (0.x minor, транзитив) | Группировать с другими Go-PR; проверить `go test ./...` |
+| #30 | backend Go | `pgvector-go` | 0.2.0 | 0.4.1 | Средний (0.x, pgvector API) | Ревью changelog; тесты pgvector/integration |
+| #26 | backend Go | `go-redis/v9` | 9.14.1 | 9.22.0 | Средний (minor в рамках v9, но правила требуют v9 API) | Проверить отсутствие v8-API; `go test ./...` |
+| #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий (0.x, integration tests) | Запустить integration tests |
+| #28 | backend Go | `testcontainers-go/modules/postgres` | 0.40.0 | 0.44.0 | Средний-высокий | Запустить integration tests |
+| #25 | NLP Python | `yake` | 0.4.8 | 0.7.3 | Средний (0.x, keyword extraction) | Проверить `pytest` |
+| #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний (minor, FastAPI/Pydantic v2) | Проверить `pytest` и совместимость с FastAPI |
+| #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий (minor, модель/эмбеддинги) | Сравнить вывод embeddings; возможно, требуется пересчёт |
+| #27 | NLP Python | `python-dotenv` | 1.0.0 | 1.2.3 | Низкий | Безопасно группировать с NLP |
+| #21 | CI Actions | `actions/setup-python` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
+| #22 | CI Actions | `actions/setup-go` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
+| #23 | CI Actions | `actions/checkout` | 5 | 7 | Низкий-средний | Проверить workflow CI после merge |
+
+**Порядок действий:**
+
+1. Не закрывать все сразу — каждый PR либо мержится, либо отклоняется осознанно.
+2. Объединить по группам: Go-бэкенд (#24, #26, #28, #30, #32), NLP (#25, #27, #29, #31), GitHub Actions (#21, #22, #23).
+3. Внутри группы мержить по цепочке с `gh pr merge --rebase` или через GitHub; Dependabot предложит rebase следующих.
+4. Перед merge каждой группы — `go test ./...`, `go test -tags=integration ./...`, `pytest` (NLP), `npm run check`/`test:unit` (для Actions не нужно, но прогнать CI).
+5. `sentence-transformers` (#31) — самый рискованный; выделить отдельный раунд с замером embeddings.
+6. Действие по умолчанию: держать открытыми до следующего раунда CI/ревью, либо закрыть только явно отклонённые/устаревшие.
+
+## 22. Правки CI под PR #36, 2026-09-11
+
+**NLP: таймаут из-за nvidia-колёс.**
+
+- Симптом: `Core Checks / NLP Service Checks` падала по таймауту 10 минут, скачивая `torch==2.14.0` + `nvidia_cudnn` 553 МБ + `nvidia_cusparselt` 170 МБ + `nvidia_nccl` 216 МБ и др.
+- Причина: `pip install -r requirements.txt` в `_core-checks.yml` брал последний `torch` с PyPI (CUDA-версия), тогда как `Dockerfile` всегда использует CPU-индекс.
+- Исправление (`ff32ee0`): заменить `pip install -r requirements.txt` на `pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple -r requirements.txt` и увеличить `timeout-minutes` до 20.
+- Результат: `NLP Service Checks` стала проходить за ~1 минуту.
+
+**Smoke Tests: `SKIP_AUTH` без `APP_ENV=test`.**
+
+- Симптом: `Smoke Tests` падает на шаге `Start backend for smoke tests` с `FATAL: SKIP_AUTH=true is only allowed when APP_ENV=test; current APP_ENV=development`.
+- Причина: в `ci.yml` smoke-тесты стартуют backend и graph-service с `SKIP_AUTH=true`, но без `APP_ENV=test`.
+- Исправление (`21f5d8d`): добавить `APP_ENV: test` в env для шагов `Start backend for smoke tests` и `Start graph-service for smoke tests`.
+
+**Smoke Tests: graph-service REDIS_URL в формате URL.**
+
+- Симптом: `Start graph-service for smoke tests` падает с `failed to connect to redis: dial tcp: address redis://localhost:6379: too many colons in address`.
+- Причина: graph-service ожидает `RedisURL` как `host:port`, а `ci.yml` передавал `redis://localhost:6379`.
+- Исправление (`5acc40d`): `REDIS_URL: localhost:6379` для graph-service.
+
+**Smoke Tests: Go module cache.**
+
+- Симптом: `Start backend for smoke tests` провисел более 5 минут на `go mod download`, потому что в smoke-джобе не было `actions/setup-go` и кеша.
+- Исправление (`ff65307`): добавлен `actions/setup-go@v6` с `cache-dependency-path: '**/go.sum'` в `smoke-tests`.
+
+**Smoke Tests: мало времени на компиляцию сервисов.**
+
+- Симптом: сервис падает по таймауту опроса `health` (30 попыток × 2 сек = 60 сек), потому что `go run` компилирует из исходников дольше минуты.
+- Исправление (`af2f957`): увеличить цикл ожидания backend и graph-service до 90 попыток (до 3 минут).
+
+**Smoke Tests: конфликт миграций, Redis URL и frontend URL.**
+
+- Симптом: backend при `SKIP_AUTH=true` не мог поднять Redis (`redis://localhost:6379: too many colons in address`), не применял `019_add_test_user` из-за ручного `migrate up` + собственного `RunMigrations`, регистрация возвращала 500, а 49 тестов палили с `ERR_CONNECTION_REFUSED` на `http://127.0.0.1:5173`.
+- Исправление (`49c4e67`):
+  - убрать ручной `Apply database migrations` из smoke-тестов, чтобы backend сам применил SQL-миграции;
+  - `REDIS_URL: localhost:6379` для backend smoke;
+  - `FRONTEND_URL`, `VITE_API_TARGET`, `VITE_GRAPH_SERVICE_URL` и BDD-URL переключены на `localhost`.
+
+- Статус: все вспомогательные правки в `ci.yml`; следующий прогон CI подтверждает.
+
+**Smoke Tests: отсутствует тестовый пользователь после миграции 029.**
+
+|- Симптом: после исправления миграций Playwright-создание заметок падает с `Failed to save note`; в логе Postgres `insert or update on table "notes" violates foreign key constraint "notes_creator_id_fkey"` для `creator_id=00000000-0000-0000-0000-000000000000`.
+|- Причина: миграция `029_remove_test_user.up.sql` удаляет zero-UUID пользователя, созданного `019_add_test_user.up.sql`; `skip_auth` middleware всё ещё использует этот ID, а сидер `backend/cmd/seed` не запускался в smoke-джобе.
+|- Исправление (`5f0f6b8`): после подъёма backend запустить `go run ./cmd/seed` с `APP_ENV=test` и `SEED_TEST_USER_PASSWORD` до начала тестов.
+|- Результат: 49 Playwright smoke-тестов и 43 BDD-шага (5 сценариев) проходят.
+
+**Smoke Tests: BDD-сценарии проходят, но шаг зависает на выходе.**
+
+|- Симптом: `Run smoke BDD tests` отрапортовал `5 scenarios (5 passed), 43 steps (43 passed), 0m49.839s`, но процесс не завершился и джоба ушла в timeout/cancel.
+|- Причина: `frontend/tests/features/support/hooks.ts` запускает Vite dev-сервер сам, а `devServer.kill` не убивает дочерний процесс Vite; процесс остаётся висеть, GitHub Actions не переходит к следующему шагу.
+|- Исправление (`c7f4786`):
+  - выделить отдельный шаг `Start frontend dev server for smoke tests` с `npm run dev &` и дождаться `http://localhost:5173`;
+  - `PLAYWRIGHT_DEV_SERVER=true` + `webServer.reuseExistingServer: true` заставляют Playwright переиспользовать уже поднятый Vite, а не стартовать новый;
+  - `test:cucumber` видит готовый сервер и не стартует собственный, поэтому завершается сразу после отчёта;
+  - `SKIP_AUTH: "true"` добавлен в env `Run smoke BDD tests`, чтобы `hooks.ts` инжектировал `__SKIP_AUTH__`.
+|- Результат: `Smoke Tests` проходит за ~5m35s; полный CI run `34642092163` — success (все 9 джоб).
+
+**Итог CI-4:**
+
+|- PR #36 run `34642092163` — `conclusion: success`, все Core Checks и Smoke Tests зелёные; Playwright 49 passed/2 skipped, BDD 5 scenarios/43 steps passed.

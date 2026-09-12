@@ -81,6 +81,7 @@ func TestPostgresClient_Integration(t *testing.T) {
 			id UUID PRIMARY KEY,
 			note_id UUID NOT NULL REFERENCES notes(id),
 			embedding vector(3),
+			model_name VARCHAR(255) NOT NULL,
 			updated_at TIMESTAMP DEFAULT NOW()
 		);
 	`)
@@ -102,8 +103,8 @@ func TestPostgresClient_Integration(t *testing.T) {
 	`)
 	require.NoError(t, err)
 
-	// Create client
-	client := NewPostgresClient(pool, "all-MiniLM-L6-v2")
+	// Create client bound to the current embedding model
+	client := NewPostgresClient(pool, "paraphrase-multilingual-MiniLM-L12-v2")
 
 	t.Run("GetNotes_All", func(t *testing.T) {
 		notes, links, err := client.GetNotes(ctx, NotesFilter{})
@@ -127,17 +128,24 @@ func TestPostgresClient_Integration(t *testing.T) {
 	})
 
 	t.Run("GetEmbeddings", func(t *testing.T) {
-		// Insert test embedding
+		// Insert one embedding for the current model and one for a foreign model;
+		// the foreign-model row must not be returned.
 		_, err := pool.Exec(ctx, `
-			INSERT INTO note_embeddings (id, note_id, embedding) VALUES
-				('770e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000', '[0.1, 0.2, 0.3]'::vector(3));
+			INSERT INTO note_embeddings (id, note_id, embedding, model_name) VALUES
+				('770e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000', '[0.1, 0.2, 0.3]'::vector(3), 'paraphrase-multilingual-MiniLM-L12-v2'),
+				('770e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', '[0.4, 0.5, 0.6]'::vector(3), 'all-MiniLM-L6-v2');
 		`)
 		require.NoError(t, err)
 
-		noteIDs := []string{"550e8400-e29b-41d4-a716-446655440000"}
+		noteIDs := []string{
+			"550e8400-e29b-41d4-a716-446655440000",
+			"550e8400-e29b-41d4-a716-446655440001",
+		}
 		embeddings, err := client.GetEmbeddings(ctx, noteIDs)
 		require.NoError(t, err)
 		assert.Contains(t, embeddings, "550e8400-e29b-41d4-a716-446655440000")
 		assert.NotEmpty(t, embeddings["550e8400-e29b-41d4-a716-446655440000"])
+		assert.NotContains(t, embeddings, "550e8400-e29b-41d4-a716-446655440001",
+			"GetEmbeddings must not return vectors of a different model")
 	})
 }

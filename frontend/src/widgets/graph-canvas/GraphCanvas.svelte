@@ -69,10 +69,7 @@
     pinTechnicalNodes,
   } from "$features/graph-canvas/canvas-state.svelte";
   import { createFogState } from "$features/graph-canvas/fog-state.svelte";
-  import {
-    createFogWarningState,
-    updateFogWarning,
-  } from "$features/graph-canvas/fog-warning";
+  import { createFogWarningState, updateFogWarning } from "$features/graph-canvas/fog-warning";
   import {
     createNoteFormState,
     createNote,

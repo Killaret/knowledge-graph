@@ -91,17 +91,21 @@ func (c *postgresClient) GetNotes(ctx context.Context, filter NotesFilter) ([]*N
 func (c *postgresClient) loadRooted(ctx context.Context, filter NotesFilter) ([]*Note, []*Link, error) {
 	noteVis, noteArgs := noteVisibilitySQLWithAlias(filter, 2, "n")
 	query := fmt.Sprintf(`WITH RECURSIVE nodes AS (
-    SELECT n.id, n.title, n.type, 1 AS level
+    SELECT n.id, n.title, n.type, 0 AS level
     FROM notes n
     WHERE n.id = $1 AND n.deleted_at IS NULL AND %s
   UNION ALL
     SELECT n.id, n.title, n.type, nodes.level + 1
-    FROM links l
-    JOIN notes n ON n.id = l.target_note_id AND n.deleted_at IS NULL AND %s
-    JOIN nodes ON l.source_note_id = nodes.id
+    FROM nodes
+    JOIN links l ON (l.source_note_id = nodes.id OR l.target_note_id = nodes.id)
+    JOIN notes n ON n.id = CASE
+        WHEN l.source_note_id = nodes.id THEN l.target_note_id
+        ELSE l.source_note_id
+      END
+      AND n.deleted_at IS NULL AND %s
     WHERE nodes.level < $2 AND l.deleted_at IS NULL
   )
-  SELECT id, title, type FROM nodes;`, noteVis, noteVis)
+  SELECT DISTINCT id, title, type FROM nodes;`, noteVis, noteVis)
 
 	args := []interface{}{filter.RootID, filter.Depth}
 	args = append(args, noteArgs...)

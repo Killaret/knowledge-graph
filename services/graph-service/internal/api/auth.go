@@ -112,12 +112,14 @@ func validateInternalAuthWithRequest(r *http.Request, token string, cfg *config.
 	}
 
 	// Exact match with the configured internal token means the request is coming
-	// from a trusted internal proxy. If an X-User-Id header is also present,
-	// trust it for server-to-server calls; otherwise a private endpoint must
-	// also supply a signed token with a user_id.
+	// from a trusted internal proxy. X-User-Id is accepted only when explicitly
+	// enabled for server-to-server calls; otherwise a private endpoint must also
+	// supply a signed token with a user_id.
 	if subtle.ConstantTimeCompare([]byte(token), []byte(cfg.InternalAuthToken)) == 1 {
-		if userID := r.Header.Get("X-User-Id"); userID != "" {
-			return userID, true
+		if cfg.TrustUserHeader {
+			if userID := r.Header.Get("X-User-Id"); userID != "" {
+				return userID, true
+			}
 		}
 		return "", true
 	}
@@ -163,10 +165,12 @@ func grpcAuth(ctx context.Context, cfg *config.Config) (string, bool) {
 			return "", false
 		}
 		if subtle.ConstantTimeCompare([]byte(vals[0]), []byte(cfg.InternalAuthToken)) == 1 {
-			if userVals := md.Get("x-user-id"); len(userVals) > 0 && userVals[0] != "" {
-				return userVals[0], true
+			if cfg.TrustUserHeader {
+				if userVals := md.Get("x-user-id"); len(userVals) > 0 && userVals[0] != "" {
+					return userVals[0], true
+				}
 			}
-			return "", true
+			return "", false
 		}
 		return validateJWT(vals[0], cfg.InternalAuthToken)
 	}

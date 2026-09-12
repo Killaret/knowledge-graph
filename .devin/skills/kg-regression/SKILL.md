@@ -9,7 +9,7 @@ triggers:
 
 Использовать при запуске E2E, BDD, визуальных тестов, полного цикла, а также при правках `scripts/testing/`.
 
-Выведено из: `scripts/testing/run-full-test-cycle.ps1`, `scripts/testing/lib/phase-tracking.ps1`, `.windsurfrules` (раздел Testing Requirements), `docs/TESTING.md`, `docs/tasks/A-3-review-findings.md`. При их изменении скилл проверить.
+Выведено из: `scripts/testing/run-full-test-cycle.ps1`, `scripts/testing/check-all.ps1`, `scripts/testing/core-checks.tsv`, `scripts/testing/lib/phase-tracking.ps1`, `.github/workflows/_core-checks.yml`, `.windsurfrules` (раздел Testing Requirements), `docs/TESTING.md`, `docs/tasks/A-3-review-findings.md`. При их изменении скилл проверить.
 
 ## Железное правило
 
@@ -20,9 +20,10 @@ Personal-стек не поднимается без явной просьбы �
 ## Порядок
 
 ```powershell
+$env:SKIP_AUTH='false'   # визуальные эталоны строятся без обхода авторизации (VIS-1)
 .\scripts\testing\start-test.ps1
-.\scripts\testing\seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42
-cd frontend; npx playwright test --project=visual
+.\scripts\testing\seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42 -PublicPercent 50
+cd frontend; npx playwright test --project=visual --project=visual-real-auth
 .\scripts\testing\stop-test.ps1
 ```
 
@@ -39,6 +40,7 @@ cd frontend; npx playwright test --project=visual
 | MongoDB | 27019 |
 | NLP | 15002 |
 | Graph service | 19090 gRPC, 19091 HTTP |
+| nginx public perimeter | 18086 |
 
 База — `knowledge_test`, контейнеры с префиксом `kg-test-`.
 
@@ -74,6 +76,20 @@ FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 npx playwr
 
 Подставная упавшая фаза должна отдавать код выхода **2**, а не 1: ошибка, которую этот тест ловит, как раз в том, что проверялась только единица.
 
+## Локальная копия Core Checks
+
+`check-all.ps1` / `check-all.sh` повторяют пять джоб `_core-checks.yml` без управления стеками. Полный режим запускает интеграционные тесты при доступном Docker; `-Quick` / `--quick` регистрирует их как `[SKIP]`. Любой недоступный инструмент также даёт `[SKIP]` с причиной; это не выводится как полностью зелёный прогон. Соответствие команд workflow проверяет `check-core-workflow-sync.mjs` по общему `core-checks.tsv`.
+
+```powershell
+.\scripts\testing\check-all.ps1
+.\scripts\testing\check-all.ps1 -Quick
+```
+
+```bash
+./scripts/testing/check-all.sh
+./scripts/testing/check-all.sh --quick
+```
+
 ## Пирамида и команды
 
 | Уровень | Команда |
@@ -84,7 +100,7 @@ FRONTEND_URL=http://127.0.0.1:3002 BACKEND_URL=http://127.0.0.1:18083 npx playwr
 | Frontend покрытие | `cd frontend; npm run test:coverage` |
 | E2E | `cd frontend; npx playwright test --project=chromium-skip-auth` |
 | BDD | `cd frontend; npm run test:bdd` |
-| Визуальные | `cd frontend; npx playwright test --project=visual` |
+| Визуальные | `cd frontend; npx playwright test --project=visual --project=visual-real-auth` |
 | NLP | `cd nlp-service; pytest tests/ -v` |
 
 Найден дефект — регрессионный тест обязателен до закрытия задачи. Уровень выбирается по охвату, тест должен падать до правки. Норма — `.windsurfrules`, блок «Manual Found → Automated Covered».
