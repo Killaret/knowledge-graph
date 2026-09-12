@@ -8,6 +8,9 @@ import {
   updateNote,
   deleteNote,
   deleteNotesBatch,
+  restoreNote,
+  publishNote,
+  unpublishNote,
   getSuggestions,
   searchNotes,
 } from "./notes";
@@ -191,6 +194,76 @@ describe("notes API", () => {
 
       expect(result.data).toHaveLength(1);
       expect(result.total).toBe(1);
+    });
+  });
+
+  describe("restoreNote", () => {
+    it("should restore a deleted note", async () => {
+      server.use(
+        http.post("http://localhost:8080/api/v1/notes/1/restore", () =>
+          HttpResponse.json({ data: { ...mockNote, deleted_at: null } })
+        )
+      );
+
+      await expect(restoreNote("1")).resolves.toBeUndefined();
+    });
+
+    it("should throw on 404 when note not found", async () => {
+      server.use(
+        http.post("http://localhost:8080/api/v1/notes/999/restore", () =>
+          HttpResponse.json({ error: "Note not found" }, { status: 404 })
+        )
+      );
+
+      await expect(restoreNote("999")).rejects.toThrow();
+    });
+  });
+
+  describe("publishNote", () => {
+    it("should publish a note", async () => {
+      const published = { ...mockNote, is_public: true };
+      server.use(
+        http.post("http://localhost:8080/api/v1/notes/1/publish", () =>
+          HttpResponse.json(published)
+        )
+      );
+
+      const result = await publishNote("1");
+      expect(result.is_public).toBe(true);
+    });
+
+    it("should throw on 404 when note not found", async () => {
+      server.use(
+        http.post("http://localhost:8080/api/v1/notes/999/publish", () =>
+          HttpResponse.json({ error: "Note not found" }, { status: 404 })
+        )
+      );
+
+      await expect(publishNote("999")).rejects.toThrow();
+    });
+  });
+
+  describe("unpublishNote", () => {
+    it("should unpublish a note", async () => {
+      const unpublished = { ...mockNote, is_public: false };
+      server.use(
+        http.post("http://localhost:8080/api/v1/notes/1/unpublish", () =>
+          HttpResponse.json(unpublished)
+        )
+      );
+
+      const result = await unpublishNote("1");
+      expect(result.is_public).toBe(false);
+    });
+
+    it("should throw on 404 when note not found", async () => {
+      server.use(
+        http.post("http://localhost:8080/api/v1/notes/999/unpublish", () =>
+          HttpResponse.json({ error: "Note not found" }, { status: 404 })
+        )
+      );
+
+      await expect(unpublishNote("999")).rejects.toThrow();
     });
   });
 

@@ -57,6 +57,28 @@
   - Основные непокрытые области: `src/features/home-page/home-page.svelte.ts`, Svelte-компоненты (`CockpitPanel.svelte`, `CockpitNoteDetails.svelte`), `src/routes/**`, `src/shared/stores/auth.svelte.ts` (initAuth/login ветки), `src/shared/api/notes.ts`, `src/shared/api/links.ts`, `src/shared/api/sharing.ts`, `src/shared/utils/extract-urls.ts`.
 - Блокер: без стратегии по Svelte-компонентам и/или route-файлам 70% global по functions/branches не достигается за счёт чистой TS-логики. Требуется решение Claude Code / владельца.
 
+## Прогресс 2026-09-12 (третья партия)
+
+- `npm run test:unit -- --run`: 1113/1113 passed.
+- `npm run check`: 0 errors, 0 warnings.
+- `npm run lint`: 0 errors, 3 pre-existing warnings.
+- `npm run test:coverage`:
+  - lines: 70.00% ✓ (was 69.85%)
+  - statements: 66.1% (was 65.98%)
+  - functions: 65.12% (was 64.95%)
+  - branches: 57.57% (was 57.47%)
+- Добавлено/расширено:
+  - `frontend/src/shared/api/notes.test.ts` — `restoreNote`, `publishNote`, `unpublishNote`.
+  - `frontend/src/shared/api/links.test.ts` — `updateLink`, `deleteAllNoteLinks`.
+  - `frontend/src/shared/api/sharing.test.ts` — `createShareLink` с `expires_at` и `max_uses`.
+  - `frontend/src/shared/stores/auth.svelte.test.ts` — `updateUserInfo` failure, `login` under SKIP_AUTH.
+- Оставшийся зазор:
+  - statements не хватает ~3.9 pp.
+  - functions не хватает ~4.9 pp.
+  - branches не хватает ~12.4 pp.
+  - Основные непокрытые области: `src/features/home-page/home-page.svelte.ts`, Svelte-компоненты (`CockpitPanel.svelte`, `CockpitNoteDetails.svelte`), `src/routes/**`.
+- Блокер: `lines` достиг 70% за счёт чистой TS-логики и Svelte-компонента `overlay.svelte`. Для statements/functions/branches нужно тестировать крупные Svelte/runes-модули (`home-page.svelte.ts`, `CockpitPanel.svelte`, `CockpitNoteDetails.svelte`) или исключать `src/routes/**` из unit-знаменателя.
+
 ## Цель
 
 Довести `npm run test:coverage` до 70% по всем четырём метрикам, чтобы `test`-job в `frontend-tests.yml` проходил и PR #63 можно было мержить.
