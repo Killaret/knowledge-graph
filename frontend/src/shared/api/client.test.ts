@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { api } from "./client";
-import { getApiKey, saveTokens, clearAuthState, accessToken } from "$shared/stores/auth-session.svelte";
+import {
+  getApiKey,
+  saveTokens,
+  clearAuthState,
+  accessToken,
+} from "$shared/stores/auth-session.svelte";
 import { goto } from "$app/navigation";
 
 vi.mock("$app/navigation", () => ({
@@ -182,10 +187,7 @@ describe("API Client", () => {
       return createJsonResponse({ error: "Not found" }, 404);
     });
 
-    const [first, second] = await Promise.all([
-      api.get("test").text(),
-      api.get("other").text(),
-    ]);
+    const [first, second] = await Promise.all([api.get("test").text(), api.get("other").text()]);
 
     expect(first).toBe('{"ok":true}');
     expect(second).toBe('{"ok":true}');

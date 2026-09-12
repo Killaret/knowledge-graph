@@ -298,7 +298,11 @@ describe("getGraphData normalization", () => {
   });
 
   it("returns an empty graph for unrecognized object responses", async () => {
-    server.use(http.get("http://localhost:9091/api/v1/graph/note/1", () => HttpResponse.json({ weird: true })));
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/note/1", () =>
+        HttpResponse.json({ weird: true })
+      )
+    );
 
     const result = await getGraphData("1");
     expect(result.nodes).toHaveLength(0);
@@ -320,7 +324,9 @@ describe("getGraphDelta", () => {
   });
 
   it("returns an empty object for a non-object response", async () => {
-    server.use(http.get("http://localhost:9091/api/v1/graph/delta", () => HttpResponse.json("bad")));
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/delta", () => HttpResponse.json("bad"))
+    );
 
     const result = await getGraphDelta("prev");
     expect(result).toEqual({});
@@ -340,14 +346,21 @@ describe("getCachedGraph", () => {
   });
 
   it("returns null for a 204 response", async () => {
-    server.use(http.get("http://localhost:8080/api/v1/me/graph/cached", () => new HttpResponse(null, { status: 204 })));
+    server.use(
+      http.get(
+        "http://localhost:8080/api/v1/me/graph/cached",
+        () => new HttpResponse(null, { status: 204 })
+      )
+    );
 
     const result = await getCachedGraph();
     expect(result).toBeNull();
   });
 
   it("returns null on a network error", async () => {
-    server.use(http.get("http://localhost:8080/api/v1/me/graph/cached", () => HttpResponse.error()));
+    server.use(
+      http.get("http://localhost:8080/api/v1/me/graph/cached", () => HttpResponse.error())
+    );
 
     const result = await getCachedGraph();
     expect(result).toBeNull();
@@ -372,7 +385,9 @@ describe("getFreshGraph", () => {
   });
 
   it("falls back to an empty graph on an empty response", async () => {
-    server.use(http.get("http://localhost:8080/api/v1/me/graph/fresh", () => HttpResponse.json({})));
+    server.use(
+      http.get("http://localhost:8080/api/v1/me/graph/fresh", () => HttpResponse.json({}))
+    );
 
     const result = await getFreshGraph();
     expect(result.fresh.nodes).toHaveLength(0);
@@ -446,7 +461,9 @@ describe("graph API additional branches", () => {
   });
 
   it("returns empty delta for non-object response", async () => {
-    server.use(http.get("http://localhost:9091/api/v1/graph/delta", () => HttpResponse.json("not an object")));
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/delta", () => HttpResponse.json("not an object"))
+    );
 
     const result = await getGraphDelta("prev");
     expect(result).toEqual({});
@@ -475,7 +492,9 @@ describe("graph API additional branches", () => {
 
   it("returns null cached graph when body has no data", async () => {
     server.use(
-      http.get("http://localhost:8080/api/v1/me/graph/cached", () => HttpResponse.json({ meta: {} }))
+      http.get("http://localhost:8080/api/v1/me/graph/cached", () =>
+        HttpResponse.json({ meta: {} })
+      )
     );
 
     const result = await getCachedGraph();
@@ -483,11 +502,12 @@ describe("graph API additional branches", () => {
   });
 
   it("returns empty fresh graph when response data is missing", async () => {
-    server.use(http.get("http://localhost:8080/api/v1/me/graph/fresh", () => HttpResponse.json({})));
+    server.use(
+      http.get("http://localhost:8080/api/v1/me/graph/fresh", () => HttpResponse.json({}))
+    );
 
     const result = await getFreshGraph();
     expect(result.fresh.nodes).toHaveLength(0);
     expect(result.fresh.links).toHaveLength(0);
   });
 });
-
