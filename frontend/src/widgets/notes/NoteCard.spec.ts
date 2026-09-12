@@ -188,7 +188,10 @@ describe("NoteCard", () => {
 
     await waitFor(() => expect(tippy).toHaveBeenCalled());
 
-    const [, options] = vi.mocked(tippy).mock.calls[0] as [unknown, { onShown: (i: { popper: HTMLElement }) => void }];
+    const [, options] = vi.mocked(tippy).mock.calls[0] as [
+      unknown,
+      { onShown: (i: { popper: HTMLElement }) => void },
+    ];
     const popper = document.createElement("div");
     popper.innerHTML = `
       <button data-action="view">view</button>

@@ -18,8 +18,6 @@ vi.mock("$shared/stores/auth.svelte", () => ({
   isAuthenticated: vi.fn().mockReturnValue(false),
 }));
 
-
-
 describe("FloatingAuthPanel", () => {
   const baseProps = {
     open: true,
