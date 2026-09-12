@@ -851,8 +851,8 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 8. ✅ Новая волна Dependabot (#70–#77) — все смержены после фикса CI.
 
 **Следующий шаг:**
-- **#25** (`yake`): либо добавить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action`, либо оставить `yake 0.4.8` и закрыть PR.
-- **#79** (`nltk` 3.8.1 → 3.10.3): Dependency Review падает на GHSA-8mgp-746c-j5xp (high severity). Варианты: закрыть PR без обновления, разрешить конкретный GHSA через `allow-ghsas`, либо дождаться исправленного релиза `nltk`.
+- **#25** (`yake`): либо добавить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action`, либо оставить `yake 0.4.8` и закрыть PR. Подробности: [`tasks/DEPENDABOT-25-yake-license.md`](tasks/DEPENDABOT-25-yake-license.md).
+- **#79** (`nltk` 3.8.1 → 3.10.3): Dependency Review падает на GHSA-8mgp-746c-j5xp (high severity). Варианты: закрыть PR без обновления, разрешить конкретный GHSA через `allow-ghsas`, либо дождаться исправленного релиза `nltk`. Подробности: [`tasks/DEPENDABOT-79-nltk-vulnerability.md`](tasks/DEPENDABOT-79-nltk-vulnerability.md).
 
 ## 22. Правки CI под PR #36, 2026-09-11
 
