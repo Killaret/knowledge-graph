@@ -6,6 +6,7 @@ import {
   login,
   logout,
   isAuthenticated,
+  currentUser,
   register,
   handleYandexCallback,
   loginWithApiKey,
@@ -430,6 +431,27 @@ describe("Auth Store Integration with PreloadService", () => {
       await updateUserInfo();
 
       expect(usersApi.getMe).not.toHaveBeenCalled();
+    });
+
+    it("handles updateUserInfo API failure", async () => {
+      await login("user", "pass");
+      vi.mocked(usersApi.getMe).mockRejectedValue(new Error("Network error"));
+
+      await expect(updateUserInfo()).resolves.not.toThrow();
+      expect(isAuthenticated()).toBe(true);
+    });
+
+    it("logs in under SKIP_AUTH mode", async () => {
+      (window as { __SKIP_AUTH__?: boolean }).__SKIP_AUTH__ = true;
+
+      const result = await login("skipuser", "pass");
+
+      expect(result).toBe(true);
+      expect(isAuthenticated()).toBe(true);
+      expect(authApi.login).not.toHaveBeenCalled();
+      expect(currentUser()?.login).toBe("skipuser");
+
+      delete (window as { __SKIP_AUTH__?: boolean }).__SKIP_AUTH__;
     });
   });
 });

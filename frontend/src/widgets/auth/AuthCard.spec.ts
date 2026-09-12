@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, cleanup } from "@testing-library/svelte";
+import { render, cleanup, fireEvent, waitFor } from "@testing-library/svelte";
 import AuthCard from "./AuthCard.svelte";
 
 // Mock browser environment
@@ -117,5 +117,41 @@ describe("AuthCard", () => {
 
     const card = container.querySelector(".card");
     expect(card).toBeTruthy();
+  });
+
+  it("should not render subtitle when omitted", () => {
+    const { container } = render(AuthCard, {
+      props: { title: "No Subtitle", showIcon: false },
+    });
+
+    expect(container.querySelector(".subtitle")).toBeFalsy();
+  });
+
+  it("should open WeltallProtocol when logo is clicked", async () => {
+    const { container } = render(AuthCard, {
+      props: { title: "Login", showIcon: true },
+    });
+
+    const logo = container.querySelector(".logo-button") as HTMLElement;
+    expect(logo).toBeTruthy();
+
+    await fireEvent.click(logo);
+    expect(container.querySelector(".protocol-overlay")).toBeTruthy();
+  });
+
+  it("should handle graph background load failure", async () => {
+    const { getGraphWithPreload } = await import("$features/preload/hooks/usePreloadedData");
+    vi.mocked(getGraphWithPreload).mockRejectedValue(new Error("load failed"));
+
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    render(AuthCard, { props: { title: "Login", showIcon: true } });
+
+    await waitFor(() =>
+      expect(getGraphWithPreload).toHaveBeenCalledWith(100)
+    );
+    expect(consoleWarn).toHaveBeenCalled();
+
+    consoleWarn.mockRestore();
   });
 });

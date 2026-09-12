@@ -5,10 +5,13 @@ import {
   getLinks,
   getLink,
   createLink,
+  updateLink,
   deleteLink,
+  deleteAllNoteLinks,
   getNoteLinks,
   type Link,
   type CreateLinkData,
+  type UpdateLinkData,
 } from "./links";
 
 describe("links API", () => {
@@ -197,6 +200,66 @@ describe("links API", () => {
       server.use(http.post("http://localhost:8080/api/v1/links", () => HttpResponse.error()));
 
       await expect(createLink(createData)).rejects.toThrow();
+    });
+  });
+
+  describe("updateLink", () => {
+    it("should update and return link", async () => {
+      const updateData: UpdateLinkData = { weight: 2.0, metadata: { note: "updated" } };
+      const updated = { ...mockLink, ...updateData };
+
+      server.use(
+        http.put("http://localhost:8080/api/v1/links/link-1", () =>
+          HttpResponse.json({ data: updated })
+        )
+      );
+
+      const result = await updateLink("link-1", updateData);
+      expect(result.weight).toBe(2.0);
+      expect(result.metadata).toEqual({ note: "updated" });
+    });
+
+    it("should throw on 404 when link not found", async () => {
+      server.use(
+        http.put("http://localhost:8080/api/v1/links/nonexistent", () =>
+          HttpResponse.json({ error: "Link not found" }, { status: 404 })
+        )
+      );
+
+      await expect(updateLink("nonexistent", { weight: 1.5 })).rejects.toThrow();
+    });
+
+    it("should throw on 500 error", async () => {
+      server.use(
+        http.put("http://localhost:8080/api/v1/links/link-1", () =>
+          HttpResponse.json({ error: "Server error" }, { status: 500 })
+        )
+      );
+
+      await expect(updateLink("link-1", { weight: 1.5 })).rejects.toThrow();
+    });
+  });
+
+  describe("deleteAllNoteLinks", () => {
+    it("should delete all links for a note", async () => {
+      server.use(
+        http.delete(
+          "http://localhost:8080/api/v1/notes/note-1/links",
+          () => new HttpResponse(null, { status: 204 })
+        )
+      );
+
+      await expect(deleteAllNoteLinks("note-1")).resolves.toBeUndefined();
+    });
+
+    it("should throw on 404 when note not found", async () => {
+      server.use(
+        http.delete("http://localhost:8080/api/v1/notes/nonexistent/links", () =>
+          HttpResponse.json({ error: "Note not found" }, { status: 404 })
+        )
+      );
+
+      await expect(deleteAllNoteLinks("nonexistent")).rejects.toThrow();
     });
   });
 

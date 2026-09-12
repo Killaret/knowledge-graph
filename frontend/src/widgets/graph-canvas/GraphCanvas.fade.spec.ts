@@ -197,11 +197,13 @@ describe("GraphCanvas - Fade Effect", () => {
     };
     HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(mockCtx);
 
-    global.ResizeObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-      unobserve: vi.fn(),
-    }));
+    global.ResizeObserver = vi.fn().mockImplementation(function () {
+      return {
+        observe: vi.fn(),
+        disconnect: vi.fn(),
+        unobserve: vi.fn(),
+      };
+    });
 
     animationFrameHandles = [];
     let animationTime = 0;

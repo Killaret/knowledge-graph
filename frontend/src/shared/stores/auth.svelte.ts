@@ -77,12 +77,10 @@ export async function initAuth(): Promise<void> {
   }
 
   initAuthPromise = (async () => {
-    // Capture whether we already had a token at the start. This is used to
-    // avoid wiping a token set by a concurrent login while initAuth is still
-    // running.
-    let hadTokenAtStart = false;
-
     try {
+      // Capture whether we already had a token at the start. This is used to
+      // avoid wiping a token set by a concurrent login while initAuth is still
+      // running.
       // Restore API key (user-provided, not a JWT). Assign the in-memory
       // field directly: setApiKey(null) also removes the kg_auth_session
       // hint, and initAuth must still consult that hint below.
@@ -138,7 +136,7 @@ export async function initAuth(): Promise<void> {
       // If we already have an access token, try to use it directly. This
       // handles the common case where the user just logged in and the
       // HttpOnly refresh cookie may not be available (cross-origin / test env).
-      hadTokenAtStart = !!authState.accessToken;
+      const hadTokenAtStart = !!authState.accessToken;
       const hadApiKey = !!getApiKey();
       const hadSessionHint = hasSessionHint();
 

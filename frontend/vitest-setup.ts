@@ -51,13 +51,15 @@ vi.mock("three", async () => {
   const actual = await vi.importActual<typeof import("three")>("three");
   return {
     ...actual,
-    WebGLRenderer: vi.fn().mockImplementation(() => ({
-      render: vi.fn(),
-      setSize: vi.fn(),
-      setPixelRatio: vi.fn(),
-      dispose: vi.fn(),
-      domElement: document.createElement("canvas"),
-    })),
+    WebGLRenderer: vi.fn().mockImplementation(function () {
+      return {
+        render: vi.fn(),
+        setSize: vi.fn(),
+        setPixelRatio: vi.fn(),
+        dispose: vi.fn(),
+        domElement: document.createElement("canvas"),
+      };
+    }),
   };
 });
 
@@ -186,12 +188,14 @@ vi.mock("three/examples/jsm/renderers/CSS2DRenderer.js", async () => {
   }
 
   return {
-    CSS2DRenderer: vi.fn().mockImplementation(() => ({
-      setSize: vi.fn(),
-      render: vi.fn(),
-      dispose: vi.fn(),
-      domElement: document.createElement("div"),
-    })),
+    CSS2DRenderer: vi.fn().mockImplementation(function () {
+      return {
+        setSize: vi.fn(),
+        render: vi.fn(),
+        dispose: vi.fn(),
+        domElement: document.createElement("div"),
+      };
+    }),
     CSS2DObject,
   };
 });

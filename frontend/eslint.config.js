@@ -27,6 +27,11 @@ export default [
         parser: tseslint.parser,
       },
     },
+    rules: {
+      // Svelte 5 props/$bindable default values are flagged as unused by the
+      // core rule; the value is used by the framework at compile time.
+      "no-useless-assignment": "off",
+    },
   },
   {
     files: ["**/*.cjs"],

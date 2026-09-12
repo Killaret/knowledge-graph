@@ -263,4 +263,75 @@ describe("PreloadService (real)", () => {
     expect(PreloadService.getPreloadedGraph()).toBeNull();
     expect(PreloadService.hasPreloadedData()).toBe(false);
   });
+
+  it("returns preloaded achievements when fresh and null when expired", () => {
+    (PreloadService as any).preloadedAchievements = {
+      achievements: [{ id: "a1", code: "first", title: "First", description: "", icon: "⭐", points: 1, earned: false, is_hidden: false }],
+      timestamp: Date.now(),
+      ttl: 5 * 60 * 1000,
+    };
+
+    expect(PreloadService.getPreloadedAchievements()).toHaveLength(1);
+
+    vi.advanceTimersByTime(6 * 60 * 1000);
+    expect(PreloadService.getPreloadedAchievements()).toBeNull();
+  });
+
+  it("returns stats with achievements", () => {
+    (PreloadService as any).preloadedGraph = {
+      data: { ...mockGraphData, hash: "h" },
+      timestamp: Date.now(),
+      ttl: 5 * 60 * 1000,
+    };
+    (PreloadService as any).preloadedAchievements = {
+      achievements: [{ id: "a1", code: "first", title: "First", description: "", icon: "⭐", points: 1, earned: false, is_hidden: false }],
+      timestamp: Date.now(),
+      ttl: 5 * 60 * 1000,
+    };
+
+    const stats = PreloadService.getStats();
+    expect(stats.hasGraph).toBe(true);
+    expect(stats.hasAchievements).toBe(true);
+    expect(stats.achievementsAge).toBe(0);
+  });
+
+  it("returns null from updateWithDelta when there is no last hash", async () => {
+    PreloadService.seedGraph({ ...mockGraphData, hash: undefined });
+    const result = await PreloadService.updateWithDelta();
+    expect(result).toBeNull();
+  });
+
+  it("returns null from updateWithDelta when delta request fails", async () => {
+    await PreloadService.startPreload();
+    mockGraphApi.getGraphDelta.mockRejectedValue(new Error("delta fail"));
+
+    const result = await PreloadService.updateWithDelta();
+    expect(result).toBeNull();
+  });
+
+  it("seeds public or private graph based on authentication", () => {
+    mockAuth.isAuthenticated.mockReturnValue(false);
+    PreloadService.seedGraph({ ...mockGraphData, hash: "seed" });
+    expect(PreloadService.getPreloadedGraphData()?.isPublic).toBe(true);
+
+    PreloadService.clearCache();
+    mockAuth.isAuthenticated.mockReturnValue(true);
+    PreloadService.seedGraph({ ...mockGraphData, hash: "seed" });
+    expect(PreloadService.getPreloadedGraphData()?.isPublic).toBe(false);
+  });
+
+  it("skips authenticated preload when an in-flight auth preload is already non-public", async () => {
+    let resolveAuth: (value: any) => void = () => {};
+    mockAuth.isAuthenticated.mockReturnValue(true);
+    mockGraphApi.getFullGraphData.mockImplementationOnce(() => new Promise((r) => (resolveAuth = r)));
+
+    const auth1 = PreloadService.preloadAuthenticatedGraph();
+    const auth2 = PreloadService.preloadAuthenticatedGraph();
+
+    resolveAuth({ ...mockGraphData, hash: "auth-hash" });
+    await Promise.all([auth1, auth2]);
+
+    expect(mockGraphApi.getFullGraphData).toHaveBeenCalledTimes(1);
+    expect(PreloadService.getPreloadedGraphData()?.isPublic).toBe(false);
+  });
 });

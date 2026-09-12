@@ -111,7 +111,7 @@
           toggleFog: () => void;
         }
       | undefined
-    >(undefined),
+    >(),
   }: {
     nodes: Array<{
       id: string;

@@ -90,4 +90,32 @@ describe("ToastNotification", () => {
     vi.advanceTimersByTime(1300);
     expect(onClose).toHaveBeenCalled();
   });
+
+  it("closes when Escape is pressed", async () => {
+    const onClose = vi.fn();
+    render(ToastNotification, {
+      props: {
+        message: "Escape close toast",
+        onClose,
+      },
+    });
+
+    await fireEvent.keyDown(window, { key: "Escape" });
+    vi.advanceTimersByTime(400);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("clears timers when unmounted", () => {
+    const onClose = vi.fn();
+    render(ToastNotification, {
+      props: {
+        message: "Unmounted toast",
+        duration: 5000,
+        onClose,
+      },
+    });
+
+    vi.advanceTimersByTime(100);
+    cleanup();
+  });
 });

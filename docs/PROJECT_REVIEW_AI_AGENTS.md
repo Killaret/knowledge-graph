@@ -55,7 +55,8 @@
 - **SvelteKit** — meta-фреймворк.
 - **ky v1.14** — HTTP-клиент.
 - **D3-force v3** / **Three.js v0.184** — граф и 3D.
-- **Vitest v3** — юнит-тесты.
+- **Node v22.22.2** — runtime для фронтенда.
+- **Vitest v5** — юнит-тесты (обновлено с v3 в ходе PR #63).
 - **Playwright v1.59** — E2E.
 - **@cucumber/cucumber v12** — BDD.
 - **FSD + Atomic Design** — структура `frontend/src/{shared,components,entities,features,widgets,routes}` (`.windsurfrules`).
@@ -353,7 +354,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `cd backend && go build ./cmd/server && go build ./cmd/worker && go build ./cmd/cli` — успешно.
 - `cd frontend && npm run check` — 0 errors, 0 warnings.
 - `cd frontend && npm run build` — успешно.
-- `cd frontend && npm run test:coverage` — проходит при thresholds 70% (lines 80.36%, branch 80.69%, functions 79.97%).
+- `cd frontend && npm run test:coverage` — проходил при thresholds 70% (lines 80.36%, branch 80.69%, functions 79.97%) до обновления Vitest 5. После PR #63: lines 69.85%, statements 65.98%, functions 64.95%, branches 57.47% — ниже порога 70%, но сдвинулся ближе. Без стратегии по `home-page.svelte.ts`, Svelte-компонентам (`CockpitPanel`, `CockpitNoteDetails`) и `src/routes/**` 70% global не достижим.
 - `cd frontend && npm run format:check` — чисто.
 - `cd frontend && npx eslint .` — чисто.
 - `.\scripts\testing\run-full-test-cycle.ps1 -SkipManual` — exit code 0, оба режима (`skip-auth` и `real-auth`) Playwright-E2E прошли, dev/personal стеки восстановлены.
@@ -387,6 +388,14 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
    **Состояние 2026-09-12:** ruleset `main` активен (ID `23024343`), blanket-major-игноры убраны из `dependabot.yml`, `services/graph-service` и root `npm` добавлены, `permissions:` добавлены в `_core-checks.yml`, `frontend-tests.yml`, `ci.yml`, `security.yml`. #50 dismissed как `won't fix`. #51 (API-key Argon2id), #52 (`extract-urls.ts` sanitization) и #53 (`check-core-workflow-sync.mjs` escaping) реализованы в PR #55 (`security/findings`), тесты проходят. #49 (cookie Secure) dismissed как mitigated. PR #55 замёржен в `main` 2026-09-12. #54 (workflow permissions) закроется после повторного CodeQL-скана на `main`. Следующий шаг: пересоздать существующие API-ключи (breaking change) и обработать Dependabot PR.
 
+6. **Frontend Dependabot group PR #63**
+   - Node обновлён до `v22.22.2`, чтобы удовлетворить `jsdom@30`.
+   - Из группы Dependabot исключены/откачены: `eslint` до `^9.39.5`, `@eslint/js` до `^9.22.0`, `typescript` до `^5.9.3` (ESLint 10 и TS 7 несовместимы с `eslint-plugin-jsx-a11y` и SvelteKit).
+   - `ky` v1.7+ адаптирован: хуки принимают state-объект (`{ request }` / `{ request, response }`), `prefixUrl` заменён на `prefix`.
+   - Моки Vitest 5 приведены к конструируемым `function`-реализациям (`ResizeObserver`, `THREE.WebGLRenderer` и др.).
+   - `npm run lint`, `npm run check`, `npm run test:unit` — зелёные. `npm run test:coverage` — **зелёное**: lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04%, все выше порога 70%.
+   - FE-COVERAGE-1 завершён: покрыты API (`notes.ts`, `links.ts`, `sharing.ts`), `client.ts`, `graph.svelte.ts`, `auth.svelte.test.ts`, `overlay.svelte`, `CockpitNoteDetails`, `CockpitPanel`, `FloatingAuthPanel`, `QuickCaptureWidget`, `home-page.svelte.ts`, `NoteCard`, `AuthCard`, `graphUtils`, `GraphPageShell`, `deviceCapabilities`, `galactic-lexicon`, `extract-urls`, `ToastNotification`, `CockpitHUD`, `node-renderers` и route-спеки (`import`, `search`, `profile`, `notes/[id]`, `notes/[id]/edit`, `notes/new`). Также исправлены типы в 9 test-файлах и `GraphPageShellTestWrapper.svelte`, удалён `frontend/tmp-coverage-parse.cjs`. PR #63 готов к мержу.
+
 ---
 
 ## 12. Ключевые файлы для быстрого старта
@@ -412,7 +421,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **Фаза:** Alpha → Beta.
 - **Стабильность:** критических проблем нет.
 - **Регрессионное тестирование:** 11/14 частей пройдено.
-- **Покрытие тестами:** 923 frontend unit-тестов (+57 по 2D-рендереру: fog, LOD, search outline, offscreen-cache/throttling, renderer-orchestrator, renderer-utils, variation, animation), backend unit-тесты — все проходят.
+- **Покрытие тестами:** 1381 frontend unit-тестов проходят, покрытие выше 70% по всем четырём метрикам: lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04% — FE-COVERAGE-1 **завершён**. PR #63 больше не блокируется `test`-job. Backend unit-тесты — все проходят.
 - **Готовность к production:** ожидает финальных проверок (E2E, интеграция, CI/CD).
 
 ### Текущий фокус — уже выполнено
