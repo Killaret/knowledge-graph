@@ -217,3 +217,20 @@ npm run test:coverage
 | [#25](https://github.com/Killaret/knowledge-graph/pull/25) | **OPEN / BLOCKED** | yake 0.4.8 → 0.7.3, **Dependency Review fails по лицензии** `yake 0.7.3` = `AGPL-3.0-only AND AGPL-3.0-or-later AND LGPL-3.0-or-later`; [allow-licenses](https://github.com/Killaret/knowledge-graph/actions/runs/34708560386/job/103593000574#step=4:12) не включает AGPL/LGPL. |
 
 **Блокер #25:** чтобы смержить `yake 0.7.3`, надо либо включить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action` (решение владельца по лицензионной политике), либо отказаться от обновления `yake`.
+
+## Итог 2026-09-12: PR #78 и волна Dependabot #70–#77
+
+- После мёрджа PR #63 в `main` новые Dependabot-PR (#70–#77) и старые PR не могли запустить `Core Checks` из-за ошибок вызова reusable workflow (`_core-checks.yml`).
+- PR #78 (`devin/fix-ci-permissions`) починил CI: `permissions`, `run-name`, `needs` для `Smoke Tests`, совместимость NLP (`fastapi`/`uvicorn`) и `httpx 0.28.1`, Prettier для 20 frontend test/spec файлов.
+- PR #78 замёржен: https://github.com/Killaret/knowledge-graph/pull/78
+- PR #70–#77 обновлены до актуального `main` и смержены со свежими зелёными checks:
+  - [#70](https://github.com/Killaret/knowledge-graph/pull/70) `@humanfs/node` 0.16.7 → 0.16.8
+  - [#71](https://github.com/Killaret/knowledge-graph/pull/71) `@sveltejs/kit` 2.59.0 → 2.70.3
+  - [#72](https://github.com/Killaret/knowledge-graph/pull/72) `brace-expansion` 1.1.14 → 1.1.18 (frontend)
+  - [#73](https://github.com/Killaret/knowledge-graph/pull/73) `vite` 8.0.10 → 8.3.0
+  - [#74](https://github.com/Killaret/knowledge-graph/pull/74) `js-yaml` 4.1.1 → 4.3.2
+  - [#75](https://github.com/Killaret/knowledge-graph/pull/75) `svelte` 5.55.5 → 5.57.0
+  - [#76](https://github.com/Killaret/knowledge-graph/pull/76) `brace-expansion` 1.1.14 → 1.1.18 (root)
+  - [#77](https://github.com/Killaret/knowledge-graph/pull/77) `postcss` 8.5.14 → 8.5.28
+- Покрытие после всех merges сохранилось выше порога 70%: lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04%; `npm run test:unit -- --run`: 1381/1381 passed.
+- Оставшиеся открытые PR: **#25** (`yake` 0.4.8 → 0.7.3) — лицензионный блокер, подробности в [`DEPENDABOT-25-yake-license.md`](DEPENDABOT-25-yake-license.md); **#79** (`nltk` 3.8.1 → 3.10.3) — high severity GHSA-8mgp-746c-j5xp, подробности в [`DEPENDABOT-79-nltk-vulnerability.md`](DEPENDABOT-79-nltk-vulnerability.md).

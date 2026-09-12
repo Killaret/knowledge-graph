@@ -799,9 +799,9 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
 - Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d`, `5acc40d`, `ff65307`, `af2f957`, `49c4e67` и все последующие до слияния.
 
-## 21. Dependabot PR — итоговая разборка (#21–#32, #38–#40, #56–#63, #68), 2026-09-12
+## 21. Dependabot PR — итоговая разборка (#21–#32, #38–#40, #56–#63, #68, #70–#77), 2026-09-12
 
-Все Dependabot-PR обработаны. Замёржены: #21–#23, #24, #26, #27, #28, #29, #30, #31, #38, #56, #57, #60, #61, #62, #63. Закрыты как дублирующие/устаревшие: #32 (дублирует #28), #39, #40, #58, #59 (вошли в консолидированный PR #68). Остаётся **#25** (`yake`) — блокер по лицензии, требует решения владельца.
+Все Dependabot-PR обработаны, кроме **#25** и **#79**. Замёржены: #21–#23, #24, #26, #27, #28, #29, #30, #31, #38, #56, #57, #60, #61, #62, #63. Закрыты как дублирующие/устаревшие: #32 (дублирует #28), #39, #40, #58, #59 (вошли в консолидированный PR #68). После фикса CI (PR #78) пришла новая волна Dependabot-PR: #70–#77 — все смержены. Остаётся **#25** (`yake`) — блокер по лицензии; **#79** (`nltk` 3.8.1 → 3.10.3) — заблокирован high severity GHSA-8mgp-746c-j5xp, требует решения владельца.
 
 | # | Область | Зависимость | С | По | Риск | Итог |
 |---|---|---|---|---|---|---|
@@ -829,6 +829,15 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 | #40 | graph-service | `containerd` | 1.7.18 | 1.7.35 | Средний | ❌ закрыт — вошёл в #68 |
 | #58 | graph-service | `testcontainers-go/modules/postgres` | 0.35.0 | 0.44.0 | Средний-высокий | ❌ закрыт — вошёл в #68 |
 | #59 | graph-service | `testcontainers-go` | 0.35.0 | 0.44.0 | Средний-высокий | ❌ закрыт — вошёл в #68 |
+|| #70 | frontend npm | `@humanfs/node` | 0.16.7 | 0.16.8 | Низкий | ✅ замёржен |
+|| #71 | frontend npm | `@sveltejs/kit` | 2.59.0 | 2.70.3 | Средний | ✅ замёржен |
+|| #72 | frontend npm | `brace-expansion` | 1.1.14 | 1.1.18 | Низкий | ✅ замёржен |
+|| #73 | frontend npm | `vite` | 8.0.10 | 8.3.0 | Средний-высокий | ✅ замёржен |
+|| #74 | frontend npm | `js-yaml` | 4.1.1 | 4.3.2 | Низкий | ✅ замёржен |
+|| #75 | frontend npm | `svelte` | 5.55.5 | 5.57.0 | Средний | ✅ замёржен |
+|| #76 | root npm | `brace-expansion` | 1.1.14 | 1.1.18 | Низкий | ✅ замёржен |
+|| #77 | root npm | `postcss` | 8.5.14 | 8.5.28 | Низкий | ✅ замёржен |
+|| #79 | NLP Python | `nltk` | 3.8.1 | 3.10.3 | Средний | ❌ открыт / **заблокирован** GHSA-8mgp-746c-j5xp (path traversal в model-artifact APIs, high severity) |
 
 **Порядок действий (выполнен):**
 
@@ -838,8 +847,12 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 4. ✅ Backend Go (#24, #26, #28, #30); #32 закрыт.
 5. ✅ NLP (#56, #27, #29, #31); #25 открыт, требует решения по лицензии.
 6. ✅ Graph-service (#38, #57, #60, #61) — squash-merge; конфликтующие #39/#40/#58/#59 объединены в PR #68 и смержены.
+7. ✅ CI fix (PR #78) — починен запуск Core Checks (`permissions:`, `environment:` для `run-name`, `smoke` env, `needs` для smoke).
+8. ✅ Новая волна Dependabot (#70–#77) — все смержены после фикса CI.
 
-**Следующий шаг:** решить судьбу **#25** (`yake`): либо добавить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action`, либо оставить `yake 0.4.8` и закрыть PR.
+**Следующий шаг:**
+- **#25** (`yake`): либо добавить `AGPL-3.0-only`, `AGPL-3.0-or-later`, `LGPL-3.0-or-later` в `allow-licenses` `actions/dependency-review-action`, либо оставить `yake 0.4.8` и закрыть PR. Подробности: [`tasks/DEPENDABOT-25-yake-license.md`](tasks/DEPENDABOT-25-yake-license.md).
+- **#79** (`nltk` 3.8.1 → 3.10.3): Dependency Review падает на GHSA-8mgp-746c-j5xp (high severity). Варианты: закрыть PR без обновления, разрешить конкретный GHSA через `allow-ghsas`, либо дождаться исправленного релиза `nltk`. Подробности: [`tasks/DEPENDABOT-79-nltk-vulnerability.md`](tasks/DEPENDABOT-79-nltk-vulnerability.md).
 
 ## 22. Правки CI под PR #36, 2026-09-11
 
@@ -903,3 +916,53 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 **Итог CI-4:**
 
 |- PR #36 run `34642092163` — `conclusion: success`, все Core Checks и Smoke Tests зелёные; Playwright 49 passed/2 skipped, BDD 5 scenarios/43 steps passed.
+
+## 23. CI-5: починка запуска Core Checks и волна Dependabot PR #70–#77, 2026-09-12
+
+**Контекст.** После мёрджа PR #63 и ряда Dependabot-обновлений в `main` новые PR стали застревать на стадии `Core Checks`: джоба не могла запустить ни одного шага из-за ошибки `Error when evaluating 'strategy' for job 'build-matrix'` / `Error parsing called workflow` и аналогичных синтаксических/контекстных ошибок. Параллельно пришла новая волна Dependabot-PR (#70–#77), которую нельзя было проверить и смержить, пока CI не работал.
+
+**PR #78 — `ci: fix Core Checks startup and pre-existing failures`.**
+
+- Исправлен запуск `Core Checks` (`_core-checks.yml`):
+  - `run-name` вынесен на уровень `workflow` вместо `job`, убрана ссылка на `inputs` в `run-name`.
+  - `permissions:` добавлены/исправлены: `contents: read` и `checks: read` для `reusable_workflow_call`.
+  - `environment:` убран из `job`-level, оставлен для шагов, которым он действительно нужен.
+  - `needs:` у `Smoke Tests` (`ci.yml`) теперь корректно ссылается на джобы `Core Checks` / `Security Audit`.
+- Исправлена совместимость NLP после `httpx 0.28.1`:
+  - `frontend/package-lock.json` обновлён (`ky` hooks state, `prefixUrl` → `prefix`).
+  - `nlp-service/requirements.txt`: `fastapi` поднят до совместимой с `httpx 0.28` версии, `uvicorn` синхронизирован.
+- Форматирование: Prettier применён к 20 frontend test/spec файлам.
+- Локальная верификация:
+  - `npm run format:check` — чисто.
+  - `npm run check` — 0 errors, 0 warnings.
+  - `npm run lint` — 0 errors, 9 pre-existing warnings.
+  - `npm run test:unit -- --run` — 1381/1381 passed.
+  - `npm run test:coverage` — lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04% — все выше порога 70%.
+- CI run `34710120173` / `34710117628` — `conclusion: success`: CodeQL, Dependency Review, Frontend Security Audit, Core Checks (Backend, Frontend, Graph, NLP, Integration), Docker Compose, Smoke Tests, `test` — все зелёные.
+- PR #78 замёржен в `main`.
+
+**Новая волна Dependabot PR #70–#77.**
+
+После фикса CI Dependabot поднял свежие PR:
+
+|| # | Область | Зависимость | С | По | Итог |
+|---|---|---|---|---|---|---|
+|| #70 | frontend npm | `@humanfs/node` | 0.16.7 | 0.16.8 | ✅ замёржен |
+|| #71 | frontend npm | `@sveltejs/kit` | 2.59.0 | 2.70.3 | ✅ замёржен |
+|| #72 | frontend npm | `brace-expansion` | 1.1.14 | 1.1.18 | ✅ замёржен |
+|| #73 | frontend npm | `vite` | 8.0.10 | 8.3.0 | ✅ замёржен |
+|| #74 | frontend npm | `js-yaml` | 4.1.1 | 4.3.2 | ✅ замёржен |
+|| #75 | frontend npm | `svelte` | 5.55.5 | 5.57.0 | ✅ замёржен |
+|| #76 | root npm | `brace-expansion` | 1.1.14 | 1.1.18 | ✅ замёржен |
+|| #77 | root npm | `postcss` | 8.5.14 | 8.5.28 | ✅ замёржен |
+|| #79 | NLP Python | `nltk` | 3.8.1 | 3.10.3 | ❌ открыт — GHSA-8mgp-746c-j5xp (high severity) |
+
+- Каждый PR был обновлён до актуального `main` и прогнан с фиксом CI.
+- Все checks (`Analyze`, `Core Checks`, `Dependency Review`, `Frontend Security Audit`, `test`, `Smoke Tests`) — зелёные.
+- Все PR смержены через squash.
+
+**Состояние на 2026-09-12.**
+
+- Открытые Dependabot-PR: **#25** (`yake` 0.4.8 → 0.7.3), заблокирован лицензиями `AGPL-3.0-only AND AGPL-3.0-or-later AND LGPL-3.0-or-later`; **#79** (`nltk` 3.8.1 → 3.10.3), заблокирован GHSA-8mgp-746c-j5xp (high severity).
+- Frontend coverage после всех обновлений: **1381/1381 unit-тестов passed**, lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04% — выше 70%.
+- `npm run check` — 0 errors, 0 warnings; `npm run lint` — 0 errors, 9 pre-existing warnings.

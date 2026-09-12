@@ -67,3 +67,7 @@ jobs:
         with:
           fail-on-severity: high
           allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, LicenseRef-scancode-google-patent-license-golang
+          # GHSA-8mgp-746c-j5xp: NLTK model-artifact APIs bypass pathsec.
+          # nlp-service uses only nltk punkt/stopwords, not TransitionParser/PerceptronTagger/save_maxent_params.
+          # Accepted while waiting for nltk 3.10.4+.
+          allow-ghsas: GHSA-8mgp-746c-j5xp
