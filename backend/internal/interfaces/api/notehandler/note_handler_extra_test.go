@@ -38,7 +38,7 @@ func setupFullNoteRouter() (*gin.Engine, *mockNoteRepo) {
 	r.PUT("/notes/:id", handler.Update)
 	r.DELETE("/notes/:id", handler.Delete)
 	r.POST("/notes/:id/restore", handler.Restore)
-	r.POST("/notes/batch", handler.DeleteBatch)
+	r.POST("/notes/batch/delete", handler.DeleteBatch)
 	r.GET("/notes/:id/suggestions", handler.GetSuggestions)
 	r.GET("/notes/search", handler.Search)
 	r.GET("/notes", handler.List)

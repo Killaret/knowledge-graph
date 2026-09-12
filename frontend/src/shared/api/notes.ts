@@ -60,7 +60,7 @@ export async function deleteNote(id: string): Promise<void> {
 
 // Delete multiple notes in a single batch request
 export async function deleteNotesBatch(ids: string[]): Promise<void> {
-  await api.post("v1/notes/batch", { json: { ids } });
+  await api.post("v1/notes/batch/delete", { json: { ids } });
 }
 
 // Restore a deleted note

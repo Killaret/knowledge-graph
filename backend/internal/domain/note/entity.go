@@ -29,6 +29,14 @@ func WithIsPublic(isPublic bool) NoteOption {
 	}
 }
 
+// WithID sets a specific id on a newly created note.
+// Used by importers that generate note IDs ahead of time so links can reference them.
+func WithID(id uuid.UUID) NoteOption {
+	return func(n *Note) {
+		n.id = id
+	}
+}
+
 func NewNote(title Title, content Content, noteType string, metadata Metadata, opts ...NoteOption) *Note {
 	now := time.Now()
 	if noteType == "" {

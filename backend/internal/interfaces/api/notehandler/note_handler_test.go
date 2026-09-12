@@ -56,7 +56,8 @@ func setupNoteRouter() (*gin.Engine, *mockNoteRepo) {
 
 	r.DELETE("/notes/:id", handler.Delete)
 
-	r.POST("/notes/batch", handler.DeleteBatch)
+	r.POST("/notes/batch/delete", handler.DeleteBatch)
+	r.POST("/notes/batch/create", handler.CreateBatch)
 
 	r.GET("/notes/:id/suggestions", handler.GetSuggestions) // если хотите тестировать и рекомендации
 	r.GET("/notes", handler.List)
@@ -300,7 +301,7 @@ func TestDeleteBatchNotes(t *testing.T) {
 
 	body := fmt.Sprintf(`{"ids":["%s","%s"]}`, n1.ID().String(), n2.ID().String())
 
-	req := httptest.NewRequest("POST", "/notes/batch", bytes.NewBufferString(body))
+	req := httptest.NewRequest("POST", "/notes/batch/delete", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
 	// SEC-1: this router has no auth at all, so the batch ownership check
 	// would refuse creatorless notes. Exercise it under the test bypass.
@@ -327,7 +328,7 @@ func TestDeleteBatchNotes_EmptyBody(t *testing.T) {
 
 	r, _ := setupNoteRouter()
 
-	req := httptest.NewRequest("POST", "/notes/batch", bytes.NewBufferString(`{"ids":[]}`))
+	req := httptest.NewRequest("POST", "/notes/batch/delete", bytes.NewBufferString(`{"ids":[]}`))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -779,5 +780,68 @@ func TestListPagination(t *testing.T) {
 	}
 	if len(notes) != 1 {
 		t.Errorf("expected 1 note, got %d", len(notes))
+	}
+}
+
+func TestCreateBatchNotes(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	body := `{"notes":[{"title":"Batch 1","content":"Content 1","type":"star"},{"title":"Batch 2"}]}`
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(context.WithValue(req.Context(), contextkeys.SkipAuthKey, true))
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", w.Code)
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	data, ok := resp["data"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("response data is not an object")
+	}
+	created, ok := data["notes"].([]interface{})
+	if !ok {
+		t.Fatalf("created notes is not an array")
+	}
+	if len(created) != 2 {
+		t.Fatalf("expected 2 created notes, got %d", len(created))
+	}
+
+	failed, ok := data["failed"].([]interface{})
+	if !ok {
+		t.Fatalf("failed is not an array")
+	}
+	if len(failed) != 0 {
+		t.Fatalf("expected 0 failed notes, got %d", len(failed))
+	}
+
+	// Verify both notes were actually persisted.
+	all, _ := repo.FindAll(ctx)
+	if len(all) != 2 {
+		t.Errorf("expected 2 notes in repo, got %d", len(all))
+	}
+}
+
+func TestCreateBatchNotesValidationFailure(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	body := `{"notes":[{"content":"Missing title"}]}`
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(context.WithValue(req.Context(), contextkeys.SkipAuthKey, true))
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
 	}
 }
