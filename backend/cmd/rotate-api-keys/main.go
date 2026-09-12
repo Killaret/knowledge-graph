@@ -28,16 +28,12 @@ type rotatedKey struct {
 
 func main() {
 	dryRun := flag.Bool("dry-run", false, "Show what would be rotated without writing to the database")
-	out := flag.String("out", "", "File to write new tokens to (required for a real run)")
+	out := flag.String("out", "api-keys-rotated-"+time.Now().UTC().Format("20060102-150405")+".json", "File to write new tokens to")
 	dsn := flag.String("dsn", os.Getenv("DATABASE_URL"), "PostgreSQL DSN (defaults to DATABASE_URL)")
 	flag.Parse()
 
 	if *dsn == "" {
 		log.Fatalf("DATABASE_URL environment variable or -dsn flag is required")
-	}
-
-	if !*dryRun && *out == "" {
-		log.Fatalf("-out is required for a real rotation (or use -dry-run)")
 	}
 
 	database, err := db.Connect(*dsn)
@@ -110,7 +106,7 @@ func main() {
 			token := keyID.String() + ":" + secret
 			newKeys = append(newKeys, rotatedKey{
 				UserID:    old.UserID,
-				KeyName:   newName,
+				KeyName:   newKey.Name,
 				Token:     token,
 				CreatedAt: newKey.CreatedAt,
 			})
