@@ -790,32 +790,45 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
 - Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d`, `5acc40d`, `ff65307`, `af2f957`, `49c4e67` и все последующие до слияния.
 
-## 21. Открытые Dependabot PR (#21–#32, #38–#40), 2026-09-12
+## 21. Открытые Dependabot PR (#21–#32, #38–#40, #56–#63), 2026-09-12
 
-Всего 15 открытых Dependabot PR. #33 (frontend group), #34 (deploy docs), #35/#36 (UX-2) — замёржены. #37 не существует. `go.mod`, `requirements.txt`, `services/graph-service/go.mod` на `main` до сих пор содержат старые версии.
+Всего 23 открытых Dependabot PR. После обновления `.github/dependabot.yml` добавились grouped root/frontend (#62/#63) и новые PR по graph-service/NLP (#56–#61). #33 (frontend group), #34 (deploy docs), #35/#36 (UX-2), #55 (security) — замёржены. #37 не существует.
 
 | # | Область | Зависимость | С | По | Риск | Рекомендация |
 |---|---|---|---|---|---|---|
-| #24 | backend Go | `golang.org/x/net` | 0.52.0 | 0.58.0 | Средний (0.x minor, транзитив) | Группировать с другими Go-PR; проверить `go test ./...` |
-| #30 | backend Go | `pgvector-go` | 0.2.0 | 0.4.1 | Средний (0.x, pgvector API) | Ревью changelog; тесты pgvector/integration |
-| #26 | backend Go | `go-redis/v9` | 9.14.1 | 9.22.0 | Средний (minor в рамках v9, но правила требуют v9 API) | Проверить отсутствие v8-API; `go test ./...` |
-| #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий (0.x, integration tests) | Запустить integration tests |
+| #21 | CI Actions | `actions/setup-python` | 6 | 7 | Низкий | Мёржить первой группой; проверить workflow CI |
+| #22 | CI Actions | `actions/setup-go` | 6 | 7 | Низкий | Мёржить первой группой; проверить workflow CI |
+| #23 | CI Actions | `actions/checkout` | 5 | 7 | Низкий | Мёржить первой группой; проверить workflow CI |
+| #62 | root npm | grouped (7 updates) | — | — | Средний | Ревью списка; `npm audit`; затронут root `package-lock.json` |
+| #63 | frontend npm | grouped (17 updates) | — | — | Средний-высокий | `npm run check` / `test:unit`; влияет на Svelte, SvelteKit, sharp, brace-expansion |
+| #24 | backend Go | `golang.org/x/net` | 0.52.0 | 0.58.0 | Средний | Группировать с Go-бэкенд; `go test ./...` |
+| #26 | backend Go | `go-redis/v9` | 9.14.1 | 9.22.0 | Средний | Проверить v9 API; `go test ./...` |
 | #28 | backend Go | `testcontainers-go/modules/postgres` | 0.40.0 | 0.44.0 | Средний-высокий | Запустить integration tests |
-| #25 | NLP Python | `yake` | 0.4.8 | 0.7.3 | Средний (0.x, keyword extraction) | Проверить `pytest` |
-| #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний (minor, FastAPI/Pydantic v2) | Проверить `pytest` и совместимость с FastAPI |
-| #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий (minor, модель/эмбеддинги) | Сравнить вывод embeddings; возможно, требуется пересчёт |
+| #30 | backend Go | `pgvector-go` | 0.2.0 | 0.4.1 | Средний | Ревью changelog; тесты pgvector/integration |
+| #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий | Запустить integration tests |
+| #56 | NLP Python | `httpx` | 0.25.2 | 0.28.1 | Низкий-средний | `pytest`; FastAPI/httpx совместимость |
+| #25 | NLP Python | `yake` | 0.4.8 | 0.7.3 | Средний | `pytest`; keyword extraction |
 | #27 | NLP Python | `python-dotenv` | 1.0.0 | 1.2.3 | Низкий | Безопасно группировать с NLP |
-| #21 | CI Actions | `actions/setup-python` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
-| #22 | CI Actions | `actions/setup-go` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
-| #23 | CI Actions | `actions/checkout` | 5 | 7 | Низкий-средний | Проверить workflow CI после merge |
-| #38 | graph-service | `pgx/v5` | 5.7.2 | 5.9.2 | Средний (pgx API, graph-service) | Запустить `go test` в `services/graph-service`; проверить gRPC/pgvector |
-| #39 | graph-service | `grpc` | 1.67.0 | 1.83.2 | Средний-высокий (minor, транспорт gRPC) | Запустить graph-service integration; проверить совместимость с backend |
-| #40 | graph-service | `containerd` | 1.7.18 | 1.7.35 | Средний (transitive, container runtime) | Группировать с #39; пересобрать образ graph-service |
+| #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний | `pytest`; FastAPI/Pydantic v2 |
+| #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий | Сравнить вывод embeddings; возможно, пересчёт |
+| #57 | graph-service | `go-redis/v9` | 9.5.5 | 9.22.0 | Средний | Проверить v9 API; `go test` в `services/graph-service` |
+| #58 | graph-service | `testcontainers-go/modules/postgres` | 0.35.0 | 0.44.0 | Средний-высокий | Запустить graph-service integration |
+| #59 | graph-service | `testcontainers-go` | 0.35.0 | 0.44.0 | Средний-высокий | Запустить graph-service integration |
+| #60 | graph-service | `testify` | 1.11.1 | 1.12.1 | Низкий | `go test` в `services/graph-service` |
+| #61 | graph-service | `protobuf` | 1.34.2 | 1.36.12 | Средний | Проверить gRPC/protobuf совместимость |
+| #38 | graph-service | `pgx/v5` | 5.7.2 | 5.9.2 | Средний | `go test` в `services/graph-service`; проверить pgvector |
+| #39 | graph-service | `grpc` | 1.67.0 | 1.83.2 | Средний-высокий | Запустить graph-service integration; проверить совместимость с backend |
+| #40 | graph-service | `containerd` | 1.7.18 | 1.7.35 | Средний | Transitive; пересобрать образ graph-service |
 
 **Порядок действий:**
 
 1. Не закрывать все сразу — каждый PR либо мержится, либо отклоняется осознанно.
-2. Объединить по группам: Go-бэкенд (#24, #26, #28, #30, #32), graph-service (#38, #39, #40), NLP (#25, #27, #29, #31), GitHub Actions (#21, #22, #23).
+2. Объединить по группам, от низкого к высокому риску:
+   - **CI Actions** (#21–#23) — низкий риск, мёржить первой группой.
+   - **Root/frontend npm** (#62–#63) — проверить `npm audit` и frontend CI.
+   - **Go-бэкенд** (#24, #26, #28, #30, #32).
+   - **Graph-service** (#57–#61, #38–#40).
+   - **NLP** (#25, #27, #29, #31, #56); #31 отдельно из-за embeddings.
 3. Внутри группы мержить по цепочке с `gh pr merge --rebase` или через GitHub; Dependabot предложит rebase следующих.
 4. Перед merge каждой группы — `go test ./...` и `go test -tags=integration ./...` (backend), `go test ./...` в `services/graph-service` (graph-service), `pytest` (NLP), `npm run check`/`test:unit` (frontend/Actions — CI достаточно).
 5. `sentence-transformers` (#31) — самый рискованный; выделить отдельный раунд с замером embeddings.
