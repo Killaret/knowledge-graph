@@ -204,7 +204,9 @@ describe("CockpitPanel", () => {
 
   it("removes panel transitions when reduced motion is enabled", () => {
     cockpitStore.reducedMotion = true;
-    const { container } = render(CockpitPanel, { props: { position: "right", size: 300, title: "Right" } });
+    const { container } = render(CockpitPanel, {
+      props: { position: "right", size: 300, title: "Right" },
+    });
 
     const panel = container.querySelector('[data-testid="cockpit-panel-right"]') as HTMLElement;
     expect(panel?.getAttribute("style") ?? "").toContain("transition: none");

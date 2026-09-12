@@ -122,7 +122,10 @@ describe("Edit note page", () => {
     await waitFor(() => {
       expect(goto).toHaveBeenCalledWith("/notes/note-1");
     });
-    expect(updateNote).toHaveBeenCalledWith("note-1", { title: "New title", content: "Old content" });
+    expect(updateNote).toHaveBeenCalledWith("note-1", {
+      title: "New title",
+      content: "Old content",
+    });
   });
 
   it("shows an error when update fails", async () => {

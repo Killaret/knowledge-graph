@@ -48,7 +48,15 @@ function createCtx() {
 }
 
 function v(partial: Partial<NodeVariation>) {
-  return { sizeMultiplier: 1, hueShift: 0, phaseShift: 0, color: "", glowColor: "", strokeColor: "", ...partial } as unknown as NodeVariation;
+  return {
+    sizeMultiplier: 1,
+    hueShift: 0,
+    phaseShift: 0,
+    color: "",
+    glowColor: "",
+    strokeColor: "",
+    ...partial,
+  } as unknown as NodeVariation;
 }
 
 describe("node renderers", () => {
@@ -59,7 +67,17 @@ describe("node renderers", () => {
   });
 
   it("draws a star with all effects enabled", () => {
-    drawStar(ctx as any, 10, 10, 5, 0, v({ color: "#ffcc00", glowColor: "#ffcc00", strokeColor: "#cc9900" }), "n1", 50, 1000);
+    drawStar(
+      ctx as any,
+      10,
+      10,
+      5,
+      0,
+      v({ color: "#ffcc00", glowColor: "#ffcc00", strokeColor: "#cc9900" }),
+      "n1",
+      50,
+      1000
+    );
     expect(ctx.beginPath).toHaveBeenCalled();
   });
 
@@ -69,7 +87,17 @@ describe("node renderers", () => {
   });
 
   it("draws a planet with rings and glow", () => {
-    drawPlanet(ctx as any, 10, 10, 5, 0.5, v({ color: "#d6aa5d", glowColor: "#d6aa5d" }), "n1", 50, 1000);
+    drawPlanet(
+      ctx as any,
+      10,
+      10,
+      5,
+      0.5,
+      v({ color: "#d6aa5d", glowColor: "#d6aa5d" }),
+      "n1",
+      50,
+      1000
+    );
     expect(ctx.ellipse).toHaveBeenCalled();
   });
 
@@ -79,7 +107,17 @@ describe("node renderers", () => {
   });
 
   it("draws a comet with a tail", () => {
-    drawComet(ctx as any, 10, 10, 5, 0.5, v({ color: "#e879f9", glowColor: "#e879f9" }), "n1", 50, 1000);
+    drawComet(
+      ctx as any,
+      10,
+      10,
+      5,
+      0.5,
+      v({ color: "#e879f9", glowColor: "#e879f9" }),
+      "n1",
+      50,
+      1000
+    );
     expect(ctx.quadraticCurveTo).toHaveBeenCalled();
   });
 
@@ -89,7 +127,17 @@ describe("node renderers", () => {
   });
 
   it("draws a galaxy with spiral arms", () => {
-    drawGalaxy(ctx as any, 10, 10, 5, 0.5, v({ color: "#8b5cf6", glowColor: "#8b5cf6" }), "n1", 50, 1000);
+    drawGalaxy(
+      ctx as any,
+      10,
+      10,
+      5,
+      0.5,
+      v({ color: "#8b5cf6", glowColor: "#8b5cf6" }),
+      "n1",
+      50,
+      1000
+    );
     expect(ctx.stroke).toHaveBeenCalled();
   });
 
@@ -105,7 +153,18 @@ describe("node renderers", () => {
   });
 
   it("draws an asteroid with craters and variation", () => {
-    drawAsteroid(ctx as any, 10, 10, 5, 0, v({ color: "#94a3b8", glowColor: "#94a3b8", strokeColor: "#64748b" }), false, "n1", 50, 1000);
+    drawAsteroid(
+      ctx as any,
+      10,
+      10,
+      5,
+      0,
+      v({ color: "#94a3b8", glowColor: "#94a3b8", strokeColor: "#64748b" }),
+      false,
+      "n1",
+      50,
+      1000
+    );
     expect(ctx.arc).toHaveBeenCalled();
   });
 
@@ -127,7 +186,17 @@ describe("node renderers", () => {
   });
 
   it("draws a black hole with and without glow", () => {
-    drawBlackhole(ctx as any, 10, 10, 5, 0, "n1", 50, 1000, v({ color: "#000000", glowColor: "#ff6600" }));
+    drawBlackhole(
+      ctx as any,
+      10,
+      10,
+      5,
+      0,
+      "n1",
+      50,
+      1000,
+      v({ color: "#000000", glowColor: "#ff6600" })
+    );
     drawBlackhole(ctx as any, 10, 10, 5, 0);
     expect(ctx.arc).toHaveBeenCalled();
   });
@@ -140,7 +209,14 @@ describe("node renderers", () => {
 
   it("draws a moon with and without variation", () => {
     drawMoon(ctx as any, 10, 10, 5, 0);
-    drawMoon(ctx as any, 10, 10, 5, 0, v({ color: "#cccccc", strokeColor: "#999999", glowColor: "#aaaaaa" }));
+    drawMoon(
+      ctx as any,
+      10,
+      10,
+      5,
+      0,
+      v({ color: "#cccccc", strokeColor: "#999999", glowColor: "#aaaaaa" })
+    );
     expect(ctx.arc).toHaveBeenCalled();
   });
 
