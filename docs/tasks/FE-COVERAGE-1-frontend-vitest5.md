@@ -233,4 +233,4 @@ npm run test:coverage
   - [#76](https://github.com/Killaret/knowledge-graph/pull/76) `brace-expansion` 1.1.14 → 1.1.18 (root)
   - [#77](https://github.com/Killaret/knowledge-graph/pull/77) `postcss` 8.5.14 → 8.5.28
 - Покрытие после всех merges сохранилось выше порога 70%: lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04%; `npm run test:unit -- --run`: 1381/1381 passed.
-- Оставшиеся открытые PR: **#25** (`yake` 0.4.8 → 0.7.3), заблокирован по лицензии; **#79** (`nltk` 3.8.1 → 3.10.3), заблокирован high severity GHSA-8mgp-746c-j5xp.
+- Оставшиеся открытые PR: **#25** (`yake` 0.4.8 → 0.7.3) — лицензионный блокер, подробности в [`DEPENDABOT-25-yake-license.md`](DEPENDABOT-25-yake-license.md); **#79** (`nltk` 3.8.1 → 3.10.3) — high severity GHSA-8mgp-746c-j5xp, подробности в [`DEPENDABOT-79-nltk-vulnerability.md`](DEPENDABOT-79-nltk-vulnerability.md).
