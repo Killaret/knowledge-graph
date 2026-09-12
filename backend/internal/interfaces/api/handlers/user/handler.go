@@ -2,8 +2,6 @@
 package user
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"time"
 
@@ -243,16 +241,20 @@ func (h *Handler) CreateAPIKey(c *gin.Context) {
 		return
 	}
 
-	apiKey, err := auth.GenerateRandomToken(32)
+	keyID := uuid.New()
+	secret, err := auth.GenerateRandomToken(32)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate API key"})
 		return
 	}
 
-	hash := sha256.Sum256([]byte(apiKey))
-	keyHash := hex.EncodeToString(hash[:])
+	keyHash, err := auth.HashPassword(secret, h.passwordConfig)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash API key"})
+		return
+	}
 
-	key, err := user.NewAPIKey(uuid.New(), userID, keyHash, req.Name, req.Scopes, time.Now())
+	key, err := user.NewAPIKey(keyID, userID, keyHash, req.Name, req.Scopes, time.Now())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create API key"})
 		return
@@ -263,9 +265,13 @@ func (h *Handler) CreateAPIKey(c *gin.Context) {
 		return
 	}
 
+	// Token format: <id>:<secret>. The id is public and used for lookup;
+	// the secret is shown only once and verified with Argon2id.
+	token := keyID.String() + ":" + secret
+
 	c.JSON(http.StatusCreated, gin.H{
 		"id":         key.ID(),
-		"api_key":    apiKey, // Only shown once!
+		"api_key":    token, // Only shown once!
 		"name":       key.Name(),
 		"scopes":     key.Scopes(),
 		"created_at": key.CreatedAt(),
