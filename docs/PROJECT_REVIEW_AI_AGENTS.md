@@ -725,6 +725,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Контракт ссылок в `/import/batch`: внешний Java/source-text handler не имеет UUID новых заметок. Текущий механизм клиентских `id` работает, но неудобен. Нужно решить: индексы массива, `external_id` с маппингом в ответе или упорядоченные операции. Обсуждается с Claude Code / владельцем.
 - **Adversarial-тестирование:** процесс зафиксирован в `docs/tasks/BATCH-TEST-STRATEGY.md`; осталось договориться о маркировке и формализации "практического исчерпания".
 - **DDD / Clean Architecture:** валидация `noteType` сейчас в `interfaces`, нужен перенос в `domain`. Варианты описаны в `docs/tasks/BATCH-DDD-VALIDATION.md`.
+- **Таксономия типов заметок:** обсуждена в `docs/tasks/NOTE-TYPE-TAXONOMY.md`; нужно согласовать `scaleRank`, состав `UI_TYPES` и единый порядок во всех списках (backend, frontend, OpenAPI) перед реализацией `BATCH-DDD-1`.
 
 ## 18. AUD-4: контракт входа через Яндекс (2026-09-06)
 

@@ -113,6 +113,8 @@
 || **BATCH-TEST-1:** adversarial-тестирование — смешанные позитивные/негативные тесты, маркировка, формализация "практического исчерпания" | [`tasks/BATCH-TEST-STRATEGY.md`](tasks/BATCH-TEST-STRATEGY.md) | **ждёт** — Claude Code / владелец решает по неймингу, маркировке и чек-листу; Devin применяет к следующим фичам, в первую очередь к контракту связей в `/import/batch` | 2026-09-13 |
 || **BATCH-DDD-1:** DDD / Clean Architecture — валидация `noteType` сейчас в interface layer, нужно перенести в домен (`note.NewNote`, `SetType`) | [`tasks/BATCH-DDD-VALIDATION.md`](tasks/BATCH-DDD-VALIDATION.md) | **ждёт** — Claude Code / владелец выбирает вариант A (`NewNote` возвращает `error`) или B (`NoteType` value object); Devin делает рефакторинг после принятия | 2026-09-13 |
 
+|| **NOTE-TYPE-TAXONOMY:** привести список типов заметок к единой шкале «от большего к меньшему», добавить `moon` в `UI_TYPES`, определить `NoteType` value object | [`tasks/NOTE-TYPE-TAXONOMY.md`](tasks/NOTE-TYPE-TAXONOMY.md), `frontend/src/entities/shared/model/celestial-body.ts`, `backend/internal/domain/note/entity.go`, `backend/internal/interfaces/api/common/validation/validators.go`, `backend/openAPI.yaml` | **ждёт** — владелец/Devin обсудили черновик, Claude Code / владелец решает по `scaleRank` и составу `UI_TYPES`; Devin делает `NoteType` value object и синхронизацию backend/frontend/OpenAPI после принятия. Блокирует `BATCH-DDD-1` | 2026-09-13 |
+
 ## На человеке
 
 | Что | Где | Статус | Обновлено |

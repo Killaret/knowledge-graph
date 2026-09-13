@@ -35,6 +35,7 @@
 ## Связанное
 
 - ADR-005 `docs/architecture/decisions/005-validation-strategy.md`
+- `docs/tasks/NOTE-TYPE-TAXONOMY.md` — таксономия и порядок типов, от которой зависит доменный `NoteType`
 - `backend/internal/domain/note/entity.go`
 - `backend/internal/domain/note/value_objects.go`
 - `backend/internal/interfaces/api/notehandler/note_handler.go`
