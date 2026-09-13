@@ -116,6 +116,8 @@
 || **BATCH-DDD-1:** DDD / Clean Architecture — валидация `noteType` сейчас в interface layer, нужно перенести в домен (`note.NewNote`, `SetType`) | [`tasks/BATCH-DDD-VALIDATION.md`](tasks/BATCH-DDD-VALIDATION.md), `backend/internal/domain/note/type.go`, `backend/internal/domain/note/entity.go`, `backend/internal/interfaces/api/notehandler/note_handler.go` | **на ревью у Claude** — реализован `NoteType` value object (вариант B), конструкторы/сеттер `Note` валидируют; обработчики через `note.NewType`; `go test ./...`, `go vet` зелёные | 2026-09-14 |
 
 || **NOTE-TYPE-TAXONOMY:** привести список типов заметок к единой шкале «от большего к меньшему», добавить `moon` в `UI_TYPES`, определить `NoteType` value object | [`tasks/NOTE-TYPE-TAXONOMY.md`](tasks/NOTE-TYPE-TAXONOMY.md), `frontend/src/entities/shared/model/celestial-body.ts`, `backend/internal/domain/note/type.go`, `backend/internal/domain/note/entity.go`, `backend/internal/interfaces/api/common/validation/validators.go`, `backend/openAPI.yaml` | **на ревью у Claude** — реализован `NoteType` value object, `moon` в `UI_TYPES`, единый порядок и OpenAPI; `go test`, `go vet`, `npm run test:unit`, `npm run build`, `npm run check` зелёные; `BATCH-DDD-1` разблокирован | 2026-09-14 |
+|
+||| **WSL-SWAP:** перенести/отключить swap-файл WSL2, чтобы освободить место на `D:\`; сейчас `D:\wsl-swap\swap.vhdx` (309 МБ, max 8 ГБ) прописан в `C:\Users\89209\.wslconfig`; обсудить с Claude риски OOM и путь миграции | `C:\Users\89209\.wslconfig`, `D:\wsl-swap` | **на ревью у Claude** — Devin оставил файл нетронутым, нужно решение | 2026-09-13 |
 
 ## На человеке
 
