@@ -349,8 +349,6 @@ jobs:
       SKIP_AUTH: "false"
       FRONTEND_URL: http://localhost:3002
       ARGOS_REFERENCE_BRANCH: main
-      JWT_SECRET: ${{ env.JWT_SECRET }}
-      SEED_TEST_USER_PASSWORD: TestPassword123!
     steps:
       - uses: actions/checkout@v7
 
