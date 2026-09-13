@@ -213,6 +213,17 @@ jobs:
             exit 1
           fi
 
+      - name: Seed test user
+        working-directory: ./backend
+        env:
+          APP_ENV: "test"
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
+          REDIS_URL: localhost:6379
+          MONGO_URL: mongodb://localhost:27017
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          SEED_TEST_USER_PASSWORD: ${{ secrets.SEED_TEST_USER_PASSWORD || 'ci-test-password-123' }}
+        run: go run ./cmd/seed
+
       - name: Run all Playwright tests
         env:
           PLAYWRIGHT_DEV_SERVER: "true"
