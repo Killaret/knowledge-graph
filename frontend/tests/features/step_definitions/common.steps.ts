@@ -30,7 +30,9 @@ Before(async function (this: ITestWorld) {
   // mark created notes with metadata.__testNote = true.
   const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:18083";
   try {
-    const listResp = await this.request.get(`${backendUrl}/api/v1/notes?limit=1000`);
+    const listResp = await this.request.get(`${backendUrl}/api/v1/notes?limit=1000`, {
+      timeout: 10000,
+    });
     if (listResp.ok()) {
       const listData = (await listResp.json()) as {
         notes?: Array<{ id: string; metadata?: Record<string, unknown> }>;
@@ -40,7 +42,7 @@ Before(async function (this: ITestWorld) {
       for (const note of notes) {
         if (note.metadata?.__testNote === true) {
           try {
-            await this.request.delete(`${backendUrl}/api/v1/notes/${note.id}`);
+            await this.request.delete(`${backendUrl}/api/v1/notes/${note.id}`, { timeout: 10000 });
           } catch {
             // ignore individual cleanup errors
           }
@@ -57,7 +59,8 @@ After(async function (this: ITestWorld) {
   for (const note of this.testNotes) {
     try {
       await this.request.delete(
-        `${process.env.BACKEND_URL || "http://127.0.0.1:18083"}/api/v1/notes/${note.id}`
+        `${process.env.BACKEND_URL || "http://127.0.0.1:18083"}/api/v1/notes/${note.id}`,
+        { timeout: 10000 }
       );
     } catch {
       // Ignore cleanup errors
@@ -142,9 +145,8 @@ Given("there are notes of various types in the database", async function (this: 
 
 // Navigation steps
 Given("I am on the main page {string}", async function (this: ITestWorld, path: string) {
-  const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  await this.page.goto(`${baseUrl}${path}`);
-  await this.page.waitForLoadState("domcontentloaded");
+  const baseUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5173";
+  await this.page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded", timeout: 30000 });
   // Give Svelte time to hydrate the page
   await this.page.waitForTimeout(1000);
 });
@@ -152,9 +154,11 @@ Given("I am on the main page {string}", async function (this: ITestWorld, path: 
 Given("I navigate to {string}", async function (this: ITestWorld, path: string) {
   // Replace {centerNoteId} placeholder
   const resolvedPath = path.replace("{centerNoteId}", this.centerNoteId || "test-id");
-  const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  await this.page.goto(`${baseUrl}${resolvedPath}`);
-  await this.page.waitForLoadState("domcontentloaded");
+  const baseUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5173";
+  await this.page.goto(`${baseUrl}${resolvedPath}`, {
+    waitUntil: "domcontentloaded",
+    timeout: 30000,
+  });
   await this.page.waitForTimeout(500);
 });
 
@@ -187,9 +191,11 @@ Given("I am on the 3D graph page for a note with connections", async function (t
   }
 
   // Navigate to 3D graph
-  const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  await this.page.goto(`${baseUrl}/graph/3d/${this.centerNoteId}`);
-  await this.page.waitForLoadState("domcontentloaded");
+  const baseUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5173";
+  await this.page.goto(`${baseUrl}/graph/3d/${this.centerNoteId}`, {
+    waitUntil: "domcontentloaded",
+    timeout: 30000,
+  });
   await this.page.waitForTimeout(500);
 });
 
@@ -395,9 +401,8 @@ Then("I should see the fullscreen 2D force graph", async function (this: ITestWo
 
 Then("I am in list view", async function (this: ITestWorld) {
   // First ensure we're on main page
-  const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  await this.page.goto(`${baseUrl}/`, { timeout: 60000 });
-  await this.page.waitForLoadState("domcontentloaded");
+  const baseUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5173";
+  await this.page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await this.page.waitForTimeout(2000);
 
   // Click the list view toggle button
@@ -605,9 +610,8 @@ Then("all nodes should be visible", async function (this: ITestWorld) {
 
 // Alternative "I am on the main page" without parameter
 Given("I am on the main page", async function (this: ITestWorld) {
-  const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  await this.page.goto(`${baseUrl}/`);
-  await this.page.waitForLoadState("domcontentloaded");
+  const baseUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5173";
+  await this.page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded", timeout: 30000 });
   await this.page.waitForTimeout(500);
 });
 

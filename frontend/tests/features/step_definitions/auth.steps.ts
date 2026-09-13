@@ -4,7 +4,7 @@ import type { ITestWorld } from "../support/world";
 import { loginOrCreateTestUser } from "../../helpers/auth";
 
 const getFrontendUrl = (): string =>
-  (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+  (process.env.FRONTEND_URL || "http://127.0.0.1:5173").replace(/\/$/, "");
 
 Given("the test user exists", async function (this: ITestWorld) {
   await loginOrCreateTestUser(this.request);
@@ -24,14 +24,18 @@ Given("I start an anonymous session", async function (this: ITestWorld) {
 });
 
 Given("I am on the login page", async function (this: ITestWorld) {
-  await this.page.goto(`${getFrontendUrl()}/auth/login`);
-  await this.page.waitForLoadState("domcontentloaded");
+  await this.page.goto(`${getFrontendUrl()}/auth/login`, {
+    waitUntil: "domcontentloaded",
+    timeout: 30000,
+  });
   await this.page.waitForTimeout(500);
 });
 
 Given("I am on the registration page", async function (this: ITestWorld) {
-  await this.page.goto(`${getFrontendUrl()}/auth/register`);
-  await this.page.waitForLoadState("domcontentloaded");
+  await this.page.goto(`${getFrontendUrl()}/auth/register`, {
+    waitUntil: "domcontentloaded",
+    timeout: 30000,
+  });
   await this.page.waitForTimeout(500);
 });
 

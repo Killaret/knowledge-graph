@@ -9,7 +9,7 @@ import {
  * Get frontend URL from environment or use default
  */
 export function getFrontendUrl(): string {
-  return process.env.FRONTEND_URL || "http://localhost:5173";
+  return process.env.FRONTEND_URL || "http://127.0.0.1:5173";
 }
 
 /**

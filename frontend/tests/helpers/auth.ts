@@ -34,6 +34,7 @@ async function loginOrCreateUser(
         login: user.login,
         password: user.password,
       },
+      timeout: 10000,
     });
 
     if (loginResp.ok()) {
@@ -48,6 +49,7 @@ async function loginOrCreateUser(
         email: user.email,
         password: user.password,
       },
+      timeout: 10000,
     });
 
     if (registerResp.ok()) {
@@ -56,6 +58,7 @@ async function loginOrCreateUser(
           login: user.login,
           password: user.password,
         },
+        timeout: 10000,
       });
 
       if (secondLoginResp.ok()) {

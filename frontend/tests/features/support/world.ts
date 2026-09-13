@@ -37,4 +37,6 @@ class CustomWorld extends World implements ITestWorld {
 }
 
 setWorldConstructor(CustomWorld);
-setDefaultTimeout(15000);
+// Give heavy browser/network steps enough time in CI; Playwright actions have
+// their own explicit timeouts, this is the Cucumber-level safety net.
+setDefaultTimeout(60 * 1000);

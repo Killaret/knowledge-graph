@@ -62,7 +62,7 @@ export interface LinkData {
  * Get backend base URL from environment or default
  */
 export function getBackendUrl(): string {
-  return process.env.BACKEND_URL || "http://127.0.0.1:9000";
+  return process.env.BACKEND_URL || "http://127.0.0.1:8080";
 }
 
 /**
@@ -85,6 +85,7 @@ export async function createNote(
 
   const response = await request.post(`${getBackendUrl()}/api/v1/notes`, {
     data: payload,
+    timeout: 10000,
   });
 
   if (!response.ok()) {
@@ -174,6 +175,7 @@ export async function createLink(
       "Content-Type": "application/json",
       Accept: "application/json",
     },
+    timeout: 10000,
   });
 
   if (!response.ok()) {
@@ -251,7 +253,9 @@ export async function createChainTopology(
  * Delete a note via API
  */
 export async function deleteNote(request: APIRequestContext, noteId: string): Promise<void> {
-  const response = await request.delete(`${getBackendUrl()}/api/v1/notes/${noteId}`);
+  const response = await request.delete(`${getBackendUrl()}/api/v1/notes/${noteId}`, {
+    timeout: 10000,
+  });
 
   if (!response.ok() && response.status() !== 404) {
     const errorText = await response.text();
@@ -311,6 +315,7 @@ export async function getOrCreateTestUser(request: APIRequestContext) {
         email: TEST_USER.email,
         password: TEST_USER.password,
       },
+      timeout: 10000,
     });
 
     if (response.ok()) {
@@ -337,6 +342,7 @@ export async function loginAsTestUser(request: APIRequestContext) {
       login: TEST_USER.login,
       password: TEST_USER.password,
     },
+    timeout: 10000,
   });
 
   if (!response.ok()) {

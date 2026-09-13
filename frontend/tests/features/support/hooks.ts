@@ -23,7 +23,7 @@ async function waitForServer(url: string, timeout = 60000): Promise<void> {
 
 BeforeAll(async function () {
   // Start Vite dev server if not already running
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const frontendUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5173";
   try {
     await fetch(frontendUrl);
     // Server already running
@@ -79,6 +79,11 @@ Before(async function (this: ITestWorld) {
     extraHTTPHeaders: extraHeaders,
   });
 
+  // Cap Playwright action/navigation waits so a slow/failing page cannot hang
+  // the whole CI job (default is 0 / no timeout for actions in a raw context).
+  this.context.setDefaultTimeout(30 * 1000);
+  this.context.setDefaultNavigationTimeout(30 * 1000);
+
   // Add SKIP_AUTH init script only when running against a SKIP_AUTH stack
   if (process.env.SKIP_AUTH === "true") {
     await this.context.addInitScript(() => {
@@ -112,7 +117,8 @@ After(async function (this: ITestWorld) {
   for (const note of this.testNotes) {
     try {
       await this.request.delete(
-        `${process.env.BACKEND_URL || "http://127.0.0.1:18083"}/api/v1/notes/${note.id}`
+        `${process.env.BACKEND_URL || "http://127.0.0.1:18083"}/api/v1/notes/${note.id}`,
+        { timeout: 10000 }
       );
     } catch {
       // Ignore cleanup errors
