@@ -349,6 +349,8 @@ jobs:
       SKIP_AUTH: "false"
       FRONTEND_URL: http://localhost:3002
       ARGOS_REFERENCE_BRANCH: main
+      JWT_SECRET: ${{ env.JWT_SECRET }}
+      SEED_TEST_USER_PASSWORD: TestPassword123!
     steps:
       - uses: actions/checkout@v7
 
@@ -448,7 +450,9 @@ jobs:
         run: docker build -t knowledge-graph-nlp ./nlp-service
 
       - name: Test docker-compose
-        run: docker compose config || docker-compose config
+        run: |
+          touch .env
+          docker compose config
 
       - name: Start backend container
         env:

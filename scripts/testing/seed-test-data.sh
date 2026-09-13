@@ -1,7 +1,7 @@
 #!/bin/bash
 # Seed Test Data - Linux/Mac
 # Creates a known set of test notes and links for manual/automated testing.
-# Requires the test stack to be running at localhost:18083.
+# Requires the test stack to be running at 127.0.0.1:18083.
 
 set -e
 
@@ -20,7 +20,7 @@ if [ -n "$SEED" ]; then
     RANDOM=$SEED
 fi
 
-API_URL="http://localhost:18083/api/v1"
+API_URL="http://127.0.0.1:18083/api/v1"
 POSTGRES_CONTAINER="kg-test-postgres"
 
 TEST_USER='{
@@ -148,7 +148,7 @@ for i in $(seq 0 $((NOTE_COUNT - 1))); do
 
     if [ -n "$NOTE_ID" ] && [ "$NOTE_ID" != "null" ]; then
         NOTE_IDS+=("$NOTE_ID")
-        TYPE_DIST=$(echo "$TYPE_DIST" | jq --arg t "$type" '(.[$t] // 0) += 1')
+        TYPE_DIST=$(echo "$TYPE_DIST" | jq --arg t "$type" '.[$t] = ((.[$t] // 0) + 1)')
         if [ $(( (i + 1) % 10 )) -eq 0 ]; then
             echo "  Created $((i + 1)) notes..."
         fi
