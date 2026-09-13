@@ -4,6 +4,23 @@
 
 set -e
 
+# Use .env.test if the user has created one, otherwise fall back to a default test secret.
+if [ -f .env.test ]; then
+    while IFS='=' read -r name value; do
+        name=$(printf '%s' "$name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        value=$(printf '%s' "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        case "$name" in \#*|"") continue ;; esac
+        if [ -z "${!name:-}" ]; then
+            export "$name=$value"
+        fi
+    done < .env.test
+fi
+
+if [ -z "$JWT_SECRET" ]; then
+    export JWT_SECRET='test-jwt-secret-32-characters-long'
+    echo "JWT_SECRET not set; using default test secret."
+fi
+
 echo "Starting test stack setup..."
 
 # Stop and remove previous test stack

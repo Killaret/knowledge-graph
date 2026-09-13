@@ -96,6 +96,27 @@ The full field list is `components.schemas.Note` in the spec; errors follow
 `components.schemas.ErrorResponse` (`code`, `message`, `details[]`) — see
 [`API_ERRORS_EN.md`](API_ERRORS_EN.md) for the error catalogue.
 
+## 7. Publishing and unpublishing a note
+
+A note is created **private** by default. The only supported way to change
+public visibility is through the dedicated publish endpoints:
+
+```bash
+# Make a note public (owner or admin only)
+POST /api/v1/notes/{id}/publish
+
+# Revert a note to private
+POST /api/v1/notes/{id}/unpublish
+```
+
+Both answer with the standard `Note` envelope and set `is_public` accordingly.
+
+Do **not** set `is_public` in `POST /api/v1/notes` or `PUT /api/v1/notes/{id}` —
+`createNoteRequest` and `UpdateNoteRequest` do not include the field, and any
+`is_public` or `source_url` sent on `PUT` is silently ignored. The public
+read endpoints described in section 5 only return notes whose `is_public` is
+`true`.
+
 ## Notes for maintainers
 
 - The Swagger UI bundle is embedded via `swaggo/gin-swagger` and reads

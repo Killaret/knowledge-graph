@@ -7,7 +7,7 @@
 # code, the script exits non-zero when any step failed, and a failed step
 # prints the command's stderr. --dry-run previews each step and changes
 # nothing. Steps that can touch volumes (6, 7) refuse without a fresh
-# non-empty Personal-stack backup — the rule lives in
+# non-empty Personal-stack backup - the rule lives in
 # scripts/devops/check-personal-backup.sh and backup-policy.env, the same
 # policy the guard-personal-data.py hook enforces.
 
@@ -59,7 +59,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SNAPSHOT_DIR=""
 BACKUP_CHECK="$SCRIPT_DIR/../devops/check-personal-backup.sh"
 
-echo "🧹 Knowledge Graph Docker Cleanup"
+echo "[CLEAN] Knowledge Graph Docker Cleanup"
 if [ "$DRY_RUN" = true ]; then
     echo "$(date '+%H:%M:%S') Starting cleanup (dry-run)..."
 else
@@ -83,7 +83,7 @@ run_docker_step() {
 }
 
 # 1. Stop running containers
-echo "1️⃣  Stopping containers..."
+echo "1.  Stopping containers..."
 running=$(docker ps -q 2>&1)
 code=$?
 if [ "$code" -ne 0 ]; then
@@ -101,7 +101,7 @@ fi
 
 # 2. Remove dangling images
 echo ""
-echo "2️⃣  Removing dangling images..."
+echo "2.  Removing dangling images..."
 if [ "$DRY_RUN" = true ]; then
     dangling=$(docker images -f "dangling=true" -q 2>&1)
     code=$?
@@ -120,7 +120,7 @@ fi
 
 # 3. Remove stopped containers
 echo ""
-echo "3️⃣  Removing stopped containers..."
+echo "3.  Removing stopped containers..."
 if [ "$DRY_RUN" = true ]; then
     stopped=$(docker ps -aq --filter "status=exited" --filter "status=created" --filter "status=dead" 2>&1)
     code=$?
@@ -139,7 +139,7 @@ fi
 
 # 4. Remove unused networks
 echo ""
-echo "4️⃣  Removing unused networks..."
+echo "4.  Removing unused networks..."
 if [ "$DRY_RUN" = true ]; then
     networks=$(docker network ls --format "{{.Name}}" 2>&1)
     code=$?
@@ -157,7 +157,7 @@ fi
 
 # 5. Clear build cache
 echo ""
-echo "5️⃣  Clearing Docker build cache..."
+echo "5.  Clearing Docker build cache..."
 if [ "$DRY_RUN" = true ]; then
     df_out=$(docker system df 2>&1)
     code=$?
@@ -176,7 +176,7 @@ fi
 # dangling volumes are eligible; personal-named and protected-labeled
 # volumes are always skipped. A fresh non-empty backup is required first.
 echo ""
-echo "6️⃣  Volume cleanup..."
+echo "6.  Volume cleanup..."
 if [ "$REMOVE_VOLUMES" != true ]; then
     register_phase "volume-cleanup" 0 1 "default safe mode"
 else
@@ -245,11 +245,11 @@ fi
 
 # 7. Full cleanup mode. NOTE: step 1 stops every container and step 3
 # removes all stopped ones, so by this point NO container remains and
-# `docker system prune -af` treats every image on the machine as unused —
+# `docker system prune -af` treats every image on the machine as unused -
 # the price is the whole local image store, not just project layers.
 if [ "$FULL_CLEANUP" = true ]; then
     echo ""
-    echo "7️⃣  Full cleanup mode (removing ALL unused images, not volumes)..."
+    echo "7.  Full cleanup mode (removing ALL unused images, not volumes)..."
     images=$(docker images -q 2>&1)
     code=$?
     if [ "$code" -ne 0 ]; then
@@ -276,7 +276,7 @@ fi
 # 8. Optimize Docker disk (optional, Linux only)
 if [ "$OPTIMIZE_DOCKER" = true ]; then
     echo ""
-    echo "8️⃣  Optimizing Docker disk space..."
+    echo "8.  Optimizing Docker disk space..."
 
     if [ "$DRY_RUN" = true ]; then
         register_phase "optimize-disk" 0 1 "dry-run"
@@ -314,7 +314,7 @@ fi
 
 # Show status
 echo ""
-echo "📊 Docker system status:"
+echo "[CHART] Docker system status:"
 docker system df 2>/dev/null | sed 's/^/  /'
 
 if test_any_failed; then
@@ -324,7 +324,7 @@ else
 fi
 write_final_summary "$([ "$script_failed" = true ] && echo false || echo true)"
 
-echo "ℹ️  Usage:"
+echo "[INFO]  Usage:"
 echo "  bash cleanup-docker.sh                    # Basic cleanup; preserves all volumes"
 echo "  bash cleanup-docker.sh -n|--dry-run       # Preview every step, change nothing"
 echo "  bash cleanup-docker.sh -f|--full          # Remove all unused images; still preserves volumes"

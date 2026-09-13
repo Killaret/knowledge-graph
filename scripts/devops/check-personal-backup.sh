@@ -1,11 +1,11 @@
 #!/bin/bash
 # Checks that a fresh, non-empty Personal-stack backup exists before a
 # destructive Docker operation. Mirrors the rule in
-# scripts/devops/guard-personal-data.py — the backup globs and the
+# scripts/devops/guard-personal-data.py - the backup globs and the
 # freshness threshold come from the same policy, so the two cannot drift.
 #
-# Exit code 0 — a usable backup exists (prints its path and age).
-# Exit code 1 — no usable backup (prints the reason and where to put one).
+# Exit code 0 - a usable backup exists (prints its path and age).
+# Exit code 1 - no usable backup (prints the reason and where to put one).
 
 set -u
 
@@ -15,7 +15,7 @@ BACKUP_DIR="$REPO_ROOT/backups"
 POLICY_FILE="$SCRIPT_DIR/backup-policy.env"
 
 # Threshold: env var first, then the shared policy file. Refuse rather than
-# guess — a cleanup that cannot tell how fresh the backup must be is not safe.
+# guess - a cleanup that cannot tell how fresh the backup must be is not safe.
 MAX_AGE_HOURS="${KG_BACKUP_MAX_AGE_HOURS:-}"
 if [ -z "$MAX_AGE_HOURS" ]; then
     if [ ! -f "$POLICY_FILE" ]; then

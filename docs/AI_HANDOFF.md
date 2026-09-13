@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-13 — 10e2011
-Прочитано: Devin — 2026-09-13 — 5868225
+Прочитано: Devin — 2026-09-14 — d511fde
 ```
 
 ---
@@ -134,10 +134,10 @@
 || **CI-MAIN-1 / DEPLOY-1:** финальное ревью зелёного CI/DEPLOY | `.github/workflows/main.yml`, `.github/workflows/deploy.yml` | **принято** — 12 jobs success, 0 пропущенных шагов, ноль `continue-on-error`; проверено через `gh`, не по бейджу. Находка: job deploy — это `echo`, не деплой. [`tasks/CI-MAIN-1-review-findings.md`](tasks/CI-MAIN-1-review-findings.md) | 2026-09-13 |
 ||
 | **DEPLOY-2:** публиковать проверенные образы из CI (сейчас `deploy.yml` собирает, проверяет и удаляет их). Образы на Hub отстали от кода на 5 дней — у второго разработчика нет batch-маршрутов | [`tasks/DEPLOY-review-findings.md`](tasks/DEPLOY-review-findings.md) | **ждёт Devin** — постановка написана; нужен секрет `DOCKERHUB_*` от владельца | 2026-09-13 |
-| **ENV-1:** `start-test.ps1` не задаёт `JWT_SECRET` и `.env` нет — на чистой машине backend/worker уходят в рестарт с `FATAL`, а compose лишь пишет warning. Тот самый сценарий второго компьютера | `scripts/testing/start-test.ps1`, `docker-compose.test.yml` | **в работе** — Devin задаёт дефолт секрета в `docker-compose.test.yml` и в `start-test.ps1`/`.sh` | 2026-09-13 |
-| **NOTE-PUBLISH-DOC:** путь публикации заметки неочевиден — `create` не принимает `is_public`, `update` его молча игнорирует, работает только `POST /notes/:id/publish`. Описать в `docs/API_EN.md`; решить судьбу мёртвого поля `updateNoteRequest.IsPublic` | [`tasks/PUB-1-review-findings.md`](tasks/PUB-1-review-findings.md) | **ждёт Devin** | 2026-09-13 |
+| **ENV-1:** `start-test.ps1` не задаёт `JWT_SECRET` и `.env` нет — на чистой машине backend/worker уходят в рестарт с `FATAL`, а compose лишь пишет warning. Тот самый сценарий второго компьютера | `scripts/testing/start-test.ps1`, `docker-compose.test.yml` | **на ревью у Claude Code** — дефолт `JWT_SECRET` задан, стек поднимается без ручной `.env`, `Yandex OAuth` warning ожидаем; check-all без -Quick — PASS | 2026-09-14 |
+| **NOTE-PUBLISH-DOC:** путь публикации заметки неочевиден — `create` не принимает `is_public`, `update` его молча игнорирует, работает только `POST /notes/:id/publish`. Описать в `docs/API_EN.md`; решить судьбу мёртвого поля `updateNoteRequest.IsPublic` | [`tasks/PUB-1-review-findings.md`](tasks/PUB-1-review-findings.md) | **на ревью у Claude Code** — путь публикации описан; DTO/спека `UpdateNoteRequest` без `is_public`/`source_url`; `docs-links` зелёный | 2026-09-14 |
 
-| **CHECK-ALL-1:** локальный `check-all.ps1` не сообщает о провале — `lib\phase-tracking.ps1` с UTF-8 em-dash без BOM не парсится в PowerShell 5.1, фазы идут, но агрегат и код выхода мёртвы (exit 0 при любом результате). GitHub-CI зелёный, потому что там `.sh` на Linux | [`tasks/CHECK-ALL-1-runner-cannot-report-failure.md`](tasks/CHECK-ALL-1-runner-cannot-report-failure.md) | **ждёт Devin** — блокер обвязки: правило CI-3 «узнаём прогоном» этой поломкой обойдено | 2026-09-13 |
+| **CHECK-ALL-1:** локальный `check-all.ps1` не сообщает о провале — `lib\phase-tracking.ps1` с UTF-8 em-dash без BOM не парсится в PowerShell 5.1, фазы идут, но агрегат и код выхода мёртвы (exit 0 при любом результате). GitHub-CI зелёный, потому что там `.sh` на Linux | [`tasks/CHECK-ALL-1-runner-cannot-report-failure.md`](tasks/CHECK-ALL-1-runner-cannot-report-failure.md) | **на ревью у Claude Code** — `phase-tracking.ps1` ASCII, dot-source guard, кодировочный guard для `.ps1`; мутация падения ловится, `check-all` без `-Quick` PASS (skip golangci-lint) | 2026-09-14 |
 | **IMP-4-JAVA:** как Java `source-text-handler` создаёт заметки — через `import/bookmarks`, generic `import/batch` или отдельным путём. Решение продукта, блокирует раздел 3 IMP-4 | [`tasks/IMP-4-review-findings.md`](tasks/IMP-4-review-findings.md) | **решает владелец** | 2026-09-13 |
 ## На человеке
 

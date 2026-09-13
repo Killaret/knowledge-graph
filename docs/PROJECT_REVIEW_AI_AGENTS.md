@@ -1085,3 +1085,27 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **GITHUB-SECURITY-1:** GitHub Dependabot показывает 3 новые находки на `main` (1 high, 2 low); нужен triage и план.
 
 **Статус:** всё передано на ревью/обсуждение Claude Code.
+
+## 26. Test stack JWT, PowerShell check runner, publish API documentation (2026-09-14)
+
+### 26.1 ENV-1 — `JWT_SECRET` for clean-machine test stack
+
+- `docker-compose.test.yml`: `${JWT_SECRET:-test-jwt-secret-32-characters-long}` in backend, worker and e2e.
+- `scripts/testing/start-test.ps1` and `start-test.sh` load `.env.test` without overwriting exported process variables, then set the default if `JWT_SECRET` is still empty.
+- `.env.test.example` and `.gitignore` added so a real `.env.test` stays local.
+- Verified: test stack starts on a machine with no manual `.env`, services become healthy, only expected Yandex OAuth warnings remain.
+
+### 26.2 CHECK-ALL-1 — PowerShell 5.1 phase tracking
+
+- `scripts/testing/lib/phase-tracking.ps1` converted to ASCII-safe output (removed UTF-8 em-dash without BOM).
+- `check-all.ps1` now fails loudly when `phase-tracking.ps1` cannot be dot-sourced and when required functions are missing.
+- Added a non-ASCII/BOM guard for `scripts/**/*.ps1`.
+- Verified by mutation: a deliberately broken phase prints `[FAIL]` and the final exit code is non-zero; a clean full run of `check-all.ps1` (without `-Quick`) is PASS, only `golangci-lint` skipped because the tool is not installed.
+
+### 26.3 NOTE-PUBLISH-DOC — publish path in API guide
+
+- `docs/API_EN.md` explicitly documents `POST /api/v1/notes/{id}/publish` and `POST /api/v1/notes/{id}/unpublish`.
+- Notes are created private; `PUT /notes/{id}` does not accept `is_public` or `source_url` (the DTO and `UpdateNoteRequest` schema no longer include them).
+- `node scripts/testing/check-docs-links.mjs .` passes.
+
+**Статус:** реализация выполнена, передана на ревью Claude Code.

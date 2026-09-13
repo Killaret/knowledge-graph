@@ -1,4 +1,4 @@
-﻿# Full Test Cycle - Windows PowerShell (Isolated Testing Model)
+# Full Test Cycle - Windows PowerShell (Isolated Testing Model)
 # This script orchestrates the complete testing cycle with full stack isolation.
 # Dev and personal stacks are stopped during testing to prevent resource conflicts.
 # All temporary snapshots are saved to scripts/testing/temp/snapshots/.
@@ -17,7 +17,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "For comprehensive regression testing, see docs/REGRESSION_TEST_PLAN.md" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "⚠️  WARNING: Dev and personal stacks will be stopped during testing" -ForegroundColor Yellow
+Write-Host "[WARN]  WARNING: Dev and personal stacks will be stopped during testing" -ForegroundColor Yellow
 Write-Host ""
 
 $scriptDir = $PSScriptRoot
@@ -47,9 +47,9 @@ function Stop-TestStack {
     try {
         Set-Location $repoDir
         & $scriptDir\stop-test.ps1 | Out-Null
-        Write-Host "  ✓ Test stack stopped" -ForegroundColor Green
+        Write-Host "  [OK] Test stack stopped" -ForegroundColor Green
     } catch {
-        Write-Host "  ⚠ Could not stop test stack automatically" -ForegroundColor Yellow
+        Write-Host "  [WARN] Could not stop test stack automatically" -ForegroundColor Yellow
     } finally {
         Set-Location $restoreDir
     }
@@ -77,9 +77,9 @@ function Restore-Stacks {
                 docker compose -f docker-compose.personal.yml up -d --build --wait | Out-Null
             }
         }
-        Write-Host "  ✓ Previously running stacks restored" -ForegroundColor Green
+        Write-Host "  [OK] Previously running stacks restored" -ForegroundColor Green
     } catch {
-        Write-Host "  ⚠ Could not restore all stacks automatically" -ForegroundColor Yellow
+        Write-Host "  [WARN] Could not restore all stacks automatically" -ForegroundColor Yellow
     } finally {
         Set-Location $restoreDir
     }
@@ -89,33 +89,33 @@ try {
     # Step 0: Capture dev stack state snapshot
     Write-Host "[Step 0/28] Capturing dev stack state snapshot..." -ForegroundColor Yellow
     docker ps --format "{{.Names}}" | Where-Object { $_ -like "kg-*" -and $_ -notlike "kg-test-*" } | Sort-Object > "$snapshotDir\pre-test-ps.txt"
-    Write-Host "  ✓ Container names snapshot saved to $snapshotDir\pre-test-ps.txt" -ForegroundColor Green
+    Write-Host "  [OK] Container names snapshot saved to $snapshotDir\pre-test-ps.txt" -ForegroundColor Green
 
     try {
         Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-health.json"
-        Write-Host "  ✓ Health snapshot saved to $snapshotDir\pre-test-health.json" -ForegroundColor Green
+        Write-Host "  [OK] Health snapshot saved to $snapshotDir\pre-test-health.json" -ForegroundColor Green
     } catch {
-        Write-Host "  ⚠ Dev health endpoint not available (stack may be stopped)" -ForegroundColor Yellow
+        Write-Host "  [WARN] Dev health endpoint not available (stack may be stopped)" -ForegroundColor Yellow
     }
 
     try {
         Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\pre-test-notes.json"
-        Write-Host "  ✓ Notes snapshot saved to $snapshotDir\pre-test-notes.json" -ForegroundColor Green
+        Write-Host "  [OK] Notes snapshot saved to $snapshotDir\pre-test-notes.json" -ForegroundColor Green
     } catch {
-        Write-Host "  ⚠ Dev API not available (stack may be stopped)" -ForegroundColor Yellow
+        Write-Host "  [WARN] Dev API not available (stack may be stopped)" -ForegroundColor Yellow
     }
 
     # Step 1: Stop dev stack
     Write-Host "`n[Step 1/28] Stopping dev stack..." -ForegroundColor Yellow
     docker compose down
-    if ($LASTEXITCODE -ne 0) { Write-Host "  ⚠ docker compose down returned $LASTEXITCODE" -ForegroundColor Yellow }
-    Write-Host "  ✓ Dev stack stopped" -ForegroundColor Green
+    if ($LASTEXITCODE -ne 0) { Write-Host "  [WARN] docker compose down returned $LASTEXITCODE" -ForegroundColor Yellow }
+    Write-Host "  [OK] Dev stack stopped" -ForegroundColor Green
 
     # Step 2: Stop personal stack
     Write-Host "`n[Step 2/28] Stopping personal stack..." -ForegroundColor Yellow
     docker compose -f docker-compose.personal.yml down
-    if ($LASTEXITCODE -ne 0) { Write-Host "  ⚠ docker compose down returned $LASTEXITCODE" -ForegroundColor Yellow }
-    Write-Host "  ✓ Personal stack stopped" -ForegroundColor Green
+    if ($LASTEXITCODE -ne 0) { Write-Host "  [WARN] docker compose down returned $LASTEXITCODE" -ForegroundColor Yellow }
+    Write-Host "  [OK] Personal stack stopped" -ForegroundColor Green
 
     # Step 3: Check stacks identity
     Write-Host "`n[Step 3/28] Checking stacks identity..." -ForegroundColor Yellow
@@ -123,9 +123,9 @@ try {
     if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Stacks have differences" -ForegroundColor Red
         Write-Host "Please fix the differences before running tests" -ForegroundColor Red
-        Write-Host "⚠ Continuing with isolated testing despite identity differences" -ForegroundColor Yellow
+        Write-Host "[WARN] Continuing with isolated testing despite identity differences" -ForegroundColor Yellow
     } else {
-        Write-Host "✓ Stacks are identical" -ForegroundColor Green
+        Write-Host "[OK] Stacks are identical" -ForegroundColor Green
     }
 
     # Step 4: Start test stack
@@ -148,7 +148,7 @@ try {
     if ($startTestStackExit -ne 0) {
         throw "Failed to start test stack"
     }
-    Write-Host "✓ Test stack started" -ForegroundColor Green
+    Write-Host "[OK] Test stack started" -ForegroundColor Green
 
     # Step 5: Seed test data
     Write-Host "`n[Step 5/28] Seeding test data..." -ForegroundColor Yellow
@@ -163,15 +163,15 @@ try {
     Write-Host "`n[Step 6/28] Docker Build Verification..." -ForegroundColor Yellow
     Write-Host "  Checking Docker images..." -ForegroundColor Yellow
     docker images --format "{{.Repository}}:{{.Tag}}" | Select-String -Pattern "^knowledge-graph" | Out-Host
-    Write-Host "  ✓ Docker images checked" -ForegroundColor Green
+    Write-Host "  [OK] Docker images checked" -ForegroundColor Green
 
     # Step 7: NLP Service Tests
     Write-Host "`n[Step 7/28] NLP Service Tests..." -ForegroundColor Yellow
     try {
         $null = Invoke-RestMethod -Uri "http://127.0.0.1:15002/health" -Method Get -TimeoutSec 5
-        Write-Host "  ✓ NLP health endpoint: OK" -ForegroundColor Green
+        Write-Host "  [OK] NLP health endpoint: OK" -ForegroundColor Green
     } catch {
-        Write-Host "  ⚠ NLP health endpoint: FAILED" -ForegroundColor Yellow
+        Write-Host "  [WARN] NLP health endpoint: FAILED" -ForegroundColor Yellow
     }
 
     # Step 8: Backend Unit Tests
@@ -186,7 +186,7 @@ try {
     if ($backendTestExit -ne 0) {
         throw "Backend unit tests failed"
     }
-    Write-Host "  ✓ Backend unit tests completed" -ForegroundColor Green
+    Write-Host "  [OK] Backend unit tests completed" -ForegroundColor Green
 
     # Step 9: Backend Integration Tests
     Write-Host "`n[Step 9/28] Backend Integration Tests..." -ForegroundColor Yellow
@@ -215,25 +215,25 @@ try {
     Write-Host "`n[Step 10/28] Backend API Verification..." -ForegroundColor Yellow
     try {
         $null = Invoke-RestMethod -Uri "http://127.0.0.1:18083/health" -Method Get -TimeoutSec 5
-        Write-Host "  ✓ Test backend health: OK" -ForegroundColor Green
+        Write-Host "  [OK] Test backend health: OK" -ForegroundColor Green
     } catch {
-        Write-Host "  ⚠ Test backend health: FAILED" -ForegroundColor Red
+        Write-Host "  [WARN] Test backend health: FAILED" -ForegroundColor Red
     }
 
     try {
         $null = Invoke-RestMethod -Uri "http://127.0.0.1:18083/api/v1/notes?limit=1" -Method Get -TimeoutSec 5
-        Write-Host "  ✓ Test backend API: OK" -ForegroundColor Green
+        Write-Host "  [OK] Test backend API: OK" -ForegroundColor Green
     } catch {
-        Write-Host "  ⚠ Test backend API: FAILED" -ForegroundColor Red
+        Write-Host "  [WARN] Test backend API: FAILED" -ForegroundColor Red
     }
 
     # Step 11: Asynchronous Tasks Verification
     Write-Host "`n[Step 11/28] Asynchronous Tasks Verification..." -ForegroundColor Yellow
     docker logs kg-test-worker --tail 10 | Out-Null
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "  ⚠ Worker logs not available" -ForegroundColor Yellow
+        Write-Host "  [WARN] Worker logs not available" -ForegroundColor Yellow
     } else {
-        Write-Host "  ✓ Worker logs checked" -ForegroundColor Green
+        Write-Host "  [OK] Worker logs checked" -ForegroundColor Green
     }
 
     # Step 12: PGVECTOR Verification
@@ -244,7 +244,7 @@ try {
     if ($pgvectorExit -ne 0) {
         throw "PGVECTOR verification failed"
     }
-    Write-Host "  ✓ PGVECTOR extension checked" -ForegroundColor Green
+    Write-Host "  [OK] PGVECTOR extension checked" -ForegroundColor Green
 
     # Step 13: Redis & MongoDB Verification
     Write-Host "`n[Step 13/28] Redis & MongoDB Verification..." -ForegroundColor Yellow
@@ -257,7 +257,7 @@ try {
     if ($redisMongoExit -ne 0) {
         throw "Redis and/or MongoDB verification failed"
     }
-    Write-Host "  ✓ Redis and MongoDB checked" -ForegroundColor Green
+    Write-Host "  [OK] Redis and MongoDB checked" -ForegroundColor Green
 
     # Step 14: Frontend Unit Tests + Coverage
     Write-Host "`n[Step 14/28] Frontend Unit Tests + Coverage..." -ForegroundColor Yellow
@@ -287,10 +287,10 @@ try {
     if ($frontendTestExit -ne 0) {
         throw "Frontend unit tests or coverage check failed"
     }
-    Write-Host "  ✓ Frontend unit tests + coverage completed" -ForegroundColor Green
+    Write-Host "  [OK] Frontend unit tests + coverage completed" -ForegroundColor Green
 
-    # Step 15: E2E/BDD Phase 1 — SKIP_AUTH=true test stack
-    Write-Host "`n[Step 15/28] E2E/BDD Phase 1 — SKIP_AUTH=true test stack..." -ForegroundColor Yellow
+    # Step 15: E2E/BDD Phase 1 - SKIP_AUTH=true test stack
+    Write-Host "`n[Step 15/28] E2E/BDD Phase 1 - SKIP_AUTH=true test stack..." -ForegroundColor Yellow
     $env:FRONTEND_URL = $frontendUrl
     $env:BACKEND_URL = "http://127.0.0.1:18083"
     $env:SKIP_AUTH = "true"
@@ -310,8 +310,8 @@ try {
     }
     Set-Location $repoDir
 
-    # Step 16: E2E Phase 2 — real auth (SKIP_AUTH=false) test stack
-    Write-Host "`n[Step 16/28] E2E Phase 2 — real auth (SKIP_AUTH=false) test stack..." -ForegroundColor Yellow
+    # Step 16: E2E Phase 2 - real auth (SKIP_AUTH=false) test stack
+    Write-Host "`n[Step 16/28] E2E Phase 2 - real auth (SKIP_AUTH=false) test stack..." -ForegroundColor Yellow
     Write-Host "  Stopping SKIP_AUTH test stack and restarting with SKIP_AUTH=false..." -ForegroundColor Yellow
     Set-Location $repoDir
     & $scriptDir\stop-test.ps1
@@ -406,7 +406,7 @@ try {
         }
         Set-Location $repoDir
     } else {
-        Write-Host "  ℹ Skipping Argos visual tests (ARGOS_TOKEN or ARGOS_UPLOAD_LOCAL not set)" -ForegroundColor Cyan
+        Write-Host "  [INFO] Skipping Argos visual tests (ARGOS_TOKEN or ARGOS_UPLOAD_LOCAL not set)" -ForegroundColor Cyan
         Register-Phase -Name "Argos visual tests (skipped, no token)" -ExitCode 0
     }
 
@@ -453,12 +453,12 @@ try {
 
     # Step 19: Public Graph Verification
     Write-Host "`n[Step 19/28] Public Graph Verification..." -ForegroundColor Yellow
-    Write-Host "  ⏳ Manual verification required" -ForegroundColor Yellow
+    Write-Host "  [WAIT] Manual verification required" -ForegroundColor Yellow
     Write-Host "  Please verify public graph functionality manually" -ForegroundColor Yellow
 
     # Step 20: CI/CD Verification
     Write-Host "`n[Step 20/28] CI/CD Verification..." -ForegroundColor Yellow
-    Write-Host "  ⏳ Manual verification required" -ForegroundColor Yellow
+    Write-Host "  [WAIT] Manual verification required" -ForegroundColor Yellow
     Write-Host "  Please verify CI/CD workflows manually" -ForegroundColor Yellow
 
     # Step 21: Documentation Verification
@@ -467,21 +467,21 @@ try {
     $docFiles | ForEach-Object {
         $p = Join-Path $repoDir $_
         if (Test-Path $p) {
-            Write-Host "  ✓ $_ exists" -ForegroundColor Green
+            Write-Host "  [OK] $_ exists" -ForegroundColor Green
         } else {
-            Write-Host "  ⚠ $_ missing" -ForegroundColor Yellow
+            Write-Host "  [WARN] $_ missing" -ForegroundColor Yellow
         }
     }
     try {
         $dirty = git diff --name-only 2>$null | Where-Object { $_ -match "^(docs/AGENTS\.md|\.windsurfrules|internal/(domain|infrastructure|application|interfaces))" }
         if ($dirty) {
-            Write-Host "  ⚠ Architecture files changed; verify docs/AGENTS.md and .windsurfrules are updated:" -ForegroundColor Yellow
+            Write-Host "  [WARN] Architecture files changed; verify docs/AGENTS.md and .windsurfrules are updated:" -ForegroundColor Yellow
             $dirty | ForEach-Object { Write-Host "    - $_" -ForegroundColor Yellow }
         } else {
-            Write-Host "  ✓ No architecture boundary changes detected" -ForegroundColor Green
+            Write-Host "  [OK] No architecture boundary changes detected" -ForegroundColor Green
         }
     } catch {
-        Write-Host "  ⚠ Could not run git diff; verify docs manually" -ForegroundColor Yellow
+        Write-Host "  [WARN] Could not run git diff; verify docs manually" -ForegroundColor Yellow
     }
 
 
@@ -491,7 +491,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         Write-Host "WARNING: Failed to stop test stack" -ForegroundColor Yellow
     } else {
-        Write-Host "✓ Test stack destroyed" -ForegroundColor Green
+        Write-Host "[OK] Test stack destroyed" -ForegroundColor Green
     }
 
     # Step 23: Prepare for dev stack restoration
@@ -514,9 +514,9 @@ try {
         if ($devRestoreExit -ne 0) {
             throw "Failed to restore dev stack"
         }
-        Write-Host "  ✓ Dev stack restored" -ForegroundColor Green
+        Write-Host "  [OK] Dev stack restored" -ForegroundColor Green
     } else {
-        Write-Host "  ✓ Dev stack remains stopped" -ForegroundColor Green
+        Write-Host "  [OK] Dev stack remains stopped" -ForegroundColor Green
         Register-Phase -Name "Restore dev stack" -Skipped
     }
 
@@ -534,9 +534,9 @@ try {
         if ($personalRestoreExit -ne 0) {
             throw "Failed to restore personal stack"
         }
-        Write-Host "  ✓ Personal stack restored" -ForegroundColor Green
+        Write-Host "  [OK] Personal stack restored" -ForegroundColor Green
     } else {
-        Write-Host "  ✓ Personal stack remains stopped" -ForegroundColor Green
+        Write-Host "  [OK] Personal stack remains stopped" -ForegroundColor Green
         Register-Phase -Name "Restore personal stack" -Skipped
     }
 
@@ -545,27 +545,27 @@ try {
     $devStateChanged = $false
     New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
     docker ps --format "{{.Names}}" | Where-Object { $_ -like "kg-*" -and $_ -notlike "kg-test-*" } | Sort-Object > "$snapshotDir\post-test-ps.txt"
-    Write-Host "  ✓ Post-test container names snapshot saved" -ForegroundColor Green
+    Write-Host "  [OK] Post-test container names snapshot saved" -ForegroundColor Green
 
     if ($devWasRunning) {
         try {
             Invoke-RestMethod -Uri "http://127.0.0.1:18080/health" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-health.json"
-            Write-Host "  ✓ Post-test health snapshot saved" -ForegroundColor Green
+            Write-Host "  [OK] Post-test health snapshot saved" -ForegroundColor Green
         } catch {
-            Write-Host "  ⚠ Dev health endpoint not available after restoration" -ForegroundColor Red
+            Write-Host "  [WARN] Dev health endpoint not available after restoration" -ForegroundColor Red
             Register-Phase -Name "Dev stack restoration (health endpoint)" -ExitCode 1
             throw "Dev stack restoration failed (health endpoint)"
         }
 
         try {
             Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/notes?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
-            Write-Host "  ✓ Post-test notes snapshot saved" -ForegroundColor Green
+            Write-Host "  [OK] Post-test notes snapshot saved" -ForegroundColor Green
         } catch {
             try {
                 Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
-                Write-Host "  ✓ Post-test public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
+                Write-Host "  [OK] Post-test public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
             } catch {
-                Write-Host "  ⚠ Dev API not available after restoration" -ForegroundColor Yellow
+                Write-Host "  [WARN] Dev API not available after restoration" -ForegroundColor Yellow
                 $devStateChanged = $true
             }
         }
@@ -579,10 +579,10 @@ try {
     if ((Test-Path $prePs) -and (Test-Path $postPs)) {
         # Wrap in @(...) so empty files produce empty arrays, not $null.
         if (Compare-Object (@(Get-Content $prePs)) (@(Get-Content $postPs))) {
-            Write-Host "  ⚠ Dev container state changed during testing" -ForegroundColor Yellow
+            Write-Host "  [WARN] Dev container state changed during testing" -ForegroundColor Yellow
             $devStateChanged = $true
         } else {
-            Write-Host "  ✓ Dev container state unchanged" -ForegroundColor Green
+            Write-Host "  [OK] Dev container state unchanged" -ForegroundColor Green
         }
     }
 
@@ -598,18 +598,18 @@ try {
         while ($tries -lt 3 -and -not $reachable) {
             try {
                 $null = Invoke-RestMethod -Uri $notesUrl -Method Get -TimeoutSec 5
-                Write-Host "  ✓ $($stack.Name) API is reachable" -ForegroundColor Green
+                Write-Host "  [OK] $($stack.Name) API is reachable" -ForegroundColor Green
                 $reachable = $true
             } catch {
                 try {
                     Start-Sleep -Seconds 2
                     $null = Invoke-RestMethod -Uri $graphUrl -Method Get -TimeoutSec 5
-                    Write-Host "  ✓ $($stack.Name) public graph is reachable (notes endpoint requires auth)" -ForegroundColor Green
+                    Write-Host "  [OK] $($stack.Name) public graph is reachable (notes endpoint requires auth)" -ForegroundColor Green
                     $reachable = $true
                 } catch {
                     $tries++
                     if ($tries -ge 3) {
-                        Write-Host "  ⚠ Could not reach $($stack.Name) API or public graph after retries" -ForegroundColor Yellow
+                        Write-Host "  [WARN] Could not reach $($stack.Name) API or public graph after retries" -ForegroundColor Yellow
                         $devStateChanged = $true
                     } else {
                         Start-Sleep -Seconds 3
@@ -630,7 +630,7 @@ try {
         Write-Host "  This may indicate data leakage or side effects" -ForegroundColor Yellow
     } else {
         Register-Phase -Name "Dev stack state verification" -ExitCode 0
-        Write-Host "  ✓ Dev stack state verified - no unexpected changes detected" -ForegroundColor Green
+        Write-Host "  [OK] Dev stack state verified - no unexpected changes detected" -ForegroundColor Green
     }
 
     # Step 23: (continued)
@@ -656,7 +656,7 @@ try {
     } else {
         Register-Phase -Name "Personal stack health check" -Skipped
     }
-    Write-Host "  ✓ Restored stacks health verified" -ForegroundColor Green
+    Write-Host "  [OK] Restored stacks health verified" -ForegroundColor Green
 
     # Step 27: Cleanup Temporary Files
     Write-Host "`n[Step 27/28] Cleanup Temporary Files..." -ForegroundColor Yellow

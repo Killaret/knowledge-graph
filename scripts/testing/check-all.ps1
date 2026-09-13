@@ -11,6 +11,10 @@ $workflowPath = Join-Path $repoDir '.github\workflows\_core-checks.yml'
 $syncScript = Join-Path $scriptDir 'check-core-workflow-sync.mjs'
 
 . "$scriptDir\lib\phase-tracking.ps1"
+if (-not (Get-Command Register-Phase -ErrorAction SilentlyContinue)) {
+    Write-Host "FATAL: lib\phase-tracking.ps1 did not load (check encoding)" -ForegroundColor Red
+    exit 1
+}
 $script:PhaseResults.Clear()
 $script:SnapshotDir = $null
 $checks = Import-Csv -Path $manifestPath -Delimiter "`t"

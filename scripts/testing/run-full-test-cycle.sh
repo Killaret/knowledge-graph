@@ -33,7 +33,7 @@ restore_stacks() {
             docker compose -f docker-compose.personal.yml up -d --build --wait || true
         fi
     )
-    echo "  ✓ Dev and personal stacks restored"
+    echo "  [OK] Dev and personal stacks restored"
 }
 
 summary_printed=0
@@ -52,26 +52,26 @@ echo "========================================"
 echo ""
 echo "For comprehensive regression testing, see docs/REGRESSION_TEST_PLAN.md"
 echo ""
-echo "⚠️  WARNING: Dev and personal stacks will be stopped during testing"
+echo "[WARN]  WARNING: Dev and personal stacks will be stopped during testing"
 echo ""
 
 # Step 0: Capture dev stack state snapshot
 echo "[Step 0/24] Capturing dev stack state snapshot..."
 docker ps --filter "name=kg-" > "$SNAPSHOT_DIR/pre-test-ps.txt"
-echo "  ✓ Container snapshot saved to $SNAPSHOT_DIR/pre-test-ps.txt"
+echo "  [OK] Container snapshot saved to $SNAPSHOT_DIR/pre-test-ps.txt"
 
 if curl -s -f http://127.0.0.1:18080/health > /dev/null; then
     curl -s http://127.0.0.1:18080/health > "$SNAPSHOT_DIR/pre-test-health.json"
-    echo "  ✓ Health snapshot saved to $SNAPSHOT_DIR/pre-test-health.json"
+    echo "  [OK] Health snapshot saved to $SNAPSHOT_DIR/pre-test-health.json"
 else
-    echo "  ⚠ Dev health endpoint not available (stack may be stopped)"
+    echo "  [WARN] Dev health endpoint not available (stack may be stopped)"
 fi
 
 if curl -s -f "http://127.0.0.1:18080/api/v1/notes?limit=1" > /dev/null; then
     curl -s "http://127.0.0.1:18080/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/pre-test-notes.json"
-    echo "  ✓ Notes snapshot saved to $SNAPSHOT_DIR/pre-test-notes.json"
+    echo "  [OK] Notes snapshot saved to $SNAPSHOT_DIR/pre-test-notes.json"
 else
-    echo "  ⚠ Dev API not available (stack may be stopped)"
+    echo "  [WARN] Dev API not available (stack may be stopped)"
 fi
 
 # Step 1: Stop dev stack
@@ -81,7 +81,7 @@ docker compose down
 stop_dev_exit=$?
 register_phase "Stop dev stack" "$stop_dev_exit"
 if [[ $stop_dev_exit -eq 0 ]]; then
-    echo "  ✓ Dev stack stopped"
+    echo "  [OK] Dev stack stopped"
 fi
 
 # Step 2: Stop personal stack
@@ -91,7 +91,7 @@ docker compose -f docker-compose.personal.yml down
 stop_personal_exit=$?
 register_phase "Stop personal stack" "$stop_personal_exit"
 if [[ $stop_personal_exit -eq 0 ]]; then
-    echo "  ✓ Personal stack stopped"
+    echo "  [OK] Personal stack stopped"
 fi
 
 # Step 3: Check stacks identity
@@ -103,9 +103,9 @@ register_phase "Check stacks identity" "$identity_exit"
 if [[ $identity_exit -ne 0 ]]; then
     echo "ERROR: Stacks have differences"
     echo "Please fix the differences before running tests"
-    echo "⚠ Continuing with isolated testing despite identity differences"
+    echo "[WARN] Continuing with isolated testing despite identity differences"
 else
-    echo "✓ Stacks are identical"
+    echo "[OK] Stacks are identical"
 fi
 
 # Step 4: Start test stack
@@ -118,7 +118,7 @@ if [[ $start_test_exit -ne 0 ]]; then
     echo "ERROR: Failed to start test stack"
     exit 1
 fi
-echo "✓ Test stack started"
+echo "[OK] Test stack started"
 
 # Step 5: Seed test data
 echo ""
@@ -130,7 +130,7 @@ if [[ $seed_exit -ne 0 ]]; then
     echo "WARNING: Failed to seed test data"
     echo "Continuing anyway (data might already exist)"
 else
-    echo "✓ Test data seeded"
+    echo "[OK] Test data seeded"
 fi
 
 # Step 6: Docker Build Verification
@@ -138,15 +138,15 @@ echo ""
 echo "[Step 6/24] Docker Build Verification..."
 echo "  Checking Docker images..."
 docker images --format "{{.Repository}}:{{.Tag}}" | grep '^knowledge-graph' || true
-echo "  ✓ Docker images checked"
+echo "  [OK] Docker images checked"
 
 # Step 7: NLP Service Tests
 echo ""
 echo "[Step 7/24] NLP Service Tests..."
 if curl -s -f http://127.0.0.1:15002/health > /dev/null; then
-    echo "  ✓ NLP health endpoint: OK"
+    echo "  [OK] NLP health endpoint: OK"
 else
-    echo "  ⚠ NLP health endpoint: FAILED"
+    echo "  [WARN] NLP health endpoint: FAILED"
 fi
 
 # Step 8: Backend Unit Tests
@@ -159,7 +159,7 @@ if cd "$PROJECT_ROOT/backend"; then
     cd "$PROJECT_ROOT"
     register_phase "Backend unit tests" "$backend_unit_exit"
     if [[ $backend_unit_exit -eq 0 ]]; then
-        echo "  ✓ Backend unit tests completed"
+        echo "  [OK] Backend unit tests completed"
     fi
 else
     register_phase "Backend unit tests" 1
@@ -176,7 +176,7 @@ if cd "$PROJECT_ROOT/backend"; then
     cd "$PROJECT_ROOT"
     register_phase "Backend integration tests" "$backend_integration_exit"
     if [[ $backend_integration_exit -eq 0 ]]; then
-        echo "  ✓ Backend integration tests completed"
+        echo "  [OK] Backend integration tests completed"
     else
         echo "  WARNING: Backend integration tests failed"
         echo "  This is often testcontainers on Windows rootless Docker; use WSL2 or CI."
@@ -193,7 +193,7 @@ if cd "$PROJECT_ROOT/services/graph-service"; then
     cd "$PROJECT_ROOT"
     register_phase "Graph-service integration tests" "$graph_integration_exit"
     if [[ $graph_integration_exit -eq 0 ]]; then
-        echo "  ✓ Graph-service integration tests completed"
+        echo "  [OK] Graph-service integration tests completed"
     else
         echo "  WARNING: Graph-service integration tests failed"
     fi
@@ -206,22 +206,22 @@ fi
 echo ""
 echo "[Step 10/24] Backend API Verification..."
 if curl -s -f http://127.0.0.1:18083/health > /dev/null; then
-    echo "  ✓ Test backend health: OK"
+    echo "  [OK] Test backend health: OK"
 else
-    echo "  ⚠ Test backend health: FAILED"
+    echo "  [WARN] Test backend health: FAILED"
 fi
 
 if curl -s -f "http://127.0.0.1:18083/api/v1/notes?limit=1" > /dev/null; then
-    echo "  ✓ Test backend API: OK"
+    echo "  [OK] Test backend API: OK"
 else
-    echo "  ⚠ Test backend API: FAILED"
+    echo "  [WARN] Test backend API: FAILED"
 fi
 
 # Step 11: Asynchronous Tasks Verification
 echo ""
 echo "[Step 11/24] Asynchronous Tasks Verification..."
-docker logs kg-test-worker --tail 10 || echo "  ⚠ Worker logs not available"
-echo "  ✓ Worker logs checked"
+docker logs kg-test-worker --tail 10 || echo "  [WARN] Worker logs not available"
+echo "  [OK] Worker logs checked"
 
 # Step 12: PGVECTOR Verification
 echo ""
@@ -230,7 +230,7 @@ docker exec kg-test-postgres psql -U kb_user -d knowledge_test -c "SELECT extnam
 pgvector_exit=$?
 register_phase "PGVECTOR verification" "$pgvector_exit"
 if [[ $pgvector_exit -eq 0 ]]; then
-    echo "  ✓ PGVECTOR extension checked"
+    echo "  [OK] PGVECTOR extension checked"
 fi
 
 # Step 13: Redis & MongoDB Verification
@@ -243,7 +243,7 @@ mongo_exit=$?
 redis_mongo_exit=$(( redis_exit != 0 ? redis_exit : mongo_exit ))
 register_phase "Redis and MongoDB verification" "$redis_mongo_exit"
 if [[ $redis_mongo_exit -eq 0 ]]; then
-    echo "  ✓ Redis and MongoDB checked"
+    echo "  [OK] Redis and MongoDB checked"
 fi
 
 # Step 14: Frontend Unit Tests
@@ -256,7 +256,7 @@ if cd "$PROJECT_ROOT/frontend"; then
     cd "$PROJECT_ROOT"
     register_phase "Frontend unit tests" "$frontend_unit_exit"
     if [[ $frontend_unit_exit -eq 0 ]]; then
-        echo "  ✓ Frontend unit tests completed"
+        echo "  [OK] Frontend unit tests completed"
     fi
 else
     register_phase "Frontend unit tests" 1
@@ -299,13 +299,13 @@ rm -f "$MANUAL_TEST_FLAG"
 # Step 16: Public Graph Verification
 echo ""
 echo "[Step 16/24] Public Graph Verification..."
-echo "  ⏳ Manual verification required"
+echo "  [WAIT] Manual verification required"
 echo "  Please verify public graph functionality manually"
 
 # Step 17: CI/CD Verification
 echo ""
 echo "[Step 17/24] CI/CD Verification..."
-echo "  ⏳ Manual verification required"
+echo "  [WAIT] Manual verification required"
 echo "  Please verify CI/CD workflows manually"
 
 # Step 18: Documentation Verification
@@ -313,17 +313,17 @@ echo ""
 echo "[Step 18/24] Documentation Verification..."
 for f in docs/AGENTS.md .windsurfrules; do
     if [ -f "$PROJECT_ROOT/$f" ]; then
-        echo "  ✓ $f exists"
+        echo "  [OK] $f exists"
     else
-        echo "  ⚠ $f missing"
+        echo "  [WARN] $f missing"
     fi
 done
 dirty=$(git diff --name-only 2>/dev/null | grep -E "^(docs/AGENTS\.md|\.windsurfrules|internal/(domain|infrastructure|application|interfaces))" || true)
 if [ -n "$dirty" ]; then
-    echo "  ⚠ Architecture files changed; verify docs/AGENTS.md and .windsurfrules are updated:"
+    echo "  [WARN] Architecture files changed; verify docs/AGENTS.md and .windsurfrules are updated:"
     echo "$dirty" | sed 's/^/    - /'
 else
-    echo "  ✓ No architecture boundary changes detected"
+    echo "  [OK] No architecture boundary changes detected"
 fi
 
 # Step 19: Stop test stack
@@ -333,7 +333,7 @@ echo "[Step 19/24] Stopping test stack..."
 stop_test_exit=$?
 register_phase "Stop test stack" "$stop_test_exit"
 if [[ $stop_test_exit -eq 0 ]]; then
-    echo "✓ Test stack destroyed"
+    echo "[OK] Test stack destroyed"
 else
     echo "WARNING: Failed to stop test stack"
 fi
@@ -345,7 +345,7 @@ python "$SCRIPT_DIR/../cleanup/cleanup-test-artifacts.py"
 cleanup_exit=$?
 register_phase "Cleanup temporary files" "$cleanup_exit"
 if [[ $cleanup_exit -eq 0 ]]; then
-    echo "  ✓ Temporary files cleaned"
+    echo "  [OK] Temporary files cleaned"
 fi
 
 # Step 21: Start dev stack
@@ -359,7 +359,7 @@ fi
 dev_restore_exit=$?
 register_phase "Restore dev stack" "$dev_restore_exit"
 if [[ $dev_restore_exit -eq 0 ]]; then
-    echo "  ✓ Dev stack started"
+    echo "  [OK] Dev stack started"
 fi
 
 # Step 22: Start personal stack
@@ -373,22 +373,22 @@ fi
 personal_restore_exit=$?
 register_phase "Restore personal stack" "$personal_restore_exit"
 if [[ $personal_restore_exit -eq 0 ]]; then
-    echo "  ✓ Personal stack started"
+    echo "  [OK] Personal stack started"
 fi
 
 # Step 23: State, identity and health checks
 echo ""
 echo "[Step 23/24] State, identity and health checks"
 docker ps --filter "name=kg-" > "$SNAPSHOT_DIR/post-test-ps.txt"
-echo "  ✓ Post-test container snapshot saved"
+echo "  [OK] Post-test container snapshot saved"
 
 curl -s -f http://127.0.0.1:18080/health > /dev/null
 dev_health_exit=$?
 if [[ $dev_health_exit -eq 0 ]]; then
     curl -s http://127.0.0.1:18080/health > "$SNAPSHOT_DIR/post-test-health.json"
-    echo "  ✓ Post-test health snapshot saved"
+    echo "  [OK] Post-test health snapshot saved"
 else
-    echo "  ⚠ Dev health endpoint not available after restoration"
+    echo "  [WARN] Dev health endpoint not available after restoration"
     echo "  ERROR: Dev stack restoration failed"
     register_phase "Dev stack restoration (health endpoint)" "$dev_health_exit"
     exit 1
@@ -398,9 +398,9 @@ curl -s -f "http://127.0.0.1:18080/api/v1/notes?limit=1" > /dev/null
 dev_api_exit=$?
 if [[ $dev_api_exit -eq 0 ]]; then
     curl -s "http://127.0.0.1:18080/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/post-test-notes.json"
-    echo "  ✓ Post-test notes snapshot saved"
+    echo "  [OK] Post-test notes snapshot saved"
 else
-    echo "  ⚠ Dev API not available after restoration"
+    echo "  [WARN] Dev API not available after restoration"
     echo "  ERROR: Dev stack restoration failed"
     register_phase "Dev stack restoration (API endpoint)" "$dev_api_exit"
     exit 1
@@ -409,26 +409,26 @@ fi
 dev_state_changed=false
 
 if ! diff -q "$SNAPSHOT_DIR/pre-test-ps.txt" "$SNAPSHOT_DIR/post-test-ps.txt" > /dev/null; then
-    echo "  ⚠ Dev container state changed during testing"
+    echo "  [WARN] Dev container state changed during testing"
     dev_state_changed=true
 else
-    echo "  ✓ Dev container state unchanged"
+    echo "  [OK] Dev container state unchanged"
 fi
 
 if [ -f "$SNAPSHOT_DIR/pre-test-health.json" ] && [ -f "$SNAPSHOT_DIR/post-test-health.json" ]; then
     if ! diff -q "$SNAPSHOT_DIR/pre-test-health.json" "$SNAPSHOT_DIR/post-test-health.json" > /dev/null; then
-        echo "  ⚠ Dev health endpoint changed during testing"
+        echo "  [WARN] Dev health endpoint changed during testing"
         dev_state_changed=true
     else
-        echo "  ✓ Dev health endpoint unchanged"
+        echo "  [OK] Dev health endpoint unchanged"
     fi
 fi
 
 if ! diff -q "$SNAPSHOT_DIR/pre-test-notes.json" "$SNAPSHOT_DIR/post-test-notes.json" > /dev/null; then
-    echo "  ⚠ Dev API response changed during testing"
+    echo "  [WARN] Dev API response changed during testing"
     dev_state_changed=true
 else
-    echo "  ✓ Dev API response unchanged"
+    echo "  [OK] Dev API response unchanged"
 fi
 
 if [ "$dev_state_changed" = true ]; then
@@ -437,14 +437,14 @@ if [ "$dev_state_changed" = true ]; then
     echo "  This may indicate data leakage or side effects"
 else
     register_phase "Dev stack state verification" 0
-    echo "  ✓ Dev stack state verified - no changes detected"
+    echo "  [OK] Dev stack state verified - no changes detected"
 fi
 
 curl -s -f "http://127.0.0.1:18080/api/v1/notes?limit=1" > /dev/null
 dev_notes_exit=$?
 if [[ $dev_notes_exit -eq 0 ]]; then
     curl -s "http://127.0.0.1:18080/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/dev-notes.json"
-    echo "  ✓ Dev notes snapshot saved"
+    echo "  [OK] Dev notes snapshot saved"
 else
     echo "  ERROR: Failed to get dev notes"
     register_phase "Dev notes snapshot" "$dev_notes_exit"
@@ -455,7 +455,7 @@ curl -s -f "http://127.0.0.1:18082/api/v1/notes?limit=1" > /dev/null
 personal_notes_exit=$?
 if [[ $personal_notes_exit -eq 0 ]]; then
     curl -s "http://127.0.0.1:18082/api/v1/notes?limit=1" > "$SNAPSHOT_DIR/personal-notes.json"
-    echo "  ✓ Personal notes snapshot saved"
+    echo "  [OK] Personal notes snapshot saved"
 else
     echo "  ERROR: Failed to get personal notes"
     register_phase "Personal notes snapshot" "$personal_notes_exit"
@@ -466,7 +466,7 @@ diff -q "$SNAPSHOT_DIR/dev-notes.json" "$SNAPSHOT_DIR/personal-notes.json" > /de
 stacks_identity_exit=$?
 register_phase "Stacks identity (dev vs personal)" "$stacks_identity_exit"
 if [[ $stacks_identity_exit -ne 0 ]]; then
-    echo "  ⚠ Dev and Personal stacks are NOT identical"
+    echo "  [WARN] Dev and Personal stacks are NOT identical"
     echo "  ERROR: Stacks have differences - manual investigation required"
     echo "  Difference details:"
     diff "$SNAPSHOT_DIR/dev-notes.json" "$SNAPSHOT_DIR/personal-notes.json"
@@ -474,7 +474,7 @@ if [[ $stacks_identity_exit -ne 0 ]]; then
     echo "  Please investigate and fix the differences manually"
     exit 1
 else
-    echo "  ✓ Dev and Personal stacks are identical"
+    echo "  [OK] Dev and Personal stacks are identical"
 fi
 
 "$SCRIPT_DIR/../ci/check-stacks-health.sh" --stack dev
@@ -492,7 +492,7 @@ if [[ $personal_health_check_exit -ne 0 ]]; then
     echo "  ERROR: Personal stack is not healthy"
     exit 1
 fi
-echo "  ✓ Dev and personal stacks health verified"
+echo "  [OK] Dev and personal stacks health verified"
 
 # Final Summary:
 summary_printed=1

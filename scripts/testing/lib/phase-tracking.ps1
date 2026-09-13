@@ -29,7 +29,7 @@ function Register-Phase {
             ExitCode = $ExitCode
             Reason   = $Reason
         }
-        $reasonSuffix = if ($Reason) { " — $Reason" } else { "" }
+        $reasonSuffix = if ($Reason) { " - $Reason" } else { "" }
         Write-Host "  [SKIP] $Name$reasonSuffix" -ForegroundColor Yellow
         return
     }
@@ -65,7 +65,7 @@ function Write-FinalSummary {
     foreach ($entry in $script:PhaseResults.GetEnumerator()) {
         switch ($entry.Value.Status) {
             'skip'  {
-                $reasonSuffix = if ($entry.Value.Reason) { " — $($entry.Value.Reason)" } else { "" }
+                $reasonSuffix = if ($entry.Value.Reason) { " - $($entry.Value.Reason)" } else { "" }
                 Write-Host "  [SKIP] $($entry.Key)$reasonSuffix" -ForegroundColor Yellow
             }
             'pass'  { Write-Host "  [PASS] $($entry.Key)" -ForegroundColor Green }
