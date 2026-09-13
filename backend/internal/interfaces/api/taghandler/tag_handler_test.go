@@ -24,7 +24,7 @@ func createTestNote(t *testing.T, repo *mockNoteRepo, title string) *note.Note {
 	require.NoError(t, err)
 	metadata, err := note.NewMetadata(map[string]interface{}{})
 	require.NoError(t, err)
-	n := note.NewNote(noteTitle, content, "star", metadata)
+	n := note.NewNote(noteTitle, content, note.MustType("star"), metadata)
 	err = repo.Save(context.TODO(), n)
 	require.NoError(t, err)
 	return n

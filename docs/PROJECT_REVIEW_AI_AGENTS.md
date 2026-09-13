@@ -705,6 +705,28 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Интеграция: `REFRESH MATERIALIZED VIEW` с разреженным графом (≤2 связи на узел) завершается <1s.
 - E2E/контракт: `POST /notes/batch` возвращает `data[].id`, `import_task_id` и признак постобработки.
 
+### 19.6 BATCH-1: batch-роуты notes/links — на ревью Claude Code / владельца (2026-09-13)
+
+**Что сделано.**
+
+- Реализованы `POST /api/v1/notes/batch/create`, `POST /api/v1/notes/batch/delete`, `POST /api/v1/import/batch`.
+- Старый `POST /api/v1/notes/batch` удалён из роутера и OpenAPI; фронтенд `deleteNotesBatch` переехал на `v1/notes/batch/delete`.
+- Покрытие велось в согласованном цикле: регрессионные тесты → намеренно падающие тесты → исправления.
+- Найдено и исправлено:
+  - `POST /api/v1/import/batch` не проверял `FindByID == nil` и позволял создавать связи на несуществующие заметки;
+  - пустой `notes` в `/import/batch` возвращал 200 вместо 400;
+  - доменный лимит `note.NewContent` (10 000 rune) расходился с API/OpenAPI (50 000 символов) — приведён к 50 000;
+  - `metadata.type` не валидировался по `ValidCelestialBodyTypes` в `POST /notes`, `/notes/batch/create` и `/import/batch`;
+  - `source_url` из импортного batch-айтема терялась и не сохранялась в метаданных.
+- Прогоны: `go test ./...`, `go vet ./...`, `go test ./cmd/server/...`, `npm run test:unit -- --run`, `npm run check`, `npm run lint` зелёные (9 pre-existing warnings).
+
+**Открытые риски / вопросы.**
+
+- Контракт ссылок в `/import/batch`: внешний Java/source-text handler не имеет UUID новых заметок. Текущий механизм клиентских `id` работает, но неудобен. Нужно решить: индексы массива, `external_id` с маппингом в ответе или упорядоченные операции. Обсуждается с Claude Code / владельцем.
+- **Adversarial-тестирование:** процесс зафиксирован в `docs/tasks/BATCH-TEST-STRATEGY.md`; осталось договориться о маркировке и формализации "практического исчерпания".
+- **DDD / Clean Architecture:** валидация `noteType` сейчас в `interfaces`, нужен перенос в `domain`. Варианты описаны в `docs/tasks/BATCH-DDD-VALIDATION.md`.
+- **Таксономия типов заметок:** обсуждена в `docs/tasks/NOTE-TYPE-TAXONOMY.md`; нужно согласовать `scaleRank`, состав `UI_TYPES` и единый порядок во всех списках (backend, frontend, OpenAPI) перед реализацией `BATCH-DDD-1`.
+
 ## 18. AUD-4: контракт входа через Яндекс (2026-09-06)
 
 **Что сделано.**
@@ -968,3 +990,37 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Открытые Dependabot-PR: **#25** (`yake`) — отклонён в пользу замены на `keybert` (MIT) с лемматизацией; **#79** (`nltk` 3.8.1 → 3.10.3) — смержен с `allow-ghsas: GHSA-8mgp-746c-j5xp`.
 - Frontend coverage после всех обновлений: **1381/1381 unit-тестов passed**, lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04% — выше 70%.
 - `npm run check` — 0 errors, 0 warnings; `npm run lint` — 0 errors, 9 pre-existing warnings.
+
+## 24. NOTE-TYPE-TAXONOMY и DDD `NoteType` value object (2026-09-14)
+
+**Контекст.** Типы заметок (`galaxy`, `nebula`, `blackhole`, `star`, `planet`, `moon`, `comet`, `satellite`, `asteroid`, `dust`, `debris`, плюс системные/аномалии) были рассогласованы между backend, frontend и OpenAPI. `moon` был известен домену, но отсутствовал в пользовательском селекторе; порядок в списках шёл не по космической иерархии; `blackhole` спорно располагался ниже `star`; дефолтный тип зависел от `types[0]`.
+
+**Решения владельца:**
+- Единая шкала `scaleRank` от `galaxy` (100) к `debris` (5).
+- `blackhole` выше `star` (массивнее и иное смысловое наполнение).
+- `moon` включается в пользовательский UI.
+- `debris` ниже `dust`; `dust` остаётся для быстрых захватов/инбокса.
+- Дефолтный тип при создании заметки — `star`.
+
+**Реализация Devin (ветка `devin/batch-api-37`):**
+- `backend/internal/domain/note/type.go` — `NoteType` value object с `scaleRank`, `IsUserSelectable`, валидацией, `DefaultNoteType()`.
+- `backend/internal/domain/note/entity.go` — `Note` хранит `NoteType`; конструкторы и `SetType` принимают `NoteType`.
+- `backend/internal/interfaces/api/notehandler/note_handler.go` — `resolveNoteType` через `note.NewType`; `validateResolvedNoteType` удалён.
+- `backend/internal/interfaces/api/common/validation/validators.go` — `IsValidCelestialBodyType` делегирует `note.NewType`.
+- `backend/internal/infrastructure/db/postgres/note_repo.go` — `toDomainNote` преобразует строки БД в `NoteType`; пустые legacy-значения мапятся в `star`.
+- `backend/internal/application/import/service.go` — импорт преобразует типы через `note.NewType`; дефолт `asteroid` сохранён.
+- `backend/openAPI.yaml` — все note-type enum приведены к единому каноническому порядку.
+- `frontend/src/entities/shared/model/celestial-body.ts` — `scaleRank` для всех типов; `UI_TYPES` включает `moon` и сортируется по `scaleRank`; `ALL` в каноническом порядке.
+- `frontend/src/components/molecules/TypeSelector.svelte` — `defaultSelected` ищет `star`, а не `types[0]`.
+- `CreateNoteModal`, `NoteForm`, graph-формы, импорт закладок, фильтры графа/home page — все используют `CelestialBody.UI_TYPES`.
+- Тесты: `note/type_test.go`, `celestial-body.test.ts`, `CreateNoteModal.spec.ts`, `EditNoteModal.spec.ts`, `GraphCanvas.events.spec.ts`, `home-page.svelte.test.ts`.
+
+**Верификация:**
+- `cd backend && go test ./...` — зелёное.
+- `cd backend && go vet ./...` — чисто.
+- `cd backend && go test ./cmd/server/...` — контрактный тест проходит.
+- `cd frontend && npm run test:unit -- --run` — 1381/1381 passed.
+- `cd frontend && npm run build` — успешно.
+- `cd frontend && npm run check` — 0 errors, 0 warnings.
+
+**Статус:** реализация готова, передана на ревью Claude Code. Не мержить без ревью.

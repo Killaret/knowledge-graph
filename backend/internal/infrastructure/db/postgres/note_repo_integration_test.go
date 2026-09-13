@@ -58,7 +58,7 @@ func (s *NoteRepositoryIntegrationTestSuite) TestSave_Create() {
 	title, _ := note.NewTitle("Test Title")
 	content, _ := note.NewContent("Test Content")
 	metadata, _ := note.NewMetadata(map[string]interface{}{"key": "value"})
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	err := s.repo.Save(s.ctx, n)
 	s.NoError(err)
@@ -77,7 +77,7 @@ func (s *NoteRepositoryIntegrationTestSuite) TestSave_Update() {
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original Content")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	err := s.repo.Save(s.ctx, n)
 	s.NoError(err)
@@ -86,7 +86,7 @@ func (s *NoteRepositoryIntegrationTestSuite) TestSave_Update() {
 	// Обновляем через повторный Save (репозиторий обновляет существующую запись)
 	newTitle, _ := note.NewTitle("Updated Title")
 	newContent, _ := note.NewContent("Updated Content")
-	updatedNote := note.NewNote(newTitle, newContent, "planet", metadata)
+	updatedNote := note.NewNote(newTitle, newContent, note.MustType("planet"), metadata)
 	// Копируем ID для обновления
 	updatedNoteModel, _ := toGormNote(updatedNote)
 	updatedNoteModel.ID = id
@@ -112,7 +112,7 @@ func (s *NoteRepositoryIntegrationTestSuite) TestFindAll() {
 		title, _ := note.NewTitle("Note " + string(rune('A'+i)))
 		content, _ := note.NewContent("Content " + string(rune('A'+i)))
 		metadata, _ := note.NewMetadata(map[string]interface{}{})
-		n := note.NewNote(title, content, "star", metadata)
+		n := note.NewNote(title, content, note.MustType("star"), metadata)
 		err := s.repo.Save(s.ctx, n)
 		s.NoError(err)
 	}
@@ -127,7 +127,7 @@ func (s *NoteRepositoryIntegrationTestSuite) TestDelete() {
 	title, _ := note.NewTitle("To Delete")
 	content, _ := note.NewContent("Content to delete")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	err := s.repo.Save(s.ctx, n)
 	s.NoError(err)
@@ -149,11 +149,11 @@ func (s *NoteRepositoryIntegrationTestSuite) TestFindAllWithFilter() {
 	title1, _ := note.NewTitle("Golang Tutorial")
 	content1, _ := note.NewContent("Learn Go programming")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n1 := note.NewNote(title1, content1, "star", metadata)
+	n1 := note.NewNote(title1, content1, note.MustType("star"), metadata)
 
 	title2, _ := note.NewTitle("Python Guide")
 	content2, _ := note.NewContent("Learn Python programming")
-	n2 := note.NewNote(title2, content2, "planet", metadata)
+	n2 := note.NewNote(title2, content2, note.MustType("planet"), metadata)
 
 	err := s.repo.Save(s.ctx, n1)
 	s.NoError(err)
@@ -171,7 +171,7 @@ func (s *NoteRepositoryIntegrationTestSuite) TestFindByID_AfterDelete() {
 	title, _ := note.NewTitle("Delete Test")
 	content, _ := note.NewContent("Content to delete")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	err := s.repo.Save(s.ctx, n)
 	s.NoError(err)

@@ -99,7 +99,7 @@ describe("CreateNoteModal", () => {
       expect(createNote).toHaveBeenCalledWith({
         title: "Test Note",
         content: "Test content",
-        type: "planet",
+        type: "star",
         metadata: {},
       });
     });
@@ -161,7 +161,9 @@ describe("CreateNoteModal", () => {
     expect(screen.getByTestId("create-note-parent")).toHaveTextContent(
       "Child note of: Parent Star"
     );
-    expect(screen.getByRole("button", { name: /Planet/i })).toBeInTheDocument();
+    const planetButton = screen.getByTestId("type-btn-planet");
+    expect(planetButton).toBeInTheDocument();
+    expect(planetButton).toHaveAttribute("aria-pressed", "true");
   });
 
   it("calls onClose when cancelled", async () => {
@@ -195,8 +197,8 @@ describe("CreateNoteModal", () => {
       },
     });
 
-    // Выбираем тип Planet через TypeSelector (находим по эмодзи + текст)
-    const planetButton = screen.getByRole("button", { name: /Planet/i });
+    // Выбираем тип Planet через TypeSelector
+    const planetButton = screen.getByTestId("type-btn-planet");
     await fireEvent.click(planetButton);
     await tick();
 

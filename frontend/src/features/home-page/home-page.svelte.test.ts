@@ -11,6 +11,7 @@ import { loadGraph } from "$shared/services/graphLoader";
 import * as preloadHooks from "$features/preload/hooks/usePreloadedData";
 import * as preloadService from "$shared/services/PreloadService";
 import * as graph3d from "$features/graph-3d";
+import { CelestialBody } from "$entities";
 
 vi.mock("$app/environment", () => ({
   browser: true,
@@ -518,11 +519,25 @@ describe("Home Page State", () => {
     expect(homePage.graphData).toBe(existing);
   });
 
-  it("falls back to label for unknown type filters", async () => {
+  it("exposes UI type filters sorted from broad to narrow", async () => {
     const homePage = await getHomePage();
-    const unknownFilter = homePage.typeFilters.find((f) => f.id === "unknown");
-    expect(unknownFilter).toBeDefined();
-    expect(unknownFilter?.label.toLowerCase()).toContain("unknown");
+    const uiIds = homePage.typeFilters
+      .filter((f) => CelestialBody.UI_TYPES.some((b) => b.type === f.id))
+      .map((f) => f.id);
+    expect(uiIds).toEqual([
+      "galaxy",
+      "nebula",
+      "blackhole",
+      "star",
+      "planet",
+      "moon",
+      "comet",
+      "satellite",
+      "asteroid",
+      "dust",
+      "debris",
+    ]);
+    expect(homePage.typeFilters.some((f) => f.id === "unknown")).toBe(false);
   });
 
   it("hides undo toast and clears last deleted note after timeout", async () => {

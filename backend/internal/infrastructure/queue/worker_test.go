@@ -72,7 +72,7 @@ func TestWorker_HandleExtractKeywords_NLPError(t *testing.T) {
 	title, _ := note.NewTitle("Title")
 	content, _ := note.NewContent("some content here")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	repo.On("FindByID", mock.Anything, noteID).Return(n, nil)
 
@@ -122,7 +122,7 @@ func TestWorker_HandleComputeEmbedding_NLPError(t *testing.T) {
 	title, _ := note.NewTitle("Title")
 	content, _ := note.NewContent("some content here")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	repo.On("FindByID", mock.Anything, noteID).Return(n, nil)
 

@@ -148,22 +148,9 @@ export function createHomePageState() {
       emoji: "🌌",
       description: t("filter.all.description"),
     },
-    ...[
-      "star",
-      "planet",
-      "moon",
-      "comet",
-      "galaxy",
-      "nebula",
-      "asteroid",
-      "satellite",
-      "blackhole",
-      "dust",
-      "unknown",
-    ].map((id) => {
-      const body = CelestialBody.fromString(id);
+    ...CelestialBody.UI_TYPES.map((body) => {
       return {
-        id,
+        id: body.type,
         label: filterLabel(body),
         emoji: body.emoji,
         description: body.description,

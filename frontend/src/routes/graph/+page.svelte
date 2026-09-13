@@ -49,21 +49,8 @@
 
   const graphTypeFilters = [
     { id: "all", label: t("filter.all"), emoji: "🌌", description: t("filter.all.description") },
-    ...[
-      "star",
-      "planet",
-      "moon",
-      "comet",
-      "galaxy",
-      "nebula",
-      "asteroid",
-      "satellite",
-      "blackhole",
-      "dust",
-      "unknown",
-    ].map((id) => {
-      const body = CelestialBody.fromString(id);
-      return { id, label: body.label, emoji: body.emoji, description: body.description };
+    ...CelestialBody.UI_TYPES.map((body) => {
+      return { id: body.type, label: body.label, emoji: body.emoji, description: body.description };
     }),
   ];
 

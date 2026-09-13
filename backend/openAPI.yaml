@@ -1010,9 +1010,33 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/v1/notes/batch:
+  /api/v1/notes/batch/create:
     post:
-      summary: Batch delete notes
+      summary: Create a batch of notes
+      tags: [Notes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNotesBatchRequest'
+      responses:
+        '201':
+          description: Created notes and any failures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateNotesBatchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/batch/delete:
+    post:
+      summary: Delete a batch of notes
       tags: [Notes]
       requestBody:
         required: true
@@ -1021,12 +1045,32 @@ paths:
             schema:
               $ref: '#/components/schemas/DeleteBatchRequest'
       responses:
+        '204':
+          description: Batch delete succeeded
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/import/batch:
+    post:
+      summary: Import a batch of notes and links
+      tags: [Import]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportBatchRequest'
+      responses:
         '200':
-          description: Batch delete result
+          description: Created notes and links, with any failures
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                $ref: '#/components/schemas/ImportBatchResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -2126,9 +2170,11 @@ components:
           type: string
         type:
           type: string
-          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
         metadata:
           type: object
+        is_public:
+          type: boolean
         created_at:
           type: string
           description: ISO 8601 timestamp with timezone
@@ -2149,7 +2195,7 @@ components:
           maxLength: 50000
         type:
           type: string
-          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
         metadata:
           type: object
 
@@ -2171,7 +2217,7 @@ components:
           maxLength: 50000
         type:
           type: string
-          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula, blackhole, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
 
     BookmarkletResponse:
       type: object
@@ -2205,7 +2251,7 @@ components:
           maxLength: 50000
         type:
           type: string
-          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula, blackhole, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
 
     ImportBookmarksPreviewRequest:
       type: object
@@ -2222,7 +2268,7 @@ components:
           properties:
             default_type:
               type: string
-              enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula, blackhole, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+              enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
               default: asteroid
             extract_content:
               type: boolean
@@ -2344,6 +2390,143 @@ components:
             type: string
             format: uuid
 
+    CreateNotesBatchRequest:
+      type: object
+      required:
+        - notes
+      properties:
+        notes:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/CreateNoteItem'
+
+    CreateNoteItem:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+          maxLength: 50000
+        type:
+          type: string
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+        metadata:
+          type: object
+
+    CreateNotesBatchResponse:
+      type: object
+      properties:
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchItemError'
+
+    BatchItemError:
+      type: object
+      properties:
+        index:
+          type: integer
+        field:
+          type: string
+        reason:
+          type: string
+        message:
+          type: string
+
+    ImportBatchRequest:
+      type: object
+      required:
+        - notes
+      properties:
+        notes:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ImportNoteItem'
+        links:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ImportLinkItem'
+
+    ImportNoteItem:
+      type: object
+      required:
+        - title
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+          maxLength: 50000
+        type:
+          type: string
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+        is_public:
+          type: boolean
+        source_url:
+          type: string
+          format: uri
+          maxLength: 16384
+        metadata:
+          type: object
+
+    ImportLinkItem:
+      type: object
+      required:
+        - source_note_id
+        - target_note_id
+        - link_type
+      properties:
+        source_note_id:
+          type: string
+          format: uuid
+        target_note_id:
+          type: string
+          format: uuid
+        link_type:
+          type: string
+          enum: [reference, dependency, related, custom, parent, child]
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+        metadata:
+          type: object
+
+    ImportBatchResponse:
+      type: object
+      properties:
+        created_notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        created_links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        failed_notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchItemError'
+        failed_links:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchItemError'
+
     Link:
       type: object
       properties:
@@ -2358,7 +2541,7 @@ components:
           format: uuid
         link_type:
           type: string
-          enum: [reference, dependency, related, custom]
+          enum: [reference, dependency, related, custom, parent, child]
         weight:
           type: number
           minimum: 0
@@ -2422,7 +2605,7 @@ components:
           format: uuid
         link_type:
           type: string
-          enum: [reference, dependency, related, custom]
+          enum: [reference, dependency, related, custom, parent, child]
         weight:
           type: number
           minimum: 0
@@ -2441,7 +2624,7 @@ components:
           type: string
         type:
           type: string
-          enum: [star, planet, moon, asteroid, nebula, satellite, comet, blackhole, galaxy]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
 
     GraphLink:
       type: object
@@ -2458,7 +2641,7 @@ components:
           maximum: 1
         link_type:
           type: string
-          enum: [reference, dependency, related, custom]
+          enum: [reference, dependency, related, custom, parent, child]
 
     RegisterRequest:
       type: object

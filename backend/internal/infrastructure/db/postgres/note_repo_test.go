@@ -29,7 +29,7 @@ func TestNoteRepository_SaveAndFind(t *testing.T) {
 	title, _ := note.NewTitle("Test")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	ctx := context.Background()
 	err := repo.Save(ctx, n)
@@ -60,7 +60,7 @@ func TestNoteRepository_Update(t *testing.T) {
 	title, _ := note.NewTitle("Original")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	ctx := context.Background()
 	if err := repo.Save(ctx, n); err != nil {
 		t.Fatalf("Save failed: %v", err)
@@ -87,7 +87,7 @@ func TestNoteRepository_Delete(t *testing.T) {
 	title, _ := note.NewTitle("ToDelete")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	ctx := context.Background()
 	if err := repo.Save(ctx, n); err != nil {
 		t.Fatalf("Save failed: %v", err)

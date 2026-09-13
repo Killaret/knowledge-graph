@@ -30,7 +30,7 @@ func TestEmbeddingRepository_UpsertAndFind(t *testing.T) {
 	title, _ := note.NewTitle("Embedding Test")
 	content, _ := note.NewContent("Test content for embedding")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	ctx := context.Background()
 	if err := noteRepo.Save(ctx, n); err != nil {
@@ -75,7 +75,7 @@ func TestEmbeddingRepository_UpsertUpdate(t *testing.T) {
 	title, _ := note.NewTitle("Update Test")
 	content, _ := note.NewContent("Test content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	ctx := context.Background()
 	if err := noteRepo.Save(ctx, n); err != nil {
@@ -137,7 +137,7 @@ func TestEmbeddingRepository_ModelFiltering(t *testing.T) {
 		titleV, _ := note.NewTitle(title)
 		content, _ := note.NewContent("content")
 		metadata, _ := note.NewMetadata(nil)
-		n := note.NewNote(titleV, content, "star", metadata)
+		n := note.NewNote(titleV, content, note.MustType("star"), metadata)
 		if err := noteRepo.Save(ctx, n); err != nil {
 			t.Fatalf("Save note failed: %v", err)
 		}

@@ -325,10 +325,7 @@ func toDomainNote(m *NoteModel) (*note.Note, error) {
 	if err != nil {
 		return nil, err
 	}
-	noteType := m.Type
-	if noteType == "" {
-		noteType = "unknown"
-	}
+	noteType := note.NewTypeOrUnknown(m.Type)
 	return note.ReconstructNoteWithCreator(m.ID, title, content, noteType, metadata, m.CreatorID, m.CreatedAt, m.UpdatedAt, note.WithIsPublic(m.IsPublic)), nil
 }
 

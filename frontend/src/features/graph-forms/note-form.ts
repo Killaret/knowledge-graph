@@ -11,7 +11,7 @@ export interface NoteFormCallbacks {
   onFormClose?: () => void;
 }
 
-export const NOTE_DEFAULT_TYPE = "planet";
+export const NOTE_DEFAULT_TYPE = "star";
 
 export function createNoteFormState(): NoteFormState {
   return {

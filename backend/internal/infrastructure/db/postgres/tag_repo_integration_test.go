@@ -64,7 +64,7 @@ func (s *TagRepositoryIntegrationTestSuite) createTestNote(title string) *note.N
 	noteTitle, _ := note.NewTitle(title)
 	noteContent, _ := note.NewContent("Test content for " + title)
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNote(noteTitle, noteContent, "star", metadata)
+	n := note.NewNote(noteTitle, noteContent, note.MustType("star"), metadata)
 	err := s.noteRepo.Save(s.ctx, n)
 	s.Require().NoError(err, "failed to create test note")
 	return n

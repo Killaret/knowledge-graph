@@ -2,7 +2,16 @@
 
 ## Статус
 
-**2026-09-12.** Постановка не принята — ждёт ревью и обсуждения с Claude Code / владельцем. Реализация только после финального дизайна.
+**2026-09-13.** Реализовано Devin. Пользовательские batch-роуты (`/notes/batch/create`, `/notes/batch/delete`) и import batch (`/import/batch`) добавлены, старый `POST /notes/batch` удалён, OpenAPI обновлено.
+
+Покрытие тестами велось в согласованном порядке: сначала регрессионные тесты на текущее поведение, затем намеренно падающие тесты, чтобы найти дыры, потом правки. Найдено и исправлено:
+- `/import/batch` не проверял, что `FindByID` вернул `nil`, и мог создавать связи на несуществующие заметки;
+- пустой `notes` в `/import/batch` возвращал 200 вместо 400;
+- домен `note.NewContent` ограничивал контент 10 000 rune, в то время как API/OpenAPI допускали 50 000 символов — лимит приведён к 50 000;
+- в `POST /notes`, `POST /notes/batch/create` и `POST /import/batch` тип заметки, переданный через `metadata.type`, не валидировался по справочнику допустимых типов;
+- `source_url` в `/import/batch` терялась и не сохранялась в метаданных.
+
+Ждёт ревью Claude Code / владельца, в первую очередь по контракту ссылок в `/import/batch`.
 
 ## Контекст
 
@@ -94,8 +103,8 @@
 - Возвращает 204 No Content (как сейчас) **или** 200 с `{ "deleted": [...], "not_found": [...] }`.
 
 **Backward compatibility:**
-- Старый `POST /api/v1/notes/batch` остаётся как alias на `delete` до перехода фронтенда, но помечается `deprecated`.
-- Фронтенд (`frontend/src/shared/api/notes.ts:deleteNotesBatch`) потом переехать на `notes/batch/delete`.
+- Старый `POST /api/v1/notes/batch` удалён вместо deprecated.
+- Фронтенд (`frontend/src/shared/api/notes.ts:deleteNotesBatch`) уже переехал на `v1/notes/batch/delete`.
 
 ## Import batch-роуты (`/api/v1/import`)
 
@@ -158,16 +167,39 @@
 
 **Вариант A** (`POST /api/v1/import/batch`) — потому что Java-источник, похоже, хочет передать один payload с заметками и связями, а не вести state между двумя запросами.
 
+## Реализация и покрытие тестами
+
+- `POST /api/v1/notes/batch/create`: max 50, best-effort, валидация title/content/type, пустой массив → 400, ответ с `notes` и `failed`.
+- `POST /api/v1/notes/batch/delete`: валидация UUID, 400 на пустой `ids`, 400 на malformed UUID, 404 при чужой заметке, 204 No Content, no-op для missing IDs.
+- `POST /api/v1/import/batch`: синхронный best-effort, сначала notes, потом links, клиент может задать `id` заметки для ссылок внутри одного запроса; защита от перезаписи существующих `id`; пустой `notes` → 400.
+- Исправлен дефект: связи не создаются, если `source_note_id` или `target_note_id` не существуют и не были созданы в том же запросе.
+- Тесты: `backend/internal/interfaces/api/notehandler/note_handler_test.go`, `backend/internal/interfaces/api/notehandler/note_handler_import_test.go`, вспомогательный `mockLinkRepo` в `backend/internal/interfaces/api/notehandler/mock_repo.go`.
+- Дополнительно добавлены падающие (сначала) тесты:
+  - `TestCreateNoteContent_20000`, `TestUpdateNoteContent_20000`, `TestCreateBatchNotesContent_20000`, `TestImportBatch_Content_20000` — контент 20 000 символов;
+  - `TestCreateNoteInvalidTypeInMetadata`, `TestCreateBatchNotesInvalidTypeInMetadata`, `TestImportBatch_InvalidTypeInMetadata` — недопустимый тип через `metadata.type`;
+  - `TestImportBatch_PreservesSourceURL` — `source_url` должна сохраняться в метаданных.
+- Прогоны: `go test ./...`, `go vet ./...`, `go test ./cmd/server/...`, `npm run test:unit -- --run`, `npm run check`, `npm run lint` — зелёные.
+
 ## Открытые вопросы для обсуждения
 
-1. **Атомарность create/delete batch:** all-or-nothing или best-effort?
+1. **Контракт ссылок в `/import/batch` (ключевой):** внешний Java/source-text сервис не имеет UUID создаваемых заметок. Текущий вариант с клиентскими `id` работает, но неудобен для клиента. Возможные альтернативы:
+   - ссылки по индексам массива `notes`;
+   - ссылки по внешнему/source-идентификатору, который возвращается в ответе с маппингом на UUID;
+   - упорядоченные операции ("create note, then create link ...") внутри одного batch.
+   Решение требуется от Claude Code / владельца.
 2. **Rate limit:** `writeLimiter` достаточно? Нужен ли отдельный лимит для batch?
-3. **Постобработка при batch-create:** запускать keywords/embeddings для каждой заметки сразу или одну фоновую `RefreshRecommendations`?
-4. **Ответ delete batch:** оставить 204 или вернуть JSON с результатами?
-5. **Backward compatibility:** оставить `POST /notes/batch` на delete или сразу ломать и обновить frontend?
-6. **Import batch:** вариант A или B?
-7. **Авторизация import batch:** JWT + API key? Отдельный `X-API-Key` или тот же middleware?
-8. **Типы импортируемых заметок:** ограничить `UI_TYPES` и `CelestialBody.UI_TYPES` как в IMP-1/IMP-3?
+3. **Авторизация import batch:** JWT + API key? Отдельный `X-API-Key` или тот же middleware?
+4. **Типы импортируемых заметок:** ограничить `UI_TYPES` и `CelestialBody.UI_TYPES` как в IMP-1/IMP-3?
+
+## Процесс тестирования
+
+Для BATCH-1 применён именно тот порядок, который обсуждался с владельцем:
+1. Сначала — проходящие регрессионные тесты на уже существующее поведение.
+2. Затем — намеренно падающие тесты, спроектированные на оставшиеся дыры (content 20 000, `metadata.type`, `source_url` и т.д.).
+3. Исправление найденных дефектов.
+4. Повтор до тех пор, пока новые осмысленные падающие тесты больше не находят реальных дефектов.
+
+Это не чистое TDD «сначала пишем тест на будущую фичу» — такой TDD остаётся на следующие фичи, особенно на новый контракт ссылок в `/import/batch`.
 
 ## Связанные issue/PR
 
@@ -175,8 +207,10 @@
 - IMP-4: <https://github.com/Killaret/knowledge-graph/docs/tasks/IMP-4-import-recommendations-and-java-batch.md>
 - `backend/cmd/server/router.go`: <ref_file file="D:\knowledge-graph\backend\cmd\server\router.go" />
 - `backend/internal/interfaces/api/notehandler/note_handler.go`: <ref_file file="D:\knowledge-graph\backend\internal\interfaces\api\notehandler\note_handler.go" />
+- `backend/internal/interfaces/api/notehandler/note_handler_test.go`: <ref_file file="D:\knowledge-graph\backend\internal\interfaces\api\notehandler\note_handler_test.go" />
+- `backend/internal/interfaces/api/notehandler/note_handler_import_test.go`: <ref_file file="D:\knowledge-graph\backend\internal\interfaces\api\notehandler\note_handler_import_test.go" />
 - `backend/openAPI.yaml`: <ref_file file="D:\knowledge-graph\backend\openAPI.yaml" />
 
 ## Следующее действие
 
-Claude Code проводит ревью дизайна, закрывает открытые вопросы и готовит постановку. Devin реализует после принятой постановки.
+Claude Code / владелец ревьюирует реализацию и тесты, решает контракт ссылок в `/import/batch` и даёт постановку по дальнейшей доработке. Devin внедряет после принятой постановки.

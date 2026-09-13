@@ -41,24 +41,9 @@
     return base || fallback;
   }
 
-  const noteTypes = [
-    "star",
-    "planet",
-    "comet",
-    "galaxy",
-    "asteroid",
-    "satellite",
-    "debris",
-    "nebula",
-    "blackhole",
-    "moon",
-    "technical",
-    "unknown",
-    "reality_rift",
-    "chromatic_maw",
-    "void_whisper",
-    "cosmic_abomination",
-  ];
+  import { CelestialBody } from "$entities/shared/model/celestial-body";
+
+  const noteTypes = CelestialBody.UI_TYPES.map((body) => body.type);
 
   let status = $state<
     "idle" | "loading" | "preview" | "importing" | "done" | "error" | "unauthorized"

@@ -135,7 +135,7 @@ describe("notes API", () => {
     it("should delete multiple notes", async () => {
       server.use(
         http.post(
-          "http://localhost:8080/api/v1/notes/batch",
+          "http://localhost:8080/api/v1/notes/batch/delete",
           () => new HttpResponse(null, { status: 204 })
         )
       );

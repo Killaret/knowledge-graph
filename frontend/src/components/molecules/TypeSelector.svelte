@@ -24,7 +24,7 @@
 
   let {
     types,
-    defaultSelected = types[0]?.type ?? "star",
+    defaultSelected = types.find((t) => t.type === "star")?.type ?? types[0]?.type ?? "star",
     selected = $bindable(defaultSelected),
     id = "type-selector",
   }: Props = $props();
@@ -40,6 +40,7 @@
       type="button"
       class="type-btn"
       data-type={type.type}
+      data-testid="type-btn-{type.type}"
       class:active={selected === type.type}
       onclick={() => selectType(type.type)}
       style="--type-color: {type.toCSSColor()}; --type-bg: {type.color}33"

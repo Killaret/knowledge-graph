@@ -30,6 +30,7 @@ describe("CelestialBody", () => {
     expect(star.maxRadius).toBe(1.2);
     expect(star.baseSpeed).toBe(0.005);
     expect(star.gravityOffset).toBe(20);
+    expect(star.scaleRank).toBe(80);
     expect(star.cssVarName).toBe("--color-star");
     expect(star.isUi).toBe(true);
     expect(star.isAnomaly).toBe(false);
@@ -37,11 +38,21 @@ describe("CelestialBody", () => {
 
   it("groups UI and anomaly types correctly", () => {
     const uiTypes = CelestialBody.UI_TYPES.map((b) => b.type);
-    expect(uiTypes).toContain("star");
-    expect(uiTypes).toContain("planet");
-    expect(uiTypes).toContain("blackhole");
-    expect(uiTypes).not.toContain("moon");
+    expect(uiTypes).toEqual([
+      "galaxy",
+      "nebula",
+      "blackhole",
+      "star",
+      "planet",
+      "moon",
+      "comet",
+      "satellite",
+      "asteroid",
+      "dust",
+      "debris",
+    ]);
     expect(uiTypes).not.toContain("unknown");
+    expect(uiTypes).not.toContain("reality_rift");
 
     const anomalies = CelestialBody.ANOMALIES.map((b) => b.type);
     expect(anomalies).toContain("unknown");
@@ -51,11 +62,11 @@ describe("CelestialBody", () => {
 
   it("suggests a UI-visible child type for each parent", () => {
     expect(CelestialBody.getChildSuggestion("star")).toBe("planet");
-    expect(CelestialBody.getChildSuggestion("planet")).toBe("satellite");
+    expect(CelestialBody.getChildSuggestion("planet")).toBe("moon");
     expect(CelestialBody.getChildSuggestion("galaxy")).toBe("star");
     expect(CelestialBody.getChildSuggestion("blackhole")).toBe("star");
     expect(CelestialBody.getChildSuggestion("satellite")).toBe("asteroid");
-    expect(CelestialBody.getChildSuggestion("")).toBe("planet");
+    expect(CelestialBody.getChildSuggestion("")).toBe("star");
   });
 
   it("produces a CSS color expression with fallback", () => {

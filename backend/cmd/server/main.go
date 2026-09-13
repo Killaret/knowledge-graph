@@ -258,6 +258,7 @@ func run(
 
 	// Handlers with new parameters
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService, importService)
+	noteHandler.SetLinkRepository(linkRepo)
 	linkHandler := linkhandler.New(linkRepo, noteRepo, achievementService, graphCache)
 	if eventPublisher != nil {
 		noteHandler.SetEventPublisher(eventPublisher)

@@ -103,7 +103,7 @@ func newNote(t *testing.T, title string) *note.Note {
 	assert.NoError(t, err)
 	metadata, err := note.NewMetadata(nil)
 	assert.NoError(t, err)
-	return note.NewNote(titleV, content, "star", metadata)
+	return note.NewNote(titleV, content, note.MustType("star"), metadata)
 }
 
 func TestGammaLinkGenerator_RespectsMaxOutDegree(t *testing.T) {

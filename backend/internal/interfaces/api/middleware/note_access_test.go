@@ -46,7 +46,7 @@ func makeNote(t *testing.T, creatorID uuid.UUID, public bool) *note.Note {
 	assert.NoError(t, err)
 	metadata, err := note.NewMetadata(map[string]interface{}{})
 	assert.NoError(t, err)
-	return note.NewNoteWithCreator(title, content, "star", metadata, creatorID, note.WithIsPublic(public))
+	return note.NewNoteWithCreator(title, content, note.MustType("star"), metadata, creatorID, note.WithIsPublic(public))
 }
 
 // exercise builds a Gin engine with one route guarded by the access

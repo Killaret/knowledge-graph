@@ -274,7 +274,7 @@ func TestSyncDraft_Success(t *testing.T) {
 	metadata, _ := noteDomain.NewMetadata(nil)
 	userID := draft.UserID()
 	existingNote := noteDomain.ReconstructNoteWithCreator(
-		draft.NoteID(), title, content, "star", metadata, &userID,
+		draft.NoteID(), title, content, noteDomain.MustType("star"), metadata, &userID,
 		time.Now().Add(-time.Hour), time.Now().Add(-time.Hour),
 	)
 
@@ -333,7 +333,7 @@ func TestSyncDraft_DifferentCreator(t *testing.T) {
 	metadata, _ := noteDomain.NewMetadata(nil)
 	differentCreator := uuid.New()
 	existingNote := noteDomain.ReconstructNoteWithCreator(
-		draft.NoteID(), title, content, "star", metadata, &differentCreator,
+		draft.NoteID(), title, content, noteDomain.MustType("star"), metadata, &differentCreator,
 		time.Now().Add(-time.Hour), time.Now().Add(-time.Hour),
 	)
 

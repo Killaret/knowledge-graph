@@ -173,7 +173,7 @@ func TestHandler_GetGraph(t *testing.T) {
 		title, _ := note.NewTitle("Center Node")
 		content, _ := note.NewContent("Center content")
 		metadata, _ := note.NewMetadata(map[string]interface{}{"type": "star"})
-		centerNote := note.NewNote(title, content, "star", metadata)
+		centerNote := note.NewNote(title, content, note.MustType("star"), metadata)
 
 		noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
 		linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
@@ -216,12 +216,12 @@ func TestHandler_GetGraph(t *testing.T) {
 		title1, _ := note.NewTitle("Center")
 		content1, _ := note.NewContent("Center content")
 		metadata1, _ := note.NewMetadata(map[string]interface{}{"type": "star"})
-		centerNote := note.NewNote(title1, content1, "star", metadata1)
+		centerNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
 
 		title2, _ := note.NewTitle("Neighbor")
 		content2, _ := note.NewContent("Neighbor content")
 		metadata2, _ := note.NewMetadata(map[string]interface{}{"type": "planet"})
-		neighborNote := note.NewNote(title2, content2, "planet", metadata2)
+		neighborNote := note.NewNote(title2, content2, note.MustType("planet"), metadata2)
 
 		linkType, _ := link.NewLinkType("reference")
 		weight, _ := link.NewWeight(0.8)
@@ -266,7 +266,7 @@ func TestHandler_GetGraph(t *testing.T) {
 		title, _ := note.NewTitle("Center")
 		content, _ := note.NewContent("Content")
 		metadata, _ := note.NewMetadata(nil)
-		centerNote := note.NewNote(title, content, "star", metadata)
+		centerNote := note.NewNote(title, content, note.MustType("star"), metadata)
 
 		noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
 		linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
@@ -286,7 +286,7 @@ func TestHandler_GetGraph(t *testing.T) {
 		title, _ := note.NewTitle("Center")
 		content, _ := note.NewContent("Content")
 		metadata, _ := note.NewMetadata(nil)
-		centerNote := note.NewNote(title, content, "star", metadata)
+		centerNote := note.NewNote(title, content, note.MustType("star"), metadata)
 
 		noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
 		linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
@@ -308,12 +308,12 @@ func TestHandler_GetFullGraph(t *testing.T) {
 		title1, _ := note.NewTitle("Note 1")
 		content1, _ := note.NewContent("Content 1")
 		metadata1, _ := note.NewMetadata(map[string]interface{}{"type": "star"})
-		n1 := note.NewNote(title1, content1, "star", metadata1)
+		n1 := note.NewNote(title1, content1, note.MustType("star"), metadata1)
 
 		title2, _ := note.NewTitle("Note 2")
 		content2, _ := note.NewContent("Content 2")
 		metadata2, _ := note.NewMetadata(map[string]interface{}{"type": "planet"})
-		n2 := note.NewNote(title2, content2, "planet", metadata2)
+		n2 := note.NewNote(title2, content2, note.MustType("planet"), metadata2)
 
 		linkType, _ := link.NewLinkType("reference")
 		weight, _ := link.NewWeight(1.0)
@@ -346,7 +346,7 @@ func TestHandler_GetFullGraph(t *testing.T) {
 		title1, _ := note.NewTitle("Note 1")
 		content1, _ := note.NewContent("Content 1")
 		metadata1, _ := note.NewMetadata(nil)
-		n1 := note.NewNote(title1, content1, "star", metadata1)
+		n1 := note.NewNote(title1, content1, note.MustType("star"), metadata1)
 
 		noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 1, 0).Return([]*note.Note{n1}, int64(1), nil)
 		linkRepo.On("FindAllPaginated", mock.Anything, 500, 0).Return([]*link.Link{}, int64(0), nil)
@@ -423,7 +423,7 @@ func TestHandler_GetGraphDepthZero(t *testing.T) {
 	title, _ := note.NewTitle("Center")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	centerNote := note.NewNote(title, content, "star", metadata)
+	centerNote := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
 	linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
@@ -444,7 +444,7 @@ func TestHandler_GetGraphDepthNegative(t *testing.T) {
 	title, _ := note.NewTitle("Center")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	centerNote := note.NewNote(title, content, "star", metadata)
+	centerNote := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
 	linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
@@ -465,7 +465,7 @@ func TestHandler_GetFullGraphLinkLimit(t *testing.T) {
 	title1, _ := note.NewTitle("Note 1")
 	content1, _ := note.NewContent("Content 1")
 	metadata1, _ := note.NewMetadata(nil)
-	n1 := note.NewNote(title1, content1, "star", metadata1)
+	n1 := note.NewNote(title1, content1, note.MustType("star"), metadata1)
 
 	noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
 	linkRepo.On("FindAllPaginated", mock.Anything, 10, 0).Return([]*link.Link{}, int64(0), nil)
@@ -484,7 +484,7 @@ func TestHandler_GetFullGraphLinkOffset(t *testing.T) {
 	title1, _ := note.NewTitle("Note 1")
 	content1, _ := note.NewContent("Content 1")
 	metadata1, _ := note.NewMetadata(nil)
-	n1 := note.NewNote(title1, content1, "star", metadata1)
+	n1 := note.NewNote(title1, content1, note.MustType("star"), metadata1)
 
 	noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
 	linkRepo.On("FindAllPaginated", mock.Anything, 500, 10).Return([]*link.Link{}, int64(0), nil)
@@ -522,7 +522,7 @@ func TestHandler_GetGraphLinkRepoError(t *testing.T) {
 	title, _ := note.NewTitle("Center")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	centerNote := note.NewNote(title, content, "star", metadata)
+	centerNote := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
 	linkRepo.On("FindBySource", mock.Anything, centerID).Return(nil, errors.New("db error"))
@@ -556,7 +556,7 @@ func TestHandler_GetFullGraphLinksError(t *testing.T) {
 	title1, _ := note.NewTitle("Note 1")
 	content1, _ := note.NewContent("Content 1")
 	metadata1, _ := note.NewMetadata(nil)
-	n1 := note.NewNote(title1, content1, "star", metadata1)
+	n1 := note.NewNote(title1, content1, note.MustType("star"), metadata1)
 
 	noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{n1}, int64(1), nil)
 	linkRepo.On("FindAllPaginated", mock.Anything, 500, 0).Return([]*link.Link{}, int64(0), errors.New("db error"))
@@ -576,7 +576,7 @@ func TestHandler_GetGraphLargeDepth(t *testing.T) {
 	title, _ := note.NewTitle("Center")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	centerNote := note.NewNote(title, content, "star", metadata)
+	centerNote := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
 	linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)
@@ -598,7 +598,7 @@ func TestHandler_GetGraphZeroDepth(t *testing.T) {
 	title, _ := note.NewTitle("Center")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	centerNote := note.NewNote(title, content, "star", metadata)
+	centerNote := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	noteRepo.On("FindByID", mock.Anything, centerID).Return(centerNote, nil)
 	linkRepo.On("FindBySource", mock.Anything, centerID).Return([]*link.Link{}, nil)

@@ -48,7 +48,7 @@ func TestNoteRepository_Save_Create(t *testing.T) {
 	title, _ := note.NewTitle("Test Title")
 	content, _ := note.NewContent("Test Content")
 	metadata, _ := note.NewMetadata(map[string]interface{}{"key": "value"})
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	// Transaction начинается первым
 	mock.ExpectBegin()
@@ -258,7 +258,7 @@ func TestNoteRepository_Save_Update(t *testing.T) {
 	title, _ := note.NewTitle("Updated Title")
 	content, _ := note.NewContent("Updated Content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	now := time.Now()
 
@@ -320,7 +320,7 @@ func TestToGormNote(t *testing.T) {
 	title, _ := note.NewTitle("Test")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(map[string]interface{}{"key": "value"})
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	n.SetIsPublic(true)
 
 	model, err := toGormNote(n)

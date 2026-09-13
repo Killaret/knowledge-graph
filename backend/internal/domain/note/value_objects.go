@@ -32,9 +32,9 @@ type Content struct {
 }
 
 func NewContent(value string) (Content, error) {
-	// Можно добавить ограничения, например, не больше 10000 символов
-	if utf8.RuneCountInString(value) > 10000 {
-		return Content{}, errors.New("content too long (max 10000 characters)")
+	// Согласовано с API: content max 50000 символов (во всех DTO и OpenAPI).
+	if utf8.RuneCountInString(value) > 50000 {
+		return Content{}, errors.New("content too long (max 50000 characters)")
 	}
 	return Content{value: value}, nil
 }

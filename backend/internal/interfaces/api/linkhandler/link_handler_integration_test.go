@@ -88,7 +88,7 @@ func (s *LinkHandlerIntegrationTestSuite) createTestNote(title, content, noteTyp
 	noteTitle, _ := note.NewTitle(title)
 	noteContent, _ := note.NewContent(content)
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNote(noteTitle, noteContent, noteType, metadata)
+	n := note.NewNote(noteTitle, noteContent, note.MustType(noteType), metadata)
 	err := s.noteRepo.Save(ctx, n)
 	s.Require().NoError(err, "failed to create test note")
 	return n

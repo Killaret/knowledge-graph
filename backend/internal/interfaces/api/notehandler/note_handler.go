@@ -20,6 +20,7 @@ import (
 	"knowledge-graph/internal/config"
 	dcache "knowledge-graph/internal/domain/cache"
 	graphdomain "knowledge-graph/internal/domain/graph"
+	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/common/validation"
@@ -31,6 +32,7 @@ import (
 
 type Handler struct {
 	repo               note.Repository
+	linkRepo           link.Repository
 	taskQueue          common.TaskQueue
 	suggestionsHandler *graphQueries.GetSuggestionsHandler
 	affectedNotesSvc   *recommendation.AffectedNotesService
@@ -87,6 +89,11 @@ func (h *Handler) SetEventPublisher(p appevents.Publisher) {
 	h.eventPublisher = p
 }
 
+// SetLinkRepository sets the optional link repository used by batch/import handlers.
+func (h *Handler) SetLinkRepository(repo link.Repository) {
+	h.linkRepo = repo
+}
+
 // enqueueRecommendationTasks queues recommendation refresh tasks for affected notes
 func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UUID) {
 	if h.affectedNotesSvc == nil || h.taskQueue == nil {
@@ -121,7 +128,7 @@ func (h *Handler) enqueueBackupOnNoteChange(ctx context.Context) {
 type createNoteRequest struct {
 	Title    string                 `json:"title" binding:"required,max=200"`
 	Content  string                 `json:"content" binding:"omitempty,max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -129,13 +136,79 @@ type deleteBatchRequest struct {
 	IDs []string `json:"ids" binding:"required,dive,uuid"`
 }
 
-//nolint:unused
-type noteResponse struct {
-	ID       string                 `json:"id"`
-	Title    string                 `json:"title"`
-	Content  string                 `json:"content"`
-	Type     string                 `json:"type"`
+type batchNoteItem struct {
+	Title    string                 `json:"title" binding:"required,max=200"`
+	Content  string                 `json:"content" binding:"omitempty,max=50000"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	Metadata map[string]interface{} `json:"metadata"`
+}
+
+type createNotesBatchRequest struct {
+	Notes []batchNoteItem `json:"notes" binding:"required,max=50,dive"`
+}
+
+type batchItemError struct {
+	Index   int    `json:"index"`
+	Field   string `json:"field,omitempty"`
+	Reason  string `json:"reason,omitempty"`
+	Message string `json:"message"`
+}
+
+type createNotesBatchResponse struct {
+	Notes  []noteResponse   `json:"notes"`
+	Failed []batchItemError `json:"failed"`
+}
+
+type importBatchNoteItem struct {
+	ID        string                 `json:"id" binding:"omitempty,uuid"`
+	Title     string                 `json:"title" binding:"required,max=200"`
+	Content   string                 `json:"content" binding:"omitempty,max=50000"`
+	Type      string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	IsPublic  bool                   `json:"is_public"`
+	SourceURL string                 `json:"source_url" binding:"omitempty,url,max=16384"`
+	Metadata  map[string]interface{} `json:"metadata"`
+}
+
+type importBatchLinkItem struct {
+	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
+	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
+	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom parent child"`
+	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
+	Metadata     map[string]interface{} `json:"metadata"`
+}
+
+type importBatchRequest struct {
+	Notes []importBatchNoteItem `json:"notes" binding:"required,max=50,dive"`
+	Links []importBatchLinkItem `json:"links" binding:"max=50,dive"`
+}
+
+type importBatchLinkResponse struct {
+	ID           string                 `json:"id"`
+	SourceNoteID string                 `json:"source_note_id"`
+	TargetNoteID string                 `json:"target_note_id"`
+	LinkType     string                 `json:"link_type"`
+	Weight       float64                `json:"weight"`
+	Metadata     map[string]interface{} `json:"metadata"`
+	CreatedAt    time.Time              `json:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at"`
+}
+
+type importBatchResponse struct {
+	CreatedNotes []noteResponse            `json:"created_notes"`
+	CreatedLinks []importBatchLinkResponse `json:"created_links"`
+	FailedNotes  []batchItemError          `json:"failed_notes"`
+	FailedLinks  []batchItemError          `json:"failed_links"`
+}
+
+type noteResponse struct {
+	ID        string                 `json:"id"`
+	Title     string                 `json:"title"`
+	Content   string                 `json:"content"`
+	Type      string                 `json:"type"`
+	Metadata  map[string]interface{} `json:"metadata"`
+	IsPublic  bool                   `json:"is_public"`
+	CreatedAt time.Time              `json:"created_at"`
+	UpdatedAt time.Time              `json:"updated_at"`
 }
 
 //nolint:unused
@@ -143,7 +216,7 @@ var noteValidationMessages = map[string]string{
 	"title.required": "Title is required",
 	"title.max":      "Title must not exceed 200 characters",
 	"content.max":    "Content must not exceed 50000 characters",
-	"type.oneof":     "Type must be one of: star, planet, comet, nebula, galaxy, asteroid, debris, blackhole, satellite, dust, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination",
+	"type.oneof":     "Type must be one of: galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination",
 }
 
 // NoteValidationErrors defines human-readable error messages for note validation
@@ -151,7 +224,19 @@ var NoteValidationErrors = map[string]string{
 	"title.required": "Title is required",
 	"title.max":      "Title must not exceed 200 characters",
 	"content.max":    "Content must not exceed 50000 characters",
-	"type.oneof":     "Type must be one of: star, planet, comet, galaxy, asteroid, satellite, debris, nebula",
+	"type.oneof":     "Type must be one of: galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination",
+}
+
+// LinkValidationErrors defines human-readable error messages for link validation (used by import batch).
+var LinkValidationErrors = map[string]string{
+	"source_note_id.required": "Source note ID is required",
+	"source_note_id.uuid":     "Source note ID must be a valid UUID",
+	"target_note_id.required": "Target note ID is required",
+	"target_note_id.uuid":     "Target note ID must be a valid UUID",
+	"link_type.required":      "Link type is required",
+	"link_type.oneof":         "Link type must be one of: reference, dependency, related, custom, parent, child",
+	"weight.min":              "Weight must be between 0 and 1",
+	"weight.max":              "Weight must be between 0 and 1",
 }
 
 func (h *Handler) Create(c *gin.Context) {
@@ -200,14 +285,10 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	// Определяем тип: сначала из корня запроса, затем из metadata
-	noteType := req.Type
-	if noteType == "" && req.Metadata != nil {
-		if t, ok := req.Metadata["type"]; ok {
-			if ts, ok := t.(string); ok && ts != "" {
-				noteType = ts
-			}
-		}
+	noteType, fe := resolveNoteType(req.Type, req.Metadata)
+	if fe != nil {
+		apicommon.BadRequest(c, fe)
+		return
 	}
 
 	// Get authenticated user ID if available
@@ -274,11 +355,396 @@ func (h *Handler) Create(c *gin.Context) {
 	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
 
+// toNoteResponse converts a domain note to the handler note response.
+func toNoteResponse(n *note.Note) noteResponse {
+	return noteResponse{
+		ID:        n.ID().String(),
+		Title:     n.Title().String(),
+		Content:   n.Content().String(),
+		Type:      n.Type(),
+		Metadata:  n.Metadata().Value(),
+		IsPublic:  n.IsPublic(),
+		CreatedAt: n.CreatedAt(),
+		UpdatedAt: n.UpdatedAt(),
+	}
+}
+
+// resolveNoteType determines the final note type from the explicit value or metadata,
+// validates it through the domain NoteType value object, and returns structured errors.
+func resolveNoteType(value string, metadata map[string]interface{}) (note.NoteType, []apicommon.FieldError) {
+	if value == "" && metadata != nil {
+		if t, ok := metadata["type"]; ok {
+			if ts, ok := t.(string); ok && ts != "" {
+				value = ts
+			}
+		}
+	}
+	if value == "" {
+		value = note.Default().String()
+	}
+	noteType, err := note.NewType(value)
+	if err != nil {
+		return note.NoteType{}, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, err.Error(), value),
+		}
+	}
+	return noteType, nil
+}
+
+// buildNoteFromBatchItem validates an item and builds a domain note.
+func buildNoteFromBatchItem(item batchNoteItem, userID *uuid.UUID) (*note.Note, []apicommon.FieldError) {
+	title, err := note.NewTitle(item.Title)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("title", apicommon.ReasonInvalidValue, err.Error(), item.Title)}
+	}
+	content, err := note.NewContent(item.Content)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), item.Content)}
+	}
+	metadata, err := note.NewMetadata(item.Metadata)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), item.Metadata)}
+	}
+
+	noteType, fe := resolveNoteType(item.Type, item.Metadata)
+	if fe != nil {
+		return nil, fe
+	}
+
+	if userID != nil {
+		return note.NewNoteWithCreator(title, content, noteType, metadata, *userID), nil
+	}
+	return note.NewNote(title, content, noteType, metadata), nil
+}
+
+// buildImportNote validates an import item and builds a domain note.
+// When the client provides an explicit id, it is used so links in the same batch can reference it.
+func buildImportNote(item importBatchNoteItem, userID *uuid.UUID) (*note.Note, []apicommon.FieldError) {
+	title, err := note.NewTitle(item.Title)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("title", apicommon.ReasonInvalidValue, err.Error(), item.Title)}
+	}
+	content, err := note.NewContent(item.Content)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), item.Content)}
+	}
+
+	noteType, fe := resolveNoteType(item.Type, item.Metadata)
+	if fe != nil {
+		return nil, fe
+	}
+
+	// Preserve the source URL inside metadata so the client can query it later.
+	mergedMetadata := item.Metadata
+	if mergedMetadata == nil {
+		mergedMetadata = make(map[string]interface{})
+	}
+	if item.SourceURL != "" {
+		mergedMetadata["source_url"] = item.SourceURL
+	}
+	metadata, err := note.NewMetadata(mergedMetadata)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), mergedMetadata)}
+	}
+
+	opts := []note.NoteOption{note.WithIsPublic(item.IsPublic)}
+	if item.ID != "" {
+		id, err := uuid.Parse(item.ID)
+		if err != nil {
+			return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, item.ID)}
+		}
+		opts = append(opts, note.WithID(id))
+	}
+
+	if userID != nil {
+		return note.NewNoteWithCreator(title, content, noteType, metadata, *userID, opts...), nil
+	}
+	return note.NewNote(title, content, noteType, metadata, opts...), nil
+}
+
+// postprocessCreatedNote runs the standard background pipeline for a single note.
+func (h *Handler) postprocessCreatedNote(c *gin.Context, n *note.Note) {
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteCreated(context.Background(), n.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
+		}
+	}
+
+	if h.taskQueue != nil {
+		noteID := n.ID().String()
+		if err := h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue extract keywords for batch: %v", err)
+		}
+		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue compute embedding for batch: %v", err)
+		}
+		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), n.ID(), h.taskDelay); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue link weight recalculation for batch: %v", err)
+		}
+	}
+
+	h.enqueueRecommendationTasks(c.Request.Context(), n.ID())
+}
+
+// CreateBatch creates a batch of notes synchronously.
+// It is best-effort: each note is validated, saved and post-processed independently.
+func (h *Handler) CreateBatch(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "create_batch")
+
+	var req createNotesBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		for key, msg := range NoteValidationErrors {
+			if strings.Contains(errStr, key) {
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
+			}
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
+		return
+	}
+
+	if len(req.Notes) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{apicommon.NewFieldError("notes", apicommon.ReasonInvalidValue, "notes must be a non-empty array")})
+		return
+	}
+
+	var userID *uuid.UUID
+	if uid, exists := middleware.GetUserID(c); exists {
+		userID = &uid
+	}
+
+	created := make([]noteResponse, 0, len(req.Notes))
+	failed := make([]batchItemError, 0)
+
+	for i, item := range req.Notes {
+		n, errs := buildNoteFromBatchItem(item, userID)
+		if errs != nil {
+			errs[0].Field = fmt.Sprintf("notes[%d].%s", i, errs[0].Field)
+			failed = append(failed, batchItemError{Index: i, Field: errs[0].Field, Reason: string(errs[0].Reason), Message: errs[0].Message})
+			continue
+		}
+
+		if err := h.repo.Save(c.Request.Context(), n); err != nil {
+			failed = append(failed, batchItemError{Index: i, Message: apicommon.MsgFailedSaveNote})
+			continue
+		}
+
+		h.postprocessCreatedNote(c, n)
+		created = append(created, toNoteResponse(n))
+	}
+
+	if userID != nil && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
+	apicommon.JSONWithMessage(c, 201, createNotesBatchResponse{Notes: created, Failed: failed}, apicommon.MsgResourceCreated)
+}
+
+// ImportBatch creates a batch of notes and links synchronously.
+// Notes are created first. Links may reference notes via explicit ids supplied in the request
+// or existing notes already in the repository.
+func (h *Handler) ImportBatch(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "import_batch")
+
+	var req importBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		for key, msg := range NoteValidationErrors {
+			if strings.Contains(errStr, key) {
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
+			}
+		}
+		for key, msg := range LinkValidationErrors {
+			if strings.Contains(errStr, key) {
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
+			}
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
+		return
+	}
+
+	if len(req.Notes) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{apicommon.NewFieldError("notes", apicommon.ReasonInvalidValue, "notes must be a non-empty array")})
+		return
+	}
+
+	var userID *uuid.UUID
+	if uid, exists := middleware.GetUserID(c); exists {
+		userID = &uid
+	}
+
+	createdNotes := make([]noteResponse, 0, len(req.Notes))
+	createdLinks := make([]importBatchLinkResponse, 0, len(req.Links))
+	failedNotes := make([]batchItemError, 0)
+	failedLinks := make([]batchItemError, 0)
+	createdNoteIDs := make(map[uuid.UUID]bool)
+
+	// First pass: create notes.
+	for i, item := range req.Notes {
+		n, errs := buildImportNote(item, userID)
+		if errs != nil {
+			errs[0].Field = fmt.Sprintf("notes[%d].%s", i, errs[0].Field)
+			failedNotes = append(failedNotes, batchItemError{Index: i, Field: errs[0].Field, Reason: string(errs[0].Reason), Message: errs[0].Message})
+			continue
+		}
+
+		if item.ID != "" {
+			existing, err := h.repo.FindByID(c.Request.Context(), n.ID())
+			if err != nil {
+				failedNotes = append(failedNotes, batchItemError{Index: i, Message: apicommon.MsgFailedFetchNote})
+				continue
+			}
+			if existing != nil {
+				failedNotes = append(failedNotes, batchItemError{Index: i, Field: "id", Message: "note with this id already exists"})
+				continue
+			}
+		}
+
+		if err := h.repo.Save(c.Request.Context(), n); err != nil {
+			failedNotes = append(failedNotes, batchItemError{Index: i, Message: apicommon.MsgFailedSaveNote})
+			continue
+		}
+
+		h.postprocessCreatedNote(c, n)
+		createdNoteIDs[n.ID()] = true
+		createdNotes = append(createdNotes, toNoteResponse(n))
+	}
+
+	// Second pass: create links.
+	if h.linkRepo != nil {
+		for i, item := range req.Links {
+			sourceID, err := uuid.Parse(item.SourceNoteID)
+			if err != nil {
+				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "source_note_id", Reason: string(apicommon.ReasonInvalidFormat), Message: apicommon.MsgInvalidUUID})
+				continue
+			}
+			targetID, err := uuid.Parse(item.TargetNoteID)
+			if err != nil {
+				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "target_note_id", Reason: string(apicommon.ReasonInvalidFormat), Message: apicommon.MsgInvalidUUID})
+				continue
+			}
+
+			// Both endpoints must exist or have just been created.
+			if !createdNoteIDs[sourceID] {
+				existing, err := h.repo.FindByID(c.Request.Context(), sourceID)
+				if err != nil || existing == nil {
+					failedLinks = append(failedLinks, batchItemError{Index: i, Field: "source_note_id", Message: apicommon.MsgSourceNotFound})
+					continue
+				}
+			}
+			if !createdNoteIDs[targetID] {
+				existing, err := h.repo.FindByID(c.Request.Context(), targetID)
+				if err != nil || existing == nil {
+					failedLinks = append(failedLinks, batchItemError{Index: i, Field: "target_note_id", Message: apicommon.MsgTargetNotFound})
+					continue
+				}
+			}
+
+			linkType, err := link.NewLinkType(item.LinkType)
+			if err != nil {
+				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "link_type", Reason: string(apicommon.ReasonInvalidValue), Message: err.Error()})
+				continue
+			}
+
+			weight := 1.0
+			if item.Weight > 0 {
+				weight = item.Weight
+			}
+			weightVO, err := link.NewWeight(weight)
+			if err != nil {
+				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "weight", Reason: string(apicommon.ReasonOutOfRange), Message: err.Error()})
+				continue
+			}
+
+			metadata, err := link.NewMetadata(item.Metadata)
+			if err != nil {
+				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "metadata", Reason: string(apicommon.ReasonInvalidValue), Message: err.Error()})
+				continue
+			}
+
+			var newLink *link.Link
+			if userID != nil {
+				newLink = link.NewLinkWithCreator(sourceID, targetID, *userID, linkType, weightVO, metadata)
+			} else {
+				newLink = link.NewLink(sourceID, targetID, linkType, weightVO, metadata)
+			}
+
+			if err := h.linkRepo.Save(c.Request.Context(), newLink); err != nil {
+				if errors.Is(err, link.ErrDuplicateLink) {
+					failedLinks = append(failedLinks, batchItemError{Index: i, Field: "link", Message: apicommon.MsgDuplicateLink})
+					continue
+				}
+				failedLinks = append(failedLinks, batchItemError{Index: i, Message: apicommon.MsgFailedSaveLink})
+				continue
+			}
+
+			if h.eventPublisher != nil {
+				if err := h.eventPublisher.PublishLinkCreated(context.Background(), newLink.SourceNoteID().String(), newLink.TargetNoteID().String(), getUserIDString(c)); err != nil {
+					log.Printf("[NoteHandler] Failed to publish LinkCreated event for batch: %v", err)
+				}
+			}
+
+			createdLinks = append(createdLinks, importBatchLinkResponse{
+				ID:           newLink.ID().String(),
+				SourceNoteID: newLink.SourceNoteID().String(),
+				TargetNoteID: newLink.TargetNoteID().String(),
+				LinkType:     newLink.LinkType().String(),
+				Weight:       newLink.Weight().Value(),
+				Metadata:     newLink.Metadata().Value(),
+				CreatedAt:    newLink.CreatedAt(),
+				UpdatedAt:    newLink.UpdatedAt(),
+			})
+		}
+	} else if len(req.Links) > 0 {
+		for i := range req.Links {
+			failedLinks = append(failedLinks, batchItemError{Index: i, Message: "link repository not configured"})
+		}
+	}
+
+	if userID != nil && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
+	apicommon.JSONWithMessage(c, 200, importBatchResponse{
+		CreatedNotes: createdNotes,
+		CreatedLinks: createdLinks,
+		FailedNotes:  failedNotes,
+		FailedLinks:  failedLinks,
+	}, apicommon.MsgResourceCreated)
+}
+
 type bookmarkletRequest struct {
 	Title string `json:"title" binding:"required,max=200"`
 	URL   string `json:"url"   binding:"required,url,max=16384"`
 	Text  string `json:"text"  binding:"max=50000"`
-	Type  string `json:"type"  binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Type  string `json:"type"  binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 }
 
 type bookmarkletResponse struct {
@@ -317,9 +783,16 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		return
 	}
 
-	noteType := req.Type
-	if noteType == "" {
-		noteType = "asteroid"
+	noteTypeValue := req.Type
+	if noteTypeValue == "" {
+		noteTypeValue = "asteroid"
+	}
+	noteType, err := note.NewType(noteTypeValue)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, err.Error(), noteTypeValue),
+		})
+		return
 	}
 
 	content := importer.BuildContent(req.Title, req.URL, req.Text)
@@ -399,11 +872,11 @@ type importItem struct {
 	Title string `json:"title" binding:"max=1000"`
 	URL   string `json:"url"   binding:"required,url,max=16384"`
 	Text  string `json:"text"  binding:"max=50000"`
-	Type  string `json:"type"  binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Type  string `json:"type"  binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 }
 
 type importOptions struct {
-	DefaultType    string `json:"default_type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	DefaultType    string `json:"default_type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	ExtractContent bool   `json:"extract_content"`
 }
 
@@ -582,7 +1055,7 @@ func (h *Handler) ImportBookmarksStatus(c *gin.Context) {
 type updateNoteRequest struct {
 	Title    string                 `json:"title" binding:"omitempty,max=200"`
 	Content  string                 `json:"content" binding:"omitempty,max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -680,7 +1153,14 @@ func (h *Handler) Update(c *gin.Context) {
 		}
 	}
 	if req.Type != "" {
-		existing.SetType(req.Type)
+		noteType, err := note.NewType(req.Type)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, err.Error(), req.Type),
+			})
+			return
+		}
+		existing.SetType(noteType)
 	}
 
 	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
