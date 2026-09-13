@@ -278,7 +278,10 @@ jobs:
       - name: Run all Cucumber tests
         env:
           VITE_API_TARGET: http://127.0.0.1:8080
+          VITE_GRAPH_SERVICE_URL: ""
           BACKEND_URL: http://localhost:8080
+          FRONTEND_URL: http://localhost:5173
+          SKIP_AUTH: "true"
         run: npm run test:cucumber
 
       - name: Upload test results
