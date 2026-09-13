@@ -7,6 +7,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
 
 permissions:
   contents: read
@@ -454,7 +455,7 @@ jobs:
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
           REDIS_URL: localhost:6379
           MONGO_URL: mongodb://localhost:27017
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_SECRET: ${{ env.JWT_SECRET }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
           GRAPH_SERVICE_URL: ""
           SKIP_AUTH: "false"
