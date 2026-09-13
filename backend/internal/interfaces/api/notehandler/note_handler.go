@@ -294,6 +294,10 @@ func (h *Handler) Create(c *gin.Context) {
 			}
 		}
 	}
+	if fe := validateResolvedNoteType(noteType); fe != nil {
+		apicommon.BadRequest(c, fe)
+		return
+	}
 
 	// Get authenticated user ID if available
 	var newNote *note.Note
@@ -373,6 +377,19 @@ func toNoteResponse(n *note.Note) noteResponse {
 	}
 }
 
+// validateResolvedNoteType checks the final note type after metadata fallback.
+func validateResolvedNoteType(noteType string) []apicommon.FieldError {
+	if noteType == "" {
+		noteType = "unknown"
+	}
+	if !validation.ValidCelestialBodyTypes[noteType] {
+		return []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, "type must be one of the allowed values", noteType),
+		}
+	}
+	return nil
+}
+
 // buildNoteFromBatchItem validates an item and builds a domain note.
 func buildNoteFromBatchItem(item batchNoteItem, userID *uuid.UUID) (*note.Note, []apicommon.FieldError) {
 	title, err := note.NewTitle(item.Title)
@@ -396,6 +413,9 @@ func buildNoteFromBatchItem(item batchNoteItem, userID *uuid.UUID) (*note.Note, 
 			}
 		}
 	}
+	if fe := validateResolvedNoteType(noteType); fe != nil {
+		return nil, fe
+	}
 
 	if userID != nil {
 		return note.NewNoteWithCreator(title, content, noteType, metadata, *userID), nil
@@ -414,10 +434,6 @@ func buildImportNote(item importBatchNoteItem, userID *uuid.UUID) (*note.Note, [
 	if err != nil {
 		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), item.Content)}
 	}
-	metadata, err := note.NewMetadata(item.Metadata)
-	if err != nil {
-		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), item.Metadata)}
-	}
 
 	noteType := item.Type
 	if noteType == "" && item.Metadata != nil {
@@ -426,6 +442,22 @@ func buildImportNote(item importBatchNoteItem, userID *uuid.UUID) (*note.Note, [
 				noteType = ts
 			}
 		}
+	}
+	if fe := validateResolvedNoteType(noteType); fe != nil {
+		return nil, fe
+	}
+
+	// Preserve the source URL inside metadata so the client can query it later.
+	mergedMetadata := item.Metadata
+	if mergedMetadata == nil {
+		mergedMetadata = make(map[string]interface{})
+	}
+	if item.SourceURL != "" {
+		mergedMetadata["source_url"] = item.SourceURL
+	}
+	metadata, err := note.NewMetadata(mergedMetadata)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), mergedMetadata)}
 	}
 
 	opts := []note.NoteOption{note.WithIsPublic(item.IsPublic)}

@@ -273,7 +273,7 @@ func TestCreateNote_NewTitleError(t *testing.T) {
 func TestCreateNote_NewContentError(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 
-	longContent := strings.Repeat("a", 10001)
+	longContent := strings.Repeat("a", 50001)
 	body := fmt.Sprintf(`{"title":"T","content":"%s"}`, longContent)
 	w, c := newContext(t, http.MethodPost, "/notes", body)
 	h.Create(c)
@@ -471,7 +471,7 @@ func TestUpdateNote_NewContentError(t *testing.T) {
 
 	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
 
-	longContent := strings.Repeat("a", 10001)
+	longContent := strings.Repeat("a", 50001)
 	body := fmt.Sprintf(`{"content":"%s"}`, longContent)
 	w, c := newContext(t, http.MethodPut, "/notes/"+n.ID().String(), body)
 	withID(c, n.ID())

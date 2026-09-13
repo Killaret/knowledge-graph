@@ -2,6 +2,7 @@ package notehandler
 
 import (
 	"bytes"
+	"strings"
 
 	"context"
 
@@ -9,7 +10,6 @@ import (
 
 	"fmt"
 	"net/http"
-
 	"net/http/httptest"
 
 	"testing"
@@ -1171,6 +1171,128 @@ func TestDeleteBatchNotes_ForeignNoteRoute(t *testing.T) {
 	found, _ := repo.FindByID(ctx, nOwned.ID())
 	if found == nil {
 		t.Error("owned note was deleted even though foreign note was in the same batch")
+	}
+}
+
+func TestCreateNoteContent_20000(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	body := `{"title":"Long content","content":"` + strings.Repeat("a", 20000) + `"}`
+	req := httptest.NewRequest("POST", "/notes", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", w.Code)
+	}
+
+	all, _ := repo.FindAll(ctx)
+	if len(all) != 1 {
+		t.Fatalf("expected 1 note, got %d", len(all))
+	}
+	if len(all[0].Content().String()) != 20000 {
+		t.Errorf("expected content length 20000, got %d", len(all[0].Content().String()))
+	}
+}
+
+func TestUpdateNoteContent_20000(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	title, _ := note.NewTitle("Original")
+	content, _ := note.NewContent("Original content")
+	metadata, _ := note.NewMetadata(nil)
+	n := note.NewNote(title, content, "star", metadata)
+	_ = repo.Save(ctx, n)
+
+	body := `{"content":"` + strings.Repeat("a", 20000) + `"}`
+	req := httptest.NewRequest("PUT", "/notes/"+n.ID().String(), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	updated, _ := repo.FindByID(ctx, n.ID())
+	if len(updated.Content().String()) != 20000 {
+		t.Errorf("expected content length 20000, got %d", len(updated.Content().String()))
+	}
+}
+
+func TestCreateNoteInvalidTypeInMetadata(t *testing.T) {
+	r, _ := setupNoteRouter()
+
+	body := `{"title":"Bad Type","content":"content","metadata":{"type":"not_a_valid_type"}}`
+	req := httptest.NewRequest("POST", "/notes", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestCreateBatchNotesContent_20000(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	body := `{"notes":[{"title":"Long content","content":"` + strings.Repeat("a", 20000) + `"}]}`
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", w.Code)
+	}
+
+	all, _ := repo.FindAll(ctx)
+	if len(all) != 1 {
+		t.Fatalf("expected 1 note, got %d", len(all))
+	}
+}
+
+func TestCreateBatchNotesInvalidTypeInMetadata(t *testing.T) {
+	r, repo := setupNoteRouter()
+	ctx := context.Background()
+
+	body := `{"notes":[{"title":"Bad Type","content":"content","metadata":{"type":"not_a_valid_type"}}]}`
+	req := httptest.NewRequest("POST", "/notes/batch/create", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", w.Code)
+	}
+
+	all, _ := repo.FindAll(ctx)
+	if len(all) != 0 {
+		t.Fatalf("expected 0 notes in repo, got %d", len(all))
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	data := resp["data"].(map[string]interface{})
+	created := data["notes"].([]interface{})
+	failed := data["failed"].([]interface{})
+	if len(created) != 0 {
+		t.Fatalf("expected 0 created, got %d", len(created))
+	}
+	if len(failed) != 1 {
+		t.Fatalf("expected 1 failed, got %d", len(failed))
 	}
 }
 

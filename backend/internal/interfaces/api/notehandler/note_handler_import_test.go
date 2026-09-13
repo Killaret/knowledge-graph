@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -560,6 +561,71 @@ func TestImportBatch_InvalidLinkWeight(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestImportBatch_Content_20000(t *testing.T) {
+	r, repo, _, _ := setupImportRouter()
+	ctx := context.Background()
+
+	body := `{"notes":[{"title":"Long content","content":"` + strings.Repeat("a", 20000) + `","type":"star"}]}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/import/batch", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	all, err := repo.FindAll(ctx)
+	require.NoError(t, err)
+	assert.Len(t, all, 1)
+	assert.Equal(t, 20000, len(all[0].Content().String()))
+}
+
+func TestImportBatch_InvalidTypeInMetadata(t *testing.T) {
+	r, repo, _, _ := setupImportRouter()
+	ctx := context.Background()
+
+	body := `{"notes":[{"title":"Bad Type","content":"content","metadata":{"type":"not_a_valid_type"}}]}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/import/batch", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	all, err := repo.FindAll(ctx)
+	require.NoError(t, err)
+	assert.Len(t, all, 0)
+
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	data := resp["data"].(map[string]interface{})
+	createdNotes := data["created_notes"].([]interface{})
+	failedNotes := data["failed_notes"].([]interface{})
+	assert.Len(t, createdNotes, 0)
+	assert.Len(t, failedNotes, 1)
+}
+
+func TestImportBatch_PreservesSourceURL(t *testing.T) {
+	r, repo, _, _ := setupImportRouter()
+	ctx := context.Background()
+
+	body := `{"notes":[{"title":"Sourced","content":"content","type":"star","source_url":"https://example.com/source"}]}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/import/batch", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	all, err := repo.FindAll(ctx)
+	require.NoError(t, err)
+	require.Len(t, all, 1)
+	meta := all[0].Metadata().Value()
+	assert.Equal(t, "https://example.com/source", meta["source_url"])
 }
 
 func TestImportBatch_MissingNoteTitle(t *testing.T) {

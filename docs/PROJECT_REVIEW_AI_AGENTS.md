@@ -705,20 +705,24 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Интеграция: `REFRESH MATERIALIZED VIEW` с разреженным графом (≤2 связи на узел) завершается <1s.
 - E2E/контракт: `POST /notes/batch` возвращает `data[].id`, `import_task_id` и признак постобработки.
 
-### 19.6 BATCH-1: batch-роуты notes/links — на ревью Claude Code / владельца (2026-09-12)
+### 19.6 BATCH-1: batch-роуты notes/links — на ревью Claude Code / владельца (2026-09-13)
 
 **Что сделано.**
 
 - Реализованы `POST /api/v1/notes/batch/create`, `POST /api/v1/notes/batch/delete`, `POST /api/v1/import/batch`.
 - Старый `POST /api/v1/notes/batch` удалён из роутера и OpenAPI; фронтенд `deleteNotesBatch` переехал на `v1/notes/batch/delete`.
-- Добавлены позитивные и жёстко негативные тесты с проверкой репозиториев и побочных эффектов.
-- В ходе написания тестов найден и исправлен дефект: `POST /api/v1/import/batch` не проверял `FindByID == nil`, поэтому позволял создавать связи на несуществующие заметки; пустой `notes` теперь возвращает 400.
-- Прогоны: `go test ./...`, `go vet ./...`, `npm run test:unit -- --run`, `npm run check`, `npm run lint` зелёные (9 pre-existing warnings).
+- Покрытие велось в согласованном цикле: регрессионные тесты → намеренно падающие тесты → исправления.
+- Найдено и исправлено:
+  - `POST /api/v1/import/batch` не проверял `FindByID == nil` и позволял создавать связи на несуществующие заметки;
+  - пустой `notes` в `/import/batch` возвращал 200 вместо 400;
+  - доменный лимит `note.NewContent` (10 000 rune) расходился с API/OpenAPI (50 000 символов) — приведён к 50 000;
+  - `metadata.type` не валидировался по `ValidCelestialBodyTypes` в `POST /notes`, `/notes/batch/create` и `/import/batch`;
+  - `source_url` из импортного batch-айтема терялась и не сохранялась в метаданных.
+- Прогоны: `go test ./...`, `go vet ./...`, `go test ./cmd/server/...`, `npm run test:unit -- --run`, `npm run check`, `npm run lint` зелёные (9 pre-existing warnings).
 
 **Открытые риски / вопросы.**
 
 - Контракт ссылок в `/import/batch`: внешний Java/source-text handler не имеет UUID новых заметок. Текущий механизм клиентских `id` работает, но неудобен. Нужно решить: индексы массива, `external_id` с маппингом в ответе или упорядоченные операции. Обсуждается с Claude Code / владельцем.
-- TDD предложен как процесс на будущее: сначала падающий тест, потом реализация. Текущий batch покрыт регрессионными тестами задним числом.
 
 ## 18. AUD-4: контракт входа через Яндекс (2026-09-06)
 

@@ -2,7 +2,16 @@
 
 ## Статус
 
-**2026-09-12.** Реализовано Devin. Пользовательские batch-роуты (`/notes/batch/create`, `/notes/batch/delete`) и import batch (`/import/batch`) добавлены, старый `POST /notes/batch` удалён, OpenAPI обновлено. Добавлены позитивные и жёстко негативные тесты на все три роута с проверкой мутаций в мок-репозиториях. В ходе тестирования найден и исправлен дефект: `/import/batch` не проверял, что `FindByID` вернул `nil`, и мог создавать связи на несуществующие заметки; пустой массив `notes` теперь возвращает 400. Ждёт ревью Claude Code / владельца, в первую очередь по контракту ссылок в `/import/batch`.
+**2026-09-13.** Реализовано Devin. Пользовательские batch-роуты (`/notes/batch/create`, `/notes/batch/delete`) и import batch (`/import/batch`) добавлены, старый `POST /notes/batch` удалён, OpenAPI обновлено.
+
+Покрытие тестами велось в согласованном порядке: сначала регрессионные тесты на текущее поведение, затем намеренно падающие тесты, чтобы найти дыры, потом правки. Найдено и исправлено:
+- `/import/batch` не проверял, что `FindByID` вернул `nil`, и мог создавать связи на несуществующие заметки;
+- пустой `notes` в `/import/batch` возвращал 200 вместо 400;
+- домен `note.NewContent` ограничивал контент 10 000 rune, в то время как API/OpenAPI допускали 50 000 символов — лимит приведён к 50 000;
+- в `POST /notes`, `POST /notes/batch/create` и `POST /import/batch` тип заметки, переданный через `metadata.type`, не валидировался по справочнику допустимых типов;
+- `source_url` в `/import/batch` терялась и не сохранялась в метаданных.
+
+Ждёт ревью Claude Code / владельца, в первую очередь по контракту ссылок в `/import/batch`.
 
 ## Контекст
 
@@ -165,7 +174,11 @@
 - `POST /api/v1/import/batch`: синхронный best-effort, сначала notes, потом links, клиент может задать `id` заметки для ссылок внутри одного запроса; защита от перезаписи существующих `id`; пустой `notes` → 400.
 - Исправлен дефект: связи не создаются, если `source_note_id` или `target_note_id` не существуют и не были созданы в том же запросе.
 - Тесты: `backend/internal/interfaces/api/notehandler/note_handler_test.go`, `backend/internal/interfaces/api/notehandler/note_handler_import_test.go`, вспомогательный `mockLinkRepo` в `backend/internal/interfaces/api/notehandler/mock_repo.go`.
-- Прогоны: `go test ./...`, `go vet ./...`, `npm run test:unit -- --run`, `npm run check`, `npm run lint` — зелёные.
+- Дополнительно добавлены падающие (сначала) тесты:
+  - `TestCreateNoteContent_20000`, `TestUpdateNoteContent_20000`, `TestCreateBatchNotesContent_20000`, `TestImportBatch_Content_20000` — контент 20 000 символов;
+  - `TestCreateNoteInvalidTypeInMetadata`, `TestCreateBatchNotesInvalidTypeInMetadata`, `TestImportBatch_InvalidTypeInMetadata` — недопустимый тип через `metadata.type`;
+  - `TestImportBatch_PreservesSourceURL` — `source_url` должна сохраняться в метаданных.
+- Прогоны: `go test ./...`, `go vet ./...`, `go test ./cmd/server/...`, `npm run test:unit -- --run`, `npm run check`, `npm run lint` — зелёные.
 
 ## Открытые вопросы для обсуждения
 
@@ -178,13 +191,15 @@
 3. **Авторизация import batch:** JWT + API key? Отдельный `X-API-Key` или тот же middleware?
 4. **Типы импортируемых заметок:** ограничить `UI_TYPES` и `CelestialBody.UI_TYPES` как в IMP-1/IMP-3?
 
-## TDD — предложение по процессу
+## Процесс тестирования
 
-Текущую batch-реализацию уже сделали, поэтому ретроспективно добавлены регрессионные тесты. Для будущих фич (особенно нового контракта ссылок) можно применить TDD:
-1. Написать падающий тест на желаемый контракт/поведение.
-2. Реализовать минимальный код, который заставляет тест проходить.
-3. Отрефакторить, сохраняя зелёные тесты.
-Это на обсуждение с Claude Code / владельцем.
+Для BATCH-1 применён именно тот порядок, который обсуждался с владельцем:
+1. Сначала — проходящие регрессионные тесты на уже существующее поведение.
+2. Затем — намеренно падающие тесты, спроектированные на оставшиеся дыры (content 20 000, `metadata.type`, `source_url` и т.д.).
+3. Исправление найденных дефектов.
+4. Повтор до тех пор, пока новые осмысленные падающие тесты больше не находят реальных дефектов.
+
+Это не чистое TDD «сначала пишем тест на будущую фичу» — такой TDD остаётся на следующие фичи, особенно на новый контракт ссылок в `/import/batch`.
 
 ## Связанные issue/PR
 
