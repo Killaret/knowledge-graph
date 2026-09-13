@@ -521,9 +521,9 @@ describe("Home Page State", () => {
 
   it("exposes UI type filters sorted from broad to narrow", async () => {
     const homePage = await getHomePage();
-    const uiIds = homePage.typeFilters.filter((f) =>
-      CelestialBody.UI_TYPES.some((b) => b.type === f.id)
-    ).map((f) => f.id);
+    const uiIds = homePage.typeFilters
+      .filter((f) => CelestialBody.UI_TYPES.some((b) => b.type === f.id))
+      .map((f) => f.id);
     expect(uiIds).toEqual([
       "galaxy",
       "nebula",
