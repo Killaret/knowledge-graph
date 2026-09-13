@@ -2,28 +2,39 @@
 
 ## Статус
 
-**2026-09-13.** Обсуждение между владельцем и Devin. Нужно привести списки типов в единый, логичный порядок «от большего к меньшему» и зафиксировать его в домене (`NoteType` value object), backend-валидации, OpenAPI и frontend. После принятия постановки — реализация в ветке `BATCH-DDD-VALIDATION`.
+**2026-09-14.** Реализация завершена Devin в ветке `devin/batch-api-37`; передана на ревью Claude Code.
+- `blackhole` выше `star`.
+- `moon` включается в `UI_TYPES`.
+- `debris` остаётся ниже `dust`.
+- `dust` остаётся для быстрых заметок, которые потом обогащаются.
+- Дефолтный тип — `star` (явно, не первый элемент списка).
+- `NoteType` value object реализован; `NewNote`/`ReconstructNote`/`SetType` работают с `NoteType`.
+- Backend, frontend и OpenAPI синхронизированы одним каноническим порядком.
 
 ## Текущее состояние
 
 ### Backend
 
-- `ValidCelestialBodyTypes` в `backend/internal/interfaces/api/common/validation/validators.go` перечисляет 16 типов.
-- `POST /notes`, `/notes/batch/create`, `/import/batch` валидируют `type` через Gin `oneof`.
-- `note.NewNote` не валидирует `noteType` (записано в `BATCH-DDD-VALIDATION.md`).
+- `backend/internal/domain/note/type.go` — `NoteType` value object с `scaleRank`, `isUserSelectable`, валидацией, фолбеками.
+- `note.NewNote`/`NewNoteWithCreator`/`ReconstructNote`/`SetType` принимают `NoteType`; пустой/невалидный тип отклоняются.
+- `backend/internal/interfaces/api/common/validation/validators.go` — `IsValidCelestialBodyType` делегирует `note.NewType`.
+- `POST /notes`, `/notes/batch/create`, `/import/batch`, bookmarklet, batch обновления — все преобразуют строку в `NoteType` и отдают 400 при невалидном значении.
+- `backend/openAPI.yaml` — все enum-списки типов заметок приведены к единому каноническому порядку.
 
 ### Frontend
 
-- `CelestialBody.ALL` в `frontend/src/entities/shared/model/celestial-body.ts` содержит 16 типов в порядке:
-  `star, planet, moon, comet, galaxy, nebula, asteroid, satellite, blackhole, debris, dust, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination`.
-- `CelestialBody.UI_TYPES` = `isUi === true` даёт 10 типов:
-  `star, planet, comet, galaxy, nebula, asteroid, satellite, blackhole, debris, dust`.
-- `moon` есть в `ALL`, но **нет в `UI_TYPES`** — его нельзя выбрать в селекторе, хотя backend разрешает.
-- `TypeSelector` берёт `defaultSelected = types[0]`, поэтому по умолчанию выбирается `star` (первый в `UI_TYPES`).
+- `CelestialBody.ALL` в `frontend/src/entities/shared/model/celestial-body.ts` содержит 16 типов в каноническом порядке:
+  `galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination`.
+- Каждый тип имеет `scaleRank`.
+- `CelestialBody.UI_TYPES` = `isUi === true`, отсортирован по `scaleRank` убыванию, 11 типов:
+  `galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris`.
+- `moon` теперь в `UI_TYPES`.
+- `TypeSelector` явно ищет `star` как дефолт; `CreateNoteModal`, `NoteForm`, graph-формы по умолчанию используют `star`.
+- Селекторы импорта, фильтры графа и home page используют `CelestialBody.UI_TYPES`.
 
 ### OpenAPI
 
-- Несколько схем содержат разные enum-списки: где-то 8 типов, где-то 16, порядок разнится. Это дрейф.
+- Все `enum` типов заметок в `backend/openAPI.yaml` синхронизированы: 16 типов в каноническом порядке.
 
 ## Проблемы
 
@@ -33,7 +44,15 @@
 4. **Нет чёткой шкалы** для сортировки; сейчас порядок зависит от порядка объявлений в `ALL`.
 5. **Аномалии (`reality_rift` и др.)** в `ALL`, но не для пользовательского выбора — это ок, но они должны быть явно отмечены как системные.
 
-## Предлагаемая шкала
+## Решённая шкала
+
+**Решения владельца (2026-09-13):**
+- Порядок «от большего к меньшему» согласован.
+- `blackhole` находится **выше `star`** (массивнее и иное смысловое наполнение).
+- `moon` **включается в `UI_TYPES`**.
+- `debris` остаётся, но **ниже `dust`**.
+- `dust` остаётся для быстрых заметок, которые потом обогащаются.
+- Дефолтный тип при создании заметки — **`star`**.
 
 Идея — единый `scaleRank`: чем больше число, тем «крупнее» объект в космической иерархии (и шире смысловой охват заметки).
 
@@ -59,7 +78,7 @@
 
 ### Пользовательский список (`UI_TYPES`)
 
-Отсортированный по `scaleRank` сверху-вниз:
+Отсортированный по `scaleRank` сверху-вниз (11 типов):
 
 1. `galaxy`
 2. `nebula`
@@ -73,7 +92,9 @@
 10. `dust`
 11. `debris`
 
-(11 типов вместо 10; `moon` добавляется, `technical`/`unknown`/аномалии исключаются.)
+### Дефолтный выбор
+
+- Селектор по умолчанию выбирает **`star`**, не первый элемент списка.
 
 ### Пример для "аниме"
 
@@ -86,38 +107,50 @@
 - `asteroid` = Quote / scene note
 - `dust` = Raw link from browser
 
-## Что нужно сделать
+## Что сделано
 
 1. **Домен (`NoteType` value object)**
-   - Создать `backend/internal/domain/note/type.go`.
-   - Типы с `scaleRank`, `isUserSelectable`, `label`.
-   - Валидация в `NewNote`/`SetType`.
+   - Создан `backend/internal/domain/note/type.go`.
+   - Все типы с `scaleRank`, `IsUserSelectable`, `String`.
+   - `NewNote`/`SetType` валидируют `NoteType`; пустые/невалидные значения отклоняются.
 
 2. **Backend**
-   - Убрать `ValidCelestialBodyTypes` из `interfaces` или сделать его производным от доменного списка.
-   - Обновить `oneof` в DTO и OpenAPI одним единым списком.
+   - `IsValidCelestialBodyType` делегирует `note.NewType`.
+   - `oneof` в DTO и OpenAPI обновлены каноническим списком.
+   - Все обработчики и сервисы импорта преобразуют строку в `NoteType`.
 
 3. **Frontend**
-   - Добавить `scaleRank` в `CelestialBodyProps`.
-   - Добавить `moon` в `UI_TYPES`.
-   - Сортировать `UI_TYPES` по `scaleRank`.
-   - В `TypeSelector` сделать `defaultSelected = "star"` явно, а не `types[0]`.
+   - Добавлен `scaleRank` в `CelestialBodyProps`.
+   - `moon` включён в `UI_TYPES`.
+   - `UI_TYPES` сортируется по `scaleRank` убыванию.
+   - `TypeSelector` выбирает `star` явно.
+   - Все селекторы/фильтры (`CreateNoteModal`, `EditNoteModal`, `NoteForm`, graph-формы, импорт, фильтры графа/home page) используют `CelestialBody.UI_TYPES`.
 
 4. **OpenAPI**
-   - Привести все enum-списки к одному порядку и составу.
+   - Все enum-списки типов заметок приведены к единому порядку и составу.
 
 5. **Тесты**
-   - `celestial-body.test.ts` — проверить сортировку и 11 UI-типов.
-   - `note/type_test.go` — валидация.
-   - `note_handler_test.go` — не-UI типы отклоняются.
+   - `celestial-body.test.ts` — 11 UI-типов, порядок, `moon` присутствует, аномалии отсутствуют.
+   - `note/type_test.go` и `note/entity_test.go` — валидация `NoteType`.
+   - `notehandler` — негативные сценарии с невалидными типами.
 
-## Открытые вопросы для владельца / Claude Code
+## Результаты верификации
 
-1. Согласны ли с `scaleRank` выше?
-2. Добавлять ли `moon` в UI?
-3. Должен ли `blackhole` быть выше `star` (он массивнее, но это «проблема», а не тема)?
-4. Что делать с `comet`/`satellite`/`asteroid`/`dust` — текущий порядок логичен?
-5. Стоит ли `debris` переместить в конец (ниже `dust`) как архивное состояние?
+- `cd backend && go test ./...` — зелёное.
+- `cd backend && go vet ./...` — чисто.
+- `cd frontend && npm run test:unit` — 1381/1381 passed.
+- `cd frontend && npm run build` — успешно.
+- `cd frontend && npm run check` — 0 errors, 0 warnings.
+- `cd backend && go test ./cmd/server/...` (OpenAPI router contract) — проходит.
+
+## Следующий шаг
+
+- Ревью Claude Code: `backend/internal/domain/note/type.go`, `entity.go`, `note_handler.go`, `validators.go`, `openAPI.yaml`, `frontend/src/entities/shared/model/celestial-body.ts`, `TypeSelector.svelte`, селекторы/фильтры.
+
+## Открытые вопросы для Claude Code / владельца
+
+- Проверить `scaleRank` и иерархию на предмет интуитивности.
+- Подтвердить, что `moon` должен быть в пользовательском селекторе.
 
 ## Связанное
 

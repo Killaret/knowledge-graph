@@ -11,7 +11,7 @@ type Note struct {
 	id        uuid.UUID
 	title     Title
 	content   Content
-	type_     string
+	type_     NoteType
 	metadata  Metadata
 	creatorID *uuid.UUID
 	isPublic  bool
@@ -37,10 +37,10 @@ func WithID(id uuid.UUID) NoteOption {
 	}
 }
 
-func NewNote(title Title, content Content, noteType string, metadata Metadata, opts ...NoteOption) *Note {
+func NewNote(title Title, content Content, noteType NoteType, metadata Metadata, opts ...NoteOption) *Note {
 	now := time.Now()
-	if noteType == "" {
-		noteType = "unknown"
+	if !noteType.IsValid() {
+		noteType = Unknown()
 	}
 	n := &Note{
 		id:        uuid.New(),
@@ -59,10 +59,10 @@ func NewNote(title Title, content Content, noteType string, metadata Metadata, o
 }
 
 // NewNoteWithCreator creates a new note with a creator ID
-func NewNoteWithCreator(title Title, content Content, noteType string, metadata Metadata, creatorID uuid.UUID, opts ...NoteOption) *Note {
+func NewNoteWithCreator(title Title, content Content, noteType NoteType, metadata Metadata, creatorID uuid.UUID, opts ...NoteOption) *Note {
 	now := time.Now()
-	if noteType == "" {
-		noteType = "unknown"
+	if !noteType.IsValid() {
+		noteType = Unknown()
 	}
 	n := &Note{
 		id:        uuid.New(),
@@ -81,9 +81,9 @@ func NewNoteWithCreator(title Title, content Content, noteType string, metadata 
 }
 
 // ReconstructNote reconstructs a note from saved data (used by repository)
-func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, createdAt, updatedAt time.Time, opts ...NoteOption) *Note {
-	if noteType == "" {
-		noteType = "unknown"
+func ReconstructNote(id uuid.UUID, title Title, content Content, noteType NoteType, metadata Metadata, createdAt, updatedAt time.Time, opts ...NoteOption) *Note {
+	if !noteType.IsValid() {
+		noteType = Unknown()
 	}
 	n := &Note{
 		id:        id,
@@ -102,9 +102,9 @@ func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string
 }
 
 // ReconstructNoteWithCreator reconstructs a note with creator ID
-func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, creatorID *uuid.UUID, createdAt, updatedAt time.Time, opts ...NoteOption) *Note {
-	if noteType == "" {
-		noteType = "unknown"
+func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, noteType NoteType, metadata Metadata, creatorID *uuid.UUID, createdAt, updatedAt time.Time, opts ...NoteOption) *Note {
+	if !noteType.IsValid() {
+		noteType = Unknown()
 	}
 	n := &Note{
 		id:        id,
@@ -140,7 +140,7 @@ func (n *Note) Metadata() Metadata {
 }
 
 func (n *Note) Type() string {
-	return n.type_
+	return n.type_.String()
 }
 
 func (n *Note) CreatorID() *uuid.UUID {
@@ -165,8 +165,8 @@ func (n *Note) SetCreatorID(creatorID uuid.UUID) {
 	n.updatedAt = time.Now()
 }
 
-func (n *Note) SetType(noteType string) {
-	if noteType != "" {
+func (n *Note) SetType(noteType NoteType) {
+	if noteType.IsValid() {
 		n.type_ = noteType
 		n.updatedAt = time.Now()
 	}

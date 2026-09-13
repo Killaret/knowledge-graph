@@ -199,7 +199,7 @@ func TestSyncDraft(t *testing.T) {
 	d := noteDomain.NewDraft(uuid.New(), uuid.New(), "content", "title")
 	userID := d.UserID()
 	existingNote := noteDomain.ReconstructNoteWithCreator(
-		d.NoteID(), title, content, "star", metadata, &userID,
+		d.NoteID(), title, content, noteDomain.MustType("star"), metadata, &userID,
 		time.Now().Add(-time.Hour), time.Now().Add(-time.Hour),
 	)
 

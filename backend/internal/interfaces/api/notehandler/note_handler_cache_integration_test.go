@@ -203,7 +203,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteUpdateInvalidatesGraphCac
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNoteWithCreator(title, content, "star", metadata, userID)
+	n := note.NewNoteWithCreator(title, content, note.MustType("star"), metadata, userID)
 	err := s.repo.Save(ctx, n)
 	s.Require().NoError(err)
 
@@ -274,7 +274,7 @@ func (s *NoteHandlerCacheIntegrationTestSuite) TestNoteDeleteInvalidatesGraphCac
 	title, _ := note.NewTitle("To Delete")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNoteWithCreator(title, content, "star", metadata, userID)
+	n := note.NewNoteWithCreator(title, content, note.MustType("star"), metadata, userID)
 	err := s.repo.Save(ctx, n)
 	s.Require().NoError(err)
 

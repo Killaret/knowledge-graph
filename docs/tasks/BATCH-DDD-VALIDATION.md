@@ -2,9 +2,15 @@
 
 ## Статус
 
-**2026-09-13.** Devin обнаружил, что валидация celestial-body типа заметки (`star`, `planet`, `technical` и т.д.) сейчас дублируется в handler (`note_handler.go`) и не инкапсулирована в домене. Это нарушает ADR-005 «Validation Strategy» и идею rich domain model. Нужна постановка/рефакторинг.
+**2026-09-14.** Реализовано Devin в ветке `devin/batch-api-37`; передано на ревью Claude Code.
+- Выбран вариант B: `note.NewType(value string) (NoteType, error)` и `Note.SetType(noteType NoteType)`.
+- `NoteType` value object живёт в `backend/internal/domain/note/type.go`.
+- Конструкторы и реконструкторы `Note` принимают `NoteType`.
+- Обработчики преобразуют строку в `NoteType` через `NewType` и отдают 400 при невалидном значении.
+- `validateResolvedNoteType` удалён; `IsValidCelestialBodyType` делегирует домену.
+- Тесты `note/type_test.go`, `entity_test.go`, `value_objects_test.go`, `notehandler/*` обновлены.
 
-## Что не так
+## Что было не так
 
 - `note.NewNote` и `note.NewNoteWithCreator` принимают `noteType string` и не валидируют его, не возвращают `error`.
 - `note.Note.SetType` также не валидирует значение.
@@ -19,18 +25,19 @@
 - **Business invariants** (допустимые типы, пустой title, длина content) по ADR-005 должны жить в domain.
 - **Syntax validation** (JSON, max length в байтах, oneof в binding) — это задача `interfaces`, но она не должна заменять доменные инварианты.
 
-## Что нужно сделать
+## Что сделано
 
-1. Превратить `noteType` в полноценный value object или хотя бы защитить конструктор/сеттер:
-   - Вариант A: новый `note.NewNote(...)` возвращает `(*Note, error)`. Это ломает много тестов, но чисто по архитектуре.
-   - Вариант B: отдельный `note.NewType(value string) (NoteType, error)` и `Note.SetType(noteType NoteType)`. Меньше ломает существующий код.
-2. Убрать дублирующую `validateResolvedNoteType` из `note_handler.go` после того, как домен начнёт отклонять невалидные типы.
-3. Обновить тесты: `entity_test.go`, `value_objects_test.go`, `handler_unit_test.go`, `note_handler_test.go`, `note_handler_import_test.go`.
-4. Проверить `Update` handler: `existing.SetType(req.Type)` должен обрабатывать `error`.
+1. `note.NewType(value string) (NoteType, error)` — value object с валидацией, `scaleRank`, `IsUserSelectable`.
+2. `Note` хранит `NoteType`; конструкторы и реконструкторы принимают `NoteType`.
+3. `note.SetType(noteType NoteType)` игнорирует/не применяет zero value.
+4. Дублирующая `validateResolvedNoteType` удалена из `note_handler.go`; `resolveNoteType` использует `note.NewType`.
+5. `POST /notes`, `POST /notes/batch/create`, `POST /import/batch`, bookmarklet, batch update — все через `note.NewType`.
+6. `IsValidCelestialBodyType` делегирует `note.NewType`.
+7. Тесты обновлены и дополнены.
 
-## Рекомендация
+## Рекомендация по дальнейшему улучшению
 
-Вариант A — правильный, но радикальный. Лучше сделать в рамках отдельного PR/ветки, потому что затронет ~80 тестов и несколько handler'ов. Если нужно быстрое решение здесь и сейчас — вариант B плюс пометка TODO о миграции на A.
+Вариант A (`NewNote(...) (*Note, error)`) остаётся более чистым с точки зрения DDD, но требует отдельного рефакторинга ~80 тестов. Вариант B закрывает текущий риск обхода валидации.
 
 ## Связанное
 
@@ -43,4 +50,4 @@
 
 ## Следующее действие
 
-Claude Code / владелец решает: A или B, Devin выполняет рефакторинг после принятой постановки.
+Ревью Claude Code: `backend/internal/domain/note/type.go`, `entity.go`, `note_handler.go`, `validators.go`; приём решения о миграции на вариант A.

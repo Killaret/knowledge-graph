@@ -102,7 +102,7 @@ func (m *mockNoteRepoForAnalytics) add(id uuid.UUID, title, content string) {
 	t, _ := note.NewTitle(title)
 	c, _ := note.NewContent(content)
 	md, _ := note.NewMetadata(nil)
-	n := note.NewNote(t, c, "star", md)
+	n := note.NewNote(t, c, note.MustType("star"), md)
 	m.notes[id] = n
 }
 

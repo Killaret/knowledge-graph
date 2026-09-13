@@ -45,7 +45,7 @@
   let {
     title = $bindable(""),
     content = $bindable(""),
-    defaultType = "planet",
+    defaultType = "star",
     type = $bindable(defaultType),
     types,
     loading = false,

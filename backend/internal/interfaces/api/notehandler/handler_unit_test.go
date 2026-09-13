@@ -184,7 +184,7 @@ func newTestNote(t *testing.T, title, content, noteType string) *note.Note {
 	require.NoError(t, err)
 	meta, err := note.NewMetadata(nil)
 	require.NoError(t, err)
-	return note.NewNote(ttl, cnt, noteType, meta)
+	return note.NewNote(ttl, cnt, note.MustType(noteType), meta)
 }
 
 func newContext(t *testing.T, method, target, body string, userID ...uuid.UUID) (*httptest.ResponseRecorder, *gin.Context) {

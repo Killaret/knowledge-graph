@@ -129,7 +129,7 @@ func (s *NoteHandlerSemanticIntegrationTestSuite) createNote(title, content, not
 	s.Require().NoError(err)
 	metadata, err := note.NewMetadata(map[string]interface{}{})
 	s.Require().NoError(err)
-	n := note.NewNoteWithCreator(t, c, noteType, metadata, s.testUserID)
+	n := note.NewNoteWithCreator(t, c, note.MustType(noteType), metadata, s.testUserID)
 
 	ctx := context.Background()
 	s.Require().NoError(s.noteRepo.Save(ctx, n), "failed to save note")

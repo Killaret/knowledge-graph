@@ -149,7 +149,7 @@ func TestGetNote(t *testing.T) {
 
 	metadata, _ := note.NewMetadata(nil)
 
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	ctx := context.Background()
 
@@ -197,7 +197,7 @@ func TestUpdateNote(t *testing.T) {
 
 	metadata, _ := note.NewMetadata(nil)
 
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	_ = repo.Save(ctx, n)
 
@@ -247,7 +247,7 @@ func TestDeleteNote(t *testing.T) {
 
 	metadata, _ := note.NewMetadata(nil)
 
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 
 	_ = repo.Save(ctx, n)
 
@@ -280,7 +280,7 @@ func TestGetSuggestions_EmptyFallback(t *testing.T) {
 	title, _ := note.NewTitle("SugTest")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	ctx := context.Background()
 	_ = repo.Save(ctx, n)
 
@@ -322,12 +322,12 @@ func TestDeleteBatchNotes(t *testing.T) {
 	title1, _ := note.NewTitle("ToDelete1")
 	content1, _ := note.NewContent("Content1")
 	metadata1, _ := note.NewMetadata(nil)
-	n1 := note.NewNote(title1, content1, "star", metadata1)
+	n1 := note.NewNote(title1, content1, note.MustType("star"), metadata1)
 
 	title2, _ := note.NewTitle("ToDelete2")
 	content2, _ := note.NewContent("Content2")
 	metadata2, _ := note.NewMetadata(nil)
-	n2 := note.NewNote(title2, content2, "planet", metadata2)
+	n2 := note.NewNote(title2, content2, note.MustType("planet"), metadata2)
 
 	_ = repo.Save(ctx, n1)
 	_ = repo.Save(ctx, n2)
@@ -540,7 +540,7 @@ func TestListNotesPagination(t *testing.T) {
 		title, _ := note.NewTitle(fmt.Sprintf("Note %d", i))
 		content, _ := note.NewContent(fmt.Sprintf("Content %d", i))
 		metadata, _ := note.NewMetadata(nil)
-		n := note.NewNote(title, content, "star", metadata)
+		n := note.NewNote(title, content, note.MustType("star"), metadata)
 		_ = repo.Save(ctx, n)
 	}
 
@@ -586,7 +586,7 @@ func TestUpdateNoteEmptyTitle(t *testing.T) {
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	_ = repo.Save(ctx, n)
 
 	body := `{"title":""}`
@@ -607,7 +607,7 @@ func TestUpdateNoteEmptyContent(t *testing.T) {
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	_ = repo.Save(ctx, n)
 
 	body := `{"content":""}`
@@ -628,7 +628,7 @@ func TestUpdateNoteInvalidJSON(t *testing.T) {
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	_ = repo.Save(ctx, n)
 
 	body := `invalid json`
@@ -648,7 +648,7 @@ func TestUpdateNoteTooLongTitle(t *testing.T) {
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	_ = repo.Save(ctx, n)
 
 	longTitle := ""
@@ -673,7 +673,7 @@ func TestUpdateNoteTooLongContent(t *testing.T) {
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	_ = repo.Save(ctx, n)
 
 	longContent := ""
@@ -698,7 +698,7 @@ func TestUpdateNoteWithMetadata(t *testing.T) {
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	_ = repo.Save(ctx, n)
 
 	body := `{"title":"Updated Title","metadata":{"key":"value"}}`
@@ -718,7 +718,7 @@ func TestUpdateNoteInvalidMetadata(t *testing.T) {
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	_ = repo.Save(ctx, n)
 
 	// Invalid metadata (circular reference)
@@ -768,7 +768,7 @@ func TestUpdateNoteType(t *testing.T) {
 	title, _ := note.NewTitle("Original Title")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	_ = repo.Save(ctx, n)
 
 	body := `{"type":"planet"}`
@@ -791,7 +791,7 @@ func TestListPagination(t *testing.T) {
 		title, _ := note.NewTitle(fmt.Sprintf("N%d", i))
 		content, _ := note.NewContent("c")
 		metadata, _ := note.NewMetadata(nil)
-		n := note.NewNote(title, content, "star", metadata)
+		n := note.NewNote(title, content, note.MustType("star"), metadata)
 		_ = repo.Save(ctx, n)
 	}
 
@@ -1110,12 +1110,12 @@ func TestDeleteBatchNotes_Owned(t *testing.T) {
 	title1, _ := note.NewTitle("Owned1")
 	content1, _ := note.NewContent("Content1")
 	meta1, _ := note.NewMetadata(nil)
-	n1 := note.NewNoteWithCreator(title1, content1, "star", meta1, userID)
+	n1 := note.NewNoteWithCreator(title1, content1, note.MustType("star"), meta1, userID)
 
 	title2, _ := note.NewTitle("Owned2")
 	content2, _ := note.NewContent("Content2")
 	meta2, _ := note.NewMetadata(nil)
-	n2 := note.NewNoteWithCreator(title2, content2, "planet", meta2, userID)
+	n2 := note.NewNoteWithCreator(title2, content2, note.MustType("planet"), meta2, userID)
 
 	_ = repo.Save(ctx, n1)
 	_ = repo.Save(ctx, n2)
@@ -1147,12 +1147,12 @@ func TestDeleteBatchNotes_ForeignNoteRoute(t *testing.T) {
 	title, _ := note.NewTitle("Foreign")
 	content, _ := note.NewContent("Content")
 	meta, _ := note.NewMetadata(nil)
-	n := note.NewNoteWithCreator(title, content, "star", meta, foreignUserID)
+	n := note.NewNoteWithCreator(title, content, note.MustType("star"), meta, foreignUserID)
 
 	titleOwned, _ := note.NewTitle("Owned")
 	contentOwned, _ := note.NewContent("Content")
 	metaOwned, _ := note.NewMetadata(nil)
-	nOwned := note.NewNoteWithCreator(titleOwned, contentOwned, "planet", metaOwned, userID)
+	nOwned := note.NewNoteWithCreator(titleOwned, contentOwned, note.MustType("planet"), metaOwned, userID)
 
 	_ = repo.Save(ctx, n)
 	_ = repo.Save(ctx, nOwned)
@@ -1205,7 +1205,7 @@ func TestUpdateNoteContent_20000(t *testing.T) {
 	title, _ := note.NewTitle("Original")
 	content, _ := note.NewContent("Original content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	_ = repo.Save(ctx, n)
 
 	body := `{"content":"` + strings.Repeat("a", 20000) + `"}`

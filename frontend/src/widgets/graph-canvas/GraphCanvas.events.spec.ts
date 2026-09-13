@@ -381,7 +381,7 @@ describe("GraphCanvas events", () => {
     expect(onNoteCreate).toHaveBeenCalledWith({
       title: "New Note",
       content: "",
-      type: "planet",
+      type: "star",
     });
   });
 

@@ -2170,7 +2170,7 @@ components:
           type: string
         type:
           type: string
-          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
         metadata:
           type: object
         is_public:
@@ -2195,7 +2195,7 @@ components:
           maxLength: 50000
         type:
           type: string
-          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
         metadata:
           type: object
 
@@ -2217,7 +2217,7 @@ components:
           maxLength: 50000
         type:
           type: string
-          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula, blackhole, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
 
     BookmarkletResponse:
       type: object
@@ -2251,7 +2251,7 @@ components:
           maxLength: 50000
         type:
           type: string
-          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula, blackhole, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
 
     ImportBookmarksPreviewRequest:
       type: object
@@ -2268,7 +2268,7 @@ components:
           properties:
             default_type:
               type: string
-              enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula, blackhole, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+              enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
               default: asteroid
             extract_content:
               type: boolean
@@ -2414,7 +2414,7 @@ components:
           maxLength: 50000
         type:
           type: string
-          enum: [star, planet, comet, nebula, galaxy, asteroid, debris, blackhole, satellite, dust, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
         metadata:
           type: object
 
@@ -2474,7 +2474,7 @@ components:
           maxLength: 50000
         type:
           type: string
-          enum: [star, planet, comet, nebula, galaxy, asteroid, debris, blackhole, satellite, dust, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
         is_public:
           type: boolean
         source_url:
@@ -2624,7 +2624,7 @@ components:
           type: string
         type:
           type: string
-          enum: [star, planet, moon, asteroid, nebula, satellite, comet, blackhole, galaxy]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
 
     GraphLink:
       type: object

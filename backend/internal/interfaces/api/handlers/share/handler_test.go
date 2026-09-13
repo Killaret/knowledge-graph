@@ -63,7 +63,7 @@ func createTestNote(t *testing.T, noteRepo *postgres.NoteRepository, creatorID u
 	require.NoError(t, err)
 	meta, err := note.NewMetadata(map[string]interface{}{"foo": "bar"})
 	require.NoError(t, err)
-	n := note.NewNoteWithCreator(title, content, "star", meta, creatorID)
+	n := note.NewNoteWithCreator(title, content, note.MustType("star"), meta, creatorID)
 	require.NoError(t, noteRepo.Save(ctx, n))
 	return n.ID()
 }

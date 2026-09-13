@@ -990,3 +990,37 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Открытые Dependabot-PR: **#25** (`yake`) — отклонён в пользу замены на `keybert` (MIT) с лемматизацией; **#79** (`nltk` 3.8.1 → 3.10.3) — смержен с `allow-ghsas: GHSA-8mgp-746c-j5xp`.
 - Frontend coverage после всех обновлений: **1381/1381 unit-тестов passed**, lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04% — выше 70%.
 - `npm run check` — 0 errors, 0 warnings; `npm run lint` — 0 errors, 9 pre-existing warnings.
+
+## 24. NOTE-TYPE-TAXONOMY и DDD `NoteType` value object (2026-09-14)
+
+**Контекст.** Типы заметок (`galaxy`, `nebula`, `blackhole`, `star`, `planet`, `moon`, `comet`, `satellite`, `asteroid`, `dust`, `debris`, плюс системные/аномалии) были рассогласованы между backend, frontend и OpenAPI. `moon` был известен домену, но отсутствовал в пользовательском селекторе; порядок в списках шёл не по космической иерархии; `blackhole` спорно располагался ниже `star`; дефолтный тип зависел от `types[0]`.
+
+**Решения владельца:**
+- Единая шкала `scaleRank` от `galaxy` (100) к `debris` (5).
+- `blackhole` выше `star` (массивнее и иное смысловое наполнение).
+- `moon` включается в пользовательский UI.
+- `debris` ниже `dust`; `dust` остаётся для быстрых захватов/инбокса.
+- Дефолтный тип при создании заметки — `star`.
+
+**Реализация Devin (ветка `devin/batch-api-37`):**
+- `backend/internal/domain/note/type.go` — `NoteType` value object с `scaleRank`, `IsUserSelectable`, валидацией, `DefaultNoteType()`.
+- `backend/internal/domain/note/entity.go` — `Note` хранит `NoteType`; конструкторы и `SetType` принимают `NoteType`.
+- `backend/internal/interfaces/api/notehandler/note_handler.go` — `resolveNoteType` через `note.NewType`; `validateResolvedNoteType` удалён.
+- `backend/internal/interfaces/api/common/validation/validators.go` — `IsValidCelestialBodyType` делегирует `note.NewType`.
+- `backend/internal/infrastructure/db/postgres/note_repo.go` — `toDomainNote` преобразует строки БД в `NoteType`; пустые legacy-значения мапятся в `star`.
+- `backend/internal/application/import/service.go` — импорт преобразует типы через `note.NewType`; дефолт `asteroid` сохранён.
+- `backend/openAPI.yaml` — все note-type enum приведены к единому каноническому порядку.
+- `frontend/src/entities/shared/model/celestial-body.ts` — `scaleRank` для всех типов; `UI_TYPES` включает `moon` и сортируется по `scaleRank`; `ALL` в каноническом порядке.
+- `frontend/src/components/molecules/TypeSelector.svelte` — `defaultSelected` ищет `star`, а не `types[0]`.
+- `CreateNoteModal`, `NoteForm`, graph-формы, импорт закладок, фильтры графа/home page — все используют `CelestialBody.UI_TYPES`.
+- Тесты: `note/type_test.go`, `celestial-body.test.ts`, `CreateNoteModal.spec.ts`, `EditNoteModal.spec.ts`, `GraphCanvas.events.spec.ts`, `home-page.svelte.test.ts`.
+
+**Верификация:**
+- `cd backend && go test ./...` — зелёное.
+- `cd backend && go vet ./...` — чисто.
+- `cd backend && go test ./cmd/server/...` — контрактный тест проходит.
+- `cd frontend && npm run test:unit -- --run` — 1381/1381 passed.
+- `cd frontend && npm run build` — успешно.
+- `cd frontend && npm run check` — 0 errors, 0 warnings.
+
+**Статус:** реализация готова, передана на ревью Claude Code. Не мержить без ревью.

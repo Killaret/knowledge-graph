@@ -24,7 +24,7 @@
 
   let title = $state("");
   let content = $state("");
-  let type = $state<string>(CelestialBody.PLANET.type);
+  let type = $state<string>(CelestialBody.STAR.type);
   let loading = $state(false);
   let apiError = $state<ErrorResponse | null>(null);
   let currentMode = $state("standard");
@@ -34,7 +34,7 @@
   const initialType = $derived(
     parentNote
       ? (defaultType ?? CelestialBody.getChildSuggestion(parentNote.type))
-      : CelestialBody.PLANET.type
+      : CelestialBody.STAR.type
   );
 
   $effect(() => {

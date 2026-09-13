@@ -102,7 +102,7 @@ func TestImportBookmarksPreview(t *testing.T) {
 	title, _ := note.NewTitle("Existing")
 	content, _ := note.NewContent("content")
 	meta, _ := note.NewMetadata(map[string]interface{}{"source_url": "https://example.com/existing"})
-	existing := note.NewNoteWithCreator(title, content, "asteroid", meta, userID)
+	existing := note.NewNoteWithCreator(title, content, note.MustType("asteroid"), meta, userID)
 	require.NoError(t, repo.Save(ctx, existing))
 
 	body := `{
@@ -291,7 +291,7 @@ func TestImportBatch_WithExistingNoteLink(t *testing.T) {
 	title, _ := note.NewTitle("Existing")
 	content, _ := note.NewContent("content")
 	meta, _ := note.NewMetadata(nil)
-	existing := note.NewNoteWithCreator(title, content, "star", meta, userID)
+	existing := note.NewNoteWithCreator(title, content, note.MustType("star"), meta, userID)
 	require.NoError(t, repo.Save(ctx, existing))
 
 	newID := uuid.New().String()
@@ -331,7 +331,7 @@ func TestImportBatch_ClientIDCollisionWithExisting(t *testing.T) {
 	title, _ := note.NewTitle("Original")
 	content, _ := note.NewContent("content")
 	meta, _ := note.NewMetadata(nil)
-	existing := note.NewNoteWithCreator(title, content, "star", meta, userID)
+	existing := note.NewNoteWithCreator(title, content, note.MustType("star"), meta, userID)
 	require.NoError(t, repo.Save(ctx, existing))
 
 	body := fmt.Sprintf(`{"notes":[{"id":"%s","title":"Overwritten","content":"new","type":"planet"}]}`, existing.ID().String())

@@ -128,7 +128,7 @@ func (h *Handler) enqueueBackupOnNoteChange(ctx context.Context) {
 type createNoteRequest struct {
 	Title    string                 `json:"title" binding:"required,max=200"`
 	Content  string                 `json:"content" binding:"omitempty,max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -139,7 +139,7 @@ type deleteBatchRequest struct {
 type batchNoteItem struct {
 	Title    string                 `json:"title" binding:"required,max=200"`
 	Content  string                 `json:"content" binding:"omitempty,max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -163,7 +163,7 @@ type importBatchNoteItem struct {
 	ID        string                 `json:"id" binding:"omitempty,uuid"`
 	Title     string                 `json:"title" binding:"required,max=200"`
 	Content   string                 `json:"content" binding:"omitempty,max=50000"`
-	Type      string                 `json:"type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Type      string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	IsPublic  bool                   `json:"is_public"`
 	SourceURL string                 `json:"source_url" binding:"omitempty,url,max=16384"`
 	Metadata  map[string]interface{} `json:"metadata"`
@@ -216,7 +216,7 @@ var noteValidationMessages = map[string]string{
 	"title.required": "Title is required",
 	"title.max":      "Title must not exceed 200 characters",
 	"content.max":    "Content must not exceed 50000 characters",
-	"type.oneof":     "Type must be one of: star, planet, comet, nebula, galaxy, asteroid, debris, blackhole, satellite, dust, moon, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination",
+	"type.oneof":     "Type must be one of: galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination",
 }
 
 // NoteValidationErrors defines human-readable error messages for note validation
@@ -224,7 +224,7 @@ var NoteValidationErrors = map[string]string{
 	"title.required": "Title is required",
 	"title.max":      "Title must not exceed 200 characters",
 	"content.max":    "Content must not exceed 50000 characters",
-	"type.oneof":     "Type must be one of: star, planet, comet, galaxy, asteroid, satellite, debris, nebula",
+	"type.oneof":     "Type must be one of: galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination",
 }
 
 // LinkValidationErrors defines human-readable error messages for link validation (used by import batch).
@@ -285,16 +285,8 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	// Определяем тип: сначала из корня запроса, затем из metadata
-	noteType := req.Type
-	if noteType == "" && req.Metadata != nil {
-		if t, ok := req.Metadata["type"]; ok {
-			if ts, ok := t.(string); ok && ts != "" {
-				noteType = ts
-			}
-		}
-	}
-	if fe := validateResolvedNoteType(noteType); fe != nil {
+	noteType, fe := resolveNoteType(req.Type, req.Metadata)
+	if fe != nil {
 		apicommon.BadRequest(c, fe)
 		return
 	}
@@ -377,17 +369,26 @@ func toNoteResponse(n *note.Note) noteResponse {
 	}
 }
 
-// validateResolvedNoteType checks the final note type after metadata fallback.
-func validateResolvedNoteType(noteType string) []apicommon.FieldError {
-	if noteType == "" {
-		noteType = "unknown"
-	}
-	if !validation.ValidCelestialBodyTypes[noteType] {
-		return []apicommon.FieldError{
-			apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, "type must be one of the allowed values", noteType),
+// resolveNoteType determines the final note type from the explicit value or metadata,
+// validates it through the domain NoteType value object, and returns structured errors.
+func resolveNoteType(value string, metadata map[string]interface{}) (note.NoteType, []apicommon.FieldError) {
+	if value == "" && metadata != nil {
+		if t, ok := metadata["type"]; ok {
+			if ts, ok := t.(string); ok && ts != "" {
+				value = ts
+			}
 		}
 	}
-	return nil
+	if value == "" {
+		value = note.Default().String()
+	}
+	noteType, err := note.NewType(value)
+	if err != nil {
+		return note.NoteType{}, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, err.Error(), value),
+		}
+	}
+	return noteType, nil
 }
 
 // buildNoteFromBatchItem validates an item and builds a domain note.
@@ -405,15 +406,8 @@ func buildNoteFromBatchItem(item batchNoteItem, userID *uuid.UUID) (*note.Note, 
 		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), item.Metadata)}
 	}
 
-	noteType := item.Type
-	if noteType == "" && item.Metadata != nil {
-		if t, ok := item.Metadata["type"]; ok {
-			if ts, ok := t.(string); ok && ts != "" {
-				noteType = ts
-			}
-		}
-	}
-	if fe := validateResolvedNoteType(noteType); fe != nil {
+	noteType, fe := resolveNoteType(item.Type, item.Metadata)
+	if fe != nil {
 		return nil, fe
 	}
 
@@ -435,15 +429,8 @@ func buildImportNote(item importBatchNoteItem, userID *uuid.UUID) (*note.Note, [
 		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), item.Content)}
 	}
 
-	noteType := item.Type
-	if noteType == "" && item.Metadata != nil {
-		if t, ok := item.Metadata["type"]; ok {
-			if ts, ok := t.(string); ok && ts != "" {
-				noteType = ts
-			}
-		}
-	}
-	if fe := validateResolvedNoteType(noteType); fe != nil {
+	noteType, fe := resolveNoteType(item.Type, item.Metadata)
+	if fe != nil {
 		return nil, fe
 	}
 
@@ -757,7 +744,7 @@ type bookmarkletRequest struct {
 	Title string `json:"title" binding:"required,max=200"`
 	URL   string `json:"url"   binding:"required,url,max=16384"`
 	Text  string `json:"text"  binding:"max=50000"`
-	Type  string `json:"type"  binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Type  string `json:"type"  binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 }
 
 type bookmarkletResponse struct {
@@ -796,9 +783,16 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		return
 	}
 
-	noteType := req.Type
-	if noteType == "" {
-		noteType = "asteroid"
+	noteTypeValue := req.Type
+	if noteTypeValue == "" {
+		noteTypeValue = "asteroid"
+	}
+	noteType, err := note.NewType(noteTypeValue)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, err.Error(), noteTypeValue),
+		})
+		return
 	}
 
 	content := importer.BuildContent(req.Title, req.URL, req.Text)
@@ -878,11 +872,11 @@ type importItem struct {
 	Title string `json:"title" binding:"max=1000"`
 	URL   string `json:"url"   binding:"required,url,max=16384"`
 	Text  string `json:"text"  binding:"max=50000"`
-	Type  string `json:"type"  binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Type  string `json:"type"  binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 }
 
 type importOptions struct {
-	DefaultType    string `json:"default_type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	DefaultType    string `json:"default_type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	ExtractContent bool   `json:"extract_content"`
 }
 
@@ -1061,7 +1055,7 @@ func (h *Handler) ImportBookmarksStatus(c *gin.Context) {
 type updateNoteRequest struct {
 	Title    string                 `json:"title" binding:"omitempty,max=200"`
 	Content  string                 `json:"content" binding:"omitempty,max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet nebula galaxy asteroid debris blackhole satellite dust moon technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -1159,7 +1153,14 @@ func (h *Handler) Update(c *gin.Context) {
 		}
 	}
 	if req.Type != "" {
-		existing.SetType(req.Type)
+		noteType, err := note.NewType(req.Type)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, err.Error(), req.Type),
+			})
+			return
+		}
+		existing.SetType(noteType)
 	}
 
 	if err := h.repo.Save(c.Request.Context(), existing); err != nil {

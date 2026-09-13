@@ -453,9 +453,9 @@ func (s *Service) ProcessImportTask(ctx context.Context, userID uuid.UUID, taskI
 			it = extracted
 		}
 
-		noteType := it.Type
-		if noteType == "" {
-			noteType = "asteroid"
+		noteType, err := note.NewType(it.Type)
+		if err != nil {
+			noteType = note.MustType("asteroid")
 		}
 
 		normalized, err := NormalizeURL(it.URL)

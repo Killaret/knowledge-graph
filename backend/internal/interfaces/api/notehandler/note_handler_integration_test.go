@@ -330,12 +330,12 @@ func (s *NoteHandlerIntegrationTestSuite) TestSearchNotes() {
 	title, _ := note.NewTitle("Golang Tutorial")
 	content, _ := note.NewContent("Learn Go programming")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	s.repo.Save(ctx, n)
 
 	title2, _ := note.NewTitle("Python Guide")
 	content2, _ := note.NewContent("Learn Python programming")
-	n2 := note.NewNote(title2, content2, "star", metadata)
+	n2 := note.NewNote(title2, content2, note.MustType("star"), metadata)
 	s.repo.Save(ctx, n2)
 
 	w := httptest.NewRecorder()

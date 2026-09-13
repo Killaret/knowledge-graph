@@ -54,6 +54,14 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
   - `src/routes/` может импортировать любые слои.
 - Никакого `any` в production-коде; все UI-строки через i18n-ключи.
 
+### Таксономия типов заметок
+
+- Канонические UI-типы (от широкого к узкому): `galaxy`, `nebula`, `blackhole`, `star`, `planet`, `moon`, `comet`, `satellite`, `asteroid`, `dust`, `debris`.
+- Системные/не-UI типы (`technical`, `unknown`, `reality_rift`, `chromatic_maw`, `void_whisper`, `cosmic_abomination`) не должны появляться в обычных селекторах.
+- Источник правды в backend: `backend/internal/domain/note/type.go`.
+- Источник правды во frontend: `frontend/src/entities/shared/model/celestial-body.ts` (`CelestialBody.UI_TYPES`, отсортирован по `scaleRank`).
+- Дефолтный тип при создании — `star`; дефолт импорта/bookmark остаётся `asteroid`, если продуктово не решено иначе.
+
 ### Redis
 
 - Используйте go-redis/v9 API: `ConnMaxLifetime`, `ConnMaxIdleTime`.

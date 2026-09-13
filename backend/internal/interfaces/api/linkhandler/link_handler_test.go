@@ -139,14 +139,14 @@ func TestCreateLink(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -208,14 +208,14 @@ func TestCreateLinkMissingFields(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -267,14 +267,14 @@ func TestGetLink(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -344,14 +344,14 @@ func TestDeleteLink(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -390,14 +390,14 @@ func TestGetLinksByNote(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -436,14 +436,14 @@ func TestDeleteByNote(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -482,14 +482,14 @@ func TestCreateLinkInvalidLinkType(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -520,14 +520,14 @@ func TestCreateLinkInvalidWeight(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -578,8 +578,8 @@ func TestCreateLinkMissingSourceNote(t *testing.T) {
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[targetID] = targetNote
 
@@ -609,8 +609,8 @@ func TestCreateLinkSameNote(t *testing.T) {
 	title, _ := note.NewTitle("Source Note")
 	content, _ := note.NewContent("Source content")
 	metadata, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title, content, "star", metadata)
-	sourceNote = note.ReconstructNote(noteID, title, content, "star", metadata, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title, content, note.MustType("star"), metadata)
+	sourceNote = note.ReconstructNote(noteID, title, content, note.MustType("star"), metadata, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	noteRepo.notes[noteID] = sourceNote
 
@@ -642,14 +642,14 @@ func TestCreateLinkDuplicate(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "planet", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "planet", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("planet"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("planet"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -688,14 +688,14 @@ func TestCreateLinkInvalidMetadata(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "planet", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "planet", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("planet"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("planet"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -733,8 +733,8 @@ func TestCreateLinkMissingTarget(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 
@@ -780,14 +780,14 @@ func createTestLink(t *testing.T, r *gin.Engine, linkRepo *mockLinkRepo, noteRep
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
@@ -848,8 +848,8 @@ func TestCreateLinkInvalidTargetUUID(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 
@@ -889,8 +889,8 @@ func TestGetByNote(t *testing.T) {
 	title, _ := note.NewTitle("Test Note")
 	content, _ := note.NewContent("Test content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
-	n = note.ReconstructNote(noteID, title, content, "star", metadata, n.CreatedAt(), n.UpdatedAt())
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
+	n = note.ReconstructNote(noteID, title, content, note.MustType("star"), metadata, n.CreatedAt(), n.UpdatedAt())
 
 	noteRepo.notes[noteID] = n
 
@@ -1057,14 +1057,14 @@ func TestUpdateLink_Forbidden(t *testing.T) {
 	title1, _ := note.NewTitle("Source Note")
 	content1, _ := note.NewContent("Source content")
 	metadata1, _ := note.NewMetadata(nil)
-	sourceNote := note.NewNote(title1, content1, "star", metadata1)
-	sourceNote = note.ReconstructNote(sourceID, title1, content1, "star", metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
 
 	title2, _ := note.NewTitle("Target Note")
 	content2, _ := note.NewContent("Target content")
 	metadata2, _ := note.NewMetadata(nil)
-	targetNote := note.NewNote(title2, content2, "star", metadata2)
-	targetNote = note.ReconstructNote(targetID, title2, content2, "star", metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
 
 	noteRepo.notes[sourceID] = sourceNote
 	noteRepo.notes[targetID] = targetNote
