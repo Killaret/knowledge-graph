@@ -127,7 +127,7 @@ func TestNoteIDRoutesRequireAccessGuard(t *testing.T) {
 	require.NoError(t, err)
 	ownerID := uuid.New()
 	noteID := uuid.New()
-	foreignNote := note.ReconstructNoteWithCreator(noteID, title, content, "note",
+	foreignNote := note.ReconstructNoteWithCreator(noteID, title, content, note.MustType("star"),
 		note.Metadata{}, &ownerID, time.Now(), time.Now())
 
 	r := setupRouter(

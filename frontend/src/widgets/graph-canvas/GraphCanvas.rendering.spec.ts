@@ -233,11 +233,13 @@ describe("GraphCanvas - Rendering", () => {
     const mockCtx = createMockContext();
     HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(mockCtx);
 
-    global.ResizeObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-      unobserve: vi.fn(),
-    }));
+    global.ResizeObserver = vi.fn().mockImplementation(function () {
+      return {
+        observe: vi.fn(),
+        disconnect: vi.fn(),
+        unobserve: vi.fn(),
+      };
+    });
 
     vi.stubGlobal(
       "requestAnimationFrame",

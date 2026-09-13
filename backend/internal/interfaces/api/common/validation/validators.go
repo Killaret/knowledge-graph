@@ -2,6 +2,7 @@
 package validation
 
 import (
+	"knowledge-graph/internal/domain/note"
 	"regexp"
 	"strings"
 
@@ -37,27 +38,15 @@ var (
 	strictIDPattern = regexp.MustCompile(`^[a-zA-Z0-9\-_]+$`)
 )
 
-// ValidCelestialBodyTypes contains all allowed celestial body types
-// Must match the oneof validation in createNoteRequest.Type and updateNoteRequest.Type
-var ValidCelestialBodyTypes = map[string]bool{
-	"star":               true,
-	"planet":             true,
-	"comet":              true,
-	"galaxy":             true,
-	"asteroid":           true,
-	"satellite":          true,
-	"debris":             true,
-	"nebula":             true,
-	"dust":               true,
-	"unknown":            true,
-	"blackhole":          true,
-	"moon":               true,
-	"technical":          true,
-	"reality_rift":       true,
-	"chromatic_maw":      true,
-	"void_whisper":       true,
-	"cosmic_abomination": true,
-}
+// ValidCelestialBodyTypes contains all allowed celestial body types.
+// It is derived from the canonical domain list so backend, OpenAPI and frontend stay in sync.
+var ValidCelestialBodyTypes = func() map[string]bool {
+	m := make(map[string]bool)
+	for _, t := range note.AllTypeStrings() {
+		m[t] = true
+	}
+	return m
+}()
 
 // ValidLinkTypes contains all allowed link types
 var ValidLinkTypes = map[string]bool{
@@ -123,7 +112,8 @@ func IsSafeTag(tag string, maxLength int) *ValidationResult {
 
 // IsValidCelestialBodyType checks if the given type is valid (case-sensitive)
 func IsValidCelestialBodyType(t string) bool {
-	return ValidCelestialBodyTypes[t]
+	_, err := note.NewType(t)
+	return err == nil
 }
 
 // IsValidLinkType checks if the given link type is valid (case-sensitive)

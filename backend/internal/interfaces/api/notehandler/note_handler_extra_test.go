@@ -38,7 +38,7 @@ func setupFullNoteRouter() (*gin.Engine, *mockNoteRepo) {
 	r.PUT("/notes/:id", handler.Update)
 	r.DELETE("/notes/:id", handler.Delete)
 	r.POST("/notes/:id/restore", handler.Restore)
-	r.POST("/notes/batch", handler.DeleteBatch)
+	r.POST("/notes/batch/delete", handler.DeleteBatch)
 	r.GET("/notes/:id/suggestions", handler.GetSuggestions)
 	r.GET("/notes/search", handler.Search)
 	r.GET("/notes", handler.List)
@@ -51,7 +51,7 @@ func TestRestoreNote(t *testing.T) {
 	title, _ := note.NewTitle("Restored")
 	content, _ := note.NewContent("Content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	ctx := context.Background()
 	_ = repo.Save(ctx, n)
 
@@ -68,7 +68,7 @@ func TestSearchNotes(t *testing.T) {
 	title, _ := note.NewTitle("Searchable Note")
 	content, _ := note.NewContent("find me here")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	ctx := context.Background()
 	_ = repo.Save(ctx, n)
 
@@ -85,7 +85,7 @@ func TestSearchNotes_EmptyQuery(t *testing.T) {
 	title, _ := note.NewTitle("Note")
 	content, _ := note.NewContent("content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	_ = repo.Save(context.Background(), n)
 
 	w := httptest.NewRecorder()

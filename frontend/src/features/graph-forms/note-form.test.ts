@@ -16,7 +16,7 @@ describe("note-form", () => {
       noteFormPosition: { x: 0, y: 0 },
       newNoteTitle: "",
       newNoteContent: "",
-      newNoteType: "planet",
+      newNoteType: "star",
     });
   });
 
@@ -26,7 +26,7 @@ describe("note-form", () => {
     expect(state.showNoteForm).toBe(true);
     expect(state.noteFormPosition).toEqual({ x: 100, y: 200 });
     expect(state.newNoteTitle).toBe("");
-    expect(state.newNoteType).toBe("planet");
+    expect(state.newNoteType).toBe("star");
   });
 
   it("closes and resets the form", () => {

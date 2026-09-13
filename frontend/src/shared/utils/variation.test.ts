@@ -119,6 +119,36 @@ describe("getVariation", () => {
     expect(result.strokeColor).toMatch(/^#[0-9a-fA-F]{6}$/);
   });
 
+  it("should normalize manual colors without a hash prefix", () => {
+    const result = getVariation("node-1", "star", undefined, undefined, "ff0000", "00ff00");
+
+    expect(result.color).toBe("#ff0000");
+    expect(result.glowColor).toBe("#00ff00");
+    expect(result.strokeColor).toMatch(/^#[0-9a-fA-F]{6}$/);
+  });
+
+  it("should derive glow color from manual fill when glow color is omitted", () => {
+    const result = getVariation("node-2", "star", undefined, undefined, "0000ff");
+
+    expect(result.color).toBe("#0000ff");
+    expect(result.glowColor).not.toBe("#000000");
+  });
+
+  it("should preserve manual glow color with a hash prefix", () => {
+    const result = getVariation("node-3", "star", undefined, undefined, "#ff0000", "#00ff00");
+
+    expect(result.color).toBe("#ff0000");
+    expect(result.glowColor).toBe("#00ff00");
+  });
+
+  it("should fall back to the default palette for unknown types", () => {
+    const result = getVariation("node-1", "unknown-type-xyz");
+
+    expect(result.color).toMatch(/^#[0-9a-fA-F]{6}$/);
+    expect(result.sizeMultiplier).toBeGreaterThanOrEqual(0.7);
+    expect(result.sizeMultiplier).toBeLessThanOrEqual(1.3);
+  });
+
   it("should produce different colors for different node IDs", () => {
     const result1 = getVariation("node-abc123xyz", "star");
     const result2 = getVariation("node-def456uvw", "star");

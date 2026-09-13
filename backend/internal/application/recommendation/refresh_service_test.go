@@ -21,7 +21,7 @@ func TestRefreshService_RefreshRecommendations(t *testing.T) {
 		title, _ := note.NewTitle("Test Note")
 		content, _ := note.NewContent("Content")
 		meta, _ := note.NewMetadata(map[string]interface{}{})
-		n := note.NewNoteWithCreator(title, content, "star", meta, uuid.New())
+		n := note.NewNoteWithCreator(title, content, note.MustType("star"), meta, uuid.New())
 		return n
 	}
 
@@ -135,7 +135,7 @@ func TestRefreshService_RefreshRecommendationsBatch(t *testing.T) {
 	title, _ := note.NewTitle("Test Note")
 	content, _ := note.NewContent("Content")
 	meta, _ := note.NewMetadata(map[string]interface{}{})
-	n := note.NewNoteWithCreator(title, content, "star", meta, uuid.New())
+	n := note.NewNoteWithCreator(title, content, note.MustType("star"), meta, uuid.New())
 
 	noteRepo := new(mockNoteRepository)
 	recRepo := new(mockRecommendationRepository)

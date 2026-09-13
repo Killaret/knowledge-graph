@@ -34,7 +34,7 @@ try {
 // Production использует прямой backend URL или относительный путь
 // Если backendUrl относительный (начинается с /), используем его как есть
 const isRelativeUrl = backendUrl.startsWith("/");
-const prefixUrl =
+const prefix =
   isTest && !isRelativeUrl ? `${backendUrl}/api` : isRelativeUrl ? backendUrl : `${backendUrl}/api`;
 
 // Flag to prevent infinite refresh loops
@@ -69,7 +69,7 @@ export async function refreshAccessToken(): Promise<boolean> {
 // - statusCodes: сетевые и серверные ошибки, rate limiting
 // Ky использует встроенный exponential backoff с jitter между попытками
 export const api = ky.create({
-  prefixUrl,
+  prefix,
   timeout: 30000,
   credentials: "include",
   retry: {
@@ -79,7 +79,7 @@ export const api = ky.create({
   },
   hooks: {
     beforeRequest: [
-      async (request) => {
+      async ({ request }) => {
         // Add access token for JWT auth.
         const token = accessToken();
         if (token) {
@@ -94,7 +94,7 @@ export const api = ky.create({
       },
     ],
     afterResponse: [
-      async (request, options, response) => {
+      async ({ request, response }) => {
         // The auth refresh endpoint is used by the refresh flow itself;
         // do not try to refresh on a refresh request to avoid recursion/deadlock.
         const requestPath = new URL(request.url).pathname;

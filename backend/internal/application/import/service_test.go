@@ -301,7 +301,7 @@ func TestPreview_DedupAndValidation(t *testing.T) {
 	title, _ := note.NewTitle("Existing")
 	content, _ := note.NewContent("content")
 	meta, _ := note.NewMetadata(map[string]interface{}{"source_url": "https://example.com/existing"})
-	existing := note.NewNoteWithCreator(title, content, "asteroid", meta, userID)
+	existing := note.NewNoteWithCreator(title, content, note.MustType("asteroid"), meta, userID)
 	require.NoError(t, repo.Save(ctx, existing))
 
 	items := []Item{

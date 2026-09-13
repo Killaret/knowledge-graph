@@ -8,10 +8,10 @@
 | `.github/dependabot.yml` | ✅ обновлён | Убраны blanket-major-игноры, добавлены `services/graph-service` и root `npm`, группировка |
 | Workflow permissions | ✅ добавлен `permissions:` | `_core-checks.yml`, `frontend-tests.yml`, `ci.yml`, `security.yml` ограничены `contents: read` (+ `actions: write` где нужно) |
 | #50 SSRF | ✅ принят риск | Dismissed в CodeQL как `won't fix` по решению владельца |
-| #51 weak hashing | ✅ реализовано | API-ключи перешли на Argon2id; токен `id:secret`, хранится Argon2-хеш; тесты проходят; ожидает мёрджа и повторного скана CodeQL |
+| #51 weak hashing | ✅ реализовано | API-ключи перешли на Argon2id; токен `id:secret`, хранится Argon2-хеш; тесты проходят; PR #55 в `main`; требуется пересоздание старых API-ключей |
 | #49 cookie Secure | ✅ оставлено как есть | Динамический Secure по `TLS`/`X-Forwarded-Proto`; CodeQL alerts #8/#9 dismissed как `mitigated` |
 | #52/#53 front-end sanitization | ✅ реализовано | `extract-urls.ts` — однопроходный декодер и повторяющаяся очистка тегов; `check-core-workflow-sync.mjs` — экранирование regex-метасимволов |
-| #54 workflow permissions | ✅ реализовано | Добавлены `permissions:`; PR #55 запущен, CodeQL-скан перезапустится на `main` после мёрджа |
+| #54 workflow permissions | ✅ реализовано | Добавлены `permissions:`; PR #55 в `main`; CodeQL-скан пройдёт на `main` |
 
 ## Цель
 После включения Dependency graph, Dependabot alerts, CodeQL и Secret Protection появился пул задач по безопасности. Этот файл — порядок настройки и фикса, чтобы Claude и Devin не теряли контекст.
@@ -122,7 +122,37 @@
 - ✅ Frontend unit test `extract-urls.test.ts` — 13/13 зелёные.
 - ✅ Frontend `npm run lint` — зелёные (только pre-existing warnings).
 - ✅ `check-core-workflow-sync.mjs` — `Workflow sync OK: 16 local phases match 16 CI steps.`
-- ⏳ Перед мёрджем: PR #55 создан, ожидается CI; затем `check-all` локально.
+- ✅ PR #55 замёржен в `main` 2026-09-12.
+
+## Пересоздание API-ключей после мёрджа #51
+
+PR #55 — breaking change для существующих API-ключей: старые SHA-256-хеши больше не проверяются, формат токена изменился на `uuid:secret`.
+
+### Ручной способ (один-два ключа)
+1. Авторизоваться в веб-приложении.
+2. Перейти в профиль / API-ключи.
+3. Создать новый ключ (`POST /api/v1/users/me/api-keys`), скопировать токен.
+4. Заменить старый токен во всех клиентах/скриптах.
+5. Отозвать старый ключ (`DELETE /api/v1/users/me/api-keys/:id`).
+
+### Пакетный способ (много ключей)
+Используется CLI `backend/cmd/rotate-api-keys/main.go`.
+
+**Dry-run** — показать, что будет пересоздано, не трогая БД:
+```powershell
+cd backend
+$env:DATABASE_URL = "postgresql://..."
+go run ./cmd/rotate-api-keys -dry-run
+```
+
+**Реальная ротация** — создать новые ключи, отозвать старые, записать токены в файл:
+```powershell
+cd backend
+$env:DATABASE_URL = "postgresql://..."
+go run ./cmd/rotate-api-keys -out api-keys-rotated.json
+```
+
+Файл `api-keys-rotated.json` содержит секреты в формате `id:secret`. Сохрани его в безопасном месте и удали после замены токенов в клиентах.
 
 ## Ссылки
 - `docs/PROJECT_REVIEW_AI_AGENTS.md` §11 — общая сводка.

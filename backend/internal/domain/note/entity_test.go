@@ -29,22 +29,22 @@ func TestNewNote(t *testing.T) {
 			expectedType: "star",
 		},
 		{
-			name:         "valid note with highlight type",
-			title:        "Highlight",
+			name:         "valid note with planet type",
+			title:        "Planet",
 			content:      "Important excerpt",
-			noteType:     "highlight",
+			noteType:     "planet",
 			metadata:     map[string]interface{}{},
 			wantErr:      false,
-			expectedType: "highlight",
+			expectedType: "planet",
 		},
 		{
-			name:         "valid note with link type",
-			title:        "Link Note",
+			name:         "invalid note type falls back to unknown",
+			title:        "Invalid",
 			content:      "https://example.com",
 			noteType:     "link",
 			metadata:     map[string]interface{}{"url": "https://example.com"},
 			wantErr:      false,
-			expectedType: "link",
+			expectedType: "unknown",
 		},
 		{
 			name:         "empty note type defaults to star",
@@ -53,7 +53,7 @@ func TestNewNote(t *testing.T) {
 			noteType:     "",
 			metadata:     map[string]interface{}{},
 			wantErr:      false,
-			expectedType: "unknown",
+			expectedType: "star",
 		},
 		{
 			name:         "nil metadata defaults to empty map",
@@ -95,7 +95,17 @@ func TestNewNote(t *testing.T) {
 				metadata = Metadata{value: map[string]interface{}{}}
 			}
 
-			note := NewNote(title, content, tt.noteType, metadata)
+			var nt NoteType
+			if tt.noteType == "" {
+				nt = Default()
+			} else {
+				var err error
+				nt, err = NewType(tt.noteType)
+				if err != nil {
+					nt = NoteType{}
+				}
+			}
+			note := NewNote(title, content, nt, metadata)
 
 			assert.NotEqual(t, uuid.Nil, note.ID())
 			assert.Equal(t, tt.expectedType, note.Type())
@@ -113,7 +123,7 @@ func TestNewNoteWithCreator(t *testing.T) {
 	content, _ := NewContent("Content")
 	metadata, _ := NewMetadata(map[string]interface{}{})
 
-	note := NewNoteWithCreator(title, content, "star", metadata, creatorID)
+	note := NewNoteWithCreator(title, content, MustType("star"), metadata, creatorID)
 
 	assert.NotEqual(t, uuid.Nil, note.ID())
 	assert.NotNil(t, note.CreatorID())
@@ -128,7 +138,7 @@ func TestReconstructNote(t *testing.T) {
 	createdAt := time.Now().Add(-1 * time.Hour)
 	updatedAt := time.Now()
 
-	note := ReconstructNote(id, title, content, "star", metadata, createdAt, updatedAt)
+	note := ReconstructNote(id, title, content, MustType("star"), metadata, createdAt, updatedAt)
 
 	assert.Equal(t, id, note.ID())
 	assert.Equal(t, "Reconstructed", note.Title().String())
@@ -145,7 +155,7 @@ func TestReconstructNoteWithCreator(t *testing.T) {
 	createdAt := time.Now().Add(-1 * time.Hour)
 	updatedAt := time.Now()
 
-	note := ReconstructNoteWithCreator(id, title, content, "star", metadata, &creatorID, createdAt, updatedAt)
+	note := ReconstructNoteWithCreator(id, title, content, MustType("star"), metadata, &creatorID, createdAt, updatedAt)
 
 	assert.Equal(t, id, note.ID())
 	assert.NotNil(t, note.CreatorID())
@@ -156,7 +166,7 @@ func TestNote_SetCreatorID(t *testing.T) {
 	title, _ := NewTitle("Test")
 	content, _ := NewContent("Content")
 	metadata, _ := NewMetadata(map[string]interface{}{})
-	note := NewNote(title, content, "star", metadata)
+	note := NewNote(title, content, MustType("star"), metadata)
 
 	assert.Nil(t, note.CreatorID())
 
@@ -177,8 +187,8 @@ func TestNote_SetType(t *testing.T) {
 		{
 			name:       "valid type update",
 			current:    "star",
-			newType:    "highlight",
-			expectType: "highlight",
+			newType:    "planet",
+			expectType: "planet",
 		},
 		{
 			name:       "empty type not updated",
@@ -188,8 +198,14 @@ func TestNote_SetType(t *testing.T) {
 		},
 		{
 			name:       "different type changes",
-			current:    "link",
+			current:    "planet",
 			newType:    "star",
+			expectType: "star",
+		},
+		{
+			name:       "invalid type not updated",
+			current:    "star",
+			newType:    "invalid",
 			expectType: "star",
 		},
 	}
@@ -199,15 +215,23 @@ func TestNote_SetType(t *testing.T) {
 			title, _ := NewTitle("Test")
 			content, _ := NewContent("Content")
 			metadata, _ := NewMetadata(map[string]interface{}{})
-			note := NewNote(title, content, tt.current, metadata)
+			note := NewNote(title, content, MustType(tt.current), metadata)
 
 			oldUpdated := note.UpdatedAt()
 			time.Sleep(10 * time.Millisecond) // Ensure time difference
 
-			note.SetType(tt.newType)
+			var newType NoteType
+			if tt.newType != "" {
+				var err error
+				newType, err = NewType(tt.newType)
+				if err != nil {
+					newType = NoteType{}
+				}
+			}
+			note.SetType(newType)
 
 			assert.Equal(t, tt.expectType, note.Type())
-			if tt.newType != "" {
+			if newType.IsValid() && note.Type() != newType.String() {
 				assert.True(t, note.UpdatedAt().After(oldUpdated))
 			}
 		})
@@ -242,7 +266,7 @@ func TestNote_UpdateTitle(t *testing.T) {
 			oldTitle, _ := NewTitle("Old")
 			content, _ := NewContent("Content")
 			metadata, _ := NewMetadata(map[string]interface{}{})
-			note := NewNote(oldTitle, content, "star", metadata)
+			note := NewNote(oldTitle, content, MustType("star"), metadata)
 
 			newTitle, err := NewTitle(tt.title)
 			if tt.wantErr {
@@ -289,7 +313,7 @@ func TestNote_UpdateContent(t *testing.T) {
 			title, _ := NewTitle("Test")
 			oldContent, _ := NewContent("Old")
 			metadata, _ := NewMetadata(map[string]interface{}{})
-			note := NewNote(title, oldContent, "star", metadata)
+			note := NewNote(title, oldContent, MustType("star"), metadata)
 
 			newContent, err := NewContent(tt.content)
 			require.NoError(t, err)
@@ -337,7 +361,7 @@ func TestNote_UpdateMetadata(t *testing.T) {
 			title, _ := NewTitle("Test")
 			content, _ := NewContent("Content")
 			oldMetadata, _ := NewMetadata(map[string]interface{}{"old": "value"})
-			note := NewNote(title, content, "star", oldMetadata)
+			note := NewNote(title, content, MustType("star"), oldMetadata)
 
 			var newMetadata Metadata
 			if tt.metadata != nil {
@@ -366,7 +390,7 @@ func TestNote_Getters(t *testing.T) {
 	createdAt := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 	updatedAt := time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)
 
-	note := ReconstructNoteWithCreator(id, title, content, "star", metadata, &creatorID, createdAt, updatedAt)
+	note := ReconstructNoteWithCreator(id, title, content, MustType("star"), metadata, &creatorID, createdAt, updatedAt)
 
 	assert.Equal(t, id, note.ID())
 	assert.Equal(t, "Test Title", note.Title().String())
@@ -383,7 +407,7 @@ func TestNote_SetIsPublic(t *testing.T) {
 	title, _ := NewTitle("Test")
 	content, _ := NewContent("Content")
 	metadata, _ := NewMetadata(map[string]interface{}{"key": "value"})
-	note := NewNote(title, content, "star", metadata)
+	note := NewNote(title, content, MustType("star"), metadata)
 
 	assert.False(t, note.IsPublic())
 

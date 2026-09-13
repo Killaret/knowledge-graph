@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   detectDeviceCapabilities,
   shouldUse3D,
@@ -109,5 +109,167 @@ describe("deviceCapabilities", () => {
     expect(capabilities.gpuTier).toBe("high");
     expect(capabilities.maxNodes).toBe(100);
     expect(capabilities.starCount).toBe(1000);
+  });
+});
+
+describe("detectDeviceCapabilities browser path", () => {
+  const originalNavigator = global.navigator;
+
+  beforeEach(() => {
+    vi.stubGlobal("navigator", {
+      ...originalNavigator,
+      userAgent: "desktop",
+      hardwareConcurrency: 8,
+      deviceMemory: 8,
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function mockWebGL(renderer: string, maxTextureSize: number) {
+    const debugInfo = { UNMASKED_RENDERER_WEBGL: 0x9245 } as unknown as WEBGL_debug_renderer_info;
+    const gl = {
+      MAX_TEXTURE_SIZE: 0x0d33,
+      getExtension: vi.fn().mockReturnValue(debugInfo),
+      getParameter: vi.fn((p: number) => {
+        if (p === 0x9245) return renderer;
+        if (p === 0x0d33) return maxTextureSize; // MAX_TEXTURE_SIZE
+        return 0;
+      }),
+    } as unknown as WebGLRenderingContext;
+
+    vi.stubGlobal("document", {
+      createElement: vi.fn().mockReturnValue({
+        getContext: vi.fn((type: string) => (type === "webgl" ? gl : null)),
+      }),
+    });
+  }
+
+  it("detects high-end desktop GPU", () => {
+    mockWebGL("NVIDIA GeForce RTX 4090", 16384);
+    vi.stubGlobal("window", { ...window, innerWidth: 1920, devicePixelRatio: 2 });
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.gpuTier).toBe("high");
+    expect(caps.isLowPower).toBe(false);
+    expect(caps.maxNodes).toBe(100);
+    expect(caps.pixelRatio).toBe(2);
+  });
+
+  it("downgrades to low for a software renderer", () => {
+    mockWebGL("llvmpipe", 16384);
+    vi.stubGlobal("window", { ...window, innerWidth: 1920, devicePixelRatio: 1 });
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.gpuTier).toBe("low");
+    expect(caps.isLowPower).toBe(true);
+    expect(caps.maxNodes).toBe(30);
+  });
+
+  it("downgrades to low for Intel GPU", () => {
+    mockWebGL("Intel Iris Xe", 16384);
+    vi.stubGlobal("window", { ...window, innerWidth: 1920, devicePixelRatio: 1 });
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.gpuTier).toBe("low");
+    expect(caps.isLowPower).toBe(true);
+    expect(caps.maxNodes).toBe(30);
+  });
+
+  it("downgrades to low for small max texture size", () => {
+    mockWebGL("NVIDIA GeForce", 2048);
+    vi.stubGlobal("window", { ...window, innerWidth: 1920, devicePixelRatio: 1 });
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.gpuTier).toBe("low");
+    expect(caps.isLowPower).toBe(true);
+  });
+
+  it("uses medium tier on mobile", () => {
+    mockWebGL("Mali-G78", 8192);
+    vi.stubGlobal("navigator", {
+      ...originalNavigator,
+      userAgent: "Android 14",
+      hardwareConcurrency: 8,
+      deviceMemory: 8,
+    });
+    vi.stubGlobal("window", { ...window, innerWidth: 400, devicePixelRatio: 2.5 });
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.isMobile).toBe(true);
+    expect(caps.gpuTier).toBe("medium");
+    expect(caps.isLowPower).toBe(true);
+    expect(caps.maxNodes).toBe(30);
+    expect(caps.pixelRatio).toBe(1);
+  });
+
+  it("falls back to medium when WebGL is unavailable", () => {
+    vi.stubGlobal("document", {
+      createElement: vi.fn().mockReturnValue({
+        getContext: vi.fn().mockReturnValue(null),
+      }),
+    });
+    vi.stubGlobal("window", { ...window, innerWidth: 1920, devicePixelRatio: 1 });
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.gpuTier).toBe("medium");
+  });
+
+  it("detects mobile by viewport width", () => {
+    vi.stubGlobal("navigator", {
+      ...originalNavigator,
+      userAgent: "Mozilla/5.0",
+      hardwareConcurrency: 8,
+      deviceMemory: 8,
+    });
+    vi.stubGlobal("window", { ...window, innerWidth: 400, devicePixelRatio: 1 });
+    mockWebGL("NVIDIA GeForce RTX 4090", 16384);
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.isMobile).toBe(true);
+    expect(caps.gpuTier).toBe("medium");
+    expect(caps.isLowPower).toBe(true);
+    expect(caps.maxNodes).toBe(30);
+    expect(caps.pixelRatio).toBe(1);
+  });
+
+  it("uses navigator fallbacks when hardware info is missing", () => {
+    vi.stubGlobal("navigator", {
+      ...originalNavigator,
+      userAgent: "Mozilla/5.0",
+      hardwareConcurrency: undefined,
+      deviceMemory: undefined,
+    });
+    vi.stubGlobal("window", { ...window, innerWidth: 1920, devicePixelRatio: 1 });
+    mockWebGL("NVIDIA GeForce RTX 4090", 16384);
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.isLowPower).toBe(true);
+  });
+
+  it("falls back to medium when debug renderer info is unavailable", () => {
+    const gl = {
+      MAX_TEXTURE_SIZE: 0x0d33,
+      getExtension: vi.fn().mockReturnValue(null),
+      getParameter: vi.fn((p: number) => (p === 0x0d33 ? 8192 : 0)),
+    } as unknown as WebGLRenderingContext;
+
+    vi.stubGlobal("document", {
+      createElement: vi.fn().mockReturnValue({
+        getContext: vi.fn((type: string) => (type === "webgl" ? gl : null)),
+      }),
+    });
+    vi.stubGlobal("navigator", {
+      ...originalNavigator,
+      userAgent: "Mozilla/5.0",
+      hardwareConcurrency: 8,
+      deviceMemory: 8,
+    });
+    vi.stubGlobal("window", { ...window, innerWidth: 1920, devicePixelRatio: 1 });
+
+    const caps = detectDeviceCapabilities();
+    expect(caps.gpuTier).toBe("medium");
   });
 });

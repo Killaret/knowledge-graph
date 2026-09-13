@@ -63,11 +63,11 @@ func (s *LinkRepositoryIntegrationTestSuite) SetupTest() {
 	sourceTitle, _ := note.NewTitle("Source Note")
 	sourceContent, _ := note.NewContent("Source content for testing")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	s.sourceNote = note.NewNote(sourceTitle, sourceContent, "star", metadata)
+	s.sourceNote = note.NewNote(sourceTitle, sourceContent, note.MustType("star"), metadata)
 
 	targetTitle, _ := note.NewTitle("Target Note")
 	targetContent, _ := note.NewContent("Target content for testing")
-	s.targetNote = note.NewNote(targetTitle, targetContent, "star", metadata)
+	s.targetNote = note.NewNote(targetTitle, targetContent, note.MustType("star"), metadata)
 
 	// Сохраняем заметки
 	err = s.noteRepo.Save(s.ctx, s.sourceNote)
@@ -138,7 +138,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestFindBySource() {
 	targetTitle2, _ := note.NewTitle("Target Note 2")
 	targetContent2, _ := note.NewContent("Content 2")
 	noteMetadata, _ := note.NewMetadata(map[string]interface{}{})
-	targetNote2 := note.NewNote(targetTitle2, targetContent2, "star", noteMetadata)
+	targetNote2 := note.NewNote(targetTitle2, targetContent2, note.MustType("star"), noteMetadata)
 	err := s.noteRepo.Save(s.ctx, targetNote2)
 	s.NoError(err)
 
@@ -181,7 +181,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestFindBySourceIDs() {
 	sourceTitle2, _ := note.NewTitle("Source Note 2")
 	sourceContent2, _ := note.NewContent("Content 2")
 	noteMetadata, _ := note.NewMetadata(map[string]interface{}{})
-	sourceNote2 := note.NewNote(sourceTitle2, sourceContent2, "star", noteMetadata)
+	sourceNote2 := note.NewNote(sourceTitle2, sourceContent2, note.MustType("star"), noteMetadata)
 	err := s.noteRepo.Save(s.ctx, sourceNote2)
 	s.NoError(err)
 
@@ -212,7 +212,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestFindByTargetIDs() {
 	targetTitle2, _ := note.NewTitle("Target Note 2")
 	targetContent2, _ := note.NewContent("Content 2")
 	noteMetadata, _ := note.NewMetadata(map[string]interface{}{})
-	targetNote2 := note.NewNote(targetTitle2, targetContent2, "star", noteMetadata)
+	targetNote2 := note.NewNote(targetTitle2, targetContent2, note.MustType("star"), noteMetadata)
 	err := s.noteRepo.Save(s.ctx, targetNote2)
 	s.NoError(err)
 
@@ -248,7 +248,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestFindAll() {
 	targetTitle2, _ := note.NewTitle("Target Note 2")
 	targetContent2, _ := note.NewContent("Content 2")
 	noteMetadata, _ := note.NewMetadata(map[string]interface{}{})
-	targetNote2 := note.NewNote(targetTitle2, targetContent2, "star", noteMetadata)
+	targetNote2 := note.NewNote(targetTitle2, targetContent2, note.MustType("star"), noteMetadata)
 	err := s.noteRepo.Save(s.ctx, targetNote2)
 	s.NoError(err)
 
@@ -293,7 +293,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestDeleteBySource() {
 	targetTitle2, _ := note.NewTitle("Target Note 2")
 	targetContent2, _ := note.NewContent("Content 2")
 	noteMetadata, _ := note.NewMetadata(map[string]interface{}{})
-	targetNote2 := note.NewNote(targetTitle2, targetContent2, "star", noteMetadata)
+	targetNote2 := note.NewNote(targetTitle2, targetContent2, note.MustType("star"), noteMetadata)
 	err := s.noteRepo.Save(s.ctx, targetNote2)
 	s.NoError(err)
 

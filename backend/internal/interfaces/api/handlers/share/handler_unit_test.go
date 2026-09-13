@@ -147,7 +147,7 @@ func newTestNoteWithCreator(t *testing.T, creatorID uuid.UUID) *domainnote.Note 
 	require.NoError(t, err)
 	metadata, err := domainnote.NewMetadata(nil)
 	require.NoError(t, err)
-	return domainnote.NewNoteWithCreator(title, content, "star", metadata, creatorID)
+	return domainnote.NewNoteWithCreator(title, content, domainnote.MustType("star"), metadata, creatorID)
 }
 
 func newTestUser(t *testing.T, id uuid.UUID, login string) *domainuser.User {

@@ -1,175 +1,239 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/svelte";
 import GraphTopBar from "./GraphTopBar.svelte";
 import { graphStore } from "$shared/stores/graph.svelte";
+import { LinkType } from "$entities";
 
-vi.mock("$app/navigation", () => ({
-  goto: vi.fn(),
-}));
+describe("GraphTopBar", () => {
+  const typeFilters = [
+    { id: "all", label: "All", emoji: "🔎" },
+    { id: "note", label: "Notes", emoji: "📝" },
+    { id: "bookmark", label: "Bookmarks", emoji: "📑" },
+  ];
 
-vi.mock("$components/atoms/LangSwitcher.svelte", () => ({
-  default: vi.fn(),
-}));
-
-const typeFilters = [
-  { id: "all", label: "All", emoji: "🌌" },
-  { id: "star", label: "Star", emoji: "⭐" },
-];
-
-const canvasController = {
-  focusMode: false,
-  fogEnabled: true,
-  resetView: vi.fn(),
-  openSearch: vi.fn(),
-  toggleFocus: vi.fn(),
-  toggleFog: vi.fn(),
-};
-
-describe("GraphTopBar — unified top bar", () => {
-  afterEach(() => {
-    graphStore.hiddenLinkTypes = [];
+  beforeEach(() => {
     cleanup();
+    vi.clearAllMocks();
+    graphStore.reset();
   });
 
-  it("renders the top bar and canvas controls", () => {
-    render(GraphTopBar, {
-      props: {
-        isAuthenticated: false,
-        currentView: "graph",
-        searchQuery: "",
-        selectedType: "all",
-        typeFilters,
-        nodeCount: 5,
-        linkCount: 3,
-        canvasController,
-      },
-    });
-
-    expect(screen.getByTestId("graph-top-bar")).toBeInTheDocument();
-    expect(screen.getByTestId("top-bar-search-input")).toBeInTheDocument();
-    expect(screen.getByTestId("top-bar-reset")).toBeInTheDocument();
-    expect(screen.getByTestId("top-bar-open-search")).toBeInTheDocument();
-    expect(screen.getByTestId("top-bar-focus")).toBeInTheDocument();
-    expect(screen.getByTestId("top-bar-fog")).toBeInTheDocument();
-    expect(screen.getByTestId("view-toggle-graph")).toBeInTheDocument();
-  });
-
-  it("toggles fog via canvas controller", async () => {
-    render(GraphTopBar, {
-      props: {
-        isAuthenticated: false,
-        currentView: "graph",
-        searchQuery: "",
-        selectedType: "all",
-        typeFilters,
-        canvasController,
-      },
-    });
-
-    const fogBtn = screen.getByTestId("top-bar-fog");
-    expect(fogBtn).toHaveAttribute("aria-pressed", "true");
-
-    await fireEvent.click(fogBtn);
-    expect(canvasController.toggleFog).toHaveBeenCalled();
-  });
-
-  it("shows auth buttons for public and create button for authenticated", () => {
-    const { unmount } = render(GraphTopBar, {
-      props: {
-        isAuthenticated: false,
-        currentView: "graph",
-        searchQuery: "",
-        selectedType: "all",
-        typeFilters,
-        onSignIn: vi.fn(),
-        onRegister: vi.fn(),
-      },
-    });
-
-    expect(screen.getByTestId("top-bar-sign-in")).toBeInTheDocument();
-    expect(screen.getByTestId("top-bar-register")).toBeInTheDocument();
-    expect(screen.queryByTestId("create-note-button")).not.toBeInTheDocument();
-
-    unmount();
-    cleanup();
-
+  it("renders authenticated view with stats and view toggles", () => {
+    const onToggleView = vi.fn();
     render(GraphTopBar, {
       props: {
         isAuthenticated: true,
         currentView: "graph",
-        searchQuery: "",
-        selectedType: "all",
-        typeFilters,
-        onNoteCreate: vi.fn(),
-      },
-    });
-
-    expect(screen.getByTestId("create-note-button")).toBeInTheDocument();
-    expect(screen.queryByTestId("top-bar-sign-in")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("top-bar-register")).not.toBeInTheDocument();
-  });
-
-  it("emits view toggle and search callbacks", async () => {
-    const onToggleView = vi.fn();
-    const onSearch = vi.fn();
-
-    render(GraphTopBar, {
-      props: {
-        isAuthenticated: false,
-        currentView: "graph",
-        searchQuery: "",
-        selectedType: "all",
-        typeFilters,
+        nodeCount: 12,
+        linkCount: 5,
         onToggleView,
-        onSearch,
       },
     });
 
-    await fireEvent.click(screen.getByTestId("view-toggle-3d"));
-    expect(onToggleView).toHaveBeenCalledWith("3d");
-
-    const searchInput = screen.getByTestId("top-bar-search-input") as HTMLInputElement;
-    await fireEvent.input(searchInput, { target: { value: "black hole" } });
-    expect(onSearch).toHaveBeenCalledWith("black hole");
+    expect(screen.getByTestId("graph-stats")).toHaveTextContent("12");
+    expect(screen.getByTestId("graph-stats")).toHaveTextContent("5");
+    expect(screen.getByTestId("view-toggle-graph")).toBeInTheDocument();
+    expect(screen.getByTestId("view-toggle-3d")).toBeInTheDocument();
+    expect(screen.getByTestId("view-toggle-list")).toBeInTheDocument();
   });
 
-  it("does not render layout provider buttons on 3D view when no toggle handler is provided", () => {
+  it("switches views and calls onToggleView", async () => {
+    const onToggleView = vi.fn();
     render(GraphTopBar, {
-      props: {
-        isAuthenticated: false,
-        currentView: "3d",
-        layoutProvider: "d3",
-        searchQuery: "",
-        selectedType: "all",
-        typeFilters,
-      },
+      props: { isAuthenticated: true, currentView: "graph", onToggleView },
     });
 
-    expect(screen.queryByTestId("layout-provider-d3")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("layout-provider-graph-service")).not.toBeInTheDocument();
+    const listButton = screen.getByTestId("view-toggle-list");
+    await fireEvent.click(listButton);
+
+    expect(onToggleView).toHaveBeenCalledWith("list");
   });
 
-  it("renders and toggles layout provider buttons on 3D view when a handler is provided", async () => {
+  it("shows layout provider toggle only in 3d view", () => {
     const onToggleLayoutProvider = vi.fn();
-
-    render(GraphTopBar, {
+    const { rerender } = render(GraphTopBar, {
       props: {
-        isAuthenticated: false,
-        currentView: "3d",
+        isAuthenticated: true,
+        currentView: "graph",
         layoutProvider: "d3",
-        searchQuery: "",
-        selectedType: "all",
-        typeFilters,
         onToggleLayoutProvider,
       },
     });
 
-    const d3Btn = screen.getByTestId("layout-provider-d3");
-    const graphServiceBtn = screen.getByTestId("layout-provider-graph-service");
-    expect(d3Btn).toBeInTheDocument();
-    expect(graphServiceBtn).toBeInTheDocument();
+    expect(screen.queryByTestId("layout-provider-d3")).not.toBeInTheDocument();
 
-    await fireEvent.click(graphServiceBtn);
+    rerender({ currentView: "3d", layoutProvider: "graph-service" });
+
+    expect(screen.getByTestId("layout-provider-d3")).toBeInTheDocument();
+    expect(screen.getByTestId("layout-provider-graph-service")).toBeInTheDocument();
+  });
+
+  it("toggles layout provider", async () => {
+    const onToggleLayoutProvider = vi.fn();
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "3d", onToggleLayoutProvider },
+    });
+
+    const graphService = screen.getByTestId("layout-provider-graph-service");
+    await fireEvent.click(graphService);
+
     expect(onToggleLayoutProvider).toHaveBeenCalledWith("graph-service");
+  });
+
+  it("calls onSearch when typing in search box", async () => {
+    const onSearch = vi.fn();
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph", onSearch },
+    });
+
+    const input = screen.getByTestId("top-bar-search-input");
+    await fireEvent.input(input, { target: { value: "hello" } });
+
+    expect(onSearch).toHaveBeenCalledWith("hello");
+  });
+
+  it("opens type filter dropdown and selects a filter", async () => {
+    const onFilter = vi.fn();
+    render(GraphTopBar, {
+      props: {
+        isAuthenticated: true,
+        currentView: "graph",
+        typeFilters,
+        selectedType: "all",
+        onFilter,
+      },
+    });
+
+    const toggle = screen.getByTestId("type-dropdown-toggle");
+    await fireEvent.click(toggle);
+
+    const noteButton = screen.getByTestId("filter-chip-note");
+    await fireEvent.click(noteButton);
+
+    expect(onFilter).toHaveBeenCalledWith("note");
+  });
+
+  it("displays type counts in dropdown", async () => {
+    render(GraphTopBar, {
+      props: {
+        isAuthenticated: true,
+        currentView: "graph",
+        typeFilters,
+        typeCounts: { all: 10, note: 6 },
+      },
+    });
+
+    const toggle = screen.getByTestId("type-dropdown-toggle");
+    await fireEvent.click(toggle);
+
+    const allButton = screen.getByTestId("filter-chip-all");
+    expect(allButton).toHaveTextContent("10");
+  });
+
+  it("opens link type dropdown and toggles a link type", async () => {
+    const firstType = LinkType.ALL_TYPES[0];
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph" },
+    });
+
+    const toggle = screen.getByTestId("link-dropdown-toggle");
+    await fireEvent.click(toggle);
+
+    const chip = screen.getByTestId(`link-type-chip-${firstType.type}`);
+    await fireEvent.click(chip);
+
+    expect(graphStore.hiddenLinkTypes).toContain(firstType.type);
+
+    await fireEvent.click(chip);
+    expect(graphStore.hiddenLinkTypes).not.toContain(firstType.type);
+  });
+
+  it("shows and hides all link types", async () => {
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph" },
+    });
+
+    const toggle = screen.getByTestId("link-dropdown-toggle");
+    await fireEvent.click(toggle);
+
+    const hideAll = screen.getByTestId("link-types-hide-all");
+    const showAll = screen.getByTestId("link-types-show-all");
+
+    await fireEvent.click(hideAll);
+    expect(graphStore.hiddenLinkTypes).toHaveLength(LinkType.ALL_TYPES.length);
+
+    await fireEvent.click(showAll);
+    expect(graphStore.hiddenLinkTypes).toHaveLength(0);
+  });
+
+  it("updates min link weight via slider", async () => {
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph" },
+    });
+
+    const toggle = screen.getByTestId("link-dropdown-toggle");
+    await fireEvent.click(toggle);
+
+    const slider = screen.getByTestId("top-bar-min-weight");
+    await fireEvent.input(slider, { target: { value: "0.5" } });
+
+    expect(graphStore.minLinkWeight).toBe(0.5);
+  });
+
+  it("renders canvas controller buttons and invokes callbacks", async () => {
+    const controller = {
+      focusMode: false,
+      fogEnabled: false,
+      resetView: vi.fn(),
+      openSearch: vi.fn(),
+      toggleFocus: vi.fn(),
+      toggleFog: vi.fn(),
+    };
+
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph", canvasController: controller },
+    });
+
+    await fireEvent.click(screen.getByTestId("top-bar-reset"));
+    await fireEvent.click(screen.getByTestId("top-bar-open-search"));
+    await fireEvent.click(screen.getByTestId("top-bar-focus"));
+    await fireEvent.click(screen.getByTestId("top-bar-fog"));
+
+    expect(controller.resetView).toHaveBeenCalled();
+    expect(controller.openSearch).toHaveBeenCalled();
+    expect(controller.toggleFocus).toHaveBeenCalled();
+    expect(controller.toggleFog).toHaveBeenCalled();
+  });
+
+  it("shows create note button when authenticated", () => {
+    const onNoteCreate = vi.fn();
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph", onNoteCreate },
+    });
+
+    const button = screen.getByTestId("create-note-button");
+    expect(button).toBeInTheDocument();
+
+    fireEvent.click(button);
+    expect(onNoteCreate).toHaveBeenCalled();
+  });
+
+  it("shows sign in and register buttons when not authenticated", () => {
+    const onSignIn = vi.fn();
+    const onRegister = vi.fn();
+    render(GraphTopBar, {
+      props: { isAuthenticated: false, currentView: "graph", onSignIn, onRegister },
+    });
+
+    const signIn = screen.getByTestId("top-bar-sign-in");
+    const register = screen.getByTestId("top-bar-register");
+
+    expect(signIn).toBeInTheDocument();
+    expect(register).toBeInTheDocument();
+
+    fireEvent.click(signIn);
+    fireEvent.click(register);
+
+    expect(onSignIn).toHaveBeenCalled();
+    expect(onRegister).toHaveBeenCalled();
   });
 });

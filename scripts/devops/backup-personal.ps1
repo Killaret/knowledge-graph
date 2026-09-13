@@ -16,7 +16,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$BackupDir = if ($env:BACKUP_DIR) { $env:BACKUP_DIR } else { ".\backups" }
+$BackupDir = if ($env:BACKUP_DIR) { $env:BACKUP_DIR } else { "$env:USERPROFILE\Desktop\my items" }
 $Timestamp = Get-Date -Format "yyyy-MM-dd-HHmmss"
 $BackupFile = Join-Path $BackupDir "backup-personal-${Mode}-${Timestamp}.sql"
 

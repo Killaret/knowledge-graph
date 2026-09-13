@@ -52,6 +52,14 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
   - `src/routes/` may import any layer.
 - No `any` in production code; i18n keys for all UI strings.
 
+### Note type taxonomy
+
+- Canonical UI note types (largest to smallest scope): `galaxy`, `nebula`, `blackhole`, `star`, `planet`, `moon`, `comet`, `satellite`, `asteroid`, `dust`, `debris`.
+- System/non-UI types (`technical`, `unknown`, `reality_rift`, `chromatic_maw`, `void_whisper`, `cosmic_abomination`) must not appear in ordinary selectors.
+- Backend source of truth: `backend/internal/domain/note/type.go`.
+- Frontend source of truth: `frontend/src/entities/shared/model/celestial-body.ts` (`CelestialBody.UI_TYPES`, sorted by `scaleRank`).
+- Default creation type is `star`; import/bookmark default remains `asteroid` unless product changes it.
+
 ### Redis
 
 - Use go-redis/v9 API: `ConnMaxLifetime`, `ConnMaxIdleTime`.

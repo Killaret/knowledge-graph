@@ -50,6 +50,21 @@ describe("sharing API", () => {
     expect(await createShareLink("n1", "write")).toEqual(mockLink);
   });
 
+  it("createShareLink sends expires_at and max_uses when provided", async () => {
+    server.use(
+      http.post(`${baseUrl}/v1/notes/n1/share-link`, async ({ request }) => {
+        const body = await request.json();
+        expect(body).toEqual({
+          permission: "read",
+          expires_at: "2024-12-31T23:59:59Z",
+          max_uses: 5,
+        });
+        return HttpResponse.json(mockLink, { status: 201 });
+      })
+    );
+    expect(await createShareLink("n1", "read", "2024-12-31T23:59:59Z", 5)).toEqual(mockLink);
+  });
+
   it("getNoteShares returns shares and links", async () => {
     const response = { user_shares: [mockShare], share_links: [mockLink] };
     server.use(http.get(`${baseUrl}/v1/notes/n1/shares`, () => HttpResponse.json(response)));

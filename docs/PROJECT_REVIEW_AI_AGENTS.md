@@ -55,7 +55,8 @@
 - **SvelteKit** — meta-фреймворк.
 - **ky v1.14** — HTTP-клиент.
 - **D3-force v3** / **Three.js v0.184** — граф и 3D.
-- **Vitest v3** — юнит-тесты.
+- **Node v22.22.2** — runtime для фронтенда.
+- **Vitest v5** — юнит-тесты (обновлено с v3 в ходе PR #63).
 - **Playwright v1.59** — E2E.
 - **@cucumber/cucumber v12** — BDD.
 - **FSD + Atomic Design** — структура `frontend/src/{shared,components,entities,features,widgets,routes}` (`.windsurfrules`).
@@ -353,7 +354,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `cd backend && go build ./cmd/server && go build ./cmd/worker && go build ./cmd/cli` — успешно.
 - `cd frontend && npm run check` — 0 errors, 0 warnings.
 - `cd frontend && npm run build` — успешно.
-- `cd frontend && npm run test:coverage` — проходит при thresholds 70% (lines 80.36%, branch 80.69%, functions 79.97%).
+- `cd frontend && npm run test:coverage` — проходил при thresholds 70% (lines 80.36%, branch 80.69%, functions 79.97%) до обновления Vitest 5. После PR #63: lines 69.85%, statements 65.98%, functions 64.95%, branches 57.47% — ниже порога 70%, но сдвинулся ближе. Без стратегии по `home-page.svelte.ts`, Svelte-компонентам (`CockpitPanel`, `CockpitNoteDetails`) и `src/routes/**` 70% global не достижим.
 - `cd frontend && npm run format:check` — чисто.
 - `cd frontend && npx eslint .` — чисто.
 - `.\scripts\testing\run-full-test-cycle.ps1 -SkipManual` — exit code 0, оба режима (`skip-auth` и `real-auth`) Playwright-E2E прошли, dev/personal стеки восстановлены.
@@ -385,7 +386,15 @@ interfaces/api/  → Gin handlers, middleware, DTOs
    - **#44–#48** — Dependabot alerts по манифестам (`backend/go.mod`, `services/graph-service/go.mod`, `package-lock.json`, `frontend/package-lock.json`, `nlp-service/requirements.txt`). Всего 148 алертов: 16 critical, 74 high, 49 medium, 9 low.
    - **#49–#54** — CodeQL alerts (cookie Secure, SSRF в `import_fetcher.go`, weak hashing, `extract-urls.ts`, `check-core-workflow-sync.mjs`, workflow permissions).
 
-   **Состояние 2026-09-12:** ruleset `main` активен (ID `23024343`), blanket-major-игноры убраны из `dependabot.yml`, `services/graph-service` и root `npm` добавлены, `permissions:` добавлены в `_core-checks.yml`, `frontend-tests.yml`, `ci.yml`, `security.yml`. #50 dismissed как `won't fix`. #51 (API-key Argon2id), #52 (`extract-urls.ts` sanitization) и #53 (`check-core-workflow-sync.mjs` escaping) реализованы на ветке `security/findings`, тесты проходят. #49 (cookie Secure) dismissed как mitigated. #51–#53 реализованы в PR #55 (`security/findings`). Остаётся #54 (workflow permissions — скан после мёрджа) и review/merge PR #55.
+   **Состояние 2026-09-12:** ruleset `main` активен (ID `23024343`), blanket-major-игноры убраны из `dependabot.yml`, `services/graph-service` и root `npm` добавлены, `permissions:` добавлены в `_core-checks.yml`, `frontend-tests.yml`, `ci.yml`, `security.yml`. #50 dismissed как `won't fix`. #51 (API-key Argon2id), #52 (`extract-urls.ts` sanitization) и #53 (`check-core-workflow-sync.mjs` escaping) реализованы в PR #55 (`security/findings`), тесты проходят. #49 (cookie Secure) dismissed как mitigated. PR #55 замёржен в `main` 2026-09-12. #54 (workflow permissions) закроется после повторного CodeQL-скана на `main`. Следующий шаг: пересоздать существующие API-ключи (breaking change) и обработать Dependabot PR.
+
+6. **Frontend Dependabot group PR #63**
+   - Node обновлён до `v22.22.2`, чтобы удовлетворить `jsdom@30`.
+   - Из группы Dependabot исключены/откачены: `eslint` до `^9.39.5`, `@eslint/js` до `^9.22.0`, `typescript` до `^5.9.3` (ESLint 10 и TS 7 несовместимы с `eslint-plugin-jsx-a11y` и SvelteKit).
+   - `ky` v1.7+ адаптирован: хуки принимают state-объект (`{ request }` / `{ request, response }`), `prefixUrl` заменён на `prefix`.
+   - Моки Vitest 5 приведены к конструируемым `function`-реализациям (`ResizeObserver`, `THREE.WebGLRenderer` и др.).
+   - `npm run lint`, `npm run check`, `npm run test:unit` — зелёные. `npm run test:coverage` — **зелёное**: lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04%, все выше порога 70%.
+   - FE-COVERAGE-1 завершён: покрыты API (`notes.ts`, `links.ts`, `sharing.ts`), `client.ts`, `graph.svelte.ts`, `auth.svelte.test.ts`, `overlay.svelte`, `CockpitNoteDetails`, `CockpitPanel`, `FloatingAuthPanel`, `QuickCaptureWidget`, `home-page.svelte.ts`, `NoteCard`, `AuthCard`, `graphUtils`, `GraphPageShell`, `deviceCapabilities`, `galactic-lexicon`, `extract-urls`, `ToastNotification`, `CockpitHUD`, `node-renderers` и route-спеки (`import`, `search`, `profile`, `notes/[id]`, `notes/[id]/edit`, `notes/new`). Также исправлены типы в 9 test-файлах и `GraphPageShellTestWrapper.svelte`, удалён `frontend/tmp-coverage-parse.cjs`. PR #63 готов к мержу.
 
 ---
 
@@ -412,7 +421,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **Фаза:** Alpha → Beta.
 - **Стабильность:** критических проблем нет.
 - **Регрессионное тестирование:** 11/14 частей пройдено.
-- **Покрытие тестами:** 923 frontend unit-тестов (+57 по 2D-рендереру: fog, LOD, search outline, offscreen-cache/throttling, renderer-orchestrator, renderer-utils, variation, animation), backend unit-тесты — все проходят.
+- **Покрытие тестами:** 1381 frontend unit-тестов проходят, покрытие выше 70% по всем четырём метрикам: lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04% — FE-COVERAGE-1 **завершён**. PR #63 больше не блокируется `test`-job. Backend unit-тесты — все проходят.
 - **Готовность к production:** ожидает финальных проверок (E2E, интеграция, CI/CD).
 
 ### Текущий фокус — уже выполнено
@@ -696,6 +705,28 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Интеграция: `REFRESH MATERIALIZED VIEW` с разреженным графом (≤2 связи на узел) завершается <1s.
 - E2E/контракт: `POST /notes/batch` возвращает `data[].id`, `import_task_id` и признак постобработки.
 
+### 19.6 BATCH-1: batch-роуты notes/links — на ревью Claude Code / владельца (2026-09-13)
+
+**Что сделано.**
+
+- Реализованы `POST /api/v1/notes/batch/create`, `POST /api/v1/notes/batch/delete`, `POST /api/v1/import/batch`.
+- Старый `POST /api/v1/notes/batch` удалён из роутера и OpenAPI; фронтенд `deleteNotesBatch` переехал на `v1/notes/batch/delete`.
+- Покрытие велось в согласованном цикле: регрессионные тесты → намеренно падающие тесты → исправления.
+- Найдено и исправлено:
+  - `POST /api/v1/import/batch` не проверял `FindByID == nil` и позволял создавать связи на несуществующие заметки;
+  - пустой `notes` в `/import/batch` возвращал 200 вместо 400;
+  - доменный лимит `note.NewContent` (10 000 rune) расходился с API/OpenAPI (50 000 символов) — приведён к 50 000;
+  - `metadata.type` не валидировался по `ValidCelestialBodyTypes` в `POST /notes`, `/notes/batch/create` и `/import/batch`;
+  - `source_url` из импортного batch-айтема терялась и не сохранялась в метаданных.
+- Прогоны: `go test ./...`, `go vet ./...`, `go test ./cmd/server/...`, `npm run test:unit -- --run`, `npm run check`, `npm run lint` зелёные (9 pre-existing warnings).
+
+**Открытые риски / вопросы.**
+
+- Контракт ссылок в `/import/batch`: внешний Java/source-text handler не имеет UUID новых заметок. Текущий механизм клиентских `id` работает, но неудобен. Нужно решить: индексы массива, `external_id` с маппингом в ответе или упорядоченные операции. Обсуждается с Claude Code / владельцем.
+- **Adversarial-тестирование:** процесс зафиксирован в `docs/tasks/BATCH-TEST-STRATEGY.md`; осталось договориться о маркировке и формализации "практического исчерпания".
+- **DDD / Clean Architecture:** валидация `noteType` сейчас в `interfaces`, нужен перенос в `domain`. Варианты описаны в `docs/tasks/BATCH-DDD-VALIDATION.md`.
+- **Таксономия типов заметок:** обсуждена в `docs/tasks/NOTE-TYPE-TAXONOMY.md`; нужно согласовать `scaleRank`, состав `UI_TYPES` и единый порядок во всех списках (backend, frontend, OpenAPI) перед реализацией `BATCH-DDD-1`.
+
 ## 18. AUD-4: контракт входа через Яндекс (2026-09-06)
 
 **Что сделано.**
@@ -790,36 +821,61 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - PR #36 с правками и доской: https://github.com/Killaret/knowledge-graph/pull/36.
 - Ревью Claude Code: проверить все коммиты в окне 2026-09-11, включая `aff53f2`, `460e913`, `5c69aa3`, `bcf7b59`, `0d2655e`, `8808a1f`, `183521a`, `8d19daf`, `ff32ee0`, `21f5d8d`, `5acc40d`, `ff65307`, `af2f957`, `49c4e67` и все последующие до слияния.
 
-## 21. Открытые Dependabot PR (#21–#32, #38–#40), 2026-09-12
+## 21. Dependabot PR — итоговая разборка (#21–#32, #38–#40, #56–#63, #68, #70–#77), 2026-09-12
 
-Всего 15 открытых Dependabot PR. #33 (frontend group), #34 (deploy docs), #35/#36 (UX-2) — замёржены. #37 не существует. `go.mod`, `requirements.txt`, `services/graph-service/go.mod` на `main` до сих пор содержат старые версии.
+Все Dependabot-PR обработаны, кроме **#25**. Замёржены: #21–#23, #24, #26, #27, #28, #29, #30, #31, #38, #56, #57, #60, #61, #62, #63. Закрыты как дублирующие/устаревшие: #32 (дублирует #28), #39, #40, #58, #59 (вошли в консолидированный PR #68). После фикса CI (PR #78) пришла новая волна Dependabot-PR: #70–#77 и **#79** (`nltk`) — все смержены. **#85** (`go_modules`) — смержен. **#25** (`yake`) — отклонён в пользу замены на `keybert` (MIT) с лемматизацией.
 
-| # | Область | Зависимость | С | По | Риск | Рекомендация |
+| # | Область | Зависимость | С | По | Риск | Итог |
 |---|---|---|---|---|---|---|
-| #24 | backend Go | `golang.org/x/net` | 0.52.0 | 0.58.0 | Средний (0.x minor, транзитив) | Группировать с другими Go-PR; проверить `go test ./...` |
-| #30 | backend Go | `pgvector-go` | 0.2.0 | 0.4.1 | Средний (0.x, pgvector API) | Ревью changelog; тесты pgvector/integration |
-| #26 | backend Go | `go-redis/v9` | 9.14.1 | 9.22.0 | Средний (minor в рамках v9, но правила требуют v9 API) | Проверить отсутствие v8-API; `go test ./...` |
-| #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий (0.x, integration tests) | Запустить integration tests |
-| #28 | backend Go | `testcontainers-go/modules/postgres` | 0.40.0 | 0.44.0 | Средний-высокий | Запустить integration tests |
-| #25 | NLP Python | `yake` | 0.4.8 | 0.7.3 | Средний (0.x, keyword extraction) | Проверить `pytest` |
-| #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний (minor, FastAPI/Pydantic v2) | Проверить `pytest` и совместимость с FastAPI |
-| #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий (minor, модель/эмбеддинги) | Сравнить вывод embeddings; возможно, требуется пересчёт |
-| #27 | NLP Python | `python-dotenv` | 1.0.0 | 1.2.3 | Низкий | Безопасно группировать с NLP |
-| #21 | CI Actions | `actions/setup-python` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
-| #22 | CI Actions | `actions/setup-go` | 6 | 7 | Низкий-средний | Проверить workflow CI после merge |
-| #23 | CI Actions | `actions/checkout` | 5 | 7 | Низкий-средний | Проверить workflow CI после merge |
-| #38 | graph-service | `pgx/v5` | 5.7.2 | 5.9.2 | Средний (pgx API, graph-service) | Запустить `go test` в `services/graph-service`; проверить gRPC/pgvector |
-| #39 | graph-service | `grpc` | 1.67.0 | 1.83.2 | Средний-высокий (minor, транспорт gRPC) | Запустить graph-service integration; проверить совместимость с backend |
-| #40 | graph-service | `containerd` | 1.7.18 | 1.7.35 | Средний (transitive, container runtime) | Группировать с #39; пересобрать образ graph-service |
+| #21 | CI Actions | `actions/setup-python` | 6 | 7 | Низкий | ✅ замёржен |
+| #22 | CI Actions | `actions/setup-go` | 6 | 7 | Низкий | ✅ замёржен |
+| #23 | CI Actions | `actions/checkout` | 5 | 7 | Низкий | ✅ замёржен |
+| #62 | root npm | grouped (7 updates) | — | — | Средний | ✅ замёржен |
+| #63 | frontend npm | grouped (17 updates) | — | — | Средний-высокий | ✅ замёржен после фиксов `eslint`/`jsdom`/покрытия; `test:unit` 1381/1381, `test:coverage` lines 83.62%, branches 70.04% |
+| #24 | backend Go | `golang.org/x/net` | 0.52.0 | 0.58.0 | Средний | ✅ замёржен (merge-конфликт go.mod разрешён, `go test -p 1 ./...` pass) |
+| #26 | backend Go | `go-redis/v9` | 9.14.1 | 9.22.0 | Средний | ✅ замёржен |
+| #28 | backend Go | `testcontainers-go/modules/postgres` | 0.40.0 | 0.44.0 | Средний-высокий | ✅ замёржен (разрешён конфликт go.mod, `go test -p 1 ./...` pass) |
+| #30 | backend Go | `pgvector-go` | 0.2.0 | 0.4.1 | Средний | ✅ замёржен (разрешён конфликт go.mod, `go test -p 1 ./...` pass) |
+| #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий | ❌ закрыт как дублирующий #28 |
+| #56 | NLP Python | `httpx` | 0.25.2 | 0.28.1 | Низкий-средний | ✅ замёржен |
+| #25 | NLP Python | `yake` | 0.4.8 | — | Средний | ❌ отклонён — вместо обновления до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ); см. [`tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md`](tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md) |
+| #27 | NLP Python | `python-dotenv` | 1.0.0 | 1.2.3 | Низкий | ✅ замёржен |
+| #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний | ✅ замёржен |
+| #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий | ✅ замёржен; пересчёт embeddings не потребовался |
+| #57 | graph-service | `go-redis/v9` | 9.5.5 | 9.22.0 | Средний | ✅ замёржен |
+| #60 | graph-service | `testify` | 1.11.1 | 1.12.1 | Низкий | ✅ замёржен |
+| #61 | graph-service | `protobuf` | 1.34.2 | 1.36.12 | Средний | ✅ замёржен |
+| #38 | graph-service | `pgx/v5` | 5.7.2 | 5.9.2 | Средний | ✅ замёржен |
+| #68 | graph-service | консолидированный PR (#39/#40/#58/#59) | — | — | Средний-высокий | ✅ замёржен; обновлены `grpc`, `containerd`, `testcontainers-go`, `moby/go-archive v0.3.3` (fix GHSA-hfg8-hc9c-6c3h / CVE-2026-17106); в `allow-licenses` добавлен `LicenseRef-scancode-google-patent-license-golang` |
+| #39 | graph-service | `grpc` | 1.67.0 | 1.83.2 | Средний-высокий | ❌ закрыт — вошёл в #68 |
+| #40 | graph-service | `containerd` | 1.7.18 | 1.7.35 | Средний | ❌ закрыт — вошёл в #68 |
+| #58 | graph-service | `testcontainers-go/modules/postgres` | 0.35.0 | 0.44.0 | Средний-высокий | ❌ закрыт — вошёл в #68 |
+| #59 | graph-service | `testcontainers-go` | 0.35.0 | 0.44.0 | Средний-высокий | ❌ закрыт — вошёл в #68 |
+|| #70 | frontend npm | `@humanfs/node` | 0.16.7 | 0.16.8 | Низкий | ✅ замёржен |
+|| #71 | frontend npm | `@sveltejs/kit` | 2.59.0 | 2.70.3 | Средний | ✅ замёржен |
+|| #72 | frontend npm | `brace-expansion` | 1.1.14 | 1.1.18 | Низкий | ✅ замёржен |
+|| #73 | frontend npm | `vite` | 8.0.10 | 8.3.0 | Средний-высокий | ✅ замёржен |
+|| #74 | frontend npm | `js-yaml` | 4.1.1 | 4.3.2 | Низкий | ✅ замёржен |
+|| #75 | frontend npm | `svelte` | 5.55.5 | 5.57.0 | Средний | ✅ замёржен |
+|| #76 | root npm | `brace-expansion` | 1.1.14 | 1.1.18 | Низкий | ✅ замёржен |
+|| #77 | root npm | `postcss` | 8.5.14 | 8.5.28 | Низкий | ✅ замёржен |
+|| #85 | backend Go | `go_modules` (`edwards25519`, `moby/go-archive`, `quic-go`) | — | — | Средний-высокий | ✅ замёржен — закрыты алерты GHSA-hfg8-hc9c-6c3h, GHSA-vvgj-x9jq-8cj9, GHSA-fw7p-63qq-7hpr |
+|| #79 | NLP Python | `nltk` | 3.8.1 | 3.10.3 | Средний | ✅ замёржен — `allow-ghsas: GHSA-8mgp-746c-j5xp` принят и задокументирован; см. [`tasks/DEPENDABOT-79-nltk-vulnerability.md`](tasks/DEPENDABOT-79-nltk-vulnerability.md) |
 
-**Порядок действий:**
+**Порядок действий (выполнен):**
 
-1. Не закрывать все сразу — каждый PR либо мержится, либо отклоняется осознанно.
-2. Объединить по группам: Go-бэкенд (#24, #26, #28, #30, #32), graph-service (#38, #39, #40), NLP (#25, #27, #29, #31), GitHub Actions (#21, #22, #23).
-3. Внутри группы мержить по цепочке с `gh pr merge --rebase` или через GitHub; Dependabot предложит rebase следующих.
-4. Перед merge каждой группы — `go test ./...` и `go test -tags=integration ./...` (backend), `go test ./...` в `services/graph-service` (graph-service), `pytest` (NLP), `npm run check`/`test:unit` (frontend/Actions — CI достаточно).
-5. `sentence-transformers` (#31) — самый рискованный; выделить отдельный раунд с замером embeddings.
-6. Действие по умолчанию: держать открытыми до следующего раунда CI/ревью, либо закрыть только явно отклонённые/устаревшие.
+1. ✅ CI Actions (#21–#23) — squash-merge.
+2. ✅ Root npm (#62) — squash-merge.
+3. ✅ Frontend npm (#63) — fixed `eslint`/`jsdom`/coverage, squash-merge.
+4. ✅ Backend Go (#24, #26, #28, #30); #32 закрыт.
+5. ✅ NLP (#56, #27, #29, #31); #79 смержен; #25 отклонён — будет замена на `keybert` с лемматизацией.
+6. ✅ Graph-service (#38, #57, #60, #61) — squash-merge; конфликтующие #39/#40/#58/#59 объединены в PR #68 и смержены.
+7. ✅ CI fix (PR #78) — починен запуск Core Checks (`permissions:`, `environment:` для `run-name`, `smoke` env, `needs` для smoke).
+8. ✅ Новая волна Dependabot (#70–#77), #79 (`nltk`) и #85 (`go_modules`) — все смержены после фикса CI.
+
+**Следующий шаг:**
+- **#25** (`yake`): отклонён — вместо обновления `yake` до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ). PR #25 закрыт, `yake` остаётся 0.4.8. Подробности: [`tasks/DEPENDABOT-25-yake-license.md`](tasks/DEPENDABOT-25-yake-license.md), [`tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md`](tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md).
+- **#79** (`nltk` 3.8.1 → 3.10.3): ✅ замёржен — добавлен `allow-ghsas: GHSA-8mgp-746c-j5xp`; остаточный риск принят и задокументирован. Подробности: [`tasks/DEPENDABOT-79-nltk-vulnerability.md`](tasks/DEPENDABOT-79-nltk-vulnerability.md).
 
 ## 22. Правки CI под PR #36, 2026-09-11
 
@@ -883,3 +939,88 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 **Итог CI-4:**
 
 |- PR #36 run `34642092163` — `conclusion: success`, все Core Checks и Smoke Tests зелёные; Playwright 49 passed/2 skipped, BDD 5 scenarios/43 steps passed.
+
+## 23. CI-5: починка запуска Core Checks и волна Dependabot PR #70–#77, 2026-09-12
+
+**Контекст.** После мёрджа PR #63 и ряда Dependabot-обновлений в `main` новые PR стали застревать на стадии `Core Checks`: джоба не могла запустить ни одного шага из-за ошибки `Error when evaluating 'strategy' for job 'build-matrix'` / `Error parsing called workflow` и аналогичных синтаксических/контекстных ошибок. Параллельно пришла новая волна Dependabot-PR (#70–#77), которую нельзя было проверить и смержить, пока CI не работал.
+
+**PR #78 — `ci: fix Core Checks startup and pre-existing failures`.**
+
+- Исправлен запуск `Core Checks` (`_core-checks.yml`):
+  - `run-name` вынесен на уровень `workflow` вместо `job`, убрана ссылка на `inputs` в `run-name`.
+  - `permissions:` добавлены/исправлены: `contents: read` и `checks: read` для `reusable_workflow_call`.
+  - `environment:` убран из `job`-level, оставлен для шагов, которым он действительно нужен.
+  - `needs:` у `Smoke Tests` (`ci.yml`) теперь корректно ссылается на джобы `Core Checks` / `Security Audit`.
+- Исправлена совместимость NLP после `httpx 0.28.1`:
+  - `frontend/package-lock.json` обновлён (`ky` hooks state, `prefixUrl` → `prefix`).
+  - `nlp-service/requirements.txt`: `fastapi` поднят до совместимой с `httpx 0.28` версии, `uvicorn` синхронизирован.
+- Форматирование: Prettier применён к 20 frontend test/spec файлам.
+- Локальная верификация:
+  - `npm run format:check` — чисто.
+  - `npm run check` — 0 errors, 0 warnings.
+  - `npm run lint` — 0 errors, 9 pre-existing warnings.
+  - `npm run test:unit -- --run` — 1381/1381 passed.
+  - `npm run test:coverage` — lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04% — все выше порога 70%.
+- CI run `34710120173` / `34710117628` — `conclusion: success`: CodeQL, Dependency Review, Frontend Security Audit, Core Checks (Backend, Frontend, Graph, NLP, Integration), Docker Compose, Smoke Tests, `test` — все зелёные.
+- PR #78 замёржен в `main`.
+
+**Новая волна Dependabot PR #70–#77.**
+
+После фикса CI Dependabot поднял свежие PR:
+
+|| # | Область | Зависимость | С | По | Итог |
+|---|---|---|---|---|---|---|
+|| #70 | frontend npm | `@humanfs/node` | 0.16.7 | 0.16.8 | ✅ замёржен |
+|| #71 | frontend npm | `@sveltejs/kit` | 2.59.0 | 2.70.3 | ✅ замёржен |
+|| #72 | frontend npm | `brace-expansion` | 1.1.14 | 1.1.18 | ✅ замёржен |
+|| #73 | frontend npm | `vite` | 8.0.10 | 8.3.0 | ✅ замёржен |
+|| #74 | frontend npm | `js-yaml` | 4.1.1 | 4.3.2 | ✅ замёржен |
+|| #75 | frontend npm | `svelte` | 5.55.5 | 5.57.0 | ✅ замёржен |
+|| #76 | root npm | `brace-expansion` | 1.1.14 | 1.1.18 | ✅ замёржен |
+|| #77 | root npm | `postcss` | 8.5.14 | 8.5.28 | ✅ замёржен |
+|| #85 | backend Go | `go_modules` (`edwards25519`, `moby/go-archive`, `quic-go`) | — | — | ✅ замёржен — закрыты GHSA-hfg8-hc9c-6c3h, GHSA-vvgj-x9jq-8cj9, GHSA-fw7p-63qq-7hpr |
+|| #79 | NLP Python | `nltk` | 3.8.1 | 3.10.3 | ✅ замёржен — `allow-ghsas: GHSA-8mgp-746c-j5xp` |
+
+- Каждый PR был обновлён до актуального `main` и прогнан с фиксом CI.
+- Все checks (`Analyze`, `Core Checks`, `Dependency Review`, `Frontend Security Audit`, `test`, `Smoke Tests`) — зелёные.
+- Все PR смержены через squash.
+
+**Состояние на 2026-09-12.**
+
+- Открытые Dependabot-PR: **#25** (`yake`) — отклонён в пользу замены на `keybert` (MIT) с лемматизацией; **#79** (`nltk` 3.8.1 → 3.10.3) — смержен с `allow-ghsas: GHSA-8mgp-746c-j5xp`.
+- Frontend coverage после всех обновлений: **1381/1381 unit-тестов passed**, lines 83.62%, statements 81.9%, functions 81.89%, branches 70.04% — выше 70%.
+- `npm run check` — 0 errors, 0 warnings; `npm run lint` — 0 errors, 9 pre-existing warnings.
+
+## 24. NOTE-TYPE-TAXONOMY и DDD `NoteType` value object (2026-09-14)
+
+**Контекст.** Типы заметок (`galaxy`, `nebula`, `blackhole`, `star`, `planet`, `moon`, `comet`, `satellite`, `asteroid`, `dust`, `debris`, плюс системные/аномалии) были рассогласованы между backend, frontend и OpenAPI. `moon` был известен домену, но отсутствовал в пользовательском селекторе; порядок в списках шёл не по космической иерархии; `blackhole` спорно располагался ниже `star`; дефолтный тип зависел от `types[0]`.
+
+**Решения владельца:**
+- Единая шкала `scaleRank` от `galaxy` (100) к `debris` (5).
+- `blackhole` выше `star` (массивнее и иное смысловое наполнение).
+- `moon` включается в пользовательский UI.
+- `debris` ниже `dust`; `dust` остаётся для быстрых захватов/инбокса.
+- Дефолтный тип при создании заметки — `star`.
+
+**Реализация Devin (ветка `devin/batch-api-37`):**
+- `backend/internal/domain/note/type.go` — `NoteType` value object с `scaleRank`, `IsUserSelectable`, валидацией, `DefaultNoteType()`.
+- `backend/internal/domain/note/entity.go` — `Note` хранит `NoteType`; конструкторы и `SetType` принимают `NoteType`.
+- `backend/internal/interfaces/api/notehandler/note_handler.go` — `resolveNoteType` через `note.NewType`; `validateResolvedNoteType` удалён.
+- `backend/internal/interfaces/api/common/validation/validators.go` — `IsValidCelestialBodyType` делегирует `note.NewType`.
+- `backend/internal/infrastructure/db/postgres/note_repo.go` — `toDomainNote` преобразует строки БД в `NoteType`; пустые legacy-значения мапятся в `star`.
+- `backend/internal/application/import/service.go` — импорт преобразует типы через `note.NewType`; дефолт `asteroid` сохранён.
+- `backend/openAPI.yaml` — все note-type enum приведены к единому каноническому порядку.
+- `frontend/src/entities/shared/model/celestial-body.ts` — `scaleRank` для всех типов; `UI_TYPES` включает `moon` и сортируется по `scaleRank`; `ALL` в каноническом порядке.
+- `frontend/src/components/molecules/TypeSelector.svelte` — `defaultSelected` ищет `star`, а не `types[0]`.
+- `CreateNoteModal`, `NoteForm`, graph-формы, импорт закладок, фильтры графа/home page — все используют `CelestialBody.UI_TYPES`.
+- Тесты: `note/type_test.go`, `celestial-body.test.ts`, `CreateNoteModal.spec.ts`, `EditNoteModal.spec.ts`, `GraphCanvas.events.spec.ts`, `home-page.svelte.test.ts`.
+
+**Верификация:**
+- `cd backend && go test ./...` — зелёное.
+- `cd backend && go vet ./...` — чисто.
+- `cd backend && go test ./cmd/server/...` — контрактный тест проходит.
+- `cd frontend && npm run test:unit -- --run` — 1381/1381 passed.
+- `cd frontend && npm run build` — успешно.
+- `cd frontend && npm run check` — 0 errors, 0 warnings.
+
+**Статус:** реализация готова, передана на ревью Claude Code. Не мержить без ревью.

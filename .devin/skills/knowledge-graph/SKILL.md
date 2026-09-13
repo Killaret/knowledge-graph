@@ -41,6 +41,15 @@ Stored once under `.devin/skills/`; `.claude/skills/` holds pointers to the same
 - `kg-backup` — Personal stack data safety
 - `kg-layers` — layer boundaries and how to check them
 
+### Note type taxonomy
+
+- The canonical note type order (largest to smallest) is: `galaxy`, `nebula`, `blackhole`, `star`, `planet`, `moon`, `comet`, `satellite`, `asteroid`, `dust`, `debris`.
+- System/non-UI types (`technical`, `unknown`, and anomalies) must not appear in ordinary user selectors.
+- Backend source of truth: `backend/internal/domain/note/type.go` (`NoteType`, `NewType`, `DefaultNoteType`).
+- Frontend source of truth: `frontend/src/entities/shared/model/celestial-body.ts` (`CelestialBody.UI_TYPES`, sorted by `scaleRank`).
+- OpenAPI and all DTO `oneof` lists must stay synchronized with the canonical order.
+- Default creation type is `star`; import/bookmark default remains `asteroid` unless product changes it.
+
 How to write new ones: `docs/AI_AGENT_PROTOCOL.md`, section «Как писать скиллы». A skill is written after an incident, must cite real artifacts, and never duplicates the norm.
 
 ## Devin Workflow

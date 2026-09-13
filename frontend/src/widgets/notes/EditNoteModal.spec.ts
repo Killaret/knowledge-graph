@@ -81,7 +81,7 @@ describe("EditNoteModal", () => {
 
     expect(screen.getByDisplayValue("Existing content")).toBeInTheDocument();
     // TypeSelector показывает выбранный тип через aria-pressed
-    const planetButton = screen.getByRole("button", { name: /Planet/i });
+    const planetButton = screen.getByTestId("type-btn-planet");
     expect(planetButton).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -283,7 +283,7 @@ describe("EditNoteModal", () => {
     });
 
     // Выбираем Comet через TypeSelector (вместо старого select)
-    const cometButton = screen.getByRole("button", { name: /Comet/i });
+    const cometButton = screen.getByTestId("type-btn-comet");
     await fireEvent.click(cometButton);
     await tick();
 

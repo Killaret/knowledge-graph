@@ -36,7 +36,7 @@ func (m *mockNoteRepoForQueries) FindByID(ctx context.Context, id uuid.UUID) (*n
 	title, _ := note.NewTitle("Neighbor")
 	content, _ := note.NewContent("content")
 	metadata, _ := note.NewMetadata(nil)
-	n := note.NewNote(title, content, "star", metadata)
+	n := note.NewNote(title, content, note.MustType("star"), metadata)
 	return n, nil
 }
 func (m *mockNoteRepoForQueries) Delete(ctx context.Context, id uuid.UUID) error         { return nil }

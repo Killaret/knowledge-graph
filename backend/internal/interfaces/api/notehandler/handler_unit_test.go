@@ -184,7 +184,7 @@ func newTestNote(t *testing.T, title, content, noteType string) *note.Note {
 	require.NoError(t, err)
 	meta, err := note.NewMetadata(nil)
 	require.NoError(t, err)
-	return note.NewNote(ttl, cnt, noteType, meta)
+	return note.NewNote(ttl, cnt, note.MustType(noteType), meta)
 }
 
 func newContext(t *testing.T, method, target, body string, userID ...uuid.UUID) (*httptest.ResponseRecorder, *gin.Context) {
@@ -273,7 +273,7 @@ func TestCreateNote_NewTitleError(t *testing.T) {
 func TestCreateNote_NewContentError(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 
-	longContent := strings.Repeat("a", 10001)
+	longContent := strings.Repeat("a", 50001)
 	body := fmt.Sprintf(`{"title":"T","content":"%s"}`, longContent)
 	w, c := newContext(t, http.MethodPost, "/notes", body)
 	h.Create(c)
@@ -471,7 +471,7 @@ func TestUpdateNote_NewContentError(t *testing.T) {
 
 	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
 
-	longContent := strings.Repeat("a", 10001)
+	longContent := strings.Repeat("a", 50001)
 	body := fmt.Sprintf(`{"content":"%s"}`, longContent)
 	w, c := newContext(t, http.MethodPut, "/notes/"+n.ID().String(), body)
 	withID(c, n.ID())
@@ -582,7 +582,7 @@ func TestDeleteBatchNotes_Success(t *testing.T) {
 	repo.On("DeleteBatch", mock.Anything, mock.AnythingOfType("[]uuid.UUID")).Return(nil)
 
 	body := fmt.Sprintf(`{"ids":["%s","%s"]}`, n1.ID(), n2.ID())
-	w, c := newContext(t, http.MethodPost, "/notes/batch", body, owner)
+	w, c := newContext(t, http.MethodPost, "/notes/batch/delete", body, owner)
 	h.DeleteBatch(c)
 	_ = w
 
@@ -605,7 +605,7 @@ func TestDeleteBatchNotes_ForeignNote(t *testing.T) {
 	repo.On("FindByID", mock.Anything, theirs.ID()).Return(theirs, nil)
 
 	body := fmt.Sprintf(`{"ids":["%s","%s"]}`, mine.ID(), theirs.ID())
-	w, c := newContext(t, http.MethodPost, "/notes/batch", body, owner)
+	w, c := newContext(t, http.MethodPost, "/notes/batch/delete", body, owner)
 	h.DeleteBatch(c)
 	_ = w
 
@@ -616,7 +616,7 @@ func TestDeleteBatchNotes_ForeignNote(t *testing.T) {
 func TestDeleteBatchNotes_InvalidBody(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 
-	w, c := newContext(t, http.MethodPost, "/notes/batch", `{}`)
+	w, c := newContext(t, http.MethodPost, "/notes/batch/delete", `{}`)
 	h.DeleteBatch(c)
 	_ = w
 
@@ -627,7 +627,7 @@ func TestDeleteBatchNotes_InvalidBody(t *testing.T) {
 func TestDeleteBatchNotes_EmptyIDs(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 
-	w, c := newContext(t, http.MethodPost, "/notes/batch", `{"ids":[]}`)
+	w, c := newContext(t, http.MethodPost, "/notes/batch/delete", `{"ids":[]}`)
 	h.DeleteBatch(c)
 	_ = w
 
@@ -638,7 +638,7 @@ func TestDeleteBatchNotes_EmptyIDs(t *testing.T) {
 func TestDeleteBatchNotes_InvalidUUID(t *testing.T) {
 	h, repo, _, _, _, _ := setupUnitHandler(t)
 
-	w, c := newContext(t, http.MethodPost, "/notes/batch", `{"ids":["not-a-uuid"]}`)
+	w, c := newContext(t, http.MethodPost, "/notes/batch/delete", `{"ids":["not-a-uuid"]}`)
 	h.DeleteBatch(c)
 	_ = w
 
@@ -655,7 +655,7 @@ func TestDeleteBatchNotes_RepoError(t *testing.T) {
 	repo.On("DeleteBatch", mock.Anything, mock.AnythingOfType("[]uuid.UUID")).Return(assert.AnError)
 
 	body := fmt.Sprintf(`{"ids":["%s"]}`, id)
-	w, c := newContext(t, http.MethodPost, "/notes/batch", body)
+	w, c := newContext(t, http.MethodPost, "/notes/batch/delete", body)
 	h.DeleteBatch(c)
 	_ = w
 

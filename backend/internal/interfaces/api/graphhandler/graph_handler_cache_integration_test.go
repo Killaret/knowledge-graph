@@ -130,7 +130,7 @@ func (s *GraphHandlerCacheIntegrationTestSuite) createTestNote(title, content, n
 	noteTitle, _ := note.NewTitle(title)
 	noteContent, _ := note.NewContent(content)
 	metadata, _ := note.NewMetadata(map[string]interface{}{"type": noteType})
-	n := note.NewNoteWithCreator(noteTitle, noteContent, noteType, metadata, userID)
+	n := note.NewNoteWithCreator(noteTitle, noteContent, note.MustType(noteType), metadata, userID)
 	err := s.noteRepo.Save(ctx, n)
 	s.Require().NoError(err, "failed to create test note")
 	return n

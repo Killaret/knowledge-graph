@@ -59,6 +59,8 @@ export interface CelestialBodyProps {
   baseSpeed: number;
   /** Max pixel offset contributed to the gravity lens distortion. */
   gravityOffset: number;
+  /** Cosmic scale rank used for ordering selectors (larger = broader scope). */
+  scaleRank?: number;
   /** Optional CSS custom property name for components that use CSS variables. */
   cssVarName?: string;
   /** True for the four explicit anomaly renderers and the unknown dispatcher. */
@@ -120,6 +122,9 @@ export class CelestialBody {
   get gravityOffset(): number {
     return this.props.gravityOffset;
   }
+  get scaleRank(): number {
+    return this.props.scaleRank ?? 0;
+  }
   get cssVarName(): string {
     return this.props.cssVarName ?? `--color-${this.type}`;
   }
@@ -154,7 +159,7 @@ export class CelestialBody {
 
   /**
    * Suggests a UI-visible child type for a given parent celestial body type.
-   * Moon is intentionally excluded because it is an auto-assigned detail type.
+   * Moon is now a user-selectable detail type, so "planet" suggests "moon".
    */
   static getChildSuggestion(parentType: string | undefined): string {
     switch ((parentType ?? "").toLowerCase().trim()) {
@@ -164,7 +169,7 @@ export class CelestialBody {
       case "star":
         return CelestialBody.PLANET.type;
       case "planet":
-        return CelestialBody.SATELLITE.type;
+        return CelestialBody.MOON.type;
       case "nebula":
         return CelestialBody.STAR.type;
       case "satellite":
@@ -172,8 +177,9 @@ export class CelestialBody {
       case "asteroid":
         return CelestialBody.ASTEROID.type;
       case "dust":
-      default:
         return CelestialBody.PLANET.type;
+      default:
+        return CelestialBody.STAR.type;
     }
   }
 
@@ -193,6 +199,7 @@ export class CelestialBody {
     gravityOffset: 20,
     cssVarName: "--color-star",
     isUi: true,
+    scaleRank: 80,
   });
 
   static readonly PLANET = new CelestialBody({
@@ -211,6 +218,7 @@ export class CelestialBody {
     gravityOffset: 15,
     cssVarName: "--color-planet",
     isUi: true,
+    scaleRank: 60,
   });
 
   static readonly MOON = new CelestialBody({
@@ -228,7 +236,8 @@ export class CelestialBody {
     baseSpeed: 0.005,
     gravityOffset: 10,
     cssVarName: "--color-moon",
-    isUi: false,
+    isUi: true,
+    scaleRank: 50,
   });
 
   static readonly COMET = new CelestialBody({
@@ -247,6 +256,7 @@ export class CelestialBody {
     gravityOffset: 10,
     cssVarName: "--color-comet",
     isUi: true,
+    scaleRank: 40,
   });
 
   static readonly GALAXY = new CelestialBody({
@@ -265,6 +275,7 @@ export class CelestialBody {
     gravityOffset: 10,
     cssVarName: "--color-galaxy",
     isUi: true,
+    scaleRank: 100,
   });
 
   static readonly NEBULA = new CelestialBody({
@@ -283,6 +294,7 @@ export class CelestialBody {
     gravityOffset: 10,
     cssVarName: "--color-nebula",
     isUi: true,
+    scaleRank: 90,
   });
 
   static readonly ASTEROID = new CelestialBody({
@@ -301,6 +313,7 @@ export class CelestialBody {
     gravityOffset: 10,
     cssVarName: "--color-asteroid",
     isUi: true,
+    scaleRank: 30,
   });
 
   static readonly SATELLITE = new CelestialBody({
@@ -319,6 +332,7 @@ export class CelestialBody {
     gravityOffset: 10,
     cssVarName: "--color-satellite",
     isUi: true,
+    scaleRank: 35,
   });
 
   static readonly BLACKHOLE = new CelestialBody({
@@ -337,6 +351,7 @@ export class CelestialBody {
     gravityOffset: 25,
     cssVarName: "--color-blackhole",
     isUi: true,
+    scaleRank: 85,
   });
 
   static readonly DEBRIS = new CelestialBody({
@@ -355,6 +370,7 @@ export class CelestialBody {
     gravityOffset: 10,
     cssVarName: "--color-debris",
     isUi: true,
+    scaleRank: 5,
   });
 
   static readonly DUST = new CelestialBody({
@@ -373,6 +389,7 @@ export class CelestialBody {
     gravityOffset: 10,
     cssVarName: "--color-dust",
     isUi: true,
+    scaleRank: 10,
   });
 
   static readonly TECHNICAL = new CelestialBody({
@@ -391,6 +408,7 @@ export class CelestialBody {
     gravityOffset: 10,
     cssVarName: "--color-technical",
     isUi: false,
+    scaleRank: 0,
   });
 
   static readonly UNKNOWN = new CelestialBody({
@@ -410,6 +428,7 @@ export class CelestialBody {
     cssVarName: "--color-unknown",
     isAnomaly: true,
     isUi: false,
+    scaleRank: 0,
   });
 
   static readonly REALITY_RIFT = new CelestialBody({
@@ -430,6 +449,7 @@ export class CelestialBody {
     isAnomaly: true,
     isUi: false,
     anomalyType: "reality_rift",
+    scaleRank: 0,
   });
 
   static readonly CHROMATIC_MAW = new CelestialBody({
@@ -450,6 +470,7 @@ export class CelestialBody {
     isAnomaly: true,
     isUi: false,
     anomalyType: "chromatic_maw",
+    scaleRank: 0,
   });
 
   static readonly VOID_WHISPER = new CelestialBody({
@@ -470,6 +491,7 @@ export class CelestialBody {
     isAnomaly: true,
     isUi: false,
     anomalyType: "void_whisper",
+    scaleRank: 0,
   });
 
   static readonly COSMIC_ABOMINATION = new CelestialBody({
@@ -490,20 +512,21 @@ export class CelestialBody {
     isAnomaly: true,
     isUi: false,
     anomalyType: "cosmic_abomination",
+    scaleRank: 0,
   });
 
   private static readonly ALL = [
+    CelestialBody.GALAXY,
+    CelestialBody.NEBULA,
+    CelestialBody.BLACKHOLE,
     CelestialBody.STAR,
     CelestialBody.PLANET,
     CelestialBody.MOON,
     CelestialBody.COMET,
-    CelestialBody.GALAXY,
-    CelestialBody.NEBULA,
-    CelestialBody.ASTEROID,
     CelestialBody.SATELLITE,
-    CelestialBody.BLACKHOLE,
-    CelestialBody.DEBRIS,
+    CelestialBody.ASTEROID,
     CelestialBody.DUST,
+    CelestialBody.DEBRIS,
     CelestialBody.TECHNICAL,
     CelestialBody.UNKNOWN,
     CelestialBody.REALITY_RIFT,
@@ -514,6 +537,8 @@ export class CelestialBody {
 
   private static readonly MAP = new Map(CelestialBody.ALL.map((body) => [body.type, body]));
 
-  static readonly UI_TYPES = CelestialBody.ALL.filter((body) => body.isUi);
+  static readonly UI_TYPES = CelestialBody.ALL.filter((body) => body.isUi).sort(
+    (a, b) => b.scaleRank - a.scaleRank
+  );
   static readonly ANOMALIES = CelestialBody.ALL.filter((body) => body.isAnomaly);
 }

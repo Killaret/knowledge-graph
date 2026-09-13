@@ -34,7 +34,7 @@ func TestNewContent(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", "", false},
-		{"too long", string(make([]byte, 10001)), true},
+		{"too long", string(make([]byte, 50001)), true},
 		{"valid", "Content", false},
 	}
 	for _, tt := range tests {
