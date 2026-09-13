@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-08 — a222b04
-Прочитано: Devin — 2026-09-08 — 5ff7e1f
+Прочитано: Devin — 2026-09-14 — f65bf35
 ```
 
 ---
@@ -76,6 +76,8 @@
 | IMP-4: массовый импорт должен запускать тот же конвейер `RefreshRecommendations`, что и ручное/букмарклетное создание; Java `source-text-handler` нуждается в batch-методе создания заметок и проверкой, что рекомендации пересчитываются | [`tasks/IMP-4-import-recommendations-and-java-batch.md`](tasks/IMP-4-import-recommendations-and-java-batch.md), [`tasks/IMP-4-claude-review.md`](tasks/IMP-4-claude-review.md), [`TZ-Java-source-text-handler-2026-08-30.md`](../TZ-Java-source-text-handler-2026-08-30.md) | **на ревью у Claude и владельца** — Devin вручную заполнил `note_recommendations` (108) и `links` (18) семантическими top-1/6 связями, вернул `GetSuggestions` и `GetGraph`; добавил `GammaLinkGenerator` с лимитом исходящей степени (≤2) и тесты; `FindSimilarNotes` теперь возвращает нормализованный [0,1] score; Java-specific endpoint (`POST /api/v1/import/java/batch`) удалён по решению владельца; сейчас на ревью: должен ли Java использовать существующий `import/bookmarks`, generic `import/batch`, ручное создание связей, dedup и pipeline постобработки | 2026-09-11 |
 | REG-1: регрессионный тест на семантическое сходство в карточке заметки (исправлен alias `similarity`→`score` и подгрузка `title` в fallback) | [`tasks/REG-1-semantic-similarity-card-regression.md`](tasks/REG-1-semantic-similarity-card-regression.md) | **на ревью** — мутации подтверждены: тест падает на откаченном `similarity` и на откаченном `FindByID` для `title`; `go vet` и `go test -tags=integration` зелёные | 2026-09-10 |
 |
+||| **WSL-SWAP:** перенести/отключить swap-файл WSL2, чтобы освободить место на `D:\`; сейчас `D:\wsl-swap\swap.vhdx` (309 МБ, max 8 ГБ) прописан в `C:\Users\89209\.wslconfig`; обсудить риски OOM и путь миграции | `C:\Users\89209\.wslconfig`, `D:\wsl-swap` | **обсуждается** — владелец с Devin разберутся, файл оставляем | 2026-09-14 |
+|
 ## На Claude Code
 
 | Что | Где | Статус | Обновлено |
@@ -117,8 +119,6 @@
 
 || **NOTE-TYPE-TAXONOMY:** привести список типов заметок к единой шкале «от большего к меньшему», добавить `moon` в `UI_TYPES`, определить `NoteType` value object | [`tasks/NOTE-TYPE-TAXONOMY.md`](tasks/NOTE-TYPE-TAXONOMY.md), `frontend/src/entities/shared/model/celestial-body.ts`, `backend/internal/domain/note/type.go`, `backend/internal/domain/note/entity.go`, `backend/internal/interfaces/api/common/validation/validators.go`, `backend/openAPI.yaml` | **на ревью у Claude** — реализован `NoteType` value object, `moon` в `UI_TYPES`, единый порядок и OpenAPI; `go test`, `go vet`, `npm run test:unit`, `npm run build`, `npm run check` зелёные; `BATCH-DDD-1` разблокирован | 2026-09-14 |
 |
-||| **WSL-SWAP:** перенести/отключить swap-файл WSL2, чтобы освободить место на `D:\`; сейчас `D:\wsl-swap\swap.vhdx` (309 МБ, max 8 ГБ) прописан в `C:\Users\89209\.wslconfig`; обсудить с Claude риски OOM и путь миграции | `C:\Users\89209\.wslconfig`, `D:\wsl-swap` | **на ревью у Claude** — Devin оставил файл нетронутым, нужно решение | 2026-09-13 |
-
 ## На человеке
 
 | Что | Где | Статус | Обновлено |
