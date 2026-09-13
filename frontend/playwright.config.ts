@@ -60,7 +60,7 @@ export default defineConfig({
     ],
   ],
   use: {
-    baseURL: process.env.FRONTEND_URL || "http://localhost:5173",
+    baseURL: process.env.FRONTEND_URL || "http://127.0.0.1:5173",
     trace: "on-first-retry",
     actionTimeout: 60000, // Increased from 30000ms
     navigationTimeout: 60000, // Increased from 30000ms
@@ -135,7 +135,7 @@ export default defineConfig({
   webServer:
     process.env.PLAYWRIGHT_DEV_SERVER === "true"
       ? {
-          command: "npm run dev",
+          command: "npm run dev -- --host 127.0.0.1",
           url: "http://127.0.0.1:5173",
           reuseExistingServer: true,
           timeout: 120 * 1000,

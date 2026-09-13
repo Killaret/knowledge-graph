@@ -6,7 +6,7 @@ const frontend = path.resolve(__dirname, "..");
 let devServer;
 
 const getTargetUrl = () => {
-  const url = process.env.FRONTEND_URL || "http://localhost:5173";
+  const url = process.env.FRONTEND_URL || "http://127.0.0.1:5173";
   return url.endsWith("/") ? url : `${url}/`;
 };
 
@@ -26,7 +26,7 @@ const isDevServerReady = () => {
 
 const startDevServer = () => {
   const skipAuth = process.env.SKIP_AUTH || "true";
-  devServer = spawn("npm", ["run", "dev"], {
+  devServer = spawn("npm", ["run", "dev", "--", "--host", "127.0.0.1"], {
     cwd: frontend,
     stdio: "pipe",
     env: { ...process.env, SKIP_AUTH: skipAuth },

@@ -7,7 +7,7 @@ import { loginOrCreateBDDUser } from "../../helpers/auth";
 let browser: Browser;
 let devServer: ChildProcess | null = null;
 
-async function waitForServer(url: string, timeout = 60000): Promise<void> {
+async function waitForServer(url: string, timeout = 120000): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     try {
@@ -29,7 +29,7 @@ BeforeAll(async function () {
     // Server already running
   } catch {
     // Start the dev server
-    devServer = spawn("npm", ["run", "dev"], {
+    devServer = spawn("npm", ["run", "dev", "--", "--host", "127.0.0.1"], {
       cwd: process.cwd(),
       stdio: "pipe",
       shell: true,
