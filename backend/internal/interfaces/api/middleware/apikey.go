@@ -1,12 +1,11 @@
 package middleware
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"strings"
 	"time"
 
+	"knowledge-graph/internal/auth"
 	"knowledge-graph/internal/domain/user"
 
 	"github.com/gin-gonic/gin"
@@ -94,17 +93,38 @@ func APIKey(config *APIKeyConfig) gin.HandlerFunc {
 			return
 		}
 
-		// Hash the API key for lookup
-		hash := hashAPIKey(apiKey)
+		// API key token format: <id>:<secret>
+		parts := strings.SplitN(apiKey, ":", 2)
+		if len(parts) != 2 {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
+			c.Abort()
+			return
+		}
+
+		keyID, err := uuid.Parse(parts[0])
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
+			c.Abort()
+			return
+		}
 
 		// Look up the API key in the database
-		key, err := config.Repo.FindActiveByHash(c.Request.Context(), hash)
+		key, err := config.Repo.FindActiveByID(c.Request.Context(), keyID)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
 			c.Abort()
 			return
 		}
 		if key == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
+			c.Abort()
+			return
+		}
+
+		// Verify the secret against the stored Argon2 hash
+		secret := parts[1]
+		ok, err := auth.VerifyPassword(secret, key.KeyHash())
+		if err != nil || !ok {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
 			c.Abort()
 			return
@@ -127,12 +147,6 @@ func APIKey(config *APIKeyConfig) gin.HandlerFunc {
 
 		c.Next()
 	}
-}
-
-// hashAPIKey creates a SHA256 hash of the API key
-func hashAPIKey(key string) string {
-	hash := sha256.Sum256([]byte(key))
-	return hex.EncodeToString(hash[:])
 }
 
 // GetAPIKeyID extracts API key ID from context

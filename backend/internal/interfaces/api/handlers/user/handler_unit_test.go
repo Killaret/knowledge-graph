@@ -89,8 +89,8 @@ func (m *mockAPIKeyRepo) Revoke(ctx context.Context, keyID, userID uuid.UUID) (b
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *mockAPIKeyRepo) FindActiveByHash(ctx context.Context, hash string) (*domainuser.APIKey, error) {
-	args := m.Called(ctx, hash)
+func (m *mockAPIKeyRepo) FindActiveByID(ctx context.Context, keyID uuid.UUID) (*domainuser.APIKey, error) {
+	args := m.Called(ctx, keyID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -247,6 +247,15 @@ func TestCreateAPIKey(t *testing.T) {
 	h.CreateAPIKey(c)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Contains(t, resp, "api_key")
+	assert.Contains(t, resp, "id")
+
+	token, _ := resp["api_key"].(string)
+	require.NotEmpty(t, token)
+	assert.Contains(t, token, ":", "API key token must be in '<id>:<secret>' format")
 }
 
 func TestRevokeAPIKey(t *testing.T) {

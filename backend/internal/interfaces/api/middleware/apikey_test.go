@@ -1,14 +1,19 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
+	"knowledge-graph/internal/auth"
+	"knowledge-graph/internal/domain/user"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultAPIKeyConfig(t *testing.T) {
@@ -29,15 +34,6 @@ func TestDefaultAPIKeyConfig(t *testing.T) {
 	assert.NotEmpty(t, config.SkipPaths)
 	assert.Contains(t, config.SkipPaths, "/api/v1/auth/*")
 	assert.Contains(t, config.SkipPaths, "/health")
-}
-
-func TestHashAPIKey(t *testing.T) {
-	key := "test-api-key"
-	hash := hashAPIKey(key)
-
-	assert.NotEmpty(t, hash)
-	assert.NotEqual(t, key, hash)
-	assert.Len(t, hash, 64) // SHA256 hex length
 }
 
 func TestGetAPIKeyID(t *testing.T) {
@@ -382,41 +378,6 @@ func TestAPIKeyStaticKeyWithWhitespace(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestAPIKeyHashConsistency(t *testing.T) {
-	key := "test-api-key"
-	hash1 := hashAPIKey(key)
-	hash2 := hashAPIKey(key)
-
-	assert.Equal(t, hash1, hash2)
-	assert.Len(t, hash1, 64) // SHA256 hex length
-}
-
-func TestAPIKeyDifferentKeysDifferentHashes(t *testing.T) {
-	key1 := "test-api-key-1"
-	key2 := "test-api-key-2"
-
-	hash1 := hashAPIKey(key1)
-	hash2 := hashAPIKey(key2)
-
-	assert.NotEqual(t, hash1, hash2)
-}
-
-func TestAPIKeyEmptyKeyHash(t *testing.T) {
-	key := ""
-	hash := hashAPIKey(key)
-
-	assert.NotEmpty(t, hash)
-	assert.Len(t, hash, 64)
-}
-
-func TestAPIKeySpecialCharacters(t *testing.T) {
-	key := "test-@#$%^&*()_+-=[]{}|;':,.<>?/~`"
-	hash := hashAPIKey(key)
-
-	assert.NotEmpty(t, hash)
-	assert.Len(t, hash, 64)
-}
-
 func TestAPIKeyStaticKeySetsAdminRole(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -449,4 +410,119 @@ func TestAPIKeyStaticKeySetsAdminRole(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Equal(t, "admin", response["role"])
+}
+
+type mockAPIKeyRepo struct {
+	key *user.APIKey
+	err error
+}
+
+func (m *mockAPIKeyRepo) FindByUserID(ctx context.Context, userID uuid.UUID) ([]user.APIKey, error) {
+	return nil, nil
+}
+func (m *mockAPIKeyRepo) Create(ctx context.Context, key *user.APIKey) error { return nil }
+func (m *mockAPIKeyRepo) Revoke(ctx context.Context, keyID, userID uuid.UUID) (bool, error) {
+	return false, nil
+}
+func (m *mockAPIKeyRepo) FindActiveByID(ctx context.Context, keyID uuid.UUID) (*user.APIKey, error) {
+	return m.key, m.err
+}
+func (m *mockAPIKeyRepo) UpdateLastUsed(ctx context.Context, keyID uuid.UUID) error { return nil }
+
+func TestAPIKeyValidToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	keyID := uuid.New()
+	userID := uuid.New()
+	secret, err := auth.GenerateRandomToken(32)
+	require.NoError(t, err)
+	hash, err := auth.HashPassword(secret, &auth.PasswordConfig{
+		Time: 1, Memory: 64 * 1024, Threads: 4, KeyLen: 32,
+	})
+	require.NoError(t, err)
+
+	key, err := user.NewAPIKey(keyID, userID, hash, "test", []string{"read"}, time.Now())
+	require.NoError(t, err)
+
+	config := &APIKeyConfig{
+		Enabled:    true,
+		HeaderName: "X-API-Key",
+		Repo:       &mockAPIKeyRepo{key: key},
+		SkipPaths:  []string{},
+	}
+
+	router := gin.New()
+	router.Use(APIKey(config))
+	router.GET("/test", func(c *gin.Context) {
+		uid, _ := GetUserID(c)
+		c.JSON(http.StatusOK, gin.H{"user_id": uid})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-API-Key", keyID.String()+":"+secret)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), userID.String())
+}
+
+func TestAPIKeyMalformedToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	config := &APIKeyConfig{
+		Enabled:    true,
+		HeaderName: "X-API-Key",
+		Repo:       &mockAPIKeyRepo{},
+		SkipPaths:  []string{},
+	}
+
+	router := gin.New()
+	router.Use(APIKey(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-API-Key", "no-colon-secret")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestAPIKeyInvalidToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	keyID := uuid.New()
+	hash, err := auth.HashPassword("correct-secret", &auth.PasswordConfig{
+		Time: 1, Memory: 64 * 1024, Threads: 4, KeyLen: 32,
+	})
+	require.NoError(t, err)
+
+	key, err := user.NewAPIKey(keyID, uuid.New(), hash, "test", []string{"read"}, time.Now())
+	require.NoError(t, err)
+
+	config := &APIKeyConfig{
+		Enabled:    true,
+		HeaderName: "X-API-Key",
+		Repo:       &mockAPIKeyRepo{key: key},
+		SkipPaths:  []string{},
+	}
+
+	router := gin.New()
+	router.Use(APIKey(config))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-API-Key", keyID.String()+":"+"wrong-secret")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }

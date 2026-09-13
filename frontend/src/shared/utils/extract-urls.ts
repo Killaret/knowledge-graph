@@ -11,17 +11,27 @@ const MAX_URL_RUNES = 16384;
 const URL_START_RE = /(?=https?:\/\/)/;
 const URL_PREFIX_RE = /^https?:\/\/\S+/;
 
-// Decodes common HTML entities in bookmark titles and URLs.
+// Decodes common HTML entities in a single pass to avoid double-unescaping.
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: "\u00A0",
+};
+
 function decodeHtmlEntities(raw: string): string {
-  return raw
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
-    .replace(/&nbsp;/g, " ");
+  return raw.replace(/&([a-zA-Z]+|#\d+|#x[0-9a-fA-F]+);/g, (match, entity: string) => {
+    if (entity[0] === "#") {
+      const hex = entity[1] === "x" || entity[1] === "X";
+      const base = hex ? 16 : 10;
+      const value = parseInt(entity.slice(hex ? 2 : 1), base);
+      if (Number.isNaN(value)) return match;
+      return String.fromCodePoint(value);
+    }
+    return NAMED_ENTITIES[entity.toLowerCase()] ?? match;
+  });
 }
 
 function truncateToRunes(value: string, max: number): string {
@@ -39,10 +49,15 @@ function cleanUrl(raw: string): string {
 }
 
 function stripHtmlTags(raw: string): string {
-  return raw
-    .replace(/<[^>]+>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  // Apply the tag removal repeatedly so nested/concatenated tags cannot
+  // reintroduce dangerous sequences after a single pass (CodeQL).
+  let prev = "";
+  let cleaned = raw;
+  while (cleaned !== prev) {
+    prev = cleaned;
+    cleaned = cleaned.replace(/<[^>]+>/g, "");
+  }
+  return cleaned.replace(/\s+/g, " ").trim();
 }
 
 function extractUrlsFrom(text: string): string[] {

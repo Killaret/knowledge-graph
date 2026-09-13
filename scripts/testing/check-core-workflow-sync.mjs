@@ -116,7 +116,10 @@ function extractRunCommand(step) {
             if (line.trim() !== "" && lineIndent <= indent) break;
             block.push(line.trim());
         }
-        return { command: block.join(" ").replace(/\s+/g, " "), multiline: true };
+        return {
+            command: block.join(" ").replace(/\s+/g, " "),
+            multiline: true,
+        };
     }
     return null;
 }
@@ -145,9 +148,13 @@ for (const entry of manifest) {
         const threshold = entry.command.slice("@coverage:".length);
         // The bare number must appear in a comparison, not only inside an
         // echoed "64.8%" label: exclude matches followed by % or digits.
-        const thresholdPattern = new RegExp(
-            threshold.replace(/\./g, "\\.") + "(?![0-9.%])",
+        // Escape the threshold so any regex metacharacters (including \)
+        // are treated literally.
+        const escapedThreshold = threshold.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&",
         );
+        const thresholdPattern = new RegExp(escapedThreshold + "(?![0-9.%])");
         if (!runCommand || !thresholdPattern.test(runCommand.command)) {
             commandDrift.push(
                 `${entry.job}/${entry.workflow_step}: coverage threshold ${threshold} not found in the CI step`,
