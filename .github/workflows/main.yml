@@ -436,7 +436,10 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build backend image
-        run: docker build -t knowledge-graph-backend -f ./backend/Dockerfile .
+        run: docker build -t knowledge-graph-backend -f ./backend/Dockerfile --target server .
+
+      - name: Build worker image
+        run: docker build -t knowledge-graph-worker -f ./backend/Dockerfile --target worker .
 
       - name: Build graph-service image
         run: docker build -t knowledge-graph-graph-service -f ./services/graph-service/Dockerfile .
@@ -449,14 +452,18 @@ jobs:
 
       - name: Test docker-compose
         run: |
-          touch .env
+          cat > .env <<EOF
+          JWT_SECRET=${{ env.JWT_SECRET }}
+          YANDEX_CLIENT_ID=
+          YANDEX_CLIENT_SECRET=
+          EOF
           docker compose config
 
       - name: Start backend container
         env:
-          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
-          REDIS_URL: localhost:6379
-          MONGO_URL: mongodb://localhost:27017
+          DATABASE_URL: postgres://kb_user:kb_password@127.0.0.1:5432/knowledge_test?sslmode=disable
+          REDIS_URL: 127.0.0.1:6379
+          MONGO_URL: mongodb://127.0.0.1:27017
           JWT_SECRET: ${{ env.JWT_SECRET }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
           GRAPH_SERVICE_URL: ""
@@ -474,8 +481,8 @@ jobs:
 
       - name: Start graph-service container
         env:
-          POSTGRES_URL: postgresql://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
-          REDIS_URL: localhost:6379
+          POSTGRES_URL: postgresql://kb_user:kb_password@127.0.0.1:5432/knowledge_test?sslmode=disable
+          REDIS_URL: 127.0.0.1:6379
           HTTP_PORT: 9091
           GRPC_PORT: 9090
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
@@ -500,7 +507,7 @@ jobs:
             local url=$1
             local name=$2
             for i in {1..30}; do
-              if curl -fsS "$url" > /dev/null 2>&1; then
+              if curl -fsS --connect-timeout 5 --max-time 15 "$url" > /dev/null 2>&1; then
                 echo "✅ $name is healthy ($url)"
                 return 0
               fi
@@ -508,13 +515,13 @@ jobs:
               sleep 2
             done
             echo "❌ $name failed to respond at $url"
-            docker logs "$name" || true
+            docker logs "kg-$name" || true
             return 1
           }
 
-          wait_for_url http://localhost:8080/health backend
-          wait_for_url http://localhost:9091/health graph-service
-          wait_for_url http://localhost:3001/ frontend
+          wait_for_url http://127.0.0.1:8080/health backend
+          wait_for_url http://127.0.0.1:9091/health graph-service
+          wait_for_url http://127.0.0.1:3001/ frontend
 
       - name: Stop health-check containers
         if: always()
