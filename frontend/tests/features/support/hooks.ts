@@ -7,15 +7,23 @@ import { loginOrCreateBDDUser } from "../../helpers/auth";
 let browser: Browser;
 let devServer: ChildProcess | null = null;
 
+async function isServerReady(url: string): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    return response.status === 200;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function waitForServer(url: string, timeout = 120000): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeout) {
-    try {
-      const response = await fetch(url);
-      if (response.status === 200) return;
-    } catch {
-      // Server not ready yet
-    }
+    if (await isServerReady(url)) return;
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(`Server at ${url} did not start within ${timeout}ms`);
@@ -24,14 +32,14 @@ async function waitForServer(url: string, timeout = 120000): Promise<void> {
 BeforeAll(async function () {
   // Start Vite dev server if not already running
   const frontendUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5173";
-  try {
-    await fetch(frontendUrl);
+  if (await isServerReady(frontendUrl)) {
     // Server already running
-  } catch {
-    // Start the dev server
+  } else {
+    // Start the dev server, ignoring stdio so the process cannot block
+    // if the output pipe fills up.
     devServer = spawn("npm", ["run", "dev", "--", "--host", "127.0.0.1"], {
       cwd: process.cwd(),
-      stdio: "pipe",
+      stdio: "ignore",
       shell: true,
       detached: false,
     });
