@@ -224,6 +224,47 @@ jobs:
           SEED_TEST_USER_PASSWORD: ${{ secrets.SEED_TEST_USER_PASSWORD || 'ci-test-password-123' }}
         run: go run ./cmd/seed
 
+      - name: Start worker for async tasks
+        working-directory: ./backend
+        env:
+          APP_ENV: "test"
+          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
+          REDIS_URL: localhost:6379
+          MONGO_URL: mongodb://localhost:27017
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          NLP_SERVICE_URL: ""
+        run: |
+          go run ./cmd/worker > /tmp/worker.log 2>&1 &
+          WORKER_PID=$!
+          echo "WORKER_PID=$WORKER_PID" >> "$GITHUB_ENV"
+          echo "Started worker (PID $WORKER_PID)"
+          for i in {1..20}; do
+            if kill -0 "$WORKER_PID" 2>/dev/null; then
+              echo "✅ Worker is running"
+              break
+            fi
+            echo "Waiting for worker... attempt $i/20"
+            sleep 1
+          done
+          if ! kill -0 "$WORKER_PID" 2>/dev/null; then
+            echo "❌ Worker failed to start"
+            cat /tmp/worker.log
+            exit 1
+          fi
+
+      - name: Discover DB container name
+        run: |
+          DB_CONTAINER_NAME=$(docker ps --filter "ancestor=pgvector/pgvector:pg16" --format "{{.Names}}" | head -n 1)
+          if [ -z "$DB_CONTAINER_NAME" ]; then
+            DB_CONTAINER_NAME=$(docker ps --filter "publish=5432" --format "{{.Names}}" | head -n 1)
+          fi
+          if [ -z "$DB_CONTAINER_NAME" ]; then
+            echo "❌ Could not find DB container"
+            exit 1
+          fi
+          echo "DB_CONTAINER=$DB_CONTAINER_NAME" >> "$GITHUB_ENV"
+          echo "✅ DB container: $DB_CONTAINER_NAME"
+
       - name: Run all Playwright tests
         env:
           PLAYWRIGHT_DEV_SERVER: "true"
@@ -231,6 +272,7 @@ jobs:
           VITE_API_TARGET: http://127.0.0.1:8080
           BACKEND_URL: http://127.0.0.1:8080
           SKIP_AUTH: "true"
+          DB_CONTAINER: ${{ env.DB_CONTAINER }}
         run: npx playwright test --project=chromium-skip-auth
 
       - name: Run all Cucumber tests
