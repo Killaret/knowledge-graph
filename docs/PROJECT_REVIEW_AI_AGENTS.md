@@ -1024,3 +1024,64 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `cd frontend && npm run check` — 0 errors, 0 warnings.
 
 **Статус:** реализация готова, передана на ревью Claude Code. Не мержить без ревью.
+
+## 25. URL-заголовки, quality loop, события/напоминалки, архив, CI/DEPLOY — передача Claude (2026-09-14)
+
+**Контекст.** За 13–14 сентября владелец и Devin обсуждали и частично прототипировали пять крупных тем. Результаты зафиксированы в task-файлах, `docs/AI_HANDOFF.md` и `docs/AI_LOG.md`; вся очередь вынесена на ревью/обсуждение Claude Code.
+
+### 25.1 URL-HEADING-1: извлечение `title`/`content` из h1–h6
+
+- Постановка: `docs/tasks/URL-HEADING-1-heading-extraction.md`; полный отчёт пробного прогона: `docs/tasks/URL-HEADING-1-findings-probe.md`.
+- Прототип на 22 URL из `bookmarks_11.09.2026.html` (tech_doc, course, russian, complex) подтвердил, что `h1` внутри `<main>`/`<article>` обычно лучше `<title>`, а `h2`–`h6` дают осмысленный outline.
+- Главные открытые вопросы:
+  - title-кандидаты: `<title>`, один/несколько `h1`, fallback по URL;
+  - фильтрация шума по class/id (`promo`, `news`, `related`, `subscribe`, `comments`) и layout/grid;
+  - обработка `mw-parser-output`/`documentation`/`content`, где нет `<main>`;
+  - `<title>` часто содержит сайтовые суффиксы (`— Википедия`, `| OneLogin Developers`);
+  - 401/404 ответы требуют graceful fallback.
+- Результат: передано на ревью Claude Code; production-код `ImportFetcher.Extract` пока не менялся.
+
+### 25.2 NOTE-QUALITY-1: цикл качества, health, duplicate review
+
+- Постановка: `docs/tasks/NOTE-QUALITY-1-quality-loop.md`.
+- Решения владельца:
+  - без cron; обработка при создании/импорте и по ручной кнопке "улучшить заметку";
+  - пользовательские метки могут пускать заметку в тот же цикл;
+  - не ходить по сети к source URL;
+  - не удалять и не мержить дубликаты автоматически;
+  - reclassification под контролем пользователя;
+  - шкала low/medium/high, динамические веса, stopping criteria.
+- Открытые вопросы: конкретные критерии, веса, векторное сравнение title и контента, duplicate-review UI.
+
+### 25.3 COMET-1: события и напоминалки
+
+- Постановка: `docs/tasks/COMET-1-event-reminder-fields.md`.
+- Нужно выбрать тип: `comet`, `satellite` или новый `reminder`.
+- Кандидатные поля: `event_at`, `timezone`, `reminder_at`, `recurrence_rule`, `duration`, `location`, `attendees`.
+- Возможна delayed-задача `reminder:send` через `asynq`.
+
+### 25.4 ARCHIVE-1: сохранение обсуждений и постановок
+
+- Постановка: `docs/tasks/ARCHIVE-1-discussion-history.md`.
+- Требование владельца: постановки и обсуждения — это история проекта и доказательство работы с агентами.
+- Варианты: git-история, `docs/archive/`, отдельный репо/ветка, GitHub Releases.
+- Нужно решить: какие документы включать, как санировать персональные URL/данные, периодичность.
+
+### 25.5 CI-MAIN-1 / DEPLOY-1: починка Main Branch CI/CD и Production Deployment
+
+- Workflow `main.yml` и `deploy.yml` починены:
+  - `backend/Dockerfile` — `--target server` и `--target worker`;
+  - `127.0.0.1`, `APP_ENV=test`, `JWT_SECRET` ≥32 chars, `.env` для Docker Compose;
+  - Cucumber `BeforeAll` hang устранён через таймауты и `127.0.0.1`;
+  - seed test user, health checks и service discovery.
+- Run IDs: Main Branch CI/CD `34758935365`, Production Deployment `34758935316` (main) и `34758941321` (ai-agents) — зелёные.
+- Статус: Devin реализовал и верифицировал; передано на финальное ревью/подпись Claude Code.
+
+### 25.6 Прочее, требующее внимания Claude
+
+- **WSL-SWAP:** обсудить перенос/отключение `D:\wsl-swap\swap.vhdx` (309 МБ, max 8 ГБ) и риски OOM.
+- **HOUSEKEEPING-1:** ветки `devin/*` и `security/findings` смержены/удалены; оставлены `main`, `ai-agents`, `java-source-text-handler`; `main` и `ai-agents` синхронизированы.
+- **PLAYWRIGHT-ARTIFACTS-1:** в корне 6 untracked директорий `*-chromium-skip-auth-retry*/` и `debug-note-page.png` (удалён) — нужно либо удалить, либо добавить в `.gitignore`.
+- **GITHUB-SECURITY-1:** GitHub Dependabot показывает 3 новые находки на `main` (1 high, 2 low); нужен triage и план.
+
+**Статус:** всё передано на ревью/обсуждение Claude Code.
