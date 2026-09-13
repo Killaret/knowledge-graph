@@ -67,7 +67,7 @@ jobs:
 
       - name: Validate config
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
         run: go run cmd/checkconfig/main.go ../knowledge-graph.config.json
 
   # ============ BACKEND INTEGRATION TESTS ============
@@ -178,13 +178,13 @@ jobs:
 
       - name: Run graph-service unit tests
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
         run: go test -v ./...
 
       - name: Run graph-service integration tests
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
         run: go test -tags=integration -p=1 -count=1 ./...
 

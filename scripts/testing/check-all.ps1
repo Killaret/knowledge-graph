@@ -66,7 +66,7 @@ function Invoke-Check {
             return [int]$LASTEXITCODE
         }
         if ($Check.id -eq 'backend-config' -and -not $env:JWT_SECRET) {
-            $env:JWT_SECRET = 'local-check-secret'
+            $env:JWT_SECRET = 'local-check-secret-32-characters-long'
         }
         $global:LASTEXITCODE = 0
         $command = [string]$Check.command

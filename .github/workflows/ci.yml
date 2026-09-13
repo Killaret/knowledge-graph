@@ -47,7 +47,7 @@ jobs:
 
       - name: Check config loads successfully
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
         run: |
           go mod download
           go run cmd/checkconfig/main.go ../knowledge-graph.config.json
@@ -205,7 +205,7 @@ jobs:
           REDIS_URL: localhost:6379
           MONGO_URL: mongodb://localhost:27017
           REDIS_FLUSH_ON_STARTUP: "true"
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
           GRAPH_SERVICE_URL: http://localhost:9091
           SKIP_AUTH: "true"
@@ -237,7 +237,7 @@ jobs:
           REDIS_URL: localhost:6379
           HTTP_PORT: "9091"
           GRPC_PORT: "9090"
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
           SKIP_AUTH: "true"
         run: |

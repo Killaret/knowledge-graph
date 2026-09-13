@@ -1,0 +1,7 @@
+# actionlint configuration
+# Suppress false-positive "Context access might be invalid" warnings for
+# repository secrets that are configured in the repository settings.
+paths:
+  ".github/workflows/**/*.{yml,yaml}":
+    ignore:
+      - '(?i)Context access might be invalid:.*(JWT_SECRET|GRAPH_SERVICE_INTERNAL_TOKEN|SEED_TEST_USER_PASSWORD|ARGOS_TOKEN)'

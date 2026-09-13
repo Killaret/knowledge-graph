@@ -43,7 +43,7 @@ jobs:
 
       - name: Check config loads successfully
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
         run: |
           go mod download
           go run cmd/checkconfig/main.go ../knowledge-graph.config.json
@@ -190,7 +190,7 @@ jobs:
           REDIS_URL: localhost:6379
           MONGO_URL: mongodb://localhost:27017
           REDIS_FLUSH_ON_STARTUP: "true"
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
           GRAPH_SERVICE_URL: ""
           SKIP_AUTH: "true"
@@ -220,7 +220,7 @@ jobs:
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
           REDIS_URL: localhost:6379
           MONGO_URL: mongodb://localhost:27017
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
           SEED_TEST_USER_PASSWORD: ${{ secrets.SEED_TEST_USER_PASSWORD || 'ci-test-password-123' }}
         run: go run ./cmd/seed
 
@@ -231,7 +231,7 @@ jobs:
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
           REDIS_URL: localhost:6379
           MONGO_URL: mongodb://localhost:27017
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
           NLP_SERVICE_URL: ""
         run: |
           go run ./cmd/worker > /tmp/worker.log 2>&1 &

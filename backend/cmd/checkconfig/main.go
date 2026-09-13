@@ -54,7 +54,7 @@ func main() {
 		os.Setenv("DATABASE_URL", "postgres://dummy@localhost/dummy")
 	}
 	if os.Getenv("JWT_SECRET") == "" {
-		os.Setenv("JWT_SECRET", "ci-jwt-secret")
+		os.Setenv("JWT_SECRET", "ci-jwt-secret-32-characters-long")
 	}
 
 	cfg, err := config.Load()

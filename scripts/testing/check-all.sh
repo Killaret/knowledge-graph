@@ -78,7 +78,7 @@ run_check() {
         fi
     else
         if [[ "$id" == "backend-config" && -z "${JWT_SECRET:-}" ]]; then
-            export JWT_SECRET=local-check-secret
+            export JWT_SECRET=local-check-secret-32-characters-long
         fi
         eval "$command" </dev/null
         code=$?
