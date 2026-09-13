@@ -9,6 +9,7 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
 
 jobs:
   # ============ BACKEND LINT & UNIT TESTS ============
@@ -67,7 +68,7 @@ jobs:
 
       - name: Validate config
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
+          JWT_SECRET: ${{ env.JWT_SECRET }}
         run: go run cmd/checkconfig/main.go ../knowledge-graph.config.json
 
   # ============ BACKEND INTEGRATION TESTS ============
@@ -116,7 +117,6 @@ jobs:
       DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
       REDIS_URL: redis://localhost:6379
       MONGO_URL: mongodb://localhost:27017
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
       GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
       GRAPH_SERVICE_URL: ""
       SKIP_AUTH: "false"
@@ -178,13 +178,13 @@ jobs:
 
       - name: Run graph-service unit tests
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
+          JWT_SECRET: ${{ env.JWT_SECRET }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
         run: go test -v ./...
 
       - name: Run graph-service integration tests
         env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
+          JWT_SECRET: ${{ env.JWT_SECRET }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
         run: go test -tags=integration -p=1 -count=1 ./...
 

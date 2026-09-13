@@ -15,6 +15,7 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   KG_IMAGE_TAG: ci
+  JWT_SECRET: ${{ secrets.JWT_SECRET || 'deploy-ci-jwt-secret-32-characters' }}
 
 jobs:
   build-and-verify:
@@ -46,7 +47,7 @@ jobs:
       - name: Create deploy env file
         run: |
           cat > .env <<EOF
-          JWT_SECRET=${{ secrets.JWT_SECRET || 'deploy-ci-jwt-secret-32-characters' }}
+          JWT_SECRET=${JWT_SECRET}
           POSTGRES_USER=kb_user
           POSTGRES_PASSWORD=kb_password
           POSTGRES_DB=knowledge_base
