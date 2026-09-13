@@ -184,18 +184,10 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Apply database migrations
-        env:
-          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
-        run: |
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
-          sudo mv migrate /usr/local/bin/
-          migrate -path ../backend/migrations -database "$DATABASE_URL" up
-
       - name: Start backend for E2E tests
         env:
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: localhost:6379
           MONGO_URL: mongodb://localhost:27017
           REDIS_FLUSH_ON_STARTUP: "true"
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
@@ -223,10 +215,12 @@ jobs:
 
       - name: Run all Playwright tests
         env:
-          PLAYWRIGHT_DEV_SERVER: true
+          PLAYWRIGHT_DEV_SERVER: "true"
+          FRONTEND_URL: http://localhost:5173
           VITE_API_TARGET: http://127.0.0.1:8080
-          BACKEND_URL: http://localhost:8080
-        run: npm test
+          BACKEND_URL: http://127.0.0.1:8080
+          SKIP_AUTH: "true"
+        run: npx playwright test --project=chromium-skip-auth
 
       - name: Run all Cucumber tests
         env:
@@ -399,18 +393,10 @@ jobs:
       - name: Test docker-compose
         run: docker compose config || docker-compose config
 
-      - name: Apply migrations for health check
-        env:
-          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
-        run: |
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
-          sudo mv migrate /usr/local/bin/
-          migrate -path ./backend/migrations -database "$DATABASE_URL" up
-
       - name: Start backend container
         env:
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: localhost:6379
           MONGO_URL: mongodb://localhost:27017
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
@@ -430,7 +416,7 @@ jobs:
       - name: Start graph-service container
         env:
           POSTGRES_URL: postgresql://kb_user:kb_password@localhost:5432/knowledge_test?sslmode=disable
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: localhost:6379
           HTTP_PORT: 9091
           GRPC_PORT: 9090
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}

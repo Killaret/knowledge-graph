@@ -1,0 +1,128 @@
+name: Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - ai-agents
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+  actions: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  KG_IMAGE_TAG: ci
+
+jobs:
+  build-and-verify:
+    name: Build and Verify Deploy Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build backend image
+        run: docker build -t killaret/knowledge-graph-backend:${{ env.KG_IMAGE_TAG }} -f ./backend/Dockerfile --target server .
+
+      - name: Build worker image
+        run: docker build -t killaret/knowledge-graph-worker:${{ env.KG_IMAGE_TAG }} -f ./backend/Dockerfile --target worker .
+
+      - name: Build graph-service image
+        run: docker build -t killaret/knowledge-graph-graph-service:${{ env.KG_IMAGE_TAG }} -f ./services/graph-service/Dockerfile .
+
+      - name: Build frontend image
+        run: docker build -t killaret/knowledge-graph-frontend:${{ env.KG_IMAGE_TAG }} -f ./frontend/Dockerfile .
+
+      - name: Build NLP image
+        run: docker build -t killaret/knowledge-graph-nlp:${{ env.KG_IMAGE_TAG }} ./nlp-service
+
+      - name: Create deploy env file
+        run: |
+          cat > .env <<EOF
+          JWT_SECRET=${{ secrets.JWT_SECRET || 'deploy-ci-jwt-secret-32-characters' }}
+          POSTGRES_USER=kb_user
+          POSTGRES_PASSWORD=kb_password
+          POSTGRES_DB=knowledge_base
+          DATABASE_URL=postgresql://kb_user:kb_password@postgres:5432/knowledge_base?sslmode=disable
+          REDIS_URL=redis:6379
+          MONGO_URL=mongodb://mongo:27017
+          NLP_SERVICE_URL=http://nlp:5000
+          VITE_API_URL=http://localhost:18080
+          VITE_GRAPH_SERVICE_URL=http://localhost:18080/graph-service
+          VITE_API_TARGET=http://backend:8080
+          GRAPH_SERVICE_URL=http://graph-service:9091
+          CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:18080,http://localhost:18081,http://localhost:18082,http://localhost:18084,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:5173,http://127.0.0.1:18080,http://127.0.0.1:18081,http://127.0.0.1:18082,http://127.0.0.1:18084
+          EOF
+
+      - name: Start deploy stack
+        run: docker compose -f docker-compose.deploy.yml up -d --wait
+
+      - name: Wait for all services
+        run: |
+          set -e
+          wait_for() {
+            local url=$1
+            local name=$2
+            local max=$3
+            for i in $(seq 1 $max); do
+              if curl -fsS "$url" > /dev/null 2>&1; then
+                echo "✅ $name is healthy ($url)"
+                return 0
+              fi
+              echo "Waiting for $name... $i/$max"
+              sleep 5
+            done
+            echo "❌ $name failed to respond at $url"
+            return 1
+          }
+
+          wait_for "http://127.0.0.1:9000/health" backend 60
+          wait_for "http://127.0.0.1:5000/health" nlp 150
+          wait_for "http://127.0.0.1:18080/health" nginx-api 60
+          wait_for "http://127.0.0.1:18081/health" nginx-frontend 60
+          wait_for "http://127.0.0.1:18080/graph-service/health" graph-service 60
+
+          if [ "$(docker inspect -f '{{.State.Running}}' kg-worker 2>/dev/null)" != "true" ]; then
+            echo "❌ Worker is not running"
+            docker logs kg-worker || true
+            exit 1
+          fi
+          echo "✅ Worker is running"
+
+      - name: Print deploy logs on failure
+        if: failure()
+        run: |
+          for svc in kg-backend kg-worker kg-graph-service kg-frontend kg-nlp kg-nginx kg-postgres kg-redis kg-mongo; do
+            echo "===== $svc logs ====="
+            docker logs "$svc" || true
+          done
+
+      - name: Stop and remove deploy stack
+        if: always()
+        run: |
+          docker compose -f docker-compose.deploy.yml down -v
+          docker rmi -f \
+            killaret/knowledge-graph-backend:${{ env.KG_IMAGE_TAG }} \
+            killaret/knowledge-graph-worker:${{ env.KG_IMAGE_TAG }} \
+            killaret/knowledge-graph-graph-service:${{ env.KG_IMAGE_TAG }} \
+            killaret/knowledge-graph-frontend:${{ env.KG_IMAGE_TAG }} \
+            killaret/knowledge-graph-nlp:${{ env.KG_IMAGE_TAG }} || true
+
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs: build-and-verify
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://github.com/Killaret/knowledge-graph
+    steps:
+      - name: Record production deployment
+        run: echo "Production deployment verified for commit ${{ github.sha }}"
