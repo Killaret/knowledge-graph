@@ -202,6 +202,7 @@ jobs:
           GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
           GRAPH_SERVICE_URL: ""
           SKIP_AUTH: "true"
+          APP_ENV: "test"
         run: |
           cd ../backend
           go mod download
