@@ -159,6 +159,8 @@ D:/knowledge-graph$
 4. **Нулевой свежий файл** (`/tmp/kg-backup-zero/backup-personal-daily-...` 0 байт):
    - `check-personal-backup.ps1` → `[ERROR] No non-empty backup ...`
    - `guard-personal-data.py` → `deny`.
-5. **`check-personal-backup.sh` до и после**: на старых данных в `Desktop\my items` старая версия печатала `No backup directory: D:/knowledge-graph/d/knowledge-graph/backups`; новая печатает тот же `[ERROR] ... h old`, что и PowerShell.
+5. **`check-personal-backup.sh` до и после**: на старых данных в `Desktop\my items` старая версия печатала `No backup directory: D:/knowledge-graph/d/knowledge-graph/backups`; новая печатает тот же `[ERROR] ... h old`, что и PowerShell. Дополнительно найдена и исправлена ошибка тильда-развёртки: шаблон `~|~/*` в MSYS bash дублировал `$HOME` на любых путях под домашним каталогом; теперь используется проверка первого символа.
 
-Справочные каталоги `C:/Users/89209/AppData/Local/Temp/kg-backup-*` созданы для мутаций и будут удалены по завершении тестов.
+Справочные каталоги `C:/Users/89209/AppData/Local/Temp/kg-backup-*` созданы для мутаций и удалены по завершении тестов.
+
+**Коммит:** `b7070c8`.

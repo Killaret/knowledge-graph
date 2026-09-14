@@ -1220,3 +1220,38 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `check-all.ps1` без `-Quick` — 20 PASS, 1 SKIP (`golangci-lint`), exit 0. В том числе новая фаза `Commit authorship guard`.
 
 **Статус:** реализация выполнена, передана на ревью Claude Code.
+
+## 31. BACKUP-2 — canonical backup directory
+
+**Коммит:** `b7070c8`.
+
+### 31.1 Задача
+
+Единый источник каталога бэкапа Personal-стека: скрипты, сторож и compose должны смотреть в `Desktop\\my items`, а не в `<repo>/backups`.
+
+### 31.2 Что изменилось
+
+- `scripts/devops/backup-policy.env` теперь содержит `KG_BACKUP_DIR=Desktop/my items` и `KG_BACKUP_MAX_AGE_HOURS=24`.
+- `backup-personal.{ps1,sh}`, `check-personal-backup.{ps1,sh}`, `guard-personal-data.py` и `docker-compose.personal.yml` читают `KG_BACKUP_DIR`.
+- Относительный путь разворачивается от домашнего каталога; абсолютный (`C:/...`, `/...`, `\\\\...`) остаётся без изменений.
+- `check-personal-backup.sh` починен: убран сломанный `REPO_ROOT` (`A || B && C`), исправлена тильда-развёртка, которая дублировала `$HOME` на путях вида `/c/Users/...`.
+- `guard-personal-data.py` теперь использует `resolve_backup_dir()` вместо хардкода `<repo>/backups`.
+- Тесты сторожа (`test_guard_personal_data.py`) расширены с 36 до 39 assertions.
+- Подключены в `core-checks.tsv` и `_core-checks.yml` как фаза `Personal data guard tests`.
+
+### 31.3 Мутации
+
+1. Свежий бэкап → `[PASS]` (PowerShell, shell, guard).
+2. Состаренный тот же файл → `[ERROR] ... h old` (PowerShell, shell, guard deny).
+3. Пустой каталог → `[ERROR] No backup directory` (PowerShell, shell, guard deny).
+4. Нулевой свежий файл → `[ERROR] No non-empty backup` (PowerShell, guard deny; shell — то же).
+5. Shell до/после: до — «No backup directory» при полном каталоге; после — тот же `[ERROR]`, что и PowerShell.
+
+### 31.4 Верификация
+
+- `python scripts/devops/test_guard_personal_data.py` — `All checks passed (39 assertions)`.
+- `bash -n scripts/devops/backup-personal.sh` / `check-personal-backup.sh` — зелёно.
+- `node scripts/testing/check-core-workflow-sync.mjs` — `21 local phases match 21 CI steps`.
+- `check-all.ps1 -Quick` — 21 PASS, 3 SKIP (`golangci-lint`, backend integration, graph integration), exit 0.
+
+**Статус:** реализация выполнена, передана на ревью Claude Code.
