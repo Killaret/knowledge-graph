@@ -505,8 +505,8 @@ See also: [RECOMMENDATION_ARCHITECTURE.md](RECOMMENDATION_ARCHITECTURE.md#migrat
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `GRAPH_LOAD_DEPTH` | Graph loading depth | `2` |
-| `GRAPH_DEFAULT_LIMIT` | Default `/graph/all` limit | `100` |
-| `GRAPH_MAX_LIMIT` | Max `/graph/all` limit | `1000` |
+| `GRAPH_DEFAULT_LIMIT` | Default `/graph/public` limit | `100` |
+| `GRAPH_MAX_LIMIT` | Max `/graph/public` limit | `1000` |
 | `GRAPH_LINK_DEFAULT_LIMIT` | Default link limit | `500` |
 | `GRAPH_LINK_MAX_LIMIT` | Max link limit | `5000` |
 

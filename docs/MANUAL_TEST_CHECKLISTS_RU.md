@@ -33,7 +33,7 @@
 ### SKIP_AUTH и note list
 - [ ] В режиме `SKIP_AUTH=true` `GET /api/v1/notes?limit=100` возвращает все заметки (не пустой массив).
 - [ ] Создание заметки без токена работает, заметка появляется в `/api/v1/notes`.
-- [ ] `GET /api/v1/graph/all` возвращает все ноды (не 0).
+- [ ] `GET /api/v1/graph/public` возвращает все ноды (не 0).
 
 ### Graph-service / сталость кэша
 - [ ] Создать заметку, сразу перезагрузить `/`.
@@ -115,10 +115,10 @@
 
 ### GraphLoader — единый загрузчик графа
 
-- [ ] Открыть `/` без авторизации — граф и список заметок загружаются из `/api/v1/graph/all` (public graph).
+- [ ] Открыть `/` без авторизации — граф и список заметок загружаются из `/api/v1/graph/public` (public graph).
 - [ ] Открыть `/` с авторизацией — параллельно грузятся `GET /api/v1/notes` и `getGraphWithPreload()`.
 - [ ] Перейти на `/graph?full=false` (local) — используется первая заметка как центр, `GET /api/v1/graph/{id}?depth=3`.
-- [ ] Перейти на `/graph?full=true` (или просто `/graph`) — `GET /api/v1/graph/all`.
+- [ ] Перейти на `/graph?full=true` (или просто `/graph`) — `GET /api/v1/graph/public`.
 - [ ] Создать заметку, сразу перезагрузить `/` — новая заметка появляется на графе/в списке (fallback `buildNotesGraph` + `ensureNotesInGraph`).
 - [ ] Удалить все заметки, перезагрузить `/graph` — граф не падает, показывается пустое состояние.
 
@@ -126,7 +126,7 @@
 
 - [ ] Во всех сценариях выше в Console нет красных ошибок.
 - [ ] Нет бесконечных циклов `api/auth/refresh` 401.
-- [ ] Нет дублирующихся `GET /api/v1/graph/all` при переключении страниц.
+- [ ] Нет дублирующихся `GET /api/v1/graph/public` при переключении страниц.
 
 ---
 
@@ -155,8 +155,8 @@
 ## 2. Проверка публичного графа (без аутентификации)
 
 - [ ] Открыть `http://localhost:3002` в инкогнито.
-- [ ] `GET http://localhost:18083/api/v1/graph/all` без Authorization → 200, публичные данные.
-- [ ] `GET http://localhost:18083/api/v1/notes?is_public=true` без auth → 401 (список заметок требует auth; публичный граф отдаётся через `/api/v1/graph/all`).
+- [ ] `GET http://localhost:18083/api/v1/graph/public` без Authorization → 200, публичные данные.
+- [ ] `GET http://localhost:18083/api/v1/notes?is_public=true` без auth → 401 (список заметок требует auth; публичный граф отдаётся через `/api/v1/graph/public`).
 - [ ] Приватные заметки не отображаются и не возвращаются.
 - [ ] Попытка перейти на `/profile` без auth → редирект на login или 401.
 - [ ] Повторный hard refresh (`Ctrl+F5`) не вызывает 401-циклов.

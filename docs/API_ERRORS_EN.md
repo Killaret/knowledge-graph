@@ -569,7 +569,7 @@ Internal server error
 
 ---
 
-### GET /graph/all
+### GET /graph/public
 
 **500 Internal Server Error**
 ```json

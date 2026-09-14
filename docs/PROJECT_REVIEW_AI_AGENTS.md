@@ -1157,3 +1157,36 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 - `node scripts/testing/check-board-size.mjs .` — FAIL: `AI_HANDOFF.md` ~208.0 КБ, порог 40 КБ. Это ожидаемое состояние: содержимое доски не чистил, первая чистка по постановке за владельцем.
 - `check-all.ps1` без `-Quick`: 17 PASS, 1 SKIP, 1 FAIL (board size); остальные фазы зелёные, включая backend и graph integration. В сообщении сторожа исправлена опечатка `replics` → `replies`.
+
+## 29. PUB-3 — переименование публичного эндпоинта графа (`all` → `public`) (2026-09-14)
+
+### 29.1 Что изменено
+
+- `backend/cmd/server/router.go`: маршрут переименован из `all` в `public`.
+- `backend/internal/interfaces/api/middleware/jwt.go`: `SkipPaths` обновлён на `/api/v1/graph/public`.
+- `backend/openAPI.yaml`: путь и summary (`Get public graph`).
+- Go-интеграционные тесты (`graphhandler/*_test.go`) используют `/graph/public`.
+- Фронтенд/E2E/Playwright тесты (`frontend/src/shared/api/graph.test.ts`, `frontend/tests/preload-full-cycle.spec.ts`, `frontend/tests/public-graph-real-auth.spec.ts`, `tests/e2e/api-contract.spec.ts`) обновлены на `/graph/public`.
+- Скрипты проверки стеков и регресса (`scripts/ci/check-stacks-health.*`, `scripts/testing/run-full-test-cycle.ps1`) обновлены.
+- Активная документация (`docs/API_EN.md`, `docs/API_ERRORS_EN.md`, `docs/CONFIGURATION_EN.md`, `docs/DOCKER.md`, `docs/GRAPH3D.md`, `docs/LINK_TYPES*.md`, `docs/MANUAL_TEST_CHECKLISTS_RU.md`, `docs/API_TEST_COVERAGE_PLAN.md`, `docs/BACKLOG.md`, `docs/assets/graph-loading-flow.*`, `docs/DECISIONS.md`, `CHANGELOG.md`) приведена в соответствие.
+- Постановки и review-findings (`docs/tasks/PUB-3-rename-graph-endpoints.md`, `PUB-2-graph-view-mode.md`, `PUB-2-review-findings.md`, `API-1-openapi-contract-and-handover.md`, `SPECS-review-findings.md`, `AUD-2-*`) обновлены.
+
+### 29.2 Живая верификация
+
+- Тест-стек поднят, данные засеяны (20 публичных заметок).
+- `curl -s -D - http://127.0.0.1:18083/api/v1/graph/public?limit=1` → `HTTP/1.1 200 OK` (анонимно, `Cache-Control: private, max-age=300`).
+- `GET /api/v1/graph/{old-public}?limit=1` → `HTTP/1.1 404 Not Found`.
+
+### 29.3 Поиск остатков
+
+- Активный код, тесты, скрипты и документация больше не содержат действующих ссылок на старый публичный путь.
+- Оставшиеся совпадения ограничены историческими/спецификационными документами: `docs/architecture/decisions/018-public-graph-access-model.md` (ADR), `docs/EXTERNAL_AUDIT_2026-09.md` (снапшот аудита), `docs/archive/TEST_EXECUTION_REPORT.md` (архив).
+
+### 29.4 Верификация
+
+- `go test ./internal/interfaces/api/graphhandler/... -v` — PASS.
+- `go test ./internal/interfaces/api/graphhandler/... -v -tags=integration` — PASS.
+- `npm run test:unit -- src/shared/api/graph.test.ts` — 41/41 PASS.
+- `check-all.ps1` без `-Quick`: 19 PASS, 1 SKIP (`golangci-lint` не установлен), exit 0.
+
+**Статус:** реализация выполнена, передана на ревью Claude Code.

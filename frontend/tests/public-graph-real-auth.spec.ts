@@ -57,7 +57,7 @@ test.describe("Public graph in real-auth mode @auth-real", () => {
 
     // API-level assertion first: fast and unambiguous about what the
     // anonymous graph-service endpoint actually returns.
-    const publicGraphResp = await request.get(`${backendUrl}/api/v1/graph/all?nocache=1`);
+    const publicGraphResp = await request.get(`${backendUrl}/api/v1/graph/public?nocache=1`);
     expect(publicGraphResp.ok(), await publicGraphResp.text()).toBeTruthy();
     const publicGraph = await publicGraphResp.json();
     const publicNodeTitles: string[] = (publicGraph.data?.nodes ?? []).map(

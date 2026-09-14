@@ -52,7 +52,7 @@ func DefaultJWTConfig(jwtManager *auth.JWTManager, tokenStore auth.TokenStore) *
 			"/api/v1/auth/yandex/login",
 			"/api/v1/auth/yandex/callback",
 			"/api/v1/achievements",
-			"/api/v1/graph/all",
+			"/api/v1/graph/public",
 			"/health",
 			"/swagger/*any",
 			"/openapi.yaml",

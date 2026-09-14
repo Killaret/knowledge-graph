@@ -333,12 +333,12 @@
 
 ### 6. Graph API
 
-#### 6.1 GET /graph-service/api/v1/graph/all (Get Full Graph)
+#### 6.1 GET /graph-service/api/v1/graph/public (Get Public Graph)
 
 **Валидация:**
 - ⏳ Valid graph request
-- ⏳ Authentication required
-- ⏳ User scope filtering
+- ⏳ Anonymous access allowed
+- ⏳ Public subset filtering
 
 **Performance:**
 - ⏳ Large graph response

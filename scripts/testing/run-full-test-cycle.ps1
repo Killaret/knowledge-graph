@@ -562,7 +562,7 @@ try {
             Write-Host "  [OK] Post-test notes snapshot saved" -ForegroundColor Green
         } catch {
             try {
-                Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
+                Invoke-RestMethod -Uri "http://127.0.0.1:18080/api/v1/graph/public?limit=1" -Method Get -TimeoutSec 5 | ConvertTo-Json | Out-File "$snapshotDir\post-test-notes.json"
                 Write-Host "  [OK] Post-test public graph snapshot saved (notes endpoint requires auth)" -ForegroundColor Green
             } catch {
                 Write-Host "  [WARN] Dev API not available after restoration" -ForegroundColor Yellow
@@ -591,7 +591,7 @@ try {
     if ($personalWasRunning) { $restoredStacks += @{ Url = "http://127.0.0.1:18082"; Name = "personal" } }
     foreach ($stack in $restoredStacks) {
         $notesUrl = "$($stack.Url)/api/v1/notes?limit=1"
-        $graphUrl = "$($stack.Url)/api/v1/graph/all?limit=1"
+        $graphUrl = "$($stack.Url)/api/v1/graph/public?limit=1"
         $output = "$snapshotDir\$($stack.Name)-notes.json"
         $tries = 0
         $reachable = $false

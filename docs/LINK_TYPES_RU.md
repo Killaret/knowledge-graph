@@ -124,7 +124,7 @@ PUT /api/v1/links/:id
 
 ### Данные графа
 
-Ответы `/api/v1/graph/all`, `/api/v1/notes/:id/graph` теперь содержат:
+Ответы `/api/v1/graph/public`, `/api/v1/notes/:id/graph` теперь содержат:
 
 ```json
 {

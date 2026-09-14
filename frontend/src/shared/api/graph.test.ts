@@ -607,13 +607,13 @@ describe("PUB-2 graph source", () => {
     expect(result.nodes).toHaveLength(10);
   });
 
-  it("rejects for community when graph-service is unavailable and does not fall back to graph/all", async () => {
+  it("rejects for community when graph-service is unavailable and does not fall back to graph/public", async () => {
     let graphAllCalled = false;
     server.use(
       http.get("http://localhost:9091/api/v1/graph/public", () =>
         HttpResponse.json({ error: "Service Unavailable" }, { status: 503 })
       ),
-      http.get("http://localhost:8080/api/v1/graph/all", () => {
+      http.get("http://localhost:8080/api/v1/graph/public", () => {
         graphAllCalled = true;
         return HttpResponse.json(privateGraph);
       })
@@ -624,13 +624,13 @@ describe("PUB-2 graph source", () => {
     expect(graphAllCalled).toBe(false);
   });
 
-  it("falls back to fresh graph for personal when full is unavailable and does not call graph/all", async () => {
+  it("falls back to fresh graph for personal when full is unavailable and does not call graph/public", async () => {
     let graphAllCalled = false;
     server.use(
       http.get("http://localhost:9091/api/v1/graph/full", () =>
         HttpResponse.json({ error: "Timeout" }, { status: 503 })
       ),
-      http.get("http://localhost:8080/api/v1/graph/all", () => {
+      http.get("http://localhost:8080/api/v1/graph/public", () => {
         graphAllCalled = true;
         return HttpResponse.json(privateGraph);
       }),

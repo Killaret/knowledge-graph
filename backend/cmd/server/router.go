@@ -28,7 +28,7 @@ import (
 // cacheControlMiddleware sets private, per-user cache headers and declares
 // that the response varies on the Authorization header and cookies.
 // Public shared caching is not used for any API response because endpoints
-// such as /graph/all return different content for different users.
+// such as /graph/public return different content for different users.
 func cacheControlMiddleware(maxAge int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		value := "private, max-age=0"
@@ -194,7 +194,7 @@ func setupRouter(
 		v1.DELETE("/notes/:id/links", writeLimiter, noteWrite, linkHandler.DeleteByNote)
 
 		v1.GET("/notes/:id/graph", cacheControlMiddleware(300), noteRead, graphHandler.GetGraph)
-		v1.GET("/graph/all", cacheControlMiddleware(300), graphHandler.GetFullGraph)
+		v1.GET("/graph/public", cacheControlMiddleware(300), graphHandler.GetFullGraph)
 		v1.GET("/graph/analytics", cacheControlMiddleware(300), graphHandler.GetAnalytics)
 		v1.GET("/me/graph/cached", cacheControlMiddleware(60), graphHandler.GetCachedGraph)
 		v1.GET("/me/graph/fresh", cacheControlMiddleware(0), graphHandler.GetFreshGraph)

@@ -13,7 +13,7 @@ sequenceDiagram
     P->>Notes: getNotes()
     P->>Graph: getFullGraphData()
     alt graph-service 5xx / timeout / network error
-        Graph->>Graph: fallback to backend /api/v1/graph/all
+        Graph->>Graph: fallback to backend /api/v1/graph/public
     end
     Notes-->>P: allNotes
     Graph-->>P: graphResult

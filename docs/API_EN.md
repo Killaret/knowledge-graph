@@ -145,10 +145,8 @@ Verified on the test stack: a user with five notes, two of them published, sees 
 nodes in `full` and two in `public`, and an anonymous caller sees the same two. The
 community graph is what is shared, not a trimmed copy of someone's own.
 
-The main backend also exposes `GET /api/v1/graph/all`, which is the older anonymous
-route and returns the public subset. It is scheduled to be renamed to `/graph/public`
-(task PUB-3); until that lands, both names exist on different services and the backend
-one is the one exempt from authentication.
+The main backend exposes `GET /api/v1/graph/public`, an anonymous route that returns
+the public subset. It was renamed from the old `all` path (PUB-3) and has no alias.
 
 ## 9. Creating notes in batches
 

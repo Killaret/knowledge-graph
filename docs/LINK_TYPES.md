@@ -126,7 +126,7 @@ PUT /api/v1/links/:id
 
 ### Graph data
 
-Graph responses (`/api/v1/graph/all`, `/api/v1/notes/:id/graph`) include:
+Graph responses (`/api/v1/graph/public`, `/api/v1/notes/:id/graph`) include:
 
 ```json
 {
