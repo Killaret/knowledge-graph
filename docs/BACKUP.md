@@ -1,6 +1,21 @@
 # Knowledge Graph Backup System
 
-Backup system for personal Knowledge Graph instance with support for local storage and cloud backup to Yandex.Disk.
+Backup system for the personal Knowledge Graph instance.
+
+> **How this actually runs (owner's decision, 2026-09-14).** The off-machine copy is made by a
+> **synced folder, not by the Yandex.Disk API**: backups are written to
+> `%USERPROFILE%\Desktop\my items`, and the owner's own client uploads that folder to the cloud.
+> No OAuth token is involved.
+>
+> `BACKUP_CLOUD_ENABLED` therefore defaults to `false` everywhere, `docker-compose.personal.yml`
+> included. The REST-API path below still works and is kept — set `BACKUP_CLOUD_ENABLED=true`
+> and supply a token to opt back in — but it is no longer the default and no longer required.
+>
+> The freshness guard that gates destructive Docker operations still reads `<repo>/backups`,
+> which is **not** where backups now go. That mismatch is being fixed under
+> [`tasks/BACKUP-2-backup-location-single-source.md`](tasks/BACKUP-2-backup-location-single-source.md);
+> until it lands, run `scripts/devops/backup-personal.ps1` and check the result by hand before
+> anything destructive. Decisions 31-32 in [`DECISIONS.md`](DECISIONS.md).
 
 ## 📋 System Overview
 
@@ -32,13 +47,14 @@ The backup system includes:
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│               Local Storage                                   │
-│               ./backups/backup-personal-YYYY-MM-DD.sql.gz    │
+│               Local Storage (the synced folder)               │
+│               %USERPROFILE%\Desktop\my items\              │
+│               backup-personal-<mode>-<timestamp>.sql.gz       │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ▼ (if cloud backup enabled)
 ┌─────────────────────────────────────────────────────────────┐
-│               Yandex.Disk (REST API)                         │
+│               Yandex.Disk (REST API) - opt-in, off by default │
 │               /KnowledgeGraphBackups/                        │
 └─────────────────────────────────────────────────────────────┘
 

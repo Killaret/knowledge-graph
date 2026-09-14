@@ -261,7 +261,7 @@ services:
       - ./knowledge-graph.config.json:/config/config.json:ro
     environment:
       BACKUP_DIR: /backups
-      BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-true}
+      BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-false}
       BACKUP_YANDEX_OAUTH_TOKEN: ${BACKUP_YANDEX_OAUTH_TOKEN:-${BACKUP_YANDEX_TOKEN:-}}
       BACKUP_YANDEX_FOLDER: ${BACKUP_YANDEX_FOLDER:-/KnowledgeGraphBackups}
       BACKUP_DAILY_RETENTION_DAYS: ${BACKUP_DAILY_RETENTION_DAYS:-7}
@@ -279,7 +279,7 @@ services:
           echo 'SHELL=/bin/sh';
           echo 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
           echo 'BACKUP_DIR=/backups';
-          echo 'BACKUP_CLOUD_ENABLED=${BACKUP_CLOUD_ENABLED:-true}';
+          echo 'BACKUP_CLOUD_ENABLED=${BACKUP_CLOUD_ENABLED:-false}';
           echo 'BACKUP_YANDEX_OAUTH_TOKEN=${BACKUP_YANDEX_OAUTH_TOKEN:-${BACKUP_YANDEX_TOKEN:-}}';
           echo 'BACKUP_YANDEX_FOLDER=${BACKUP_YANDEX_FOLDER:-/KnowledgeGraphBackups}';
           echo 'BACKUP_DAILY_RETENTION_DAYS=${BACKUP_DAILY_RETENTION_DAYS:-7}';
