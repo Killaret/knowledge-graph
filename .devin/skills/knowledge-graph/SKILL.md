@@ -56,12 +56,21 @@ How to write new ones: `docs/AI_AGENT_PROTOCOL.md`, section «Как писат�
 
 1. Read `.windsurfrules`, `docs/AI_HANDOFF.md`, and `docs/AI_AGENT_PROTOCOL.md` first; then read relevant subsystem documentation.
 2. Update `docs/AI_HANDOFF.md` when handing off or taking over a task.
-3. Search the codebase before deciding on an implementation. A search locates a candidate, it never confirms one: read the surrounding context (a hit inside a "do not do this" list or a dated journal entry is not a defect), prefer execution for claims about behaviour, and check the negative case — an empty result may mean a bad pattern, not clean code. See "Verifying a Finding" in `.windsurfrules`.
+3. Search the codebase before deciding on an implementation. A search locates a candidate, it never confirms one: read the surrounding context (a hit inside a "do not do this" list or a dated journal entry is not a defect), prefer execution for claims about behaviour, and check the negative case — an empty result may mean a bad pattern, not clean code. See "Verifying a Finding" and "A zero is a measurement" in `.windsurfrules`.
 4. Follow existing constructors, dependency injection, error handling, and test patterns.
 5. Add a regression test for every discovered defect.
 6. Run the narrowest relevant verification first, then the required subsystem checks.
 7. Review the diff for unrelated files and secrets before committing.
 8. Never start the personal stack unless the user explicitly requests it.
+
+## Finishing a task
+
+A change is only finished when it is **covered by tests and written down**. See `## Finishing Functionality` and `## Verifying a Finding` in `.windsurfrules` for the full rule.
+
+- Every implemented behaviour needs at least one test that would fail if the change were reverted.
+- Every observable behaviour change must update or create the relevant documentation in the same change.
+- When `.windsurfrules` changes, mirror the change into this skill and both master prompts.
+- A zero count is a measurement, not proof of absence: verify the source of truth directly before concluding the product is broken.
 
 ## Task Routing
 

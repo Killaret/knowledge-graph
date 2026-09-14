@@ -117,6 +117,24 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 - Add a regression test for every defect discovered in manual testing.
 - Before committing backend changes: `go test ./...`, `go vet ./...`, and clean up `coverage.out`, `*.cov`, `*.tmp`, `*.log`.
 
+## Finishing functionality
+
+A change is finished when it is **covered by tests and written down**. Both, not either — and this applies equally to new behaviour and to changed behaviour.
+
+**Tests.** Anything implemented carries at least a basic test of its own behaviour. "Basic" is the floor, not the target: one test that would fail if the change were reverted. A change whose test cannot fail is not covered — see "Verifying a Finding" and the mutation requirement in review.
+
+**Documentation.** Every change that adds or alters behaviour a user or another service can observe must, in the same change:
+
+- update the document that describes that area, if one exists;
+- or create it, if the area has none;
+- and update the derived copies when the change touches a norm (`.windsurfrules` -> `.devin/skills/knowledge-graph/SKILL.md` and both master prompts).
+
+Applies to API contracts (`backend/openAPI.yaml`, `docs/API_EN.md`), configuration (`docs/CONFIGURATION_EN.md`), operational behaviour (`docs/DEPLOYMENT_EN.md`, `docs/DOCKER.md`), and the skills when a trap is discovered that would cost the next person time.
+
+Reason: a feature nobody can find is indistinguishable from a feature that does not exist, and the person who pays for the omission is never the one who made it.
+
+Reviewers: a change that adds behaviour and touches no documentation is rejected on that ground alone, unless the change itself says why none was needed.
+
 ## Documentation and configuration rules
 
 After any change to behavior, configuration, architecture, Docker stack, or environment variables, update:
@@ -165,6 +183,10 @@ For new AI tooling configuration (skills, prompts, rules, MCP configs, project s
 A search locates a candidate. It never confirms one. Before reporting a
 finding — or accepting someone else's — follow "Verifying a Finding" in
 `.windsurfrules`:
+
+**A zero is a measurement, and measurements break.** When a count comes back empty — no rows, no nodes, no matches — verify first that the thing being measured exists at all, and that the tool reporting it is working. Check the source of truth directly (the database, the file, the route table) before concluding the product is broken.
+
+Corollary: **an operation that reports success has not been verified.** Check that it changed what you believe it changed — a script that matched zero lines still exits 0, and a commit message can claim work the diff does not contain.
 
 - Read the surrounding context, not the matching line. A hit inside a
   "do not do this" list, a code example, or a dated journal entry is not a
