@@ -212,6 +212,32 @@ redis.Options{
 - The test should fail before the fix (where safe) and pass after the fix.
 - If the defect depends on manual data or config setup, fix the seed/config script — not just the instructions.
 
+**Adversarial Phase (MANDATORY for new surfaces):**
+
+Green tests prove the code does what you thought. They cannot tell you what you
+did not think of. So covering a new surface has two phases, and the second is not
+optional:
+
+1. **Retrospective coverage.** Positive tests and the obvious negatives against
+   the implementation as it stands.
+2. **Adversarial phase.** Tests designed *to fail*, written from knowledge of the
+   implementation, the OpenAPI contract and the invariants you believe hold.
+   Every failing test either exposes a defect (fix the code) or proves the test
+   wrong (fix the test). Repeat while meaningful failures are still findable.
+
+Categories to work through: length boundaries (0, 1, max, max+1), enum validity
+including fallbacks, empty and maximal arrays, ownership and IDOR, duplicate ids
+and links, side effects (post-processing, metadata, `source_url`).
+
+**Adversarial tests carry no special name or marker.** A test earns its place by
+reddening on broken code, not by the intent it was written with; a marker in the
+name decays the moment someone forgets to add it, and then it lies. What is
+recorded instead is **what the phase found** — list the defects in the task file,
+as `tasks/BATCH-TEST-STRATEGY.md` does for the batch routes: a rune limit that
+contradicted the API, an unvalidated enum, a dropped `source_url`, links created
+to notes that did not exist, an empty array answering 200. Five defects that no
+amount of green testing would have surfaced.
+
 **Regression Testing (MANDATORY before production deployment):**
 - **ALWAYS** run full regression cycle before production deployment
 - Run: `.\scripts\testing\run-full-test-cycle.ps1` (includes stacks identity check)
