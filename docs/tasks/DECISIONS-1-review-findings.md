@@ -162,3 +162,38 @@ NOTE-QUALITY-1, NOTE-TYPE-TAXONOMY, P11-1, SECURITY-1) и починил раз�
 работает, и я получил ноль совпадений для записей 1 и 2 — то есть чуть не объявил
 дефектными обе. Без `-i` выяснилось, что проблема только у первой. **Инструмент проверки
 сам оказался ненадёжен ровно в том месте, где я им проверял.**
+
+---
+
+## Полный прогон `check-all` (2026-09-14, без `-Quick`)
+
+Правило владельца требует полного локального прогона перед приёмкой. Прогнан после
+починки раннера:
+
+```
+[PASS] Core workflow sync            [PASS] Frontend circular dependencies
+[PASS] PS1 ASCII encoding guard      [PASS] Frontend ESLint
+[SKIP] Backend golangci-lint         [PASS] Frontend formatting
+[PASS] Backend unit tests            [PASS] Frontend TypeScript
+[PASS] Backend coverage >= 64.8%     [PASS] Generated config sync
+[PASS] Backend config validation     [PASS] Documentation links
+[PASS] Backend integration tests     [PASS] Decision index guard
+[PASS] Graph-service unit tests      [PASS] Frontend unit tests
+[PASS] Graph-service integration     [PASS] BDD TypeScript
+                                     [PASS] NLP tests
+
+Skipped phases: 1 (golangci-lint не установлен на машине)
+No phases failed, but skipped checks require review.
+CHECKALL_EXIT=0
+```
+
+**17 PASS, 1 SKIP, 0 FAIL.** Обе интеграционные фазы прошли — раньше они падали на DNS
+у testcontainers.
+
+Отдельно стоит сказать, чем этот зелёный отличается от вчерашнего: **вчера зелёный ничего
+не значил**, потому что раннер не умел краснеть и выходил нулём при любом исходе. Сегодня
+перед прогоном доказано мутацией, что он краснеет и возвращает 1. Только после этого
+«17 PASS» стало утверждением, а не оформлением.
+
+Одна оговорка честности: `golangci-lint` на машине не установлен, фаза пропущена — это
+единственная дыра в сегодняшнем прогоне, и она закрывается в CI.
