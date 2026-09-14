@@ -10,9 +10,27 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || cd "$SCRIPT_DIR/../.." && pwd)"
-BACKUP_DIR="$REPO_ROOT/backups"
 POLICY_FILE="$SCRIPT_DIR/backup-policy.env"
+
+# Resolve the backup directory: $KG_BACKUP_DIR overrides backup-policy.env.
+# A relative tail is expanded from the user's home directory.
+KG_BACKUP_DIR="${KG_BACKUP_DIR:-}"
+if [ -z "$KG_BACKUP_DIR" ] && [ -f "$POLICY_FILE" ]; then
+  KG_BACKUP_DIR="$(grep -E '^[[:space:]]*KG_BACKUP_DIR[[:space:]]*=' "$POLICY_FILE" | head -n1 | cut -d= -f2-)"
+  # trim leading/trailing whitespace
+  KG_BACKUP_DIR="$(printf '%s' "$KG_BACKUP_DIR" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+fi
+if [ -z "$KG_BACKUP_DIR" ]; then
+  echo "  [ERROR] KG_BACKUP_DIR not set and not found in $POLICY_FILE"
+  exit 1
+fi
+if [ "${KG_BACKUP_DIR:0:1}" = "~" ]; then
+  KG_BACKUP_DIR="${HOME}${KG_BACKUP_DIR#\~}"
+fi
+case "$KG_BACKUP_DIR" in
+  /*|[A-Za-z]:\\*|[A-Za-z]:/*|\\*) BACKUP_DIR="$KG_BACKUP_DIR" ;;
+  *) BACKUP_DIR="$HOME/$KG_BACKUP_DIR" ;;
+esac
 
 # Threshold: env var first, then the shared policy file. Refuse rather than
 # guess - a cleanup that cannot tell how fresh the backup must be is not safe.

@@ -1,4 +1,5 @@
 id	name	job	workflow_step	cwd	command	signature	quick_skip	tool
+guard-personal-data	Personal data guard tests	frontend-checks	Check guard-personal-data.py	.	python scripts/devops/test_guard_personal_data.py	python scripts/devops/test_guard_personal_data.py	0	python
 ps1-ascii	PS1 ASCII encoding guard	frontend-checks	Check .ps1 files are ASCII or have a BOM	.	python scripts/testing/check-ps1-ascii.py	python scripts/testing/check-ps1-ascii.py	0	python
 backend-lint	Backend golangci-lint	backend-checks	golangci-lint	backend	golangci-lint run --timeout=10m	golangci/golangci-lint-action	0	golangci-lint
 backend-unit	Backend unit tests	backend-checks	Run backend tests	backend	go test -v '-coverprofile=cover.out' ./...	go test -v -coverprofile=cover.out ./...	0	go

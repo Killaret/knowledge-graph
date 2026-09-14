@@ -258,6 +258,10 @@ jobs:
         working-directory: .
         run: python scripts/testing/check-ps1-ascii.py
 
+      - name: Check guard-personal-data.py
+        working-directory: .
+        run: python scripts/devops/test_guard_personal_data.py
+
       - name: Run unit tests
         run: npm run test:unit
 

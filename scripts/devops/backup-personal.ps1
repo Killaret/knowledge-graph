@@ -15,8 +15,31 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Configuration
-$BackupDir = if ($env:BACKUP_DIR) { $env:BACKUP_DIR } else { "$env:USERPROFILE\Desktop\my items" }
+# Configuration: backup directory.
+# Container callers set $env:BACKUP_DIR to the in-container path (/backups).
+# Host callers read the canonical default from scripts/devops/backup-policy.env
+# and may override it with $env:KG_BACKUP_DIR.
+$PolicyFile = Join-Path $PSScriptRoot "backup-policy.env"
+$BackupDir = $env:BACKUP_DIR
+if (-not $BackupDir) {
+    $KG_BACKUP_DIR = $env:KG_BACKUP_DIR
+    if (-not $KG_BACKUP_DIR -and (Test-Path $PolicyFile)) {
+        $line = Get-Content $PolicyFile | Where-Object { $_ -match '^\s*KG_BACKUP_DIR\s*=' } | Select-Object -First 1
+        if ($line) { $KG_BACKUP_DIR = ($line -split '=', 2)[1].Trim() }
+    }
+    if (-not $KG_BACKUP_DIR) {
+        throw "KG_BACKUP_DIR not set and not found in $PolicyFile"
+    }
+    # Expand a leading ~ and resolve a relative tail from the home directory.
+    if ($KG_BACKUP_DIR -match '^~') {
+        $KG_BACKUP_DIR = $KG_BACKUP_DIR -replace '^~', $env:USERPROFILE
+    }
+    if ([System.IO.Path]::IsPathRooted($KG_BACKUP_DIR)) {
+        $BackupDir = $KG_BACKUP_DIR
+    } else {
+        $BackupDir = Join-Path $env:USERPROFILE $KG_BACKUP_DIR
+    }
+}
 $Timestamp = Get-Date -Format "yyyy-MM-dd-HHmmss"
 $BackupFile = Join-Path $BackupDir "backup-personal-${Mode}-${Timestamp}.sql"
 

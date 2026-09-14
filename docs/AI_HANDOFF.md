@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-14 — 68847ef
-Прочитано: Devin — 2026-09-14 — 0ffb505b59fcc14fd4d5978fff397ab5ba6aeefe
+Прочитано: Devin — 2026-09-14 — 34e220f
 ```
 
 ---
@@ -56,7 +56,7 @@
 | **DOC-RULE-1:** норма «Documenting New Functionality» внесена в `.windsurfrules` — правило, которое владелец просил записать, не существовало нигде (ноль вхождений по всему проекту). Отзеркалить в производные `.devin/` | `.windsurfrules`, `.devin/` | **на ревью у Claude Code** — параграф «Documentation» отзеркалён в `MASTER_PROMPT.md`, `MASTER_PROMPT_RU.md` и `SKILL.md` | 2026-09-14 |
 | **DOC-SYNC-1:** отзеркалить в производные `.devin/` две новые нормы — «Finishing Functionality» (тесты + документация) и добавленный абзац «A zero is a measurement» в «Verifying a Finding» | `.windsurfrules`, `.devin/` | **на ревью у Claude Code** — раздел `Finishing functionality` и параграф «A zero is a measurement» в `Verifying a finding` отзеркалены в `MASTER_PROMPT.md`, `MASTER_PROMPT_RU.md` и `SKILL.md` | 2026-09-14 |
 | **DOC-BOARD-STATUS-1:** записать в четыре места, что доска — краткое описание и ссылка, а постановка живёт в `docs/tasks/`. Правило «указатель, не пересказ» распространяется на обе колонки, не только на статус (решение владельца 37) | [`tasks/BOARD-1-review-findings.md`](tasks/BOARD-1-review-findings.md), `docs/AI_HANDOFF.md`, `.claude/commands/kg-work.md`, `.devin/skills/kg-work/SKILL.md`, `docs/AI_AGENT_PROTOCOL.md` | **на ревью у Claude Code** — правило дописано в четырёх местах: `docs/AI_HANDOFF.md`, `.claude/commands/kg-work.md`, `.devin/skills/kg-work/SKILL.md`, `docs/AI_AGENT_PROTOCOL.md`. Терминальные строки на доске всё ещё длинные; сжатие — за Claude Code. **Статус восстановлен: я затёр его коммитом `0e939f2`, правя строку поверх несмёрженного дерева.** Добавилось после сдачи: решение 37 распространяет правило и на колонку описания, не только на статус | 2026-09-14 |
-| **BACKUP-2:** каталог бэкапа задан в шести местах по-разному, и сторож свежести читает не тот, куда теперь пишутся бэкапы. Плюс `check-personal-backup.sh` всегда отвечает «No backup directory» |  | `/`&&` всегда отвечает «No backup directory» при полном каталоге | [`tasks/BACKUP-2-backup-location-single-source.md`](tasks/BACKUP-2-backup-location-single-source.md) | **ждёт Devin, высокий приоритет** — правит хук, между заметками владельца и `docker volume rm` стоит именно этот сторож | 2026-09-14 |
+| **BACKUP-2:** каталог бэкапа — один источник, сторож смотрит туда, куда пишутся бэкапы | [`tasks/BACKUP-2-backup-location-single-source.md`](tasks/BACKUP-2-backup-location-single-source.md) | **на ревью у Claude Code** — `backup-policy.env` единый, пять мутаций, `check-personal-backup.sh` починен | 2026-09-14 |
 | **TASKS-INDEX-1:** 87 постановок, указателя нет, у 13 файлов имя не начинается с идентификатора доски — поиск по идентификатору их не находит | [`tasks/TASKS-INDEX-1-task-discoverability.md`](tasks/TASKS-INDEX-1-task-discoverability.md) | **ждёт Devin** — генерируемый указатель, сторож на расхождение, переименование 13 файлов | 2026-09-14 |
 | **DOC-SYNC-2:** отзеркалить в производные `.devin/` норму «Adversarial Phase» — обязательная фаза намеренно падающих тестов, без маркировки, с записью находок в файл задачи | `.windsurfrules`, `.devin/skills/knowledge-graph/SKILL.md`, `.devin/prompts/` | **ждёт Devin** — норму пишу я, производные твои | 2026-09-14 |
 ## На Claude Code

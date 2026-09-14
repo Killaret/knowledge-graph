@@ -12,13 +12,43 @@
 set -e
 
 MODE="${1:-${BACKUP_MODE:-daily}}"
+
+resolve_backup_dir() {
+  # Container callers set BACKUP_DIR to the in-container path (/backups).
+  # Host callers read the canonical default from backup-policy.env and may
+  # override it with KG_BACKUP_DIR.
+  if [ -n "${BACKUP_DIR:-}" ]; then
+    echo "$BACKUP_DIR"
+    return
+  fi
+  local policy_file
+  policy_file="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/backup-policy.env"
+  local kg_backup_dir="${KG_BACKUP_DIR:-}"
+  if [ -z "$kg_backup_dir" ] && [ -f "$policy_file" ]; then
+    kg_backup_dir="$(grep -E '^[[:space:]]*KG_BACKUP_DIR[[:space:]]*=' "$policy_file" | head -n1 | cut -d= -f2-)"
+    # trim leading/trailing whitespace
+    kg_backup_dir="$(printf '%s' "$kg_backup_dir" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  fi
+  if [ -z "$kg_backup_dir" ]; then
+    echo "  [ERROR] KG_BACKUP_DIR not set and not found in $policy_file" >&2
+    exit 1
+  fi
+  # Expand a leading ~ to the home directory.
+  if [ "${kg_backup_dir:0:1}" = "~" ]; then
+    kg_backup_dir="${HOME}${kg_backup_dir#\~}"
+  fi
+  case "$kg_backup_dir" in
+    /*|[A-Za-z]:\\*|[A-Za-z]:/*|\\*) echo "$kg_backup_dir" ;;
+    *) echo "$HOME/$kg_backup_dir" ;;
+  esac
+}
 case "$MODE" in
   daily|weekly) ;;
   *) echo "Usage: $0 {daily|weekly}" >&2; exit 1 ;;
 esac
 
 # Configuration
-BACKUP_DIR="${BACKUP_DIR:-./backups}"
+BACKUP_DIR="$(resolve_backup_dir)"
 TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
 BACKUP_FILE="${BACKUP_DIR}/backup-personal-${MODE}-${TIMESTAMP}.sql"
 

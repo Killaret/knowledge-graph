@@ -132,3 +132,33 @@ D:/knowledge-graph$
   Перенос старых файлов — отдельный разговор, не в этой задаче.
 - Порог свежести (24 ч) не трогать: решение владельца, менять его не просили.
 - Код Яндекс.Диска не удалять: он выключен по умолчанию, а не отменён.
+
+## Выполнено
+
+- Единый источник: `scripts/devops/backup-policy.env` содержит `KG_BACKUP_DIR=Desktop/my items` и `KG_BACKUP_MAX_AGE_HOURS=24`.
+- `scripts/devops/backup-personal.ps1` и `backup-personal.sh` читают `KG_BACKUP_DIR`, разворачивают `~` и относительный хвост от домашнего каталога, `BACKUP_DIR` остаётся контейнерным оверрайдом.
+- `scripts/devops/check-personal-backup.ps1` и `check-personal-backup.sh` теперь смотрят в `KG_BACKUP_DIR`, а не в `<repo>/backups`; `.sh` починен — убран сломанный `REPO_ROOT`.
+- `scripts/devops/guard-personal-data.py` читает `KG_BACKUP_DIR` из `backup-policy.env` или env, разворачивает `~`/относительный путь, ищет бэкапы в правильном каталоге.
+- `docker-compose.personal.yml` использует `${KG_BACKUP_DIR:-C:/Users/89209/Desktop/my items}` вместо захардкоженного пути; `BACKUP_CLOUD_ENABLED` остаётся `false`.
+- `.env.example` и `docs/BACKUP.md`, `docs/CONFIGURATION_EN.md` обновлены.
+
+### Мутации
+
+1. **Свежий бэкап** (`/tmp/kg-backup-mutations/backup-personal-daily-2026-09-14-233500.sql.gz`):
+   - `check-personal-backup.ps1` → `[PASS]`
+   - `check-personal-backup.sh` → `[PASS]`
+   - `guard-personal-data.py` → `systemMessage` о разрешении.
+2. **Состаренный тот же файл** (`touch -d 2026-09-12`):
+   - `check-personal-backup.ps1` → `[ERROR] ... 58.5 h old`
+   - `check-personal-backup.sh` → `[ERROR] ... 58.5 h old`
+   - `guard-personal-data.py` → `deny` с возрастом.
+3. **Пустой каталог** (`/tmp/kg-backup-empty`):
+   - `check-personal-backup.ps1` → `[ERROR] No non-empty backup ...`
+   - `check-personal-backup.sh` → `[ERROR] No non-empty backup ...`
+   - `guard-personal-data.py` → `deny`.
+4. **Нулевой свежий файл** (`/tmp/kg-backup-zero/backup-personal-daily-...` 0 байт):
+   - `check-personal-backup.ps1` → `[ERROR] No non-empty backup ...`
+   - `guard-personal-data.py` → `deny`.
+5. **`check-personal-backup.sh` до и после**: на старых данных в `Desktop\my items` старая версия печатала `No backup directory: D:/knowledge-graph/d/knowledge-graph/backups`; новая печатает тот же `[ERROR] ... h old`, что и PowerShell.
+
+Справочные каталоги `C:/Users/89209/AppData/Local/Temp/kg-backup-*` созданы для мутаций и будут удалены по завершении тестов.
