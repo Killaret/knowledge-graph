@@ -1109,3 +1109,32 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `node scripts/testing/check-docs-links.mjs .` passes.
 
 **Статус:** реализация выполнена, передана на ревью Claude Code.
+
+## 27. DECISIONS-1 — сторож указателя решений владельца (2026-09-14)
+
+### 27.1 Указатель
+
+- `docs/DECISIONS.md` дополнен до 29 записей; добавлены 7 ранее неиндексированных решений: `BOARD-1`, `DEPENDABOT-25`, `DEPENDABOT-79`, `NOTE-QUALITY-1`, `NOTE-TYPE-TAXONOMY`, `P11-1`, `SECURITY-1`.
+- Решения без кода (`NOTE-QUALITY-1`, `P11-1`) помечены `(кода не требует)`.
+- Исправлен парсинг идентификаторов, начинающихся с цифр (`P11-1`).
+
+### 27.2 Сторож
+
+- `scripts/testing/check-decisions.mjs` реализует 4 правила: резолв ссылок, соответствие маркеров указателю, след кода по идентификатору в коммите, архив терминальных строк старше трёх дней.
+- Интегрирован в `check-all.ps1` через `core-checks.tsv` (`decisions`) и в CI `frontend-checks` (`Check decision index`).
+- `check-core-workflow-sync.mjs`: 18 local phases match 18 CI steps.
+
+### 27.3 Протокол
+
+- В `docs/AI_AGENT_PROTOCOL.md` добавлено правило: коммит реализации называет идентификатор задачи в заголовке или теле; исключения — `(кода не требует)`.
+
+### 27.4 Мутации
+
+- Все 4 мутации пройдены: решение без записи в указателе, битая ссылка, решение без коммита, устаревшая терминальная строка. Выводы приложены в `docs/tasks/DECISIONS-1-decision-index-and-guard.md`.
+
+### 27.5 Верификация
+
+- `check-all.ps1` без `-Quick`: 17 PASS, 1 SKIP (`golangci-lint`), exit 0.
+- `node scripts/testing/check-decisions.mjs .` PASS.
+
+**Статус:** реализация выполнена, передана на ревью Claude Code.

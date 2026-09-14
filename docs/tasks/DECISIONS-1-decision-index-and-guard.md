@@ -73,6 +73,44 @@ docs/DECISIONS.md        указатель: № | дата | решение | �
 
 Все мутации откатить, вывод приложить.
 
+### Результаты мутаций
+
+1. **Правило 2 — решение без записи в указателе.**
+   Создан `docs/tasks/MUTATION-1-test.md` со строкой:
+   `## Решение владельца (2026-09-14): MUTATION-1 — guard must catch this missing row`
+   Вывод:
+   ```text
+   Decision index guard failed:
+     docs/tasks/MUTATION-1-test.md: owner decision (2026-09-14) has no matching row in DECISIONS.md
+   ```
+
+2. **Правило 1 — битая ссылка.**
+   Добавлена строка в `DECISIONS.md`:
+   `| 30 | 2026-09-14 | MUTATION-2: ссылка на несуществующий файл | проверка битой ссылки | [tasks/NONEXISTENT-1.md](tasks/NONEXISTENT-1.md) |`
+   Вывод:
+   ```text
+   Decision index guard failed:
+     DECISIONS.md row 30: broken link "tasks/NONEXISTENT-1.md"
+   ```
+
+3. **Правило 3 — решение без кода и без пометки.**
+   Создан `docs/tasks/MUTATION-3-test.md` и добавлена строка в `DECISIONS.md`:
+   `| 30 | 2026-09-14 | MUTATION-3: решение без коммита | проверка отсутствия кода | [tasks/MUTATION-3-test.md](tasks/MUTATION-3-test.md) |`
+   Вывод:
+   ```text
+   Decision index guard failed:
+     DECISIONS.md row 30 (MUTATION-3): no commit names the task identifier
+   ```
+
+4. **Правило 4 — устаревшая терминальная строка.**
+   Добавлена строка в `AI_HANDOFF.md` (таблица «На человеке»):
+   `| MUTATION-4: stale terminal row | — | **принято** | 2026-09-01 |`
+   Вывод:
+   ```text
+   Decision index guard failed:
+     AI_HANDOFF.md board row is stale (older than 3 days): | MUTATION-4: stale terminal row | — | **принято** | 2026-09-01 |
+   ```
+
 ## Соглашение об идентификаторе в коммите
 
 Записать нормой в [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md): коммит, который

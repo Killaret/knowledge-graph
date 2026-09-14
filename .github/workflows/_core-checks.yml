@@ -242,6 +242,10 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-docs-links.mjs .
 
+      - name: Check decision index
+        working-directory: .
+        run: node scripts/testing/check-decisions.mjs .
+
       - name: Check .ps1 files are ASCII or have a BOM
         working-directory: .
         run: python scripts/testing/check-ps1-ascii.py
