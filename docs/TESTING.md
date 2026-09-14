@@ -130,6 +130,19 @@ Starts the isolated test stack.
 **Windows:**
 ```powershell
 .\scripts\testing\start-test.ps1
+
+The stack no longer needs a secret supplied by hand. `JWT_SECRET` is resolved in this
+order: an existing process variable wins, then `.env.test` if you created one, then a
+built-in default for the test contour. Copy `.env.test.example` if you want your own;
+the real `.env.test` is git-ignored. Before this (ENV-1) the backend and worker
+crash-looped with `FATAL: JWT_SECRET must be set` on any machine without the variable,
+while compose only warned about defaulting to a blank string.
+
+`SKIP_AUTH` defaults to `true` on the test stack, which bypasses JWT validation on both
+the backend and graph-service. That is convenient for UI work and **wrong for testing
+anything about authentication**: under it every request is the seed user and no caller
+is anonymous. Set `SKIP_AUTH=false` on *both* services when checking anonymous access
+or view modes — restarting only the backend leaves graph-service still bypassing.
 ```
 
 **Linux/Mac:**

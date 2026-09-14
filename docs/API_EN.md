@@ -111,11 +111,68 @@ POST /api/v1/notes/{id}/unpublish
 
 Both answer with the standard `Note` envelope and set `is_public` accordingly.
 
+**These endpoints are not simple field setters, and that is why they exist.**
+Publishing and unpublishing also invalidate the cached public graph and notify the
+graph-service subscriber, so a freshly published note appears in the community graph
+without waiting for a cache expiry. Setting the column directly — in the database, or
+through any future write path that bypasses these routes — would leave the public
+graph serving a stale answer. If a new code path ever needs to change visibility, it
+must go through the same handlers rather than the column.
+
 Do **not** set `is_public` in `POST /api/v1/notes` or `PUT /api/v1/notes/{id}` —
 `createNoteRequest` and `UpdateNoteRequest` do not include the field, and any
 `is_public` or `source_url` sent on `PUT` is silently ignored. The public
 read endpoints described in section 5 only return notes whose `is_public` is
 `true`.
+
+## 8. Graph view: personal and community
+
+The graph is served by **graph-service**, not the main backend, and is reached through
+the `/graph-service/api` proxy — `http://127.0.0.1:19091/api/v1/graph/...` when talking
+to the test stack directly.
+
+```bash
+GET /api/v1/graph/full     # the caller's own graph; requires a token
+GET /api/v1/graph/public   # the community graph; open to anonymous callers
+```
+
+Which one the frontend asks for is a **view mode**, not a consequence of being logged
+in. An anonymous visitor always gets `public` and is shown no switcher; an authenticated
+user defaults to `personal`, can switch to *Community*, and the choice survives a reload
+(`localStorage`). Anonymous callers receive `401` from `full`.
+
+Verified on the test stack: a user with five notes, two of them published, sees five
+nodes in `full` and two in `public`, and an anonymous caller sees the same two. The
+community graph is what is shared, not a trimmed copy of someone's own.
+
+The main backend also exposes `GET /api/v1/graph/all`, which is the older anonymous
+route and returns the public subset. It is scheduled to be renamed to `/graph/public`
+(task PUB-3); until that lands, both names exist on different services and the backend
+one is the one exempt from authentication.
+
+## 9. Creating notes in batches
+
+For clients that produce many notes at once — the Java source-text handler, bulk
+import — three synchronous routes exist on the main backend:
+
+```bash
+POST /api/v1/notes/batch/create   # array of notes, max 50
+POST /api/v1/notes/batch/delete   # array of ids
+POST /api/v1/import/batch         # notes *and* links between them, max 50 each
+```
+
+Two asymmetries are deliberate. `import/batch` accepts links but has **no delete** —
+an external source should not be able to erase. The user-facing `batch/create` accepts
+no links.
+
+Linking notes that do not exist yet is the open question: the client currently supplies
+its own UUIDs in `import/batch`, and a foreign id that already exists is rejected rather
+than overwritten. The contract for that is still being decided (see
+`docs/tasks/BATCH-API-DESIGN.md`), so treat it as provisional.
+
+Batch creation runs the same post-processing as single creation — keywords, embeddings,
+link weights and recommendations. Mass **import** does not yet enqueue recommendations;
+that gap is tracked as IMP-4.
 
 ## Notes for maintainers
 

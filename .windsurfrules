@@ -292,6 +292,23 @@ appear", which is not the same question as "is this true". A hit inside a
 "do not do this" list, inside a code example, or inside a dated journal entry
 looks identical to a real defect. So does a miss caused by a bad pattern.
 
+**A zero is a measurement, and measurements break.** When a count comes back empty —
+no rows, no nodes, no matches — verify first that the thing being measured exists at
+all, and that the tool reporting it is working. Check the source of truth directly
+(the database, the file, the route table) before concluding the product is broken.
+
+Five times in one day this rule was the only thing standing between a false finding
+and a report: an exit code read through a pipe returned the pipe's status; `grep -i`
+silently matched nothing because the locale cannot fold non-ASCII case; a mutation
+placed outside the table read as a gap in the guard; a stack half-restarted left one
+service in the wrong mode; and a token parser that had lost its fallback made every
+write fail with 401 while the graph was declared empty. In each case the instrument
+was broken, not the subject.
+
+Corollary: **an operation that reports success has not been verified.** Check that it
+changed what you believe it changed — a script that matched zero lines still exits 0,
+and a commit message can claim work the diff does not contain.
+
 Before reporting a finding, or accepting someone else's:
 
 - **read the surrounding context**, not the matching line — a count of
