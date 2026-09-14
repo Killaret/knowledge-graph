@@ -250,6 +250,10 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-board-size.mjs .
 
+      - name: Check commit authorship
+        working-directory: .
+        run: node scripts/testing/check-commit-authorship.mjs .
+
       - name: Check .ps1 files are ASCII or have a BOM
         working-directory: .
         run: python scripts/testing/check-ps1-ascii.py

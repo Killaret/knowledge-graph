@@ -1149,7 +1149,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 ### 28.2 Сторож
 
-- `scripts/testing/check-board-size.mjs` проверяет, что `docs/AI_HANDOFF.md` не превышает 40 КБ.
+- `scripts/testing/check-board-size.mjs` проверяет, что `docs/AI_HANDOFF.md` не превышает 120 КБ (решение владельца 2026-09-14; было 40 КБ).
 - Интегрирован в `core-checks.tsv`, `_core-checks.yml` и `check-all.ps1`/`check-all.sh` через `frontend-checks` (`Check board size`).
 - `check-core-workflow-sync.mjs`: 19 local phases match 19 CI steps.
 
