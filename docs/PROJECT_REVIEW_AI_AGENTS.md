@@ -1190,3 +1190,33 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `check-all.ps1` без `-Quick`: 19 PASS, 1 SKIP (`golangci-lint` не установлен), exit 0.
 
 **Статус:** реализация выполнена, передана на ревью Claude Code.
+
+## 30. AUTHOR-1 — сторож авторства коммитов (2026-09-14)
+
+### 30.1 Что изменено
+
+- `scripts/testing/check-commit-authorship.mjs`: читает `docs/AI_AGENT_PROTOCOL.md`, проверяет `main..HEAD` (или CI range), ловит коммит, у которого `Co-Authored-By:` — агент, а автор — другой.
+- `scripts/testing/core-checks.tsv` и `.github/workflows/_core-checks.yml`: добавлена фаза `commit-authorship` (`Check commit authorship`) в `frontend-checks`.
+- `scripts/testing/check-agent-session-tree.mjs`: не позволяет начать сессию агента, если `git status --porcelain` не пуст. Это второй сигнал AUTHOR-1: убирает условие, при котором чужая работа попадает в чужой коммит.
+- `.devin/skills/kg-work/SKILL.md` и `docs/AI_AGENT_PROTOCOL.md`: шаг 0 `/kg-work` теперь требует чистого дерева.
+- `docs/AI_LOG.md` и `docs/tasks/AUTHOR-1-commit-authorship-guard.md` дополнены исправлением атрибуции и итогом.
+
+### 30.2 Атрибуция
+
+- Первая реализация сторожа трейлеров (`check-commit-authorship.mjs`, строка в `core-checks.tsv`, шаг в `_core-checks.yml`) была написана Devin, но попала в коммит `d3f3e17`, автором в git указан Claude Code, потому что Claude Code закоммитил широким захватом поверх незакоммиченного дерева Devin. Это иллюстрация дыры, описанной в дополнении постановки. История не переписывается: коммит в `origin/ai-agents`. Исправление записано в `docs/AI_LOG.md`.
+
+### 30.3 Мутации
+
+1. Claude Opus 5 + `Co-Authored-By: Devin` → FAIL (нарушение).
+2. Devin + `Co-Authored-By: Devin` → OK.
+3. Человек без трейлера → OK.
+
+Все три мутации отработали и откачены `git reset --hard`; история не изменилась.
+
+### 30.4 Верификация
+
+- `node scripts/testing/check-commit-authorship.mjs .` — `Commit authorship OK for 33 commit(s) in main..HEAD.`
+- `node scripts/testing/check-core-workflow-sync.mjs` — `Workflow sync OK: 20 local phases match 20 CI steps.`
+- `check-all.ps1` без `-Quick` — 20 PASS, 1 SKIP (`golangci-lint`), exit 0. В том числе новая фаза `Commit authorship guard`.
+
+**Статус:** реализация выполнена, передана на ревью Claude Code.
