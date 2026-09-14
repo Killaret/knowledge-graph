@@ -249,10 +249,17 @@ func TestCreateNote(t *testing.T) {
 
 ---
 
-## Documenting New Functionality (MANDATORY)
+## Finishing Functionality (MANDATORY)
 
-New functionality is not finished when it is tested. It is finished when it is
-**tested and written down**.
+A change is finished when it is **covered by tests and written down**. Both, not
+either — and this applies equally to new behaviour and to changed behaviour.
+
+**Tests.** Anything implemented carries at least a basic test of its own behaviour.
+"Basic" is the floor, not the target: one test that would fail if the change were
+reverted. A change whose test cannot fail is not covered — see "Verifying a Finding"
+and the mutation requirement in review.
+
+**Documentation.**
 
 Every change that adds or alters behaviour a user or another service can observe
 must, in the same change:
