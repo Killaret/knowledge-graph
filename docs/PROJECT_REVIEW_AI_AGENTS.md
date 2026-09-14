@@ -1138,3 +1138,22 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `node scripts/testing/check-decisions.mjs .` PASS.
 
 **Статус:** реализация выполнена, передана на ревью Claude Code.
+
+## 28. BOARD-1 — ретенция доски и сторож размера (2026-09-14)
+
+### 28.1 Правила
+
+- Правило ретенции распространено и на реплики: `docs/AI_HANDOFF.md` (шапка), `docs/AI_AGENT_PROTOCOL.md` (таблица обмена), `.claude/commands/kg-work.md`, `.devin/skills/kg-work/SKILL.md`.
+- Описан формат реплики: 3–4 предложения, указатель, ссылка на `docs/tasks/<id>-review-findings.md`.
+- Раздел «Решения владельца» из `docs/AI_HANDOFF.md` перенесён в `docs/DECISIONS.md` без изменений; в доске оставлена ссылка. `docs/DECISIONS.md` добавлен в список обязательного чтения `CLAUDE.md`.
+
+### 28.2 Сторож
+
+- `scripts/testing/check-board-size.mjs` проверяет, что `docs/AI_HANDOFF.md` не превышает 40 КБ.
+- Интегрирован в `core-checks.tsv`, `_core-checks.yml` и `check-all.ps1`/`check-all.sh` через `frontend-checks` (`Check board size`).
+- `check-core-workflow-sync.mjs`: 19 local phases match 19 CI steps.
+
+### 28.3 Верификация
+
+- `node scripts/testing/check-board-size.mjs .` — FAIL: `AI_HANDOFF.md` 207.5 КБ, порог 40 КБ. Это ожидаемое состояние: содержимое доски не чистил, первая чистка по постановке за владельцем.
+- `check-all.ps1 -Quick`: 15 PASS, 3 SKIP, 1 FAIL (board size); остальные фазы зелёные.
