@@ -30,7 +30,7 @@ jobs:
           cache-dependency-path: backend/go.sum
 
       - name: Cache Go build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/go-build
@@ -130,7 +130,7 @@ jobs:
           cache-dependency-path: backend/go.sum
 
       - name: Cache Go build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/go-build
@@ -164,7 +164,7 @@ jobs:
           cache-dependency-path: services/graph-service/go.sum
 
       - name: Cache Go build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/go-build
@@ -207,7 +207,7 @@ jobs:
           cache-dependency-path: ./frontend/package-lock.json
 
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ./frontend/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('./frontend/package-lock.json') }}
