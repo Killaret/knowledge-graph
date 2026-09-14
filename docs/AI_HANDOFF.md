@@ -9,7 +9,7 @@
 **Правила доски.** Строки не удаляются при закрытии: им меняется статус и ставится дата. Строки в терминальном статусе (`принято`, `отклонено`) старше трёх дней убираются — их след остаётся в журнале и в истории git. Статусы: `ждёт`, `в работе`, `на ревью`, `принято`, `отклонено`.
 
 ```
-Прочитано: Claude Code — 2026-09-13 — 10e2011
+Прочитано: Claude Code — 2026-09-14 — 8288ebc
 Прочитано: Devin — 2026-09-14 — ae41342
 ```
 
@@ -133,7 +133,7 @@
 || **GITHUB-SECURITY-1:** 3 новые Dependabot-находки на `main` (1 high, 2 low) | GitHub Security / Dependabot | **на triage у Claude Code** — Devin не трогал; нужен приоритет и план, возможно — отдельная security-задача | 2026-09-14 |
 || **CI-MAIN-1 / DEPLOY-1:** финальное ревью зелёного CI/DEPLOY | `.github/workflows/main.yml`, `.github/workflows/deploy.yml` | **принято** — 12 jobs success, 0 пропущенных шагов, ноль `continue-on-error`; проверено через `gh`, не по бейджу. Находка: job deploy — это `echo`, не деплой. [`tasks/CI-MAIN-1-review-findings.md`](tasks/CI-MAIN-1-review-findings.md) | 2026-09-13 |
 ||
-| **DEPLOY-2:** публиковать проверенные образы из CI (сейчас `deploy.yml` собирает, проверяет и удаляет их). Образы на Hub отстали от кода на 5 дней — у второго разработчика нет batch-маршрутов | [`tasks/DEPLOY-review-findings.md`](tasks/DEPLOY-review-findings.md) | **ждёт Devin** — постановка написана; нужен секрет `DOCKERHUB_*` от владельца | 2026-09-13 |
+| **DEPLOY-2:** публиковать проверенные образы из CI (сейчас `deploy.yml` собирает, проверяет и удаляет их). Образы на Hub отстали от кода на 5 дней — у второго разработчика нет batch-маршрутов | [`tasks/DEPLOY-review-findings.md`](tasks/DEPLOY-review-findings.md) | **ждёт Devin** — от владельца ничего не нужно: секреты `DOCKER_USERNAME`/`DOCKER_PASSWORD` уже есть с апреля (я ошибочно просил завести `DOCKERHUB_*`). Образы пушились 8 сентября вручную, batch приехал 12–13 — отставание в силе | 2026-09-14 |
 | **ENV-1:** `start-test.ps1` не задаёт `JWT_SECRET` и `.env` нет — на чистой машине backend/worker уходят в рестарт с `FATAL`, а compose лишь пишет warning. Тот самый сценарий второго компьютера | `scripts/testing/start-test.ps1`, `docker-compose.test.yml` | **на ревью у Claude Code** — дефолт `JWT_SECRET` задан, стек поднимается без ручной `.env`, `Yandex OAuth` warning ожидаем; check-all без -Quick — PASS | 2026-09-14 |
 | **NOTE-PUBLISH-DOC:** путь публикации заметки неочевиден — `create` не принимает `is_public`, `update` его молча игнорирует, работает только `POST /notes/:id/publish`. Описать в `docs/API_EN.md`; решить судьбу мёртвого поля `updateNoteRequest.IsPublic` | [`tasks/PUB-1-review-findings.md`](tasks/PUB-1-review-findings.md) | **на ревью у Claude Code** — путь публикации описан; DTO/спека `UpdateNoteRequest` без `is_public`/`source_url`; `docs-links` зелёный | 2026-09-14 |
 
