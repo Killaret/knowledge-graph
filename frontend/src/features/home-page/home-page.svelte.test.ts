@@ -3,6 +3,7 @@ import { render, cleanup, waitFor } from "@testing-library/svelte";
 import type { HomePageState } from "./";
 import TestHomePageHost from "./__tests__/TestHomePageHost.svelte";
 import { graphStore } from "$shared/stores/graph.svelte";
+import { graphView } from "$shared/stores/graph-view.svelte";
 import { goto } from "$app/navigation";
 import { isAuthenticated } from "$shared/stores/auth.svelte";
 import * as notesApi from "$shared/api/notes";
@@ -115,6 +116,9 @@ function setDefaultMocks() {
 describe("Home Page State", () => {
   beforeEach(() => {
     setDefaultMocks();
+    (window as any).__SKIP_AUTH__ = true;
+    localStorage.removeItem("graph-view-mode");
+    graphView.restore();
     graphStore.currentView = "graph";
     graphStore.selectedNodeId = null;
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -275,6 +279,7 @@ describe("Home Page State", () => {
 
   it("derives notes from public graph for anonymous users", async () => {
     vi.mocked(isAuthenticated).mockReturnValue(false);
+    (window as any).__SKIP_AUTH__ = false;
     vi.mocked(loadGraph).mockResolvedValue({
       graph: { nodes: [{ id: "gn1", title: "Graph Note", type: "star" }], links: [], hash: "h" },
       notes: [],
@@ -569,5 +574,163 @@ describe("Home Page State", () => {
     await homePage.handleDeleteConfirm();
 
     expect(preloadService.updateGraphWithDelta).not.toHaveBeenCalled();
+  });
+
+  const scopedResult = (prefix: string, count: number) => ({
+    graph: {
+      nodes: Array.from({ length: count }, (_, i) => ({
+        id: `${prefix}-${i}`,
+        title: `${prefix} ${i}`,
+        type: "star",
+      })),
+      links: [],
+      hash: `${prefix}-hash`,
+    },
+    notes: Array.from({ length: count }, (_, i) => ({
+      id: `${prefix}-${i}`,
+      title: `${prefix} ${i}`,
+      type: "star",
+      content: "",
+      metadata: {},
+      created_at: "",
+      updated_at: "",
+    })),
+    knowledgeCore: null,
+  });
+
+  it("PUB-2 switches scope and drops stale private data", async () => {
+    vi.mocked(loadGraph).mockImplementation(({ viewMode }: { viewMode?: string }) =>
+      Promise.resolve(
+        scopedResult(
+          viewMode === "community" ? "public" : "private",
+          viewMode === "community" ? 10 : 20
+        )
+      )
+    );
+
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+    expect(homePage.allNotes).toHaveLength(20);
+
+    homePage.noteToEdit = "n1";
+    homePage.showEditModal = true;
+    homePage.showCreateModal = true;
+    (homePage as any).lastDeletedNote = { id: "x" };
+    (homePage as any).showUndoToast = true;
+
+    graphView.mode = "community";
+
+    await waitFor(() => expect(homePage.allNotes).toHaveLength(10));
+    await waitFor(() => expect(homePage.loading).toBe(false));
+    expect(homePage.allNotes.every((n: any) => n.id.startsWith("public"))).toBe(true);
+    expect(homePage.noteToEdit).toBeNull();
+    expect(homePage.showEditModal).toBe(false);
+    expect(homePage.showCreateModal).toBe(false);
+    expect((homePage as any).lastDeletedNote).toBeNull();
+    expect((homePage as any).showUndoToast).toBe(false);
+
+    const lastCall = vi.mocked(loadGraph).mock.calls.at(-1);
+    expect((lastCall?.[0] as any).viewMode).toBe("community");
+    expect((lastCall?.[0] as any).nocache).toBe(true);
+  });
+
+  it("PUB-2 does not let a deferred personal result overwrite a public switch", async () => {
+    let resolveInitial: (value: any) => void = () => {};
+    vi.mocked(loadGraph).mockImplementationOnce(() => new Promise((r) => (resolveInitial = r)));
+    vi.mocked(loadGraph).mockImplementation(({ viewMode }: { viewMode?: string }) =>
+      Promise.resolve(
+        scopedResult(
+          viewMode === "community" ? "public" : "private",
+          viewMode === "community" ? 10 : 20
+        )
+      )
+    );
+
+    const homePage = await getHomePage();
+    await waitFor(() => expect(vi.mocked(loadGraph)).toHaveBeenCalled());
+
+    graphView.mode = "community";
+    await waitFor(() => expect(homePage.allNotes).toHaveLength(10));
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    resolveInitial(scopedResult("stale-private", 20));
+    await waitFor(() => expect(homePage.allNotes).toHaveLength(10));
+    expect(homePage.loading).toBe(false);
+    expect(homePage.allNotes[0].id).toBe("public-0");
+  });
+
+  it("PUB-2 does not write old private notes over public data after focus", async () => {
+    const private21 = Array.from({ length: 21 }, (_, i) => ({
+      id: `private-${i}`,
+      title: `Private ${i}`,
+      type: "star",
+      content: "",
+      metadata: {},
+      created_at: "",
+      updated_at: "",
+    }));
+    let resolveNotes: (value: any) => void = () => {};
+
+    vi.mocked(preloadService.hasPreloadedData).mockReturnValue(true);
+    vi.mocked(preloadService.updateGraphWithDelta).mockResolvedValue({
+      added_nodes: [{ id: "private-20", title: "Private 20", type: "star" }],
+      updated_nodes: [],
+      removed_nodes: [],
+      added_links: [],
+      removed_links: [],
+    } as any);
+    vi.mocked(preloadService.getPreloadedGraph).mockReturnValue({
+      ...scopedResult("private", 21).graph,
+      hash: "private-hash-v2",
+    } as any);
+    vi.mocked(notesApi.getNotes).mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolveNotes = r;
+        })
+    );
+
+    vi.mocked(loadGraph).mockImplementation(({ viewMode }: { viewMode?: string }) =>
+      Promise.resolve(
+        scopedResult(
+          viewMode === "community" ? "public" : "private",
+          viewMode === "community" ? 10 : 20
+        )
+      )
+    );
+
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+    expect(homePage.allNotes).toHaveLength(20);
+
+    window.dispatchEvent(new Event("focus"));
+    await waitFor(() => expect(notesApi.getNotes).toHaveBeenCalled());
+
+    graphView.mode = "community";
+    await waitFor(() => expect(homePage.allNotes).toHaveLength(10));
+    await waitFor(() => expect(homePage.loading).toBe(false));
+    expect(homePage.graphData.hash).toBe("public-hash");
+
+    resolveNotes(private21);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(homePage.allNotes).toHaveLength(10);
+    expect(homePage.allNotes[0].id).toBe("public-0");
+  });
+
+  it("PUB-2 foreground load is not cancelled by a focus-driven refresh", async () => {
+    let resolveInitial: (value: any) => void = () => {};
+    vi.mocked(loadGraph).mockImplementationOnce(() => new Promise((r) => (resolveInitial = r)));
+
+    const homePage = await getHomePage();
+    expect(homePage.loading).toBe(true);
+
+    window.dispatchEvent(new Event("focus"));
+    resolveInitial(scopedResult("private", 20));
+
+    await waitFor(() => expect(homePage.loading).toBe(false));
+    expect(homePage.allNotes).toHaveLength(20);
+    expect(homePage.graphData.hash).toBe("private-hash");
   });
 });

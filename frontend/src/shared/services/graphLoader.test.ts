@@ -1,6 +1,38 @@
-import { describe, it, expect } from "vitest";
-import { transformRawGraph, buildNotesGraph, ensureNotesInGraph } from "./graphLoader";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { transformRawGraph, buildNotesGraph, ensureNotesInGraph, loadGraph } from "./graphLoader";
+import { authState } from "$shared/stores/auth-session.svelte";
+import { graphView } from "$shared/stores/graph-view.svelte";
 import type { Note } from "$shared/api/notes";
+
+const privateNote: Note = {
+  id: "private",
+  title: "Private",
+  content: "private text",
+  metadata: {},
+  created_at: "2026-09-14",
+  updated_at: "2026-09-14",
+  type: "star",
+};
+
+const mockGraph = {
+  nodes: [{ id: "public", title: "Public", type: "star" }],
+  links: [],
+  hash: "public-hash",
+};
+
+const mockNotesApi = vi.hoisted(() => ({
+  getNotes: vi.fn(),
+  getNote: vi.fn(),
+}));
+vi.mock("$shared/api/notes", () => mockNotesApi);
+
+const mockGraphApi = vi.hoisted(() => ({
+  getFullGraphData: vi.fn(),
+  getGraphData: vi.fn(),
+  normalizeNode: vi.fn((n) => n),
+  normalizeLink: vi.fn((l) => l),
+}));
+vi.mock("$shared/api/graph", () => mockGraphApi);
 
 describe("graphLoader", () => {
   describe("transformRawGraph", () => {
@@ -184,6 +216,84 @@ describe("graphLoader", () => {
       const result = ensureNotesInGraph(graph as typeof graph, notes);
 
       expect(result).toBe(graph);
+    });
+  });
+
+  describe("PUB-2 loadGraph", () => {
+    beforeEach(() => {
+      authState.accessToken = "pub2-test-token";
+      authState.currentUser = null;
+      graphView.mode = "community";
+      mockGraphApi.getFullGraphData.mockReset();
+      mockGraphApi.getGraphData.mockReset();
+      mockNotesApi.getNotes.mockReset();
+      mockNotesApi.getNote.mockReset();
+    });
+
+    afterEach(() => {
+      authState.accessToken = null;
+      graphView.clear();
+    });
+
+    it.each([true, false])("PUB-2 community never mixes private notes (full=%s)", async (full) => {
+      mockGraphApi.getFullGraphData.mockResolvedValue(mockGraph);
+      const result = await loadGraph(
+        {
+          full,
+          includeKnowledgeCore: true,
+          fallbackToNotes: true,
+          ensureNotesInGraph: true,
+        },
+        [privateNote]
+      );
+      expect(result.graph.nodes.map((n) => n.id)).toEqual(["public"]);
+      expect(result.notes.map((n) => n.id)).toEqual(["public"]);
+      expect(result.knowledgeCore).toBeNull();
+      expect(mockNotesApi.getNotes).not.toHaveBeenCalled();
+      expect(mockNotesApi.getNote).not.toHaveBeenCalled();
+      expect(mockGraphApi.getGraphData).not.toHaveBeenCalled();
+      expect(mockGraphApi.getFullGraphData).toHaveBeenCalledWith(
+        0,
+        undefined,
+        undefined,
+        "community"
+      );
+    });
+
+    it("PUB-2 empty community graph does not retain private notes", async () => {
+      mockGraphApi.getFullGraphData.mockResolvedValue({ nodes: [], links: [], hash: "empty" });
+      const result = await loadGraph(
+        {
+          full: true,
+          includeKnowledgeCore: true,
+          fallbackToNotes: true,
+          ensureNotesInGraph: true,
+        },
+        [privateNote]
+      );
+      expect(result.graph.nodes).toHaveLength(0);
+      expect(result.notes).toHaveLength(0);
+      expect(result.knowledgeCore).toBeNull();
+      expect(mockNotesApi.getNotes).not.toHaveBeenCalled();
+      expect(mockNotesApi.getNote).not.toHaveBeenCalled();
+    });
+
+    it("PUB-2 personal mode keeps private notes and optional knowledge core", async () => {
+      graphView.mode = "personal";
+      mockNotesApi.getNotes.mockResolvedValue([privateNote]);
+      mockGraphApi.getFullGraphData.mockResolvedValue({ nodes: [], links: [], hash: "personal" });
+      const result = await loadGraph(
+        {
+          full: true,
+          includeKnowledgeCore: false,
+          fallbackToNotes: true,
+          ensureNotesInGraph: true,
+        },
+        [privateNote]
+      );
+      expect(result.graph.nodes.map((n) => n.id)).toEqual(["private"]);
+      expect(result.notes.map((n) => n.id)).toEqual(["private"]);
+      expect(result.knowledgeCore).toBeNull();
     });
   });
 });

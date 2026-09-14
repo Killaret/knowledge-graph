@@ -9,6 +9,9 @@ export const en: Record<string, string> = {
   "graph.networkError": "Could not connect to the server. Check your internet connection.",
   "graph.loadError": "Graph loading error: {{message}}.",
   "graph.unknownError": "Unknown error while loading the graph.",
+  "graphView.label": "Graph source",
+  "graphView.personal": "My graph",
+  "graphView.community": "Community",
   // Filters and sorting
   "filter.all": "All",
   "filter.all.description": "Show all notes regardless of type.",
@@ -227,6 +230,9 @@ export const ru: Record<string, string> = {
   "graph.networkError": "Не удалось подключиться к серверу. Проверьте интернет-соединение.",
   "graph.loadError": "Ошибка загрузки графа: {{message}}.",
   "graph.unknownError": "Неизвестная ошибка при загрузке графа.",
+  "graphView.label": "Источник графа",
+  "graphView.personal": "Мой граф",
+  "graphView.community": "Сообщество",
   // Filters and sorting
   "filter.all": "Все",
   "filter.all.description": "Показать все заметки независимо от типа.",

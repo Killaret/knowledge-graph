@@ -417,3 +417,28 @@ Create a new bullet under the right section with:
 - **Live check (test stack, rebuilt `kg-test-backend` image):** `GET http://127.0.0.1:18083/openapi.yaml` -> 200, 75922 bytes, `openapi: 3.0.3`; `GET /swagger/index.html` -> 200; `GET /swagger/doc.json` -> 500 (the generated spec is gone, the UI does not read it).
 - **Browser check (headless Chromium via Playwright):** `http://127.0.0.1:18083/swagger/index.html` — HTTP 200, 0 `.errors-wrapper`/`.error` blocks, **72 rendered operations**; title «Knowledge Graph API 1.1.0 OAS3».
 - **Screenshot / Logs:** [`assets/api-1/swagger-render.png`](assets/api-1/swagger-render.png); console output `HTTP: 200 | errorBlocks: 0 | operations rendered: 72`.
+
+## Verification
+
+### PUB-2 — graph view mode switch (personal / community)
+
+- **Scope:** authenticated users can switch between personal and community graph views; anonymous users stay on the community graph with no switcher. Endpoint selection follows the selected mode, not `isAuthenticated()`.
+- **Date:** 2026-09-14
+- **Agent:** Devin
+- **Environment:** isolated test stack (`docker-compose.test.yml`, `SKIP_AUTH=false`), seeded 20 notes / 10 links / seed 42 / 50% public.
+- **Commands:**
+  ```powershell
+  $env:SKIP_AUTH='false'
+  .\scripts\testing\start-test.ps1
+  .\scripts\testing\seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42 -PublicPercent 50
+  npx playwright test --project=visual-real-auth frontend/tests/pub2-live-check.spec.ts
+  ```
+- **Observed counts (same authenticated session):**
+  - `personal` initial: **20 nodes · 10 links**
+  - `community`: **10 nodes · 10 links**
+  - `personal` after switching back: **20 nodes · 10 links**
+  - Anonymous context: **10 nodes · 10 links**, no `graph-view-toggle` element.
+- **Network check:** after switching to `community`, the browser requested `graph-service/api/v1/graph/public`; no request to `graph/full` or `/v1/graph/delta` in the community-only window. Switching back to `personal` legitimately requested `graph/full`.
+- **Regression test fix:** `frontend/src/routes/page.spec.ts` was failing in `npm run test:unit` because `authState`/`graphView` were not initialized; tests clicked the list-view toggle and saw graph content instead of note cards. Fixed by setting `authState.currentUser`, `authState.accessToken`, and `graphView.clear()` in `beforeEach`.
+- **Full local verification:** `scripts/testing/check-all.ps1` without `-Quick` — 17 phases PASS, 1 SKIP (`golangci-lint` not installed), exit 0.
+- **Cleanup:** `scripts/testing/stop-test.ps1` destroyed the isolated test stack; Personal containers/volumes untouched.

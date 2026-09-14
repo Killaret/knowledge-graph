@@ -4,8 +4,10 @@ import {
   getPreloadedGraphDelta,
   hasPreloadedData,
   seedGraph,
+  getGraphGeneration,
 } from "$shared/services/PreloadService";
 import { getFullGraphData } from "$shared/api/graph";
+import { graphView, type GraphViewMode } from "$shared/stores/graph-view.svelte";
 import { getAllAchievements, getMyAchievements } from "$shared/api/users";
 import type { GraphData } from "$shared/api/graph";
 import { UserPoints } from "$entities";
@@ -14,23 +16,34 @@ import { UserPoints } from "$entities";
  * Хук для получения данных графа с использованием предзагруженных данных
  * Возвращает предзагруженные данные если они есть, иначе загружает с сервера
  */
-export async function getGraphWithPreload(limit: number = 1000): Promise<GraphData> {
+export async function getGraphWithPreload(
+  limit: number = 1000,
+  nocache: boolean = false,
+  viewMode: GraphViewMode = graphView.mode
+): Promise<GraphData> {
   // Сначала пробуем получить предзагруженные данные
-  const preloadedData = getPreloadedGraph();
+  const scopeKey = graphView.scopeKey;
+  const generation = getGraphGeneration();
 
-  if (preloadedData) {
-    if (import.meta.env.DEV) {
-      console.log("[usePreloadedData] Using preloaded graph data");
+  if (!nocache && viewMode === graphView.mode) {
+    const preloadedData = getPreloadedGraph();
+
+    if (preloadedData) {
+      if (import.meta.env.DEV) {
+        console.log("[usePreloadedData] Using preloaded graph data");
+      }
+      return preloadedData;
     }
-    return preloadedData;
   }
 
   // Если нет предзагруженных данных, загружаем с сервера и сохраняем в кэш
   if (import.meta.env.DEV) {
     console.log("[usePreloadedData] Loading graph data from server");
   }
-  const graphData = await getFullGraphData(limit);
-  seedGraph(graphData);
+  const graphData = await getFullGraphData(limit, undefined, nocache, viewMode);
+  if (viewMode === graphView.mode) {
+    seedGraph(graphData, scopeKey, generation);
+  }
   return graphData;
 }
 

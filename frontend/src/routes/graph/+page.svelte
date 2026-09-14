@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { initAuth } from "$shared/stores/auth.svelte";
+  import { graphView } from "$shared/stores/graph-view.svelte";
   import { createNote, deleteNote, restoreNote, type Note } from "$shared/api/notes";
   import { type GraphData } from "$shared/api/graph";
   import { loadGraph } from "$shared/services/graphLoader";
@@ -46,6 +47,10 @@
         toggleFog: () => void;
       }
     | undefined = $state(undefined);
+  let authReady = $state(false);
+  let requestVersion = 0;
+  let lastScopeKey: string | null = null;
+  let showFullGraphInitialized = false;
 
   const graphTypeFilters = [
     { id: "all", label: t("filter.all"), emoji: "🌌", description: t("filter.all.description") },
@@ -54,22 +59,32 @@
     }),
   ];
 
-  async function loadGraphData({ nocache = false }: { nocache?: boolean } = {}) {
+  async function loadGraphData({
+    full = showFullGraph,
+    nocache = false,
+  }: { full?: boolean; nocache?: boolean } = {}) {
+    const requestId = ++requestVersion;
+    const scopeKey = graphView.scopeKey;
+    const mode = graphView.mode;
+    const isCurrent = () => requestId === requestVersion && scopeKey === graphView.scopeKey;
     loading = true;
     error = "";
     try {
       const result = await loadGraph({
-        full: showFullGraph,
+        full,
         includeKnowledgeCore: true,
         fallbackToNotes: false,
         ensureNotesInGraph: false,
+        viewMode: mode,
         nocache,
       });
 
-      knowledgeCore = result.knowledgeCore;
-      graphData = result.graph;
+      if (isCurrent()) {
+        knowledgeCore = result.knowledgeCore;
+        graphData = result.graph;
+      }
 
-      if (import.meta.env.DEV) {
+      if (import.meta.env.DEV && isCurrent()) {
         console.log(
           "[graph/+page] Graph loaded:",
           graphData.nodes.length,
@@ -84,24 +99,75 @@
       if (import.meta.env.DEV) {
         console.error("Failed to load graph:", e);
       }
-      error = t("graph.loadDataError");
+      if (isCurrent()) {
+        error = t("graph.loadDataError");
+      }
     } finally {
-      loading = false;
+      if (isCurrent()) {
+        loading = false;
+      }
     }
   }
 
-  onMount(async () => {
+  onMount(() => {
     if (!browser) return;
     // Make sure auth is initialized before loading graph data so the token is
     // available for graph-service requests.
-    await initAuth();
-    // Allow tests/URLs to force a fresh graph load (bypass graph-service cache)
-    const url = new URL(window.location.href);
-    await loadGraphData({ nocache: url.searchParams.has("nocache") });
+    let disposed = false;
+    (async () => {
+      await initAuth();
+      if (!disposed) {
+        authReady = true;
+        // Allow tests/URLs to force a fresh graph load (bypass graph-service cache)
+        const url = new URL(window.location.href);
+        await loadGraphData({ nocache: url.searchParams.has("nocache") });
+      }
+    })();
 
     // Expose flag for E2E tests to assert background sync is gated by auth.
     // This page never polls for delta updates, so the flag is always false.
     (window as unknown as Record<string, unknown>).__kgGraphPollingActive = false;
+    return () => {
+      disposed = true;
+      authReady = false;
+      requestVersion += 1;
+    };
+  });
+
+  // Watch for changes to showFullGraph and reload the graph data.
+  // Skip the initial run because onMount already loads once.
+  $effect(() => {
+    const full = showFullGraph;
+    const scopeKey = graphView.scopeKey;
+    if (!authReady) return;
+
+    if (!showFullGraphInitialized) {
+      lastScopeKey = scopeKey;
+      showFullGraphInitialized = true;
+      return;
+    }
+
+    const scopeChanged = lastScopeKey !== null && lastScopeKey !== scopeKey;
+    lastScopeKey = scopeKey;
+
+    untrack(() => {
+      graphData = { nodes: [], links: [] };
+      knowledgeCore = null;
+      selectedNodeId = null;
+      noteToEdit = null;
+      showEditModal = false;
+      noteToDelete = null;
+      showConfirmDelete = false;
+      createChildParent = null;
+      showCreateModal = false;
+
+      const url = new URL(window.location.href);
+      void loadGraphData({ full, nocache: scopeChanged || url.searchParams.has("nocache") });
+    });
+
+    return () => {
+      requestVersion += 1;
+    };
   });
 
   function handleNodeSelect(nodeId: string | null) {
@@ -152,6 +218,7 @@
   }
 
   async function handleNoteCreatedSuccess(note: Note) {
+    const scopeKey = graphView.scopeKey;
     showCreateModal = false;
     if (createChildParent) {
       try {
@@ -166,10 +233,12 @@
           alert(t("note.createChildLinkError"));
         }
       }
+      if (scopeKey !== graphView.scopeKey) return;
       createChildParent = null;
     }
+    if (scopeKey !== graphView.scopeKey) return;
     selectedNodeId = note.id;
-    await loadGraphData({ nocache: true });
+    await loadGraphData({ full: showFullGraph, nocache: true });
   }
 
   function handleCreateChildNote(parent: { id: string; title: string; type?: string }) {
@@ -250,21 +319,6 @@
       }
     }
   }
-
-  // Watch for changes to showFullGraph and reload the graph data.
-  // Skip the initial run because onMount already loads once.
-  let showFullGraphInitialized = false;
-  $effect(() => {
-    if (browser) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      showFullGraph;
-      if (!showFullGraphInitialized) {
-        showFullGraphInitialized = true;
-        return;
-      }
-      loadGraphData();
-    }
-  });
 </script>
 
 <GraphPageShell
@@ -313,6 +367,7 @@
           <GraphCanvas
             nodes={graphData.nodes}
             links={graphData.links}
+            readonly={graphView.mode === "community"}
             onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
             onNoteDelete={handleDeleteRequest}
             onNoteRestore={handleNoteRestore}

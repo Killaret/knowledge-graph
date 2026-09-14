@@ -15,6 +15,7 @@ import {
   type GraphLink,
 } from "$shared/api/graph";
 import { isAuthenticated } from "$shared/stores/auth.svelte";
+import { graphView, type GraphViewMode } from "$shared/stores/graph-view.svelte";
 
 const KNOWLEDGE_CORE_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -37,6 +38,7 @@ export interface LoadGraphOptions {
   full?: boolean;
   depth?: number;
   nocache?: boolean;
+  viewMode?: GraphViewMode;
   includeKnowledgeCore?: boolean;
   fallbackToNotes?: boolean;
   ensureNotesInGraph?: boolean;
@@ -83,8 +85,10 @@ function createGraphNodeWithCreatedAt(node: RawNode): GraphNode & { createdAt?: 
 /**
  * Load the user's notes when authenticated, otherwise return an empty list.
  */
-export async function loadNotesIfAuthenticated(): Promise<Note[]> {
-  if (!isAuthenticated()) {
+export async function loadNotesIfAuthenticated(
+  viewMode: GraphViewMode = graphView.mode
+): Promise<Note[]> {
+  if (!isAuthenticated() || viewMode === "community") {
     return [];
   }
   return getNotes();
@@ -97,9 +101,11 @@ export async function loadRawGraphData(
   options: LoadGraphOptions,
   notes?: Note[]
 ): Promise<GraphData> {
-  if (options.full || !notes || notes.length === 0) {
+  const mode = isAuthenticated() ? (options.viewMode ?? graphView.mode) : "community";
+  if (mode === "community" || options.full || !notes || notes.length === 0) {
     const loader =
-      options.fullGraphLoader ?? ((nocache?: boolean) => getFullGraphData(0, undefined, nocache));
+      options.fullGraphLoader ??
+      ((nocache?: boolean) => getFullGraphData(0, undefined, nocache, mode));
     return loader(options.nocache);
   }
   return getGraphData(notes[0].id, options.depth ?? 3);
@@ -108,8 +114,10 @@ export async function loadRawGraphData(
 /**
  * Load the Knowledge Core system note when authenticated.
  */
-export async function loadKnowledgeCoreIfAuthenticated(): Promise<Note | null> {
-  if (!isAuthenticated()) {
+export async function loadKnowledgeCoreIfAuthenticated(
+  viewMode: GraphViewMode = graphView.mode
+): Promise<Note | null> {
+  if (!isAuthenticated() || viewMode === "community") {
     return null;
   }
   try {
@@ -211,24 +219,45 @@ export async function loadGraph(
   options: LoadGraphOptions,
   providedNotes?: Note[]
 ): Promise<{ graph: GraphData; notes: Note[]; knowledgeCore: Note | null }> {
-  const notes = providedNotes ?? (await loadNotesIfAuthenticated());
+  const mode = isAuthenticated() ? (options.viewMode ?? graphView.mode) : "community";
+  const scopedOptions = { ...options, viewMode: mode };
+  const notes =
+    mode === "personal" ? (providedNotes ?? (await loadNotesIfAuthenticated(mode))) : [];
 
   const [rawData, knowledgeCore] = await Promise.all([
-    loadRawGraphData(options, notes),
-    options.includeKnowledgeCore
-      ? loadKnowledgeCoreIfAuthenticated()
+    loadRawGraphData(scopedOptions, notes),
+    options.includeKnowledgeCore && mode === "personal"
+      ? loadKnowledgeCoreIfAuthenticated(mode)
       : Promise.resolve<Note | null>(null),
   ]);
 
   let graph = transformRawGraph(rawData, knowledgeCore);
 
-  if (options.ensureNotesInGraph && isAuthenticated()) {
+  if (options.ensureNotesInGraph && mode === "personal") {
     graph = ensureNotesInGraph(graph, notes);
   }
 
-  if (options.fallbackToNotes && graph.nodes.length === 0 && notes.length > 0) {
+  if (
+    options.fallbackToNotes &&
+    mode === "personal" &&
+    graph.nodes.length === 0 &&
+    notes.length > 0
+  ) {
     graph = buildNotesGraph(notes);
   }
 
-  return { graph, notes, knowledgeCore };
+  const visibleNotes: Note[] =
+    mode === "community"
+      ? graph.nodes.map((node) => ({
+          id: node.id,
+          title: node.title,
+          type: node.type || "unknown",
+          content: "",
+          metadata: {},
+          created_at: (node as GraphNode & { createdAt?: string }).createdAt ?? "",
+          updated_at: "",
+        }))
+      : notes;
+
+  return { graph, notes: visibleNotes, knowledgeCore };
 }

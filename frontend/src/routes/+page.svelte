@@ -1,6 +1,7 @@
 <script lang="ts">
   import { isAuthenticated } from "$shared/stores/auth.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
+  import { graphView } from "$shared/stores/graph-view.svelte";
   import { createHomePageState } from "$features/home-page";
   import { GraphPageShell } from "$widgets/graph-page";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
@@ -131,6 +132,7 @@
           onNoteDelete={handleDeleteRequest}
           onCreateChildNote={handleCreateChildNote}
           showLinkTypeLegend={false}
+          readonly={!isAuthenticated() || graphView.mode === "community"}
           bind:controller={canvasController}
         />
       </div>
@@ -150,24 +152,26 @@
       <div class="list-container" data-testid="list-container">
         <div class="list-header">
           <div class="list-controls">
-            <button
-              class="list-control-btn"
-              data-testid="select-mode-toggle"
-              onclick={toggleSelectionMode}
-              aria-label={t("page.selectionToggle")}
-            >
-              {homePage.selectionMode ? t("page.cancelSelection") : t("page.select")}
-            </button>
-            {#if homePage.selectionMode}
+            {#if isAuthenticated() && graphView.mode === "personal"}
               <button
                 class="list-control-btn"
-                onclick={toggleSelectAll}
-                aria-label={t("page.selectAllAria")}
+                data-testid="select-mode-toggle"
+                onclick={toggleSelectionMode}
+                aria-label={t("page.selectionToggle")}
               >
-                {homePage.selectedNoteIds.size === homePage.filteredNotes.length
-                  ? t("page.clearSelection")
-                  : t("page.selectAll")}
+                {homePage.selectionMode ? t("page.cancelSelection") : t("page.select")}
               </button>
+              {#if homePage.selectionMode}
+                <button
+                  class="list-control-btn"
+                  onclick={toggleSelectAll}
+                  aria-label={t("page.selectAllAria")}
+                >
+                  {homePage.selectedNoteIds.size === homePage.filteredNotes.length
+                    ? t("page.clearSelection")
+                    : t("page.selectAll")}
+                </button>
+              {/if}
             {/if}
           </div>
           <div class="list-sort">
@@ -231,7 +235,7 @@
                 onDelete={handleNoteDelete}
                 onClick={() => (graphStore.selectedNodeId = note.id)}
                 highlightQuery={homePage.filterState.searchQuery.value}
-                readonly={!isAuthenticated()}
+                readonly={!isAuthenticated() || graphView.mode === "community"}
               />
             {/each}
           </div>
@@ -239,7 +243,7 @@
       </div>
 
       <!-- Floating batch delete panel -->
-      {#if homePage.selectionMode && homePage.selectedNoteIds.size > 0}
+      {#if homePage.selectionMode && homePage.selectedNoteIds.size > 0 && isAuthenticated() && graphView.mode === "personal"}
         <div class="batch-panel">
           <span class="batch-count"
             >{t("page.selectedCount", {

@@ -93,6 +93,75 @@ func TestGetPublicGraphHandler(t *testing.T) {
 	assert.Equal(t, "Public Note", resp.Data.Nodes[0].Title)
 }
 
+func TestGetPublicGraphHandlerNoCache(t *testing.T) {
+	tests := []struct {
+		name      string
+		query     string
+		expectNew bool
+		wantCalls int
+	}{
+		{"cached empty", "", false, 1},
+		{"cached false", "nocache=false", false, 1},
+		{"bypass 1", "nocache=1", true, 2},
+		{"bypass true", "nocache=true", true, 2},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockDB := &mockPostgresClient{}
+			c, mr := newTestCache(t)
+			defer mr.Close()
+
+			server := NewHTTPServer(mockDB, c, 1000, 2)
+
+			mockDB.On("GetNotes", mock.Anything, db.NotesFilter{IsPublic: true}).Return([]*db.Note{
+				{ID: "old", Title: "Cached Note", Type: "star", Public: true},
+			}, []*db.Link{}, nil).Once()
+			if tt.expectNew {
+				mockDB.On("GetNotes", mock.Anything, db.NotesFilter{IsPublic: true}).Return([]*db.Note{
+					{ID: "new", Title: "Fresh Note", Type: "star", Public: true},
+				}, []*db.Link{}, nil).Once()
+			}
+
+			url := "/api/v1/graph/public"
+			if tt.query != "" {
+				url = url + "?" + tt.query
+			}
+
+			first := httptest.NewRequest(http.MethodGet, url, nil)
+			rr1 := httptest.NewRecorder()
+			server.GetPublicGraphHandler(rr1, first)
+			assert.Equal(t, http.StatusOK, rr1.Code)
+
+			var resp1 GraphApiResponse
+			assert.NoError(t, json.Unmarshal(rr1.Body.Bytes(), &resp1))
+			assert.Len(t, resp1.Data.Nodes, 1)
+			assert.Equal(t, "old", resp1.Data.Nodes[0].ID)
+			assert.NotNil(t, resp1.Meta)
+
+			second := httptest.NewRequest(http.MethodGet, url, nil)
+			rr2 := httptest.NewRecorder()
+			server.GetPublicGraphHandler(rr2, second)
+			assert.Equal(t, http.StatusOK, rr2.Code)
+
+			var resp2 GraphApiResponse
+			assert.NoError(t, json.Unmarshal(rr2.Body.Bytes(), &resp2))
+			assert.Len(t, resp2.Data.Nodes, 1)
+			assert.NotNil(t, resp2.Meta)
+
+			if tt.expectNew {
+				assert.Equal(t, "new", resp2.Data.Nodes[0].ID)
+				assert.NotEqual(t, resp1.Meta.Hash, resp2.Meta.Hash)
+			} else {
+				assert.Equal(t, "old", resp2.Data.Nodes[0].ID)
+				assert.Equal(t, resp1.Meta.Hash, resp2.Meta.Hash)
+			}
+
+			mockDB.AssertNumberOfCalls(t, "GetNotes", tt.wantCalls)
+		})
+	}
+}
+
 func TestGetNoteGraphHandlerWithUser(t *testing.T) {
 	mockDB := &mockPostgresClient{}
 	c, mr := newTestCache(t)

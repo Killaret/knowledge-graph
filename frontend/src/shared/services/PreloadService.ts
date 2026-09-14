@@ -1,6 +1,7 @@
 // PreloadService - фоновая предзагрузка данных для ускорения первого взаимодействия после входа
 import { browser } from "$app/environment";
 import { isAuthenticated } from "$shared/stores/auth-session.svelte";
+import { graphView } from "$shared/stores/graph-view.svelte";
 import {
   getFullGraphData,
   getGraphDelta,
@@ -21,6 +22,7 @@ interface PreloadedGraphData {
   // Such a cache must never be served to an authenticated session: it would
   // silently downgrade the scene to the public subset after login.
   isPublic?: boolean;
+  scopeKey: string;
 }
 
 interface PreloadedAchievementsData {
@@ -45,6 +47,7 @@ class PreloadServiceClass {
   private preloadedAchievements: PreloadedAchievementsData | null = null;
   private isPreloading: boolean = false;
   private preloadPromise: Promise<void> | null = null;
+  private graphGeneration = 0;
 
   // TTL для кэша (5 минут для графа)
   private readonly GRAPH_TTL = 5 * 60 * 1000;
@@ -87,7 +90,11 @@ class PreloadServiceClass {
       // satisfy the authenticated cache. Wait for it, then run our own fetch
       // unless that in-flight call already produced authenticated data.
       await this.preloadPromise;
-      if (this.preloadedGraph && !this.preloadedGraph.isPublic) {
+      if (
+        this.preloadedGraph &&
+        !this.preloadedGraph.isPublic &&
+        this.preloadedGraph.scopeKey === graphView.scopeKey
+      ) {
         return;
       }
     }
@@ -136,8 +143,16 @@ class PreloadServiceClass {
       console.log("[PreloadService] Starting authenticated graph preload...");
     }
 
+    const scopeKey = graphView.scopeKey;
+    const mode = graphView.mode;
+    const generation = this.graphGeneration;
+
     try {
-      const graphData = await getFullGraphData();
+      const graphData = await getFullGraphData(undefined, undefined, undefined, mode);
+
+      if (graphView.scopeKey !== scopeKey || this.graphGeneration !== generation) {
+        return;
+      }
 
       this.preloadedGraph = {
         data: graphData,
@@ -145,6 +160,7 @@ class PreloadServiceClass {
         ttl: this.GRAPH_TTL,
         lastHash: graphData.hash,
         isPublic: false,
+        scopeKey,
       };
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -158,14 +174,24 @@ class PreloadServiceClass {
    * Предзагружает данные графа
    */
   private async preloadGraph(): Promise<void> {
+    const scopeKey = graphView.scopeKey;
+    const mode = graphView.mode;
+    const generation = this.graphGeneration;
+
     try {
-      const graphData = await getFullGraphData();
+      const graphData = await getFullGraphData(undefined, undefined, undefined, mode);
+
+      if (graphView.scopeKey !== scopeKey || this.graphGeneration !== generation) {
+        return;
+      }
+
       this.preloadedGraph = {
         data: graphData,
         timestamp: Date.now(),
         ttl: this.GRAPH_TTL,
         lastHash: graphData.hash,
         isPublic: true,
+        scopeKey,
       };
       if (import.meta.env.DEV) {
         console.log("[PreloadService] Public graph preloaded successfully");
@@ -182,13 +208,21 @@ class PreloadServiceClass {
    * Сохраняет данные графа, полученные извне (например, из +page.svelte), в кэш.
    * Сохраняет timestamp, TTL и lastHash из graphData.hash для дальнейших дельта-обновлений.
    */
-  public seedGraph(graphData: GraphData): void {
+  public seedGraph(
+    graphData: GraphData,
+    scopeKey = graphView.scopeKey,
+    generation = this.graphGeneration
+  ): void {
+    if (graphView.scopeKey !== scopeKey || this.graphGeneration !== generation) {
+      return;
+    }
     this.preloadedGraph = {
       data: graphData,
       timestamp: Date.now(),
       ttl: this.GRAPH_TTL,
       lastHash: graphData.hash,
       isPublic: !isAuthenticated(),
+      scopeKey,
     };
   }
 
@@ -197,12 +231,19 @@ class PreloadServiceClass {
    * к сохранённым предзагруженным данным.
    */
   public async updateWithDelta(): Promise<GraphDeltaData | null> {
-    if (!this.preloadedGraph?.lastHash) {
+    const cached = this.getPreloadedGraphData();
+    const scopeKey = graphView.scopeKey;
+    if (graphView.mode !== "personal" || !isAuthenticated() || !cached?.lastHash) {
       return null;
     }
 
     try {
-      const delta = await getGraphDelta(this.preloadedGraph.lastHash);
+      const delta = await getGraphDelta(cached.lastHash);
+
+      if (this.preloadedGraph !== cached || graphView.scopeKey !== scopeKey) {
+        return null;
+      }
+
       this.applyDelta(delta);
       this.preloadedGraph.delta = delta;
       if (delta.current_hash) {
@@ -257,6 +298,11 @@ class PreloadServiceClass {
    */
   public getPreloadedGraphData(): PreloadedGraphData | null {
     if (!this.preloadedGraph) {
+      return null;
+    }
+
+    if (this.preloadedGraph.scopeKey !== graphView.scopeKey) {
+      this.preloadedGraph = null;
       return null;
     }
 
@@ -321,7 +367,7 @@ class PreloadServiceClass {
    * Проверяет, есть ли предзагруженные данные
    */
   public hasPreloadedData(): boolean {
-    return !!(this.preloadedGraph || this.preloadedAchievements);
+    return !!(this.getPreloadedGraphData() || this.preloadedAchievements);
   }
 
   /**
@@ -331,6 +377,7 @@ class PreloadServiceClass {
     if (import.meta.env.DEV) {
       console.log("[PreloadService] Clearing preload cache...");
     }
+    this.graphGeneration += 1;
     this.preloadedGraph = null;
     this.preloadedAchievements = null;
   }
@@ -339,6 +386,7 @@ class PreloadServiceClass {
    * Инвалидирует только кэш графа
    */
   public invalidateGraphCache(): void {
+    this.graphGeneration += 1;
     this.preloadedGraph = null;
   }
 
@@ -347,6 +395,10 @@ class PreloadServiceClass {
    */
   public invalidateAchievementsCache(): void {
     this.preloadedAchievements = null;
+  }
+
+  public getGraphGeneration(): number {
+    return this.graphGeneration;
   }
 
   /**
@@ -360,11 +412,12 @@ class PreloadServiceClass {
     isPreloading: boolean;
   } {
     const now = Date.now();
+    const graphData = this.getPreloadedGraphData();
 
     return {
-      hasGraph: !!this.preloadedGraph,
+      hasGraph: !!graphData,
       hasAchievements: !!this.preloadedAchievements,
-      graphAge: this.preloadedGraph ? now - this.preloadedGraph.timestamp : null,
+      graphAge: graphData ? now - graphData.timestamp : null,
       achievementsAge: this.preloadedAchievements
         ? now - this.preloadedAchievements.timestamp
         : null,
@@ -401,8 +454,8 @@ export function updateGraphWithDelta(): Promise<GraphDeltaData | null> {
   return PreloadService.updateWithDelta();
 }
 
-export function seedGraph(graphData: GraphData): void {
-  PreloadService.seedGraph(graphData);
+export function seedGraph(graphData: GraphData, scopeKey?: string, generation?: number): void {
+  PreloadService.seedGraph(graphData, scopeKey, generation);
 }
 
 export function getPreloadedAchievements(): Array<{
@@ -438,4 +491,8 @@ export function getStats(): {
   isPreloading: boolean;
 } {
   return PreloadService.getStats();
+}
+
+export function getGraphGeneration(): number {
+  return PreloadService.getGraphGeneration();
 }

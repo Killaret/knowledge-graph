@@ -1,4 +1,4 @@
-import { onMount, type Component } from "svelte";
+import { onMount, untrack, type Component } from "svelte";
 import { goto } from "$app/navigation";
 import { browser } from "$app/environment";
 import {
@@ -20,6 +20,7 @@ import {
 import { loadGraph } from "$shared/services/graphLoader";
 import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte";
 import { graphStore } from "$shared/stores/graph.svelte";
+import { graphView } from "$shared/stores/graph-view.svelte";
 import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
 import type { ErrorResponse } from "$shared/types/errors";
 import { CelestialBody, FilterState } from "$entities";
@@ -113,7 +114,12 @@ export function createHomePageState() {
   let undoToastStage = $state<"done" | "restore">("done");
   let showBulkActionsMenu = $state(false);
   let showAuthPanel = $state(false);
+  let authReady = $state(false);
+  let requestVersion = 0;
+  let deltaInterval: ReturnType<typeof setInterval> | undefined;
+  let handleFocus: (() => void) | undefined;
   let authPanelTab = $state<"login" | "register">("login");
+  let lastScopeKey: string | null = null;
 
   function openAuthPanel(tab: "login" | "register") {
     authPanelTab = tab;
@@ -168,37 +174,76 @@ export function createHomePageState() {
   onMount(() => {
     if (!browser) return;
 
-    let deltaInterval: ReturnType<typeof setInterval> | undefined;
-    let handleFocus: (() => void) | undefined;
+    let disposed = false;
 
     (async () => {
       await initAuth();
-      void loadData();
-
-      // Periodically sync the graph via delta updates from graph-service.
-      // Public/anonymous users have no writeable graph to sync and the
-      // /v1/graph/delta endpoint requires authentication, so polling it would
-      // fire 401 -> auth/refresh 400 cycles and trigger unnecessary re-renders.
-      if (isAuthenticated()) {
-        deltaInterval = setInterval(() => {
-          void refreshAfterMutation();
-        }, 30000);
-
-        handleFocus = () => {
-          void refreshAfterMutation();
-        };
-        window.addEventListener("focus", handleFocus);
-      }
-
-      // Expose flag for E2E tests to assert background sync is gated by auth.
-      if (browser) {
-        (window as unknown as Record<string, unknown>).__kgGraphPollingActive = !!isAuthenticated();
+      if (!disposed) {
+        authReady = true;
       }
     })();
 
     return () => {
+      disposed = true;
+      authReady = false;
+    };
+  });
+
+  $effect(() => {
+    const scopeKey = graphView.scopeKey;
+    if (!authReady) return;
+
+    const scopeChanged = lastScopeKey !== null && lastScopeKey !== scopeKey;
+    lastScopeKey = scopeKey;
+
+    untrack(() => {
+      graphData = { nodes: [], links: [] };
+      allNotes = [];
+      selectedNoteIds.clear();
+      graphStore.selectedNodeId = null;
+      noteToDelete = null;
+      showConfirmDelete = false;
+      createChildParent = null;
+      showBulkActionsMenu = false;
+      selectionMode = false;
+      apiError = null;
+      noteToEdit = null;
+      showEditModal = false;
+      showCreateModal = false;
+      lastDeletedNote = null;
+      showUndoToast = false;
+
+      const url = new URL(window.location.href);
+      void loadData({ nocache: scopeChanged || url.searchParams.has("nocache") });
+    });
+
+    // Periodically sync the graph via delta updates from graph-service.
+    // Public/anonymous users have no writeable graph to sync and the
+    // /v1/graph/delta endpoint requires authentication, so polling it would
+    // fire 401 -> auth/refresh 400 cycles and trigger unnecessary re-renders.
+    if (graphView.mode === "personal" && isAuthenticated()) {
+      deltaInterval = setInterval(() => {
+        void refreshAfterMutation();
+      }, 30000);
+
+      handleFocus = () => {
+        void refreshAfterMutation();
+      };
+      window.addEventListener("focus", handleFocus);
+
+      // Expose flag for E2E tests to assert background sync is gated by auth.
+      (window as unknown as Record<string, unknown>).__kgGraphPollingActive = true;
+    } else {
+      (window as unknown as Record<string, unknown>).__kgGraphPollingActive = false;
+    }
+
+    return () => {
       if (deltaInterval) clearInterval(deltaInterval);
+      deltaInterval = undefined;
       if (handleFocus) window.removeEventListener("focus", handleFocus);
+      handleFocus = undefined;
+      (window as unknown as Record<string, unknown>).__kgGraphPollingActive = false;
+      requestVersion += 1;
     };
   });
 
@@ -206,26 +251,37 @@ export function createHomePageState() {
    * Single source of truth load: graph-service full graph + notes.
    * For unauthenticated users the note list is derived from the public graph.
    */
-  async function loadData({ silent = false }: { silent?: boolean } = {}) {
+  async function loadData({
+    silent = false,
+    nocache = false,
+  }: { silent?: boolean; nocache?: boolean } = {}) {
+    const requestId = ++requestVersion;
+    const scopeKey = graphView.scopeKey;
+    const mode = graphView.mode;
+    const isCurrent = () => requestId === requestVersion && scopeKey === graphView.scopeKey;
+
     try {
       apiError = null;
       if (!silent) {
         loading = true;
       }
 
-      const isAuth = isAuthenticated();
       const { graph, notes } = await loadGraph({
         full: true,
         includeKnowledgeCore: false,
         fallbackToNotes: true,
         ensureNotesInGraph: true,
-        fullGraphLoader: () => getGraphWithPreload(),
+        viewMode: mode,
+        nocache,
+        fullGraphLoader: (bypass) => getGraphWithPreload(1000, bypass ?? nocache, mode),
       });
+
+      if (!isCurrent()) return;
 
       allNotes = notes;
 
       // Public graph is the single source of notes for anonymous users.
-      if (!isAuth && allNotes.length === 0 && graph.nodes.length > 0) {
+      if (mode === "community" && allNotes.length === 0 && graph.nodes.length > 0) {
         allNotes = graph.nodes.map((n) => ({
           id: n.id,
           title: n.title,
@@ -266,14 +322,14 @@ export function createHomePageState() {
     } catch (e: unknown) {
       // Background refreshes shouldn't surface a full-page error and wipe
       // out an already-rendered graph; just log and keep the current state.
-      if (!silent) {
+      if (!silent && isCurrent()) {
         apiError = toErrorResponse(e);
       }
       if (import.meta.env.DEV) {
         console.error(e);
       }
     } finally {
-      if (!silent) {
+      if (!silent && isCurrent()) {
         loading = false;
       }
     }
@@ -288,13 +344,18 @@ export function createHomePageState() {
    * auth and would return 401, so we skip background sync entirely for them.
    */
   async function refreshAfterMutation() {
-    if (!isAuthenticated()) {
+    if (!isAuthenticated() || loading) return;
+    const requestId = ++requestVersion;
+    const scopeKey = graphView.scopeKey;
+    const isCurrent = () => requestId === requestVersion && scopeKey === graphView.scopeKey;
+    if (graphView.mode === "community") {
+      await loadData({ silent: true, nocache: true });
       return;
     }
-
     if (graphData.hash && hasPreloadedData()) {
       const previousHash = graphData.hash;
       const delta = await updateGraphWithDelta();
+      if (!isCurrent()) return;
       if (delta) {
         const updated = getPreloadedGraph();
         const hasChanges =
@@ -304,16 +365,18 @@ export function createHomePageState() {
           (delta.added_links?.length ?? 0) > 0 ||
           (delta.removed_links?.length ?? 0) > 0;
         if (updated && (hasChanges || updated.hash !== previousHash)) {
-          graphData = updated;
           // The list view derives from allNotes, not graphData, so we must
           // refresh the notes list after a delta update.
-          allNotes = await getNotes();
+          const notes = await getNotes();
+          if (!isCurrent()) return;
+          graphData = updated;
+          allNotes = notes;
           applyFiltersAndSort();
         }
         return;
       }
     }
-    await loadData({ silent: true });
+    if (isCurrent()) await loadData({ silent: true, nocache: true });
   }
 
   // Helper to get note type - unified with renderer.ts logic via CelestialBody
@@ -479,6 +542,7 @@ export function createHomePageState() {
   }
 
   async function handleNoteCreated(note: Note) {
+    const scopeKey = graphView.scopeKey;
     showCreateModal = false;
     if (createChildParent) {
       try {
@@ -493,8 +557,10 @@ export function createHomePageState() {
           alert(t("note.createChildLinkError"));
         }
       }
+      if (scopeKey !== graphView.scopeKey) return;
       createChildParent = null;
     }
+    if (scopeKey !== graphView.scopeKey) return;
     graphStore.selectedNodeId = note.id;
     await refreshAfterMutation();
   }
@@ -513,13 +579,22 @@ export function createHomePageState() {
   }
 
   async function handleToggleLayoutProvider(provider: "d3" | "graph-service") {
-    if (provider === layoutProvider) return;
+    if (provider === layoutProvider || loading) return;
+    const requestId = ++requestVersion;
+    const scopeKey = graphView.scopeKey;
+    const mode = graphView.mode;
+    const isCurrent = () => requestId === requestVersion && scopeKey === graphView.scopeKey;
     layoutProvider = provider;
     try {
       const runtime = { ...toRuntimeConfig(), layoutProvider: provider };
-      graphData = await createLayoutProvider(runtime).load({ limit: 100 });
+      const graph = await createLayoutProvider(runtime).load({ limit: 100, viewMode: mode });
+      if (isCurrent()) {
+        graphData = graph;
+      }
     } catch (e) {
-      apiError = toErrorResponse(e);
+      if (isCurrent()) {
+        apiError = toErrorResponse(e);
+      }
       if (import.meta.env.DEV) {
         console.error("Failed to load 3D graph with layout provider:", provider, e);
       }

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import Page from "./+page.svelte";
 import { goto } from "$app/navigation";
+import { graphView } from "$shared/stores/graph-view.svelte";
+import { authState } from "$shared/stores/auth-session.svelte";
 import { getFullGraphData, getGraphData } from "$shared/api/graph";
 import { getNotes, getNote, createNote, updateNote } from "$shared/api/notes";
 import { createLink, getNoteLinks } from "$shared/api/links";
@@ -81,6 +83,13 @@ const mockNote = {
 
 describe("Graph page - Cosmic Cockpit integration", () => {
   beforeEach(() => {
+    (window as any).__SKIP_AUTH__ = true;
+    authState.currentUser = null;
+    authState.accessToken = "tok1";
+    authState.apiKey = null;
+    localStorage.removeItem("graph-view-mode");
+    graphView.clear();
+    graphView.restore();
     vi.mocked(getFullGraphData).mockResolvedValue(mockGraph);
     vi.mocked(getGraphData).mockResolvedValue({
       nodes: [mockNote],
@@ -117,7 +126,7 @@ describe("Graph page - Cosmic Cockpit integration", () => {
       { timeout: 2000 }
     );
 
-    expect(getFullGraphData).toHaveBeenCalledWith(0, undefined, false);
+    expect(getFullGraphData).toHaveBeenCalledWith(0, undefined, false, "personal");
     expect(getNote).toHaveBeenCalledWith(KNOWLEDGE_CORE_ID);
   });
 
@@ -198,5 +207,64 @@ describe("Graph page - Cosmic Cockpit integration", () => {
     await fireEvent.click(createButton);
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("PUB-2 switches to community and does not fetch private notes", async () => {
+    vi.mocked(getFullGraphData).mockImplementation((_limit, _user, _nocache, viewMode) =>
+      Promise.resolve(
+        viewMode === "community"
+          ? { nodes: [{ id: "public-node", title: "Public" }], links: [], hash: "public-hash" }
+          : mockGraph
+      )
+    );
+
+    render(Page);
+    await waitFor(() => expect(screen.getByTestId("graph-canvas")).toBeInTheDocument(), {
+      timeout: 2000,
+    });
+
+    vi.mocked(getNote).mockClear();
+    const communityButton = screen.getByTestId("graph-view-community");
+    await fireEvent.click(communityButton);
+
+    await waitFor(() => expect(screen.getByTestId("graph-stats")).toHaveTextContent("1"), {
+      timeout: 2000,
+    });
+    expect(vi.mocked(getFullGraphData)).toHaveBeenLastCalledWith(0, undefined, true, "community");
+    expect(vi.mocked(getNote)).not.toHaveBeenCalled();
+  });
+
+  it("PUB-2 ignores a stale personal response after switching to community", async () => {
+    let resolvePersonal: (value: any) => void = () => {};
+    vi.mocked(getFullGraphData)
+      .mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            resolvePersonal = r;
+          })
+      )
+      .mockImplementation((_limit, _user, _nocache, viewMode) =>
+        Promise.resolve(
+          viewMode === "community"
+            ? { nodes: [{ id: "public-node", title: "Public" }], links: [], hash: "public-hash" }
+            : mockGraph
+        )
+      );
+
+    render(Page);
+    await waitFor(() => expect(vi.mocked(getFullGraphData)).toHaveBeenCalled(), { timeout: 2000 });
+
+    const communityButton = screen.getByTestId("graph-view-community");
+    await fireEvent.click(communityButton);
+
+    await waitFor(() => expect(screen.getByTestId("graph-stats")).toHaveTextContent("1"), {
+      timeout: 2000,
+    });
+    resolvePersonal(mockGraph);
+
+    await waitFor(() => expect(screen.queryByText("Test Note")).not.toBeInTheDocument(), {
+      timeout: 2000,
+    }).catch(() => {});
+    expect(screen.getByTestId("graph-stats")).toHaveTextContent("1");
   });
 });

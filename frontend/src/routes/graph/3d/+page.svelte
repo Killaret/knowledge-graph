@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { GraphPageShell } from "$widgets/graph-page";
@@ -10,6 +10,7 @@
   import type { Props as Graph3DViewerProps } from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
   import { initAuth } from "$shared/stores/auth.svelte";
+  import { graphView } from "$shared/stores/graph-view.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const runtimeConfig = toRuntimeConfig();
@@ -30,28 +31,77 @@
   let loading = $state(true);
   let error = $state("");
   let Graph3DViewer: Component<Graph3DViewerProps> | null = $state(null);
+  let authReady = $state(false);
+  let requestVersion = 0;
+  let lastScopeKey: string | null = null;
 
-  onMount(async () => {
-    if (!browser) return;
-    // Wait for session restore before loading: a refresh may be in flight,
-    // and isAuthenticated() stays false until it resolves — an early call
-    // would hit graph/public and render the anonymous scene.
-    await initAuth();
+  async function loadLayout(nocache = false) {
+    const requestId = ++requestVersion;
+    const scopeKey = graphView.scopeKey;
+    const mode = graphView.mode;
+    const isCurrent = () => requestId === requestVersion && scopeKey === graphView.scopeKey;
+
+    loading = true;
+    error = "";
     try {
-      [graphData] = await Promise.all([
-        layoutProvider.load({}),
-        import("$widgets/graph-3d-viewer/Graph3DViewer.svelte").then((mod) => {
-          Graph3DViewer = mod.default;
-        }),
+      const [graph, viewer] = await Promise.all([
+        layoutProvider.load({ viewMode: mode, nocache }),
+        import("$widgets/graph-3d-viewer/Graph3DViewer.svelte").then((mod) => mod.default),
       ]);
+      if (isCurrent()) {
+        graphData = graph;
+        Graph3DViewer = viewer;
+      }
     } catch (e) {
       if (import.meta.env.DEV) {
         console.error("Failed to load 3D graph:", e);
       }
-      error = t("graph.loadDataError");
+      if (isCurrent()) {
+        error = t("graph.loadDataError");
+      }
     } finally {
-      loading = false;
+      if (isCurrent()) {
+        loading = false;
+      }
     }
+  }
+
+  onMount(() => {
+    if (!browser) return;
+    // Wait for session restore before loading: a refresh may be in flight,
+    // and isAuthenticated() stays false until it resolves — an early call
+    // would hit graph/public and render the anonymous scene.
+    let disposed = false;
+    (async () => {
+      await initAuth();
+      if (!disposed) {
+        authReady = true;
+      }
+    })();
+    return () => {
+      disposed = true;
+      authReady = false;
+      requestVersion += 1;
+    };
+  });
+
+  $effect(() => {
+    const scopeKey = graphView.scopeKey;
+    if (!authReady) return;
+
+    const scopeChanged = lastScopeKey !== null && lastScopeKey !== scopeKey;
+    lastScopeKey = scopeKey;
+
+    untrack(() => {
+      graphData = { nodes: [], links: [] };
+      graphStore.selectedNodeId = null;
+      const url = new URL(window.location.href);
+      void loadLayout(scopeChanged || url.searchParams.has("nocache"));
+    });
+
+    return () => {
+      requestVersion += 1;
+    };
   });
 </script>
 

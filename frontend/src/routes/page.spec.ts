@@ -3,7 +3,8 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import Page from "./+page.svelte";
 import { getNotes, createNote, deleteNote, deleteNotesBatch, restoreNote } from "$shared/api/notes";
 import { getGraphWithPreload } from "$features/preload/hooks/usePreloadedData";
-
+import { authState } from "$shared/stores/auth-session.svelte";
+import { graphView } from "$shared/stores/graph-view.svelte";
 vi.mock("$shared/api/notes", () => ({
   getNotes: vi.fn(),
   createNote: vi.fn(),
@@ -59,6 +60,9 @@ describe("Page list view - batch operations", () => {
   ];
 
   beforeEach(() => {
+    authState.currentUser = { id: "u1", login: "test", role: "user" } as any;
+    authState.accessToken = "test-token";
+    graphView.clear();
     vi.mocked(getNotes).mockResolvedValue(mockNotes);
     vi.mocked(getGraphWithPreload).mockResolvedValue({ nodes: [], links: [] });
     vi.mocked(createNote).mockResolvedValue({
@@ -189,6 +193,9 @@ describe("Page list view - undo toast", () => {
   };
 
   beforeEach(() => {
+    authState.currentUser = { id: "u1", login: "test", role: "user" } as any;
+    authState.accessToken = "test-token";
+    graphView.clear();
     vi.mocked(getNotes).mockResolvedValue([mockNote]);
     vi.mocked(getGraphWithPreload).mockResolvedValue({ nodes: [], links: [] });
   });

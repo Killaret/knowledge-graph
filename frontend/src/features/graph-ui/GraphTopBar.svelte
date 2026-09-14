@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { LinkType, GraphMode } from "$entities";
   import { graphStore } from "$shared/stores/graph.svelte";
+  import { graphView, type GraphViewMode } from "$shared/stores/graph-view.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import GraphStats from "$features/graph-ui/GraphStats.svelte";
   import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
@@ -181,6 +182,28 @@
         </button>
       {/each}
     </div>
+
+    {#if isAuthenticated}
+      <div
+        class="view-toggle"
+        role="group"
+        aria-label={t("graphView.label")}
+        data-testid="graph-view-toggle"
+      >
+        {#each ["personal", "community"] as mode}
+          <button
+            type="button"
+            class="top-bar-btn top-bar-btn--segment"
+            class:active={graphView.mode === mode}
+            aria-pressed={graphView.mode === mode}
+            onclick={() => (graphView.mode = mode as GraphViewMode)}
+            data-testid="graph-view-{mode}"
+          >
+            {t(`graphView.${mode}`)}
+          </button>
+        {/each}
+      </div>
+    {/if}
 
     {#if currentView === "3d" && onToggleLayoutProvider}
       <div class="layout-toggle" role="group" aria-label={t("controls.layoutProviderTitle")}>

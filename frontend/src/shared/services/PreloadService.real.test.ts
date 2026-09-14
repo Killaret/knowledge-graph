@@ -6,6 +6,10 @@ vi.mock("$app/environment", () => mockEnv);
 
 const mockAuth = vi.hoisted(() => ({
   isAuthenticated: vi.fn(() => false),
+  currentUser: vi.fn<() => { id: string } | null>(() => null),
+  accessToken: vi.fn(() => null),
+  getApiKey: vi.fn(() => null),
+  apiKey: vi.fn(() => null),
 }));
 vi.mock("$shared/stores/auth-session.svelte", () => mockAuth);
 
@@ -19,6 +23,7 @@ vi.mock("$shared/api/graph", () => mockGraphApi);
 
 describe("PreloadService (real)", () => {
   let PreloadService: any;
+  let graphView: typeof import("$shared/stores/graph-view.svelte").graphView;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -27,6 +32,15 @@ describe("PreloadService (real)", () => {
 
     mockEnv.browser = true;
     mockAuth.isAuthenticated.mockReturnValue(false);
+    mockAuth.currentUser.mockReturnValue(null);
+    mockAuth.accessToken.mockReturnValue(null);
+    mockAuth.getApiKey.mockReturnValue(null);
+    localStorage.removeItem("graph-view-mode");
+
+    const view = await import("$shared/stores/graph-view.svelte");
+    graphView = view.graphView;
+    graphView.clear();
+
     mockGraphApi.getFullGraphData.mockResolvedValue({ ...mockGraphData, hash: "hash-1" });
     mockGraphApi.getGraphDelta.mockResolvedValue({ current_hash: "hash-2" });
 
@@ -65,7 +79,7 @@ describe("PreloadService (real)", () => {
     PreloadService.seedGraph(data);
     expect(PreloadService.getPreloadedGraphData()).not.toBeNull();
 
-    vi.advanceTimersByTime(6 * 60 * 1000); // TTL is 5 minutes
+    vi.advanceTimersByTime(6 * 60 * 1000);
 
     expect(PreloadService.getPreloadedGraphData()).toBeNull();
     expect(PreloadService.getPreloadedGraph()).toBeNull();
@@ -117,7 +131,7 @@ describe("PreloadService (real)", () => {
     await PreloadService.startPreload();
     expect(PreloadService.getPreloadedGraphData()).not.toBeNull();
 
-    vi.advanceTimersByTime(6 * 60 * 1000); // 6 minutes, TTL is 5
+    vi.advanceTimersByTime(6 * 60 * 1000);
 
     expect(PreloadService.getPreloadedGraphData()).toBeNull();
     expect(PreloadService.getPreloadedGraph()).toBeNull();
@@ -133,8 +147,9 @@ describe("PreloadService (real)", () => {
       current_hash: "hash-2",
     };
     mockGraphApi.getGraphDelta.mockResolvedValue(delta);
+    mockAuth.isAuthenticated.mockReturnValue(true);
 
-    await PreloadService.startPreload();
+    await PreloadService.preloadAuthenticatedGraph();
     expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("hash-1");
 
     const result = await PreloadService.updateWithDelta();
@@ -149,6 +164,7 @@ describe("PreloadService (real)", () => {
   });
 
   it("applies delta add/remove/update without a full reload", async () => {
+    mockAuth.isAuthenticated.mockReturnValue(true);
     const seeded = {
       ...mockGraphData,
       nodes: [
@@ -212,9 +228,6 @@ describe("PreloadService (real)", () => {
   });
 
   it("does not serve a public cached graph to an authenticated session", async () => {
-    // Regression: a graph fetched via the public endpoint while anonymous
-    // must not be returned once the session is authenticated — it would
-    // silently render the anonymous subset after login/session restore.
     await PreloadService.startPreload();
     expect(PreloadService.getPreloadedGraph()).not.toBeNull();
 
@@ -225,10 +238,6 @@ describe("PreloadService (real)", () => {
   });
 
   it("does not let an in-flight guest preload satisfy an authenticated preload", async () => {
-    // Regression: preloadAuthenticatedGraph used to return the in-flight
-    // guest promise, leaving the public graph cached for an authenticated
-    // session (found via auth-setup review: graph/full returned 100 nodes
-    // but the scene stayed at the public 20).
     let resolveGuest: (value: any) => void = () => {};
     mockGraphApi.getFullGraphData.mockImplementationOnce(
       () => new Promise((r) => (resolveGuest = r))
@@ -242,9 +251,7 @@ describe("PreloadService (real)", () => {
     resolveGuest({ ...mockGraphData, hash: "public-hash" });
     await Promise.all([guest, auth]);
 
-    // The guest fetch completed, then a separate authenticated fetch ran.
     expect(mockGraphApi.getFullGraphData).toHaveBeenCalledTimes(2);
-    // The authenticated reader gets the second (non-public) result.
     expect(PreloadService.getPreloadedGraph()).toEqual({ ...mockGraphData, hash: "hash-1" });
   });
 
@@ -289,11 +296,7 @@ describe("PreloadService (real)", () => {
   });
 
   it("returns stats with achievements", () => {
-    (PreloadService as any).preloadedGraph = {
-      data: { ...mockGraphData, hash: "h" },
-      timestamp: Date.now(),
-      ttl: 5 * 60 * 1000,
-    };
+    PreloadService.seedGraph({ ...mockGraphData, hash: "h" });
     (PreloadService as any).preloadedAchievements = {
       achievements: [
         {
@@ -324,10 +327,13 @@ describe("PreloadService (real)", () => {
   });
 
   it("returns null from updateWithDelta when delta request fails", async () => {
-    await PreloadService.startPreload();
+    mockAuth.isAuthenticated.mockReturnValue(true);
+    graphView.mode = "personal";
+    PreloadService.seedGraph({ ...mockGraphData, hash: "hash-1" });
     mockGraphApi.getGraphDelta.mockRejectedValue(new Error("delta fail"));
 
     const result = await PreloadService.updateWithDelta();
+    expect(mockGraphApi.getGraphDelta).toHaveBeenCalled();
     expect(result).toBeNull();
   });
 
@@ -357,5 +363,107 @@ describe("PreloadService (real)", () => {
 
     expect(mockGraphApi.getFullGraphData).toHaveBeenCalledTimes(1);
     expect(PreloadService.getPreloadedGraphData()?.isPublic).toBe(false);
+  });
+
+  it("PUB-2 scopes cached IDs and hashes across mode switches", () => {
+    mockAuth.isAuthenticated.mockReturnValue(true);
+    PreloadService.seedGraph({
+      nodes: [{ id: "private", title: "Private" }],
+      links: [],
+      hash: "private-hash",
+    });
+    graphView.mode = "community";
+    expect(PreloadService.getPreloadedGraph()).toBeNull();
+    expect(PreloadService.hasPreloadedData()).toBe(false);
+    PreloadService.seedGraph({
+      nodes: [{ id: "public", title: "Public" }],
+      links: [],
+      hash: "public-hash",
+    });
+    expect(PreloadService.getPreloadedGraph()?.hash).toBe("public-hash");
+    graphView.mode = "personal";
+    expect(PreloadService.getPreloadedGraphData()).toBeNull();
+  });
+
+  it.each(["switch", "clear", "invalidate"] as const)(
+    "PUB-2 discards pending private preload after %s",
+    async (action) => {
+      mockAuth.isAuthenticated.mockReturnValue(true);
+      let resolve!: (data: typeof mockGraphData) => void;
+      mockGraphApi.getFullGraphData.mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            resolve = r;
+          })
+      );
+      const pending = PreloadService.preloadAuthenticatedGraph();
+      if (action === "switch") graphView.mode = "community";
+      else if (action === "clear") PreloadService.clearCache();
+      else PreloadService.invalidateGraphCache();
+      const next = { nodes: [{ id: "new", title: "New" }], links: [], hash: "new-hash" };
+      PreloadService.seedGraph(next);
+      resolve({ ...mockGraphData, hash: "old-hash" });
+      await pending;
+      expect(PreloadService.getPreloadedGraph()).toEqual(next);
+    }
+  );
+
+  it("PUB-2 discards a private delta after public cache replaces its source", async () => {
+    mockAuth.isAuthenticated.mockReturnValue(true);
+    PreloadService.seedGraph({
+      nodes: [{ id: "private", title: "Private" }],
+      links: [],
+      hash: "private-hash",
+    });
+    let resolve!: (data: any) => void;
+    mockGraphApi.getGraphDelta.mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        })
+    );
+    const pending = PreloadService.updateWithDelta();
+    graphView.mode = "community";
+    const pub = { nodes: [{ id: "public", title: "Public" }], links: [], hash: "public-hash" };
+    PreloadService.seedGraph(pub);
+    resolve({
+      added_nodes: [{ id: "private2", title: "Private2" }],
+      current_hash: "stale-private",
+    });
+    expect(await pending).toBeNull();
+    expect(PreloadService.getPreloadedGraph()).toEqual(pub);
+  });
+
+  it.each([false, true])(
+    "PUB-2 never requests private delta in community (auth=%s)",
+    async (auth) => {
+      mockAuth.isAuthenticated.mockReturnValue(auth);
+      if (auth) graphView.mode = "community";
+      PreloadService.seedGraph({ ...mockGraphData, hash: "public-hash" });
+      mockGraphApi.getGraphDelta.mockClear();
+      expect(await PreloadService.updateWithDelta()).toBeNull();
+      expect(mockGraphApi.getGraphDelta).not.toHaveBeenCalled();
+    }
+  );
+
+  it("PUB-2 cache misses when user id changes", () => {
+    mockAuth.isAuthenticated.mockReturnValue(true);
+    mockAuth.currentUser.mockReturnValue({ id: "u1" });
+    PreloadService.seedGraph({ ...mockGraphData, hash: "u1-hash" });
+    expect(PreloadService.getPreloadedGraphData()).not.toBeNull();
+
+    mockAuth.currentUser.mockReturnValue({ id: "u2" });
+    expect(PreloadService.getPreloadedGraphData()).toBeNull();
+  });
+
+  it("PUB-2 cache misses after logout", () => {
+    mockAuth.isAuthenticated.mockReturnValue(true);
+    mockAuth.currentUser.mockReturnValue({ id: "u1" });
+    PreloadService.seedGraph({ ...mockGraphData, hash: "u1-hash" });
+    expect(PreloadService.getPreloadedGraphData()).not.toBeNull();
+
+    mockAuth.isAuthenticated.mockReturnValue(false);
+    mockAuth.currentUser.mockReturnValue(null);
+    expect(PreloadService.getPreloadedGraphData()).toBeNull();
   });
 });

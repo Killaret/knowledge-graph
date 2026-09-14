@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -325,7 +327,8 @@ func convertDeltaResponse(delta *engine.DeltaResponse) *graphservice.DeltaRespon
 // computeLayoutHash computes a hash of the layout for cache validation
 func computeLayoutHash(layout *engine.LayoutResponse) string {
 	data, _ := json.Marshal(layout)
-	return fmt.Sprintf("%x", data)[:32]
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
 }
 
 // GetNeighbors returns the neighbors of a note within a given depth.
