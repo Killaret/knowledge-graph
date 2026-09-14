@@ -1,6 +1,6 @@
 // Board size guard for BOARD-1.
 // The handoff board is not a log: if it grows past 40 KB, old terminal rows
-// and "Обмен репликами" replics have not been cleaned up.
+// and replies in "Обмен репликами" have not been cleaned up.
 
 import { statSync } from "node:fs";
 import { resolve, join } from "node:path";
@@ -19,7 +19,7 @@ if (size > SIZE_THRESHOLD_BYTES) {
             `threshold is ${thresholdKb} KB.`,
     );
     console.error(
-        "Remove terminal board rows and replics in 'Обмен репликами' " +
+        "Remove terminal board rows and replies in 'Обмен репликами' " +
             "older than three days. The board is not a log; keep it under " +
             `the ${thresholdKb} KB threshold.`,
     );
