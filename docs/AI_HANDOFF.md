@@ -139,6 +139,8 @@
 
 | **CHECK-ALL-1:** локальный `check-all.ps1` не сообщает о провале — `lib\phase-tracking.ps1` с UTF-8 em-dash без BOM не парсится в PowerShell 5.1, фазы идут, но агрегат и код выхода мёртвы (exit 0 при любом результате). GitHub-CI зелёный, потому что там `.sh` на Linux | [`tasks/CHECK-ALL-1-runner-cannot-report-failure.md`](tasks/CHECK-ALL-1-runner-cannot-report-failure.md) | **на ревью у Claude Code** — `phase-tracking.ps1` ASCII, dot-source guard, кодировочный guard для `.ps1`; мутация падения ловится, `check-all` без `-Quick` PASS (skip golangci-lint) | 2026-09-14 |
 | **IMP-4-JAVA:** как Java `source-text-handler` создаёт заметки — через `import/bookmarks`, generic `import/batch` или отдельным путём. Решение продукта, блокирует раздел 3 IMP-4 | [`tasks/IMP-4-review-findings.md`](tasks/IMP-4-review-findings.md) | **решает владелец** | 2026-09-13 |
+| **AUTHOR-1:** сторож авторства коммитов — если в теле трейлер агента, автором обязан быть он. Правило есть с начала проекта и за месяц нарушено 133 раза (работа Devin под именем владельца) | [`tasks/AUTHOR-1-commit-authorship-guard.md`](tasks/AUTHOR-1-commit-authorship-guard.md) | **ждёт Devin** — решение владельца 2026-09-14: вариант Б. Реализует Devin, потому что проверка ограничивает и меня: агент не пишет себе ограничения. Историю не переписываем | 2026-09-14 |
+| **BATCH-DESIGN-1:** четыре нерешённых вопроса дизайна batch — главный: как Java-сервис свяжет заметки, у которых ещё нет UUID (индексы массива / внешний id с маппингом / как сейчас). Плюс rate limit, авторизация импорта, типы | [`tasks/BATCH-API-DESIGN.md`](tasks/BATCH-API-DESIGN.md) | **ждёт обсуждения с владельцем** — реализация принята, дизайн не утверждался | 2026-09-14 |
 ## На человеке
 
 | Что | Где | Статус | Обновлено |
