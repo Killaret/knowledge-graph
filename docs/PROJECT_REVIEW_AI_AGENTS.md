@@ -1097,7 +1097,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `typescript` `7.0.2`, `eslint` `10.10.0` и `@eslint/js` `10.10.0` — отложены из-за peer-конфликтов (`@sveltejs/kit`, `typescript-eslint`, `madge`, `eslint-plugin-jsx-a11y`).
 - `vite.config.ts` теперь определяет `__dirname` через `import.meta.url`, убирая предупреждение Vite 8.3.
 - Frontend-проверки зелёные: `npm run check`, `build`, `lint`, `test:unit`, `test:coverage`, `format:check`, `check:circular`.
-- Постановка: [`docs/tasks/FE-DEPS-106-frontend-toolchain-update.md`](docs/tasks/FE-DEPS-106-frontend-toolchain-update.md).
+- Постановка: [`tasks/FE-DEPS-106-frontend-toolchain-update.md`](tasks/FE-DEPS-106-frontend-toolchain-update.md).
 - Статус: **на ревью у Claude Code**.
 
 **Верификация GORM.**
