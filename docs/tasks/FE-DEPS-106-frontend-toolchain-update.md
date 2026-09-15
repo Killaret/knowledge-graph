@@ -110,8 +110,19 @@ const PROJECT_ROOT = fileURLToPath(new URL('src', import.meta.url));
 
 Эти падения наблюдались до FE-DEPS-106; они относятся к подсистеме 3D-графа и не являются регрессией от Vite 8.3.
 
+## Дополнительные правки, потребовавшиеся перед мержем
+
+Первый пуш фейлил `Core Checks / Frontend Checks` из-за `check-docs-links.mjs`:
+- `docs/PROJECT_REVIEW_AI_AGENTS.md` ссылался на `docs/tasks/FE-DEPS-106-frontend-toolchain-update.md` из папки `docs/`, что разрешается как `docs/docs/tasks/...`.
+- Поправлено на `tasks/FE-DEPS-106-frontend-toolchain-update.md`.
+
+Второй пуш фейлил `Smoke Tests`, потому что CI запускал `npm run dev` без `--host`, а Playwright `webServer` ждал `http://127.0.0.1:5173`. Ручной сервер биндился на `localhost` (IPv6 на runner), Playwright пытался поднять второй сервер на `127.0.0.1:5173`, порт был занят, и webServer таймаутился:
+- В `.github/workflows/ci.yml` для шагов `Start frontend dev server`, `Run smoke tests only`, `Run smoke BDD tests` заменено `localhost` на `127.0.0.1`.
+- `npm run dev` в CI теперь запускается с `--host 127.0.0.1`, соответствуя `playwright.config.ts`.
+
+Текущий PR: <https://github.com/Killaret/knowledge-graph/pull/110>. Все CI-проверки зелёные, включая `Smoke Tests`.
+
 ## Следующий шаг
 
-- Claude Code: ревью реализации, в том числе `vite.config.ts` и `package.json`.
-- После принятия: мержить в `main` и закрыть PR #106 (или заменить его на ручной PR).
-- Отдельно взять GORM (#95 / #101) и NLP-четвёрку (#102, #92, #100, #96).
+- Владелец: мерж PR #110 в `main`.
+- После мержа: отдельно взять GORM и NLP-четвёрку.
