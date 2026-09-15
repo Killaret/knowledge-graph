@@ -1085,3 +1085,32 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - **GITHUB-SECURITY-1:** GitHub Dependabot показывает 3 новые находки на `main` (1 high, 2 low); нужен triage и план.
 
 **Статус:** всё передано на ревью/обсуждение Claude Code.
+
+## 26. FE-DEPS-106: совместимое обновление frontend-зависимостей и верификация GORM (2026-09-15)
+
+**Контекст.** Новая волна Dependabot-PR (2026-09-14) принесла 18 PR. Безопасные смержены через PR #107. Сложные остались открытыми: frontend toolchain (#106), конфликтующие GORM (#95, #101) и четырка NLP (#102, #92, #100, #96).
+
+**FE-DEPS-106 — реализация Devin.**
+
+- Ветка: `feat/frontend-toolchain-106`, коммит `0735bf6`.
+- `vite` `^8.2.2` → `^8.3.0`, `happy-dom` `^20.14.0` → `^20.14.3`, `@types/node` `^26.5.0` → `^26.5.1`.
+- `typescript` `7.0.2`, `eslint` `10.10.0` и `@eslint/js` `10.10.0` — отложены из-за peer-конфликтов (`@sveltejs/kit`, `typescript-eslint`, `madge`, `eslint-plugin-jsx-a11y`).
+- `vite.config.ts` теперь определяет `__dirname` через `import.meta.url`, убирая предупреждение Vite 8.3.
+- Frontend-проверки зелёные: `npm run check`, `build`, `lint`, `test:unit`, `test:coverage`, `format:check`, `check:circular`.
+- Постановка: [`docs/tasks/FE-DEPS-106-frontend-toolchain-update.md`](docs/tasks/FE-DEPS-106-frontend-toolchain-update.md).
+- Статус: **на ревью у Claude Code**.
+
+**Верификация GORM.**
+
+- `gorm.io/gorm` — последняя стабильная `v1.31.2`; линии `v3.0.1` не существует.
+- `gorm.io/driver/postgres` — последняя стабильная `v1.6.3`.
+- `gorm.io/datatypes` — последняя стабильная `v1.2.7`.
+- PR #95 (driver 1.6.2) и PR #101 (datatypes 1.2.7) конфликтуют по `gorm.io/gorm` (`1.31.2` vs `1.30.0`). Смержить по отдельности нельзя; нужен единый комбинированный PR с backend-тестами.
+
+**Остальные открытые Dependabot-PR.**
+
+- `#95` / `#101` — GORM (backend).
+- `#106` — frontend toolchain (теперь `FE-DEPS-106`).
+- `#102` (`sentence-transformers` 2.7.0 → 6.0.1), `#92` (`huggingface-hub` 0.23.0 → 1.31.0), `#100` (`uvicorn` 0.34.0 → 0.52.4), `#96` (`fastapi` 0.115.5 → 0.141.1) — NLP, рекомендуется обновлять одной группой на изолированном тест-стеке с реальным скачиванием модели.
+
+**Статус:** frontend-реализация передана Claude Code; GORM и NLP — в планировании/ожидании очереди.
