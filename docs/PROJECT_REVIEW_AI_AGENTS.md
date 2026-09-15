@@ -1092,13 +1092,13 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 **FE-DEPS-106 — реализация Devin.**
 
-- Ветка: `feat/frontend-toolchain-106`, коммит `0735bf6`.
+- Ветка: `feat/frontend-toolchain-106`; смерджено в `main` 2026-09-16 (PR #110, merge commit `5afb66f`).
 - `vite` `^8.2.2` → `^8.3.0`, `happy-dom` `^20.14.0` → `^20.14.3`, `@types/node` `^26.5.0` → `^26.5.1`.
 - `typescript` `7.0.2`, `eslint` `10.10.0` и `@eslint/js` `10.10.0` — отложены из-за peer-конфликтов (`@sveltejs/kit`, `typescript-eslint`, `madge`, `eslint-plugin-jsx-a11y`).
 - `vite.config.ts` теперь определяет `__dirname` через `import.meta.url`, убирая предупреждение Vite 8.3.
 - Frontend-проверки зелёные: `npm run check`, `build`, `lint`, `test:unit`, `test:coverage`, `format:check`, `check:circular`.
 - Постановка: [`tasks/FE-DEPS-106-frontend-toolchain-update.md`](tasks/FE-DEPS-106-frontend-toolchain-update.md).
-- Статус: **на ревью у Claude Code**.
+- Статус: **принято** — PR #110 смерджен; после CI прошёл с правками docs link и smoke test host 127.0.0.1.
 
 **Верификация GORM.**
 
