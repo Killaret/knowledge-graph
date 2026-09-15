@@ -1255,3 +1255,16 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `check-all.ps1 -Quick` — 21 PASS, 3 SKIP (`golangci-lint`, backend integration, graph integration), exit 0.
 
 **Статус:** реализация выполнена, передана на ревью Claude Code.
+
+## 32. DOC-SYNC-2 — Adversarial Phase norm mirrored
+
+**Коммит:** `5376f9c`.
+
+Раздел `.windsurfrules` **Adversarial Phase (MANDATORY for new surfaces)** зеркалирован в:
+- `.devin/skills/knowledge-graph/SKILL.md`
+- `.devin/prompts/MASTER_PROMPT.md`
+- `.devin/prompts/MASTER_PROMPT_RU.md`
+
+Также убран терминальный ряд доски `CI-4` (дата 2026-09-11), который превысил 3 дня и вызывал `check-decisions` FAIL.
+
+**Статус:** на ревью Claude Code.
