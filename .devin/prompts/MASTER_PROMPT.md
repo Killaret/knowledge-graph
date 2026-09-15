@@ -128,7 +128,7 @@ optional:
 
 Categories to work through: length boundaries (0, 1, max, max+1), enum validity including fallbacks, empty and maximal arrays, ownership and IDOR, duplicate ids and links, side effects (post-processing, metadata, `source_url`).
 
-**Adversarial tests carry no special name or marker.** A test earns its place by reddening on broken code, not by the intent it was written with; a marker in the name decays the moment someone forgets to add it, and then it lies. What is recorded instead is **what the phase found** — list the defects in the task file, as `tasks/BATCH-TEST-STRATEGY.md` does for the batch routes.
+**Adversarial tests carry no special name or marker.** A test earns its place by reddening on broken code, not by the intent it was written with; a marker in the name decays the moment someone forgets to add it, and then it lies. What is recorded instead is **what the phase found** — list the defects in the task file, as `tasks/BATCH-TEST-1-strategy.md` does for the batch routes.
 
 ## Finishing functionality
 

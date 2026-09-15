@@ -46,7 +46,7 @@
 - `backend/internal/domain/note/entity.go`
 - `backend/internal/domain/note/value_objects.go`
 - `backend/internal/interfaces/api/notehandler/note_handler.go`
-- `docs/tasks/BATCH-API-DESIGN.md`
+- `docs/tasks/BATCH-1-api-design.md`
 
 ## Следующее действие
 

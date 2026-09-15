@@ -134,7 +134,7 @@ Pipeline должен:
 ## Связанное
 
 - `docs/tasks/NOTE-TYPE-TAXONOMY.md`
-- `docs/tasks/BATCH-DDD-VALIDATION.md`
+- `docs/tasks/BATCH-DDD-1-validation.md`
 - `docs/tasks/IMP-1-import-type-restrictions.md`
 - `docs/tasks/IMP-4-import-recommendations-and-java-batch.md`
 - `backend/internal/infrastructure/queue/tasks/recommendation.go`

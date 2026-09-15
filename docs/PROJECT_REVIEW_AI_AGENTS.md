@@ -723,8 +723,8 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 **Открытые риски / вопросы.**
 
 - Контракт ссылок в `/import/batch`: внешний Java/source-text handler не имеет UUID новых заметок. Текущий механизм клиентских `id` работает, но неудобен. Нужно решить: индексы массива, `external_id` с маппингом в ответе или упорядоченные операции. Обсуждается с Claude Code / владельцем.
-- **Adversarial-тестирование:** процесс зафиксирован в `docs/tasks/BATCH-TEST-STRATEGY.md`; осталось договориться о маркировке и формализации "практического исчерпания".
-- **DDD / Clean Architecture:** валидация `noteType` сейчас в `interfaces`, нужен перенос в `domain`. Варианты описаны в `docs/tasks/BATCH-DDD-VALIDATION.md`.
+- **Adversarial-тестирование:** процесс зафиксирован в `docs/tasks/BATCH-TEST-1-strategy.md`; осталось договориться о маркировке и формализации "практического исчерпания".
+- **DDD / Clean Architecture:** валидация `noteType` сейчас в `interfaces`, нужен перенос в `domain`. Варианты описаны в `docs/tasks/BATCH-DDD-1-validation.md`.
 - **Таксономия типов заметок:** обсуждена в `docs/tasks/NOTE-TYPE-TAXONOMY.md`; нужно согласовать `scaleRank`, состав `UI_TYPES` и единый порядок во всех списках (backend, frontend, OpenAPI) перед реализацией `BATCH-DDD-1`.
 
 ## 18. AUD-4: контракт входа через Яндекс (2026-09-06)
@@ -838,7 +838,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 | #30 | backend Go | `pgvector-go` | 0.2.0 | 0.4.1 | Средний | ✅ замёржен (разрешён конфликт go.mod, `go test -p 1 ./...` pass) |
 | #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий | ❌ закрыт как дублирующий #28 |
 | #56 | NLP Python | `httpx` | 0.25.2 | 0.28.1 | Низкий-средний | ✅ замёржен |
-| #25 | NLP Python | `yake` | 0.4.8 | — | Средний | ❌ отклонён — вместо обновления до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ); см. [`tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md`](tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md) |
+| #25 | NLP Python | `yake` | 0.4.8 | — | Средний | ❌ отклонён — вместо обновления до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ); см. [`tasks/NLP-2-yake-replace-keybert-lemmatization.md`](tasks/NLP-2-yake-replace-keybert-lemmatization.md) |
 | #27 | NLP Python | `python-dotenv` | 1.0.0 | 1.2.3 | Низкий | ✅ замёржен |
 | #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний | ✅ замёржен |
 | #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий | ✅ замёржен; пересчёт embeddings не потребовался |
@@ -874,7 +874,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 8. ✅ Новая волна Dependabot (#70–#77), #79 (`nltk`) и #85 (`go_modules`) — все смержены после фикса CI.
 
 **Следующий шаг:**
-- **#25** (`yake`): отклонён — вместо обновления `yake` до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ). PR #25 закрыт, `yake` остаётся 0.4.8. Подробности: [`tasks/DEPENDABOT-25-yake-license.md`](tasks/DEPENDABOT-25-yake-license.md), [`tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md`](tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md).
+- **#25** (`yake`): отклонён — вместо обновления `yake` до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ). PR #25 закрыт, `yake` остаётся 0.4.8. Подробности: [`tasks/DEPENDABOT-25-yake-license.md`](tasks/DEPENDABOT-25-yake-license.md), [`tasks/NLP-2-yake-replace-keybert-lemmatization.md`](tasks/NLP-2-yake-replace-keybert-lemmatization.md).
 - **#79** (`nltk` 3.8.1 → 3.10.3): ✅ замёржен — добавлен `allow-ghsas: GHSA-8mgp-746c-j5xp`; остаточный риск принят и задокументирован. Подробности: [`tasks/DEPENDABOT-79-nltk-vulnerability.md`](tasks/DEPENDABOT-79-nltk-vulnerability.md).
 
 ## 22. Правки CI под PR #36, 2026-09-11
@@ -1169,7 +1169,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Фронтенд/E2E/Playwright тесты (`frontend/src/shared/api/graph.test.ts`, `frontend/tests/preload-full-cycle.spec.ts`, `frontend/tests/public-graph-real-auth.spec.ts`, `tests/e2e/api-contract.spec.ts`) обновлены на `/graph/public`.
 - Скрипты проверки стеков и регресса (`scripts/ci/check-stacks-health.*`, `scripts/testing/run-full-test-cycle.ps1`) обновлены.
 - Активная документация (`docs/API_EN.md`, `docs/API_ERRORS_EN.md`, `docs/CONFIGURATION_EN.md`, `docs/DOCKER.md`, `docs/GRAPH3D.md`, `docs/LINK_TYPES*.md`, `docs/MANUAL_TEST_CHECKLISTS_RU.md`, `docs/API_TEST_COVERAGE_PLAN.md`, `docs/BACKLOG.md`, `docs/assets/graph-loading-flow.*`, `docs/DECISIONS.md`, `CHANGELOG.md`) приведена в соответствие.
-- Постановки и review-findings (`docs/tasks/PUB-3-rename-graph-endpoints.md`, `PUB-2-graph-view-mode.md`, `PUB-2-review-findings.md`, `API-1-openapi-contract-and-handover.md`, `SPECS-review-findings.md`, `AUD-2-*`) обновлены.
+- Постановки и review-findings (`docs/tasks/PUB-3-rename-graph-endpoints.md`, `PUB-2-graph-view-mode.md`, `PUB-2-review-findings.md`, `API-1-openapi-contract-and-handover.md`, `SPECS-1-review-findings.md`, `AUD-2-*`) обновлены.
 
 ### 29.2 Живая верификация
 
@@ -1304,5 +1304,31 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `go test -count=1 -tags=integration -run TestEmbeddingRepository_FindSimilarNotesBatch ./internal/infrastructure/db/postgres/...` — PASS (`TEST_DATABASE_URL` на тест-стек, testcontainers не используется).
 - `go test ./...` (без тега `integration`) — PASS.
 - Документация по поведению `FindSimilarNotesBatch` в `docs/` отсутствует; дополнительных документов не требовалось.
+
+**Статус:** на ревью Claude Code.
+
+## 34. TASKS-INDEX-1 — генератор указателя постановок
+
+### 34.1 Что изменено
+
+- `scripts/testing/generate-tasks-index.mjs`: генерирует `docs/tasks/README.md` из `docs/tasks/*.md`, `docs/AI_HANDOFF.md` и `docs/AI_LOG.md`; идентификатор выбирается по самому длинному известному доске/журналу префиксу файла; поддерживает суффиксы `AUD-7a`/`AUD-7b`; ссылки статуса нормализуются от `tasks/X.md` к `X.md`.
+- `scripts/testing/check-tasks-index.mjs`: сторож дрейфа — ловит файлы без известного идентификатора, расхождение между каталогом и `docs/tasks/README.md`, ссылки доски/журнала на отсутствующие файлы.
+- `scripts/testing/core-checks.tsv` и `.github/workflows/_core-checks.yml`: добавлена фаза `tasks-index` в `frontend-checks`.
+- Переименованы 10 файлов, чьи имена не начинались с доски/журнала: `BATCH-1-api-design.md`, `BATCH-DDD-1-validation.md`, `BATCH-TEST-1-strategy.md`, `AUD-1-review-findings.md`, `DOCS-LINKS-1-review-findings.md`, `SPECS-1-review-findings.md`, `VERIFY-FINDING-MIRROR-1-review-findings.md`, `NLP-2-yake-replace-keybert-lemmatization.md`, `PROJECT-SKILLS-1-review-findings.md`. Три файла из исходного списка 13 (`AUD-7a-enforce-boundaries.md`, `AUD-7b-lint-tests-and-coverage-denominator.md`, `NOTE-TYPE-TAXONOMY.md`) после исправления парсера оказались корректными.
+- Установлены идентификаторы в `docs/AI_LOG.md` и `docs/AI_HANDOFF.md` для `PROJECT-SKILLS-1`, `DOCS-LINKS-1`, `SPECS-1`, `VERIFY-FINDING-MIRROR-1`, `DEPENDABOT-79`, `MONGO-1`.
+
+### 34.2 Мутации
+
+1. `MUTATION-1-temp.md` без обновления указателя → `check-tasks-index.mjs` FAIL: `Unknown identifier: MUTATION-1-temp.md` + drift.
+2. `mutation-no-id.md` без идентификатора → FAIL: `Unknown identifier: mutation-no-id.md`.
+3. Строка доски со ссылкой `tasks/NONEXISTENT-999.md` → FAIL: `docs\AI_HANDOFF.md links to missing task file: NONEXISTENT-999.md`.
+4. Удаление всех мутаций и повторная генерация → `Task index OK: 89 entries, no drift, no broken board links.`
+
+### 34.3 Верификация
+
+- `node scripts/testing/generate-tasks-index.mjs .` — `Generated 89 task index entries at docs\tasks\README.md.`
+- `node scripts/testing/check-tasks-index.mjs .` — `Task index OK: 89 entries, no drift, no broken board links.`
+- `node scripts/testing/check-docs-links.mjs .` — `Docs OK`.
+- `node scripts/testing/check-core-workflow-sync.mjs` — число фаз сходится с CI.
 
 **Статус:** на ревью Claude Code.

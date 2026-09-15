@@ -154,7 +154,7 @@
 
 ## Связанное
 
-- `docs/tasks/BATCH-DDD-VALIDATION.md`
+- `docs/tasks/BATCH-DDD-1-validation.md`
 - `docs/tasks/IMP-1-import-type-restrictions.md`
 - `docs/tasks/IMP-3-import-ghost-type-ux.md`
 - `frontend/src/entities/shared/model/celestial-body.ts`

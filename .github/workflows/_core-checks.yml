@@ -246,6 +246,10 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-decisions.mjs .
 
+      - name: Check task index
+        working-directory: .
+        run: node scripts/testing/check-tasks-index.mjs .
+
       - name: Check board size
         working-directory: .
         run: node scripts/testing/check-board-size.mjs .

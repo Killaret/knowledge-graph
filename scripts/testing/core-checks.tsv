@@ -14,6 +14,7 @@ frontend-format	Frontend formatting	frontend-checks	Check formatting	frontend	np
 frontend-types	Frontend TypeScript	frontend-checks	Check TypeScript	frontend	npm run check	npm run check	0	npm
 frontend-config	Generated config sync	frontend-checks	Verify generated config is in sync	.	@config-sync	npm run build-config && git diff --exit-code knowledge-graph.config.json	0	npm
 docs-links	Documentation links	frontend-checks	Check documentation links	.	node scripts/testing/check-docs-links.mjs .	node scripts/testing/check-docs-links.mjs .	0	node
+tasks-index	Task index guard	frontend-checks	Check task index	.	node scripts/testing/check-tasks-index.mjs .	node scripts/testing/check-tasks-index.mjs .	0	node
 decisions	Decision index guard	frontend-checks	Check decision index	.	node scripts/testing/check-decisions.mjs .	node scripts/testing/check-decisions.mjs .	0	node
 handoff-size	Board size guard	frontend-checks	Check board size	.	node scripts/testing/check-board-size.mjs .	node scripts/testing/check-board-size.mjs .	0	node
 commit-authorship	Commit authorship guard	frontend-checks	Check commit authorship	.	node scripts/testing/check-commit-authorship.mjs .	node scripts/testing/check-commit-authorship.mjs .	0	node

@@ -166,7 +166,7 @@ no links.
 Linking notes that do not exist yet is the open question: the client currently supplies
 its own UUIDs in `import/batch`, and a foreign id that already exists is rejected rather
 than overwritten. The contract for that is still being decided (see
-`docs/tasks/BATCH-API-DESIGN.md`), so treat it as provisional.
+`docs/tasks/BATCH-1-api-design.md`), so treat it as provisional.
 
 Batch creation runs the same post-processing as single creation — keywords, embeddings,
 link weights and recommendations. Mass **import** does not yet enqueue recommendations;
