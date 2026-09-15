@@ -1332,3 +1332,20 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `node scripts/testing/check-core-workflow-sync.mjs` — число фаз сходится с CI.
 
 **Статус:** на ревью Claude Code.
+
+## 35. GORDON-1 — внешние документы Gordon и полный локальный прогон
+
+### 35.1 Что изменено
+
+- Три внешних AI-документа, ранее лежавших в корне (`DEPLOYMENT_OPTIMIZATION_MAP.md`, `PROJECT_REVIEW_COMPREHENSIVE.md`, `docs/GORDON_ANALYSIS.md`), перенесены в `docs/gordon/`.
+- Создана постановка [`tasks/GORDON-1-gordon-documents-review.md`](tasks/GORDON-1-gordon-documents-review.md) — ожидает обзора и вердикта владельца.
+- `docs/tasks/README.md` перегенерирован: 90 записей, `check-tasks-index.mjs` зелёный.
+
+### 35.2 Верификация
+
+- Полный `scripts/testing/check-all.ps1` (не `-Quick`) прошёл: **21 PASS**, **1 SKIP** (`golangci-lint` не установлен), **exit 0**.
+- Frontend unit tests: 139 файлов / 1430 тестов PASS.
+- Backend coverage: 66.4% (порог 64.8%).
+- Task index, decision index, board size, commit authorship, documentation links — все зелёные.
+
+**Статус:** GORDON-1 ждёт человека.
