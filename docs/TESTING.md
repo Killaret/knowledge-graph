@@ -373,29 +373,17 @@ The manual test checklist covers:
 
 ### Current Code Coverage
 
-**Latest Coverage Results (run 2026-07-20):**
+**Latest Coverage Results (run 2026-09-15):**
 
 | Layer | Metric | Value | Target | Status |
 |-------|--------|-------|--------|--------|
-| Backend | Statements | **60.5%** | 70% (min 60%) | ⚠️ At minimum threshold |
-| Frontend | Statements | **63.63%** | 70% (min 60%) | ⚠️ Below target |
-| Frontend | Branches | **78.74%** | - | ✅ Good |
-| Frontend | Functions | **56.91%** | 55% (min) | ✅ Above minimum |
-| Frontend | Lines | **63.63%** | 60% (min) | ✅ Above minimum |
+| Backend | Statements | **72.2%** | 70% (min 70%) | ✅ Above minimum |
+| Frontend | Statements | **82.21%** | 70% (min 70%) | ✅ Above minimum |
+| Frontend | Branches | **70.7%** | 70% (min 70%) | ✅ Above minimum |
+| Frontend | Functions | **82.38%** | 70% (min 70%) | ✅ Above minimum |
+| Frontend | Lines | **84.01%** | 70% (min 70%) | ✅ Above minimum |
 
-**Backend coverage gaps (packages below 60%):**
-- `cmd/worker` (14.6%), `internal/infrastructure/mongo` (15.3%), `internal/infrastructure/db` (20.0%)
-- `internal/infrastructure/cloud` (34.3%), `internal/infrastructure/db/postgres` (37.2%)
-- `internal/interfaces/api/handlers/auth` (43.5%), `internal/infrastructure/queue` (46.0%)
-- `cmd/checkconfig` (47.2%), `internal/domain/user` (50.7%)
-- `internal/interfaces/api/handlers/share` (56.7%), `internal/application/cache` (57.1%)
-- `internal/interfaces/api/handlers/draft` (58.7%), `internal/interfaces/api/notehandler` (59.8%)
-
-**Frontend coverage gaps (files/directories below 60%):**
-- `features/graph-interaction` (~28%), `features/graph-forms` (~22%), `features/graph-canvas` (~41%)
-- `shared/stores` (~43%), `shared/api` (~54%), `shared/services` (~59%)
-- Several form components (`ForgotPasswordForm`, `RegisterForm`, `ResetPasswordForm`) at 0%
-- `GraphCanvas.svelte` interaction/zoom-pan/pan handlers and `delta.ts` largely uncovered
+**Backend unit-coverage denominator:** measured over packages that contain unit-testable code. CLI main entrypoints (`cmd/cli`, `cmd/embed-recompute`, `cmd/rotate-api-keys`, `cmd/seed`, `cmd/checkmigrations`, `cmd/worker`), the generated gRPC client (`internal/infrastructure/graph`), test helpers (`internal/testutil`, `internal/domain/cache/cachetest`), and `scripts` are excluded from the threshold because they are covered by integration/E2E tests or are part of the test infrastructure.
 
 ### Backend Tests
 

@@ -58,17 +58,9 @@ run_check() {
             cd "$PROJECT_ROOT" || true
             return 1
         fi
-        local actual
-        actual=$(go tool cover -func=cover.out </dev/null | awk '/^total:/ {gsub("%", "", $NF); print $NF}')
+        local required="${command#@coverage:}"
+        python3 ../scripts/testing/backend-coverage-total.py cover.out "$required"
         code=$?
-        if [[ $code -eq 0 && -n "$actual" ]]; then
-            local required="${command#@coverage:}"
-            echo "Backend coverage: ${actual}% (required >= ${required}%)"
-            awk "BEGIN { exit !($actual >= $required) }"
-            code=$?
-        else
-            code=1
-        fi
     elif [[ "$id" == "frontend-config" ]]; then
         npm run build-config </dev/null
         code=$?

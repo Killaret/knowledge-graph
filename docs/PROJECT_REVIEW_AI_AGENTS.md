@@ -217,7 +217,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 | Уровень         | Команда                                         | Инструмент                       | Покрытие            |
 | --------------- | ----------------------------------------------- | -------------------------------- | ------------------- |
-| Go unit         | `cd backend && go test ./...`                   | testify                          | min 60%, target 70% |
+| Go unit         | `cd backend && go test ./...`                   | testify                          | min 70%, target 70% |
 | Go integration  | `cd backend && go test -tags=integration ./...` | testcontainers-go, miniredis     | —                   |
 | Frontend unit   | `cd frontend && npm run test:unit`              | Vitest                           | target 70%          |
 | E2E             | `cd frontend && npm run test`                   | Playwright                       | —                   |
@@ -266,7 +266,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 5. **Несоответствия в compose/документации**: неправильные порты graph-service, отсутствовал `redis_data` volume, устаревшие ссылки на `src/shared/three/`.
 6. **Frontend i18n и `any`**: `SidebarWidget.svelte` содержал хардкодный русский; `auth-session` и `auth` использовали `as any`.
 7. **Formatter/ESLint**: `npm run format:check` и `npx eslint .` сообщали о проблемах.
-8. **Coverage thresholds**: в `vitest.config.ts` стояли 60% (target — 70%).
+8. **Coverage thresholds**: frontend и backend enforced min подняты до 70% (было 60% в `vitest.config.ts` и 64.8% в backend CI).
 9. **go-redis v8 transitive**: устаревший `github.com/go-redis/redis/v8` тянулся через `asynq`.
 10. **Пропуски миграций**: отсутствовали файлы `015` и `021`.
 11. **CORS**: `CORS_ALLOWED_ORIGINS` был настроен, но methods/headers/max-age захардкожены в middleware.
@@ -1345,7 +1345,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 - Полный `scripts/testing/check-all.ps1` (не `-Quick`) прошёл: **21 PASS**, **1 SKIP** (`golangci-lint` не установлен), **exit 0**.
 - Frontend unit tests: 139 файлов / 1430 тестов PASS.
-- Backend coverage: 66.4% (порог 64.8%).
+- Backend coverage: 66.4% (порог на тот момент 64.8%).
 - Task index, decision index, board size, commit authorship, documentation links — все зелёные.
 
 **Статус:** GORDON-1 ждёт человека.
@@ -1368,5 +1368,31 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `docker compose -f docker-compose.deploy.yml config` валиден.
 - `.github/workflows/deploy.yml` валиден (`python -c "import yaml; ..."`).
 - `check-all -Quick` — 18 PASS, 3 SKIP, exit 0.
+
+**Статус:** на ревью у Claude Code.
+
+## 37. COVERAGE-1 — пороги покрытия unit-тестов подняты до 70%
+
+### 37.1 Решение владельца
+
+- Все пороги unit coverage — **70% как цель, так и enforced min** (frontend и backend).
+- Backend измеряется по unit-testable пакетам; из знаменателя исключены CLI main, generated gRPC client (`internal/infrastructure/graph`), test helpers (`internal/testutil`, `internal/domain/cache/cachetest`) и `scripts`.
+
+### 37.2 Изменения
+
+- `.windsurfrules`: обновлена таблица покрытия.
+- `docs/TESTING.md`: актуальные цифры и пояснение по знаменателю backend.
+- `docs/PROJECT_REVIEW_AI_AGENTS.md` §6: Go unit min 70%, frontend unit target/min 70%.
+- `.devin/prompts/MASTER_PROMPT.md` и `MASTER_PROMPT_RU.md`: Go backend min 70%, frontend target/min 70%.
+- `scripts/testing/core-checks.tsv` и `.github/workflows/_core-checks.yml`: backend coverage threshold 70%.
+- `scripts/testing/check-all.ps1` и `check-all.sh`: используют `backend-coverage-total.py`.
+- `scripts/testing/backend-coverage-total.py` + `backend-coverage-excludes.txt`: вычисляет backend unit coverage по `cover.out` с фильтром.
+- `docs/DECISIONS.md`: решение #38.
+- `docs/tasks/COVERAGE-1-align-backend-coverage-threshold.md` и `docs/AI_HANDOFF.md`/`docs/AI_LOG.md` обновлены.
+
+### 37.3 Верификация
+
+- `python scripts/testing/backend-coverage-total.py backend/cover.out 70` → **72.2%** [PASS].
+- Frontend `npm run test:coverage` → statements **82.21%**, branches **70.7%**, functions **82.38%**, lines **84.01%** — все выше 70%.
 
 **Статус:** на ревью у Claude Code.

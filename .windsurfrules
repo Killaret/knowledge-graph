@@ -183,8 +183,8 @@ redis.Options{
 
 | Layer | Command | Tool | Coverage |
 |-------|---------|------|----------|
-| Go backend | `cd backend && go test ./...` | testify + testcontainers | Target 70% (enforced min 64.8%, measured 66.8% on 2026-09-07) |
-| Frontend | `cd frontend && npm run test:unit` | Vitest + @testing-library | Target 70% (enforced min 60% lines/branches, 55% functions) |
+| Go backend | `cd backend && go test ./...` | testify + testcontainers | Target 70% (enforced min 70%; measured 72.2% on 2026-09-15 after excluding CLI mains, generated gRPC client, test helpers, and scripts from the unit denominator) |
+| Frontend | `cd frontend && npm run test:unit` | Vitest + @testing-library | Target 70% (enforced min 70% lines/branches/functions/statements) |
 | E2E | `cd frontend && npm run test` | Playwright | - |
 | BDD | `cd frontend && npm run test:bdd` | Cucumber | - |
 | NLP | `cd nlp-service && pytest tests/ -v` | pytest | - |

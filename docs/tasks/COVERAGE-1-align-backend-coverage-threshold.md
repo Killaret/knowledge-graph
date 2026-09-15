@@ -1,32 +1,28 @@
-# COVERAGE-1. Согласовать backend coverage: 70% target vs 64.8% enforced
+# COVERAGE-1. Выровнять backend coverage — 70% как цель и enforced min
 
-Вопрос владельцу: backend unit coverage сейчас **target 70%**, но **enforced min 64.8%**. Нужно ли поднять enforced min до 70% и привести все документы к одной цифре, или 64.8% остаётся рабочим минимумом, пока coverage не выросла?
+## Решение владельца
 
-## Что сейчас в репозитории
+- **Все пороги unit coverage — 70%** (frontend и backend). Цель и enforced min совпадают.
+- **Backend** измеряется по unit-testable пакетам с исключённым из знаменателя кодом, который не покрывается unit-тестами: CLI main-файлы (`cmd/cli`, `cmd/embed-recompute`, `cmd/rotate-api-keys`, `cmd/seed`, `cmd/checkmigrations`, `cmd/worker`), generated gRPC client (`internal/infrastructure/graph`), test helpers (`internal/testutil`, `internal/domain/cache/cachetest`) и `scripts`.
+- Порог 64.8% отменён; все упоминания приведены к 70%.
 
-| Источник | Что говорит |
-|---|---|
-| `.windsurfrules` | Go backend: **Target 70% (enforced min 64.8%, measured 66.8% on 2026-09-07)** |
-| `docs/PROJECT_REVIEW_AI_AGENTS.md` §8 | Go unit: **target 70%, min 60%** |
-| `docs/TESTING.md` | Backend statements: **70% (min 60%)** (данные устарели — 2026-07-20) |
-| `scripts/testing/core-checks.tsv` | `backend-coverage`: **Backend coverage >= 64.8%** |
-| `.github/workflows/_core-checks.yml` | `Check backend coverage threshold (min 64.8%)` |
-| `.devin/prompts/MASTER_PROMPT.md` и `MASTER_PROMPT_RU.md` | Go unit: **Target 70% coverage, min 60%** |
-| `docs/DECISIONS.md` #4 | **AUD-7b: … порог 70 %**, но формулировка про `src/**` — это frontend, не backend |
-| Последний локальный прогон | **66.4%** (порог 64.8% пройден, 70% не пройден) |
+## Выполнено
 
-## Варианты решения
+- В `.windsurfrules`, `docs/TESTING.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md` и `.devin/prompts/MASTER_PROMPT*.md` пороги исправлены на 70%.
+- `scripts/testing/core-checks.tsv` и `.github/workflows/_core-checks.yml` теперь требуют **backend coverage >= 70%**.
+- Локальные `check-all.ps1` и `check-all.sh` используют тот же порог и фильтр.
+- Создан `scripts/testing/backend-coverage-total.py` — скрипт, который считает покрытие по `cover.out`, исключая не-unit пакеты (список — `scripts/testing/backend-coverage-excludes.txt`).
+- Решение зафиксировано в `docs/DECISIONS.md` (#38).
 
-1. **Enforced min = 70% сейчас.** `check-all` и CI будут красными, пока coverage не поднимется. Мотивирует добирать тесты, но блокирует зелёный CI.
-2. **Enforced min оставить 64.8%, target — 70%.** Дрейф сохраняется; зелёный CI, но нет гарантии, что 70% достигнут.
-3. **Принять поэтапный план:** min 70% через N дней/итераций, с планом доработки coverage (какие пакеты добирать).
+## Текущее измерение
 
-## Что нужно от владельца
+- Backend unit coverage (filtered): **72.2%**.
+- Frontend coverage: **statements 82.21%**, **branches 70.7%**, **functions 82.38%**, **lines 84.01%** — всё выше 70%.
 
-- Какой вариант выбрать?
-- Если 70% — согласен ли на красный CI до тех пор, пока coverage не выросла, или нужен план добора тестов?
-- Если 64.8% — зафиксировать это как временное решение в `DECISIONS.md` и привести `.devin/prompts/`, `TESTING.md`, `PROJECT_REVIEW_AI_AGENTS.md` к одной формулировке.
+## Исключения из backend-знаменателя
+
+CLI main-файлы, сгенерированный gRPC client, test helpers и ad-hoc скрипты исключены, так как они либо покрываются интеграционными/E2E-тестами, либо являются частью инфраструктуры тестов. Если владелец решит включить их — нужен отдельный план добора тестов.
 
 ## Статус
 
-Ждёт решения владельца / обсуждение с Devin.
+Принято владельцем; реализация на ревью у Claude Code.

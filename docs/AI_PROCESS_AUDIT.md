@@ -102,6 +102,8 @@ const isTest = typeof process !== "undefined" && process.env?.VITEST === "true";
 
 Фактически ни одного порога покрытия в CI не применяется.
 
+> **Статус 2026-09-15 (COVERAGE-1):** владелец решил, что цель и enforced min — 70% для frontend и backend. `core-checks.tsv`, `_core-checks.yml` и `check-all.ps1`/`check-all.sh` теперь применяют 70%. Backend unit coverage измеряется по фильтру `scripts/testing/backend-coverage-total.py`, исключая CLI main, generated gRPC client, test helpers и `scripts`; текущее значение 72.2%. Frontend `vitest.config.ts` остаётся на 70%, но `npm run test:unit` в CI всё ещё без coverage; для coverage в CI нужен отдельный PR.
+
 ### A-6. WebGL в headless-CI не гарантирован
 
 `Graph3DViewer.svelte:43` при недоступности WebGL показывает оверлей ошибки вместо сцены. В `visual-regression` браузер ставится как `npx playwright install --with-deps chromium` на ubuntu-раннере без GPU-флагов и без проверки контекста. Если WebGL не поднимется, тест из A-1 всё равно пройдёт: обёртка видима, снимок сделан, на нём — сообщение об ошибке. По зелёному CI отличить это от нормы невозможно.

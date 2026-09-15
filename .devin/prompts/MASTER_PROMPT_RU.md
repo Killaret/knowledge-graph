@@ -105,9 +105,9 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
 
 | Слой | Команда | Примечания |
 |------|---------|------------|
-| Go backend unit | `cd backend && go test ./...` | Target 70% coverage, min 60% |
+| Go backend unit | `cd backend && go test ./...` | Target 70% coverage, min 70% |
 | Go backend integration | `cd backend && go test -tags=integration ./...` | testcontainers-go |
-| Frontend unit | `cd frontend && npm run test:unit` | Vitest; target 70% coverage |
+| Frontend unit | `cd frontend && npm run test:unit` | Vitest; target 70% coverage, min 70% |
 | Локальные core checks | `.\scripts\testing\check-all.ps1 [-Quick]` / `./scripts/testing/check-all.sh [--quick]` | Повторяет `_core-checks.yml`; недоступные инструменты явно помечаются `[SKIP]` |
 | E2E | `cd frontend && npm run test` | Playwright; только изолированный test stack |
 | BDD | `cd frontend && npm run test:bdd` | Cucumber; только изолированный test stack |

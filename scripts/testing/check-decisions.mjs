@@ -256,7 +256,7 @@ function extractDecisionMarkersFromFile(filePath, relPath) {
     const text = readText(filePath);
     const lines = text.split(/\r?\n/);
     const fileId = extractLeadingId(
-        relPath.replace(/^docs\/tasks\//, "").replace(/\.md$/, ""),
+        relPath.replace(/\\/g, "/").replace(/^docs\/tasks\//, "").replace(/\.md$/, ""),
     );
     const markers = [];
 
