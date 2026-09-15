@@ -192,7 +192,7 @@ jobs:
           MONGO_URL: mongodb://localhost:27017
           REDIS_FLUSH_ON_STARTUP: "true"
           JWT_SECRET: ${{ env.JWT_SECRET }}
-          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
           GRAPH_SERVICE_URL: ""
           SKIP_AUTH: "true"
           APP_ENV: "test"
@@ -465,7 +465,7 @@ jobs:
           REDIS_URL: 127.0.0.1:6379
           MONGO_URL: mongodb://127.0.0.1:27017
           JWT_SECRET: ${{ env.JWT_SECRET }}
-          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
           GRAPH_SERVICE_URL: ""
           SKIP_AUTH: "false"
         run: |
@@ -485,7 +485,7 @@ jobs:
           REDIS_URL: 127.0.0.1:6379
           HTTP_PORT: 9091
           GRPC_PORT: 9090
-          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
         run: |
           docker run -d --network host --name kg-graph-service \
             -e POSTGRES_URL="$POSTGRES_URL" \
