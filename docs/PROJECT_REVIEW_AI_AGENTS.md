@@ -37,7 +37,7 @@
 
 - **Go 1.25** — основной язык (`backend/go.mod`).
 - **Gin v1.12** — HTTP-роутер/фреймворк.
-- **GORM v1.25** — ORM для PostgreSQL.
+- **GORM v1.31.2** — ORM для PostgreSQL.
 - **pgx/v5** — драйвер PostgreSQL.
 - **go-redis/v9** — клиент Redis (запрещён v8 API, `.windsurfrules`).
 - **asynq v0.26.0** — очереди задач на Redis (обновлён с v0.23.0, `backend/go.mod`).
@@ -1396,3 +1396,19 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Frontend `npm run test:coverage` → statements **82.21%**, branches **70.7%**, functions **82.38%**, lines **84.01%** — все выше 70%.
 
 **Статус:** на ревью у Claude Code.
+
+---
+
+## 38. FE-DEPS-106, GORM-COMBINED-1 и E2E-CANVAS-1 (2026-09-16)
+
+### 38.1 FE-DEPS-106
+
+Совместимое обновление frontend-инструментария (PR #110, смерджен в main): `vite` 8.3, `happy-dom` 20.14.3, `@types/node` 26.5.1. TypeScript 7.0.2 и ESLint 10.10.0 отложены из-за peer-конфликтов. Перед мержом починены: битая относительная ссылка в `docs/PROJECT_REVIEW_AI_AGENTS.md` и smoke test host 127.0.0.1 в `.github/workflows/ci.yml`.
+
+### 38.2 GORM-COMBINED-1
+
+Комбинированное обновление backend в `ai-agents`: `gorm.io/gorm` 1.31.2, `gorm.io/driver/postgres` 1.6.3, `gorm.io/datatypes` 1.2.7. Прогнаны `go mod tidy`, `go mod verify`, `go build ./...`, `go vet ./...`, `go test ./...` и `go test -tags=integration ./...` — PASS. `check-all.ps1 -Quick` — PASS (кроме отсутствующего `node_modules`, который CI установит).
+
+### 38.3 E2E-CANVAS-1
+
+Заведена постановка по двум падающим real-auth тестам `cockpit-canvas-controls.spec.ts` (`fog toggle`, `zoom transform`). Зафиксированы селекторы, URL, ожидания по туману и масштабу, гипотезы и план локализации.
