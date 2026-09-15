@@ -117,6 +117,19 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 - Add a regression test for every defect discovered in manual testing.
 - Before committing backend changes: `go test ./...`, `go vet ./...`, and clean up `coverage.out`, `*.cov`, `*.tmp`, `*.log`.
 
+### Adversarial phase (mandatory for new surfaces)
+
+Green tests prove the code does what you thought. They cannot tell you what you
+misunderstood. So covering a new surface has two phases, and the second is not
+optional:
+
+1. **Retrospective coverage.** Positive tests and the obvious negatives against the implementation as it stands.
+2. **Adversarial phase.** Tests designed *to fail*, written from knowledge of the implementation, the OpenAPI contract and the invariants you believe hold. Every failing test either exposes a defect (fix the code) or proves the test wrong (fix the test). Repeat while meaningful failures are still findable.
+
+Categories to work through: length boundaries (0, 1, max, max+1), enum validity including fallbacks, empty and maximal arrays, ownership and IDOR, duplicate ids and links, side effects (post-processing, metadata, `source_url`).
+
+**Adversarial tests carry no special name or marker.** A test earns its place by reddening on broken code, not by the intent it was written with; a marker in the name decays the moment someone forgets to add it, and then it lies. What is recorded instead is **what the phase found** — list the defects in the task file, as `tasks/BATCH-TEST-STRATEGY.md` does for the batch routes.
+
 ## Finishing functionality
 
 A change is finished when it is **covered by tests and written down**. Both, not either — and this applies equally to new behaviour and to changed behaviour.
