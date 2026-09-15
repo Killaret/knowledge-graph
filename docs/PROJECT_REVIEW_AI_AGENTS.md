@@ -1349,3 +1349,24 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Task index, decision index, board size, commit authorship, documentation links — все зелёные.
 
 **Статус:** GORDON-1 ждёт человека.
+
+## 36. DEPLOY-2 — публикация Docker-образов из CI
+
+### 36.1 Что изменено
+
+- `.github/workflows/deploy.yml` публикует 5 образов на Docker Hub после успешной проверки deploy-стека:
+  - тег `YYYY-MM-DD-<short-sha>`;
+  - тег `main`, который двигается на каждый зелёный push в `main`.
+- Публикация только из `main`; `ai-agents` проверяется, но не публикует.
+- При отсутствии `DOCKER_USERNAME`/`DOCKER_PASSWORD` шаг публикации пропускается с сообщением, workflow остаётся зелёным.
+- `deploy` job перестал быть `echo`: теперь он верифицирует манифесты опубликованных образов и имеет `environment: production`.
+- `docker-compose.deploy.yml` по умолчанию использует `main` вместо застывшего `2026-09-08`, с комментарием про семантику тегов.
+- `docs/API_EN.md` и `docs/DEPLOYMENT_EN.md` описывают: `main` = последний зелёный `main`, датированный тег = заморозка.
+
+### 36.2 Верификация
+
+- `docker compose -f docker-compose.deploy.yml config` валиден.
+- `.github/workflows/deploy.yml` валиден (`python -c "import yaml; ..."`).
+- `check-all -Quick` — 18 PASS, 3 SKIP, exit 0.
+
+**Статус:** на ревью у Claude Code.

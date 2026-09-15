@@ -89,3 +89,13 @@ e4d5d14  2026-09-12 23:11  feat: implement batch routes for notes and import (#3
 - Не публиковать из веток кроме `main`.
 - Не трогать `docker-compose.personal.yml`.
 - Не заводить `latest`.
+
+## DEPLOY-2 выполнено
+
+- `.github/workflows/deploy.yml`: после `Wait for all services` добавлен шаг `Publish verified images to Docker Hub` — публикует 5 образов с тегом `YYYY-MM-DD-<short-sha>` и двигает `main`, но только из ветки `main` и при наличии `DOCKER_USERNAME`/`DOCKER_PASSWORD`. Если секретов нет — `skipped` с сообщением.
+- `deploy` job переделан: вместо `echo` он верифицирует манифесты опубликованных образов на Docker Hub и имеет `environment: production`.
+- `docker-compose.deploy.yml`: тег по умолчанию `main`, добавлен комментарий про `main` vs датированный тег.
+- `docs/API_EN.md` и `docs/DEPLOYMENT_EN.md` описывают семантику тегов: `main` — последний зелёный `main`, датированный тег — заморозка.
+- `check-all -Quick` зелёный; `docker compose -f docker-compose.deploy.yml config` валиден.
+
+**Статус:** на ревью у Claude Code.

@@ -437,6 +437,36 @@ docker-compose -f docker-compose.prod.yml up -d
 docker-compose -f docker-compose.prod.yml up -d --scale worker=3
 ```
 
+### Option B: Pre-built images from Docker Hub
+
+The repository publishes ready-made images on every green push to `main`. Use
+`docker-compose.deploy.yml` for a faster start without building:
+
+```bash
+cp .env.example .env
+# set JWT_SECRET and other required variables
+
+docker compose -f docker-compose.deploy.yml up -d --wait
+```
+
+The compose file uses `KG_IMAGE_TAG` to pick the image version:
+
+| Tag | Meaning |
+|-----|---------|
+| `main` | Latest green build from `main` (default). Moves on every successful CI run. |
+| `YYYY-MM-DD-<short-sha>` | Frozen release from that commit. Pin to this for a stable, auditable deployment. |
+
+To pin, set the environment variable before starting:
+
+```bash
+export KG_IMAGE_TAG=2026-09-15-aab2c76
+docker compose -f docker-compose.deploy.yml up -d --wait
+```
+
+The `main` tag is convenient; a dated tag is a frozen contract. The running
+server's `GET /openapi.yaml` must match `backend/openAPI.yaml` from the same
+commit — that is the contract-identity check.
+
 ---
 
 ## Kubernetes (K8s)

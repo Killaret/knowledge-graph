@@ -25,7 +25,19 @@ not start your dev or personal data — those stacks stay untouched.
 The development stack (`docker compose up -d`) works too, but it needs a filled
 `.env` and its own database; for contract exploration the test stack is simpler.
 
-## 2. Where to look
+## 2. Pre-built images and the running contract
+
+If you use the deploy compose (`docker-compose.deploy.yml`) with pre-built Docker
+Hub images, the image tag selects the contract version you run:
+
+- `main` — the latest green build from the `main` branch; moves on every push.
+- `YYYY-MM-DD-<short-sha>` — a frozen release from that commit.
+
+`GET /openapi.yaml` from a running container must match `backend/openAPI.yaml`
+from the same commit. If it does not, the image on Docker Hub is behind the
+source-of-truth spec. Pin to a dated tag when you want the contract frozen.
+
+## 3. Where to look
 
 Open Swagger UI directly on the backend:
 
@@ -37,7 +49,7 @@ The port always comes from the compose file you started — look at the backend'
 published port (`"127.0.0.1:18083:8080"` in `docker-compose.test.yml`), not at
 this document, if the numbers ever drift.
 
-## 3. The spec file itself
+## 4. The spec file itself
 
 Two ways to the same document:
 
@@ -47,14 +59,14 @@ Two ways to the same document:
 The specification is OpenAPI 3.0.3 — deliberately the 3.0 line, because the
 embedded Swagger UI and most client generators do not read 3.1 yet.
 
-## 4. Postman
+## 5. Postman
 
 `Import` → `Link` → `http://127.0.0.1:18083/openapi.yaml` (or import the file
 from `backend/openAPI.yaml`). Postman generates a collection straight from the
 OpenAPI document. **There is no committed Postman collection** — a second copy
 of the same contract would drift; the spec is the collection.
 
-## 5. Authentication for probing
+## 6. Authentication for probing
 
 Most routes require a token. To get one:
 
@@ -72,7 +84,7 @@ Two routes are open anonymously since the public-read release: `GET
 notes only. A `200` without a token on these is intended, not a broken guard —
 private notes answer `404` to callers who do not own them, anonymous or not.
 
-## 6. What `POST /api/v1/notes` returns
+## 7. What `POST /api/v1/notes` returns
 
 A created note answers `201` with the standard envelope, and the contract spells
 the shape out, not just the code:
@@ -96,7 +108,7 @@ The full field list is `components.schemas.Note` in the spec; errors follow
 `components.schemas.ErrorResponse` (`code`, `message`, `details[]`) — see
 [`API_ERRORS_EN.md`](API_ERRORS_EN.md) for the error catalogue.
 
-## 7. Publishing and unpublishing a note
+## 8. Publishing and unpublishing a note
 
 A note is created **private** by default. The only supported way to change
 public visibility is through the dedicated publish endpoints:
@@ -125,7 +137,7 @@ Do **not** set `is_public` in `POST /api/v1/notes` or `PUT /api/v1/notes/{id}` �
 read endpoints described in section 5 only return notes whose `is_public` is
 `true`.
 
-## 8. Graph view: personal and community
+## 9. Graph view: personal and community
 
 The graph is served by **graph-service**, not the main backend, and is reached through
 the `/graph-service/api` proxy — `http://127.0.0.1:19091/api/v1/graph/...` when talking
@@ -148,7 +160,7 @@ community graph is what is shared, not a trimmed copy of someone's own.
 The main backend exposes `GET /api/v1/graph/public`, an anonymous route that returns
 the public subset. It was renamed from the old `all` path (PUB-3) and has no alias.
 
-## 9. Creating notes in batches
+## 10. Creating notes in batches
 
 For clients that produce many notes at once — the Java source-text handler, bulk
 import — three synchronous routes exist on the main backend:

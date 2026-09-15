@@ -1,7 +1,14 @@
 # Deploy variant: pulls pre-built images from Docker Hub instead of building.
 # Use when you have the repository checked out (init-db, nginx.conf and
 # knowledge-graph.config.json are still mounted from it) but do not want a
-# full build. Update KG_IMAGE_TAG to move to a newer published release.
+# full build.
+#
+# Images are published by the "Production Deployment" workflow on every green
+# push to `main`. Two tag conventions are available:
+#   - `main` ........ always points to the last green build on `main`
+#   - `YYYY-MM-DD-<short-sha>` ... a frozen release from that commit
+#
+# The default below uses `main`. Set `KG_IMAGE_TAG` to a dated tag to pin.
 #
 #   cp .env.example .env   # then set JWT_SECRET at minimum
 #   docker compose -f docker-compose.deploy.yml up -d
@@ -61,7 +68,7 @@ services:
     restart: unless-stopped
 
   nlp:
-    image: killaret/knowledge-graph-nlp:${KG_IMAGE_TAG:-2026-09-08}
+    image: killaret/knowledge-graph-nlp:${KG_IMAGE_TAG:-main}
     container_name: kg-nlp
     ports:
       - "5000:5000"
@@ -85,7 +92,7 @@ services:
           memory: 2G
 
   backend:
-    image: killaret/knowledge-graph-backend:${KG_IMAGE_TAG:-2026-09-08}
+    image: killaret/knowledge-graph-backend:${KG_IMAGE_TAG:-main}
     container_name: kg-backend
     ports:
       - "127.0.0.1:9000:8080"
@@ -123,7 +130,7 @@ services:
           memory: 1G
 
   graph-service:
-    image: killaret/knowledge-graph-graph-service:${KG_IMAGE_TAG:-2026-09-08}
+    image: killaret/knowledge-graph-graph-service:${KG_IMAGE_TAG:-main}
     container_name: kg-graph-service
     # No host ports: the service is reached through the nginx /graph-service
     # proxy and by backend/frontend over the compose network. 9090/9091 are
@@ -159,7 +166,7 @@ services:
           memory: 1G
 
   worker:
-    image: killaret/knowledge-graph-worker:${KG_IMAGE_TAG:-2026-09-08}
+    image: killaret/knowledge-graph-worker:${KG_IMAGE_TAG:-main}
     container_name: kg-worker
     command: ["./worker"]
     env_file:
@@ -188,7 +195,7 @@ services:
           memory: 1G
 
   frontend:
-    image: killaret/knowledge-graph-frontend:${KG_IMAGE_TAG:-2026-09-08}
+    image: killaret/knowledge-graph-frontend:${KG_IMAGE_TAG:-main}
     container_name: kg-frontend
     # Exposed only through nginx:18081 on the host; no direct host port.
     extra_hosts:
