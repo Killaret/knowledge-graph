@@ -100,6 +100,7 @@
 | **MONGO-1:** Место MongoDB в проекте: сегодня она держит одну коллекцию черновиков из восьми плоских полей — то есть таблицу. Обсуждение записано, ветки разобраны | [`tasks/MONGO-1-drafts-storage-discussion.md`](tasks/MONGO-1-drafts-storage-discussion.md) | **думает владелец** — по его просьбе ничего не делается; решения нет | 2026-09-09 |
 | DEPENDABOT-1: решение по 15 Dependabot PR (#21–#32, #38–#40) | см. `PROJECT_REVIEW_AI_AGENTS.md` §20 | **ждёт решения владельца** — 15 открытых PR; #33–#36, #38? не существуют/замёржены; группировка по риску ниже | 2026-09-12 |
 | **SECURITY-1:** настроить GitHub-защиту репозитория и решить по рискам; подробный порядок в `docs/tasks/SECURITY-1-handoff.md` | [`docs/tasks/SECURITY-1-handoff.md`](tasks/SECURITY-1-handoff.md), issues #41–#54 | **принято** | 2026-09-12 |
+|| **GORDON-1:** разобрать три внешних документа от Gordon (анализ, оптимизация деплоя, обзор проекта) | [`tasks/GORDON-1-gordon-documents-review.md`](tasks/GORDON-1-gordon-documents-review.md), [`docs/gordon/`](../docs/gordon/) | **ждёт человека** — обзор и вердикт: встроить в существующие документы, отклонить или оставить в `docs/gordon/` | 2026-09-15 |
 
 ---
 
