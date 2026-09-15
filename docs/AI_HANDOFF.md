@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-14 — 68847ef
-Прочитано: Devin — 2026-09-15 — 76b1f40
+Прочитано: Devin — 2026-09-15 — 11a338c
 ```
 
 ---
@@ -23,7 +23,8 @@
 
 
 
-| **FE-COVERAGE-1:** поднять frontend unit-coverage до 70% после обновления Vitest 5; PR #63 не мержится без зелёного `test`-job | [`tasks/FE-COVERAGE-1-frontend-vitest5.md`](tasks/FE-COVERAGE-1-frontend-vitest5.md), `frontend/vitest.config.ts`, `frontend/src/shared/api/{client,graph}.ts` | **принято** | 2026-09-12 |
+| **FE-COVERAGE-1:** поднять frontend unit-coverage до 70% после обновления Vitest 5
+| **COVERAGE-1:** согласовать backend unit coverage — target 70% vs enforced min 64.8%; проверить все источники и принять решение | [`tasks/COVERAGE-1-align-backend-coverage-threshold.md`](tasks/COVERAGE-1-align-backend-coverage-threshold.md) | **обсуждается** — владелец: 70% target или 70% enforced min?; последний прогон 66.4% при пороге 64.8% | 2026-09-15 |; PR #63 не мержится без зелёного `test`-job | [`tasks/FE-COVERAGE-1-frontend-vitest5.md`](tasks/FE-COVERAGE-1-frontend-vitest5.md), `frontend/vitest.config.ts`, `frontend/src/shared/api/{client,graph}.ts` | **принято** | 2026-09-12 |
 | **FE-COVERAGE-1 / DEPENDABOT-FOLLOWUP:** смержены PR #63, #56, #31, #29, #27, #38, #57–#61, #62–#68, #70–#77, #78; IDE-диагностики устранены; тесты/моки на месте; Core Checks запуск починен в PR #78 | [`tasks/FE-COVERAGE-1-frontend-vitest5.md`](tasks/FE-COVERAGE-1-frontend-vitest5.md), PRs [63](https://github.com/Killaret/knowledge-graph/pull/63), [56](https://github.com/Killaret/knowledge-graph/pull/56), [31](https://github.com/Killaret/knowledge-graph/pull/31), [29](https://github.com/Killaret/knowledge-graph/pull/29), [27](https://github.com/Killaret/knowledge-graph/pull/27), [38](https://github.com/Killaret/knowledge-graph/pull/38), [57](https://github.com/Killaret/knowledge-graph/pull/57), [60](https://github.com/Killaret/knowledge-graph/pull/60), [61](https://github.com/Killaret/knowledge-graph/pull/61), [62](https://github.com/Killaret/knowledge-graph/pull/62), [64](https://github.com/Killaret/knowledge-graph/pull/64), [65](https://github.com/Killaret/knowledge-graph/pull/65), [66](https://github.com/Killaret/knowledge-graph/pull/66), [67](https://github.com/Killaret/knowledge-graph/pull/67), [68](https://github.com/Killaret/knowledge-graph/pull/68) | **принято** | 2026-09-12 |
 | PUB-1: открыть анониму чтение публичной заметки и поиск по публичным. Слой данных уже готов — `applyNoteScope` фильтрует по `is_public` при пустом пользователе; мешает только глобальный `JWTAuth` | [`tasks/PUB-1-anonymous-read-and-search.md`](tasks/PUB-1-anonymous-read-and-search.md) | **принято** [`tasks/PUB-1-review-findings.md`](tasks/PUB-1-review-findings.md) | 2026-09-13 |
 | PUB-2: граф сообщества как режим просмотра, а не следствие авторизации | [`tasks/PUB-2-graph-view-mode.md`](tasks/PUB-2-graph-view-mode.md) | **принято** [`tasks/PUB-2-review-findings.md`](tasks/PUB-2-review-findings.md) | 2026-09-14 |
