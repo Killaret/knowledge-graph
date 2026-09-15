@@ -274,7 +274,7 @@ try {
 
     $frontendTestExit = 0
     try {
-        Set-Location $repoDirrontend
+        Set-Location $repoDir\frontend
         npm run test:coverage
         $frontendTestExit = $LASTEXITCODE
         Set-Location $repoDir

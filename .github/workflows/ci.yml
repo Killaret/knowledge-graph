@@ -260,23 +260,23 @@ jobs:
 
       - name: Start frontend dev server for smoke tests
         env:
-          FRONTEND_URL: http://localhost:5173
+          FRONTEND_URL: http://127.0.0.1:5173
           VITE_API_TARGET: http://localhost:8080
           VITE_GRAPH_SERVICE_URL: http://localhost:9091
           BACKEND_URL: http://localhost:8080
           GRAPH_SERVICE_URL: http://localhost:9091
           SKIP_AUTH: "true"
         run: |
-          npm run dev &
+          npm run dev -- --host 127.0.0.1 &
           for i in {1..60}; do
-            if curl -s http://localhost:5173 > /dev/null 2>&1; then
+            if curl -s http://127.0.0.1:5173 > /dev/null 2>&1; then
               echo "✅ Frontend dev server is ready!"
               break
             fi
             echo "Waiting for frontend... attempt $i/60"
             sleep 2
           done
-          if ! curl -s http://localhost:5173 > /dev/null 2>&1; then
+          if ! curl -s http://127.0.0.1:5173 > /dev/null 2>&1; then
             echo "❌ Frontend dev server failed to start"
             exit 1
           fi
@@ -284,7 +284,7 @@ jobs:
       - name: Run smoke tests only
         env:
           PLAYWRIGHT_DEV_SERVER: true
-          FRONTEND_URL: http://localhost:5173
+          FRONTEND_URL: http://127.0.0.1:5173
           VITE_API_TARGET: http://localhost:8080
           VITE_GRAPH_SERVICE_URL: http://localhost:9091
           BACKEND_URL: http://localhost:8080
@@ -293,7 +293,7 @@ jobs:
 
       - name: Run smoke BDD tests
         env:
-          FRONTEND_URL: http://localhost:5173
+          FRONTEND_URL: http://127.0.0.1:5173
           VITE_API_TARGET: http://localhost:8080
           VITE_GRAPH_SERVICE_URL: http://localhost:9091
           BACKEND_URL: http://localhost:8080

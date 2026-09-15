@@ -165,14 +165,14 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ./frontend/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('./frontend/package-lock.json') }}
@@ -192,7 +192,7 @@ jobs:
           MONGO_URL: mongodb://localhost:27017
           REDIS_FLUSH_ON_STARTUP: "true"
           JWT_SECRET: ${{ env.JWT_SECRET }}
-          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
           GRAPH_SERVICE_URL: ""
           SKIP_AUTH: "true"
           APP_ENV: "test"
@@ -287,7 +287,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: full-test-results
           path: frontend/test-results/
@@ -306,7 +306,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'npm'
@@ -328,7 +328,7 @@ jobs:
 
       - name: Upload performance results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: performance-results
           path: |
@@ -353,7 +353,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'npm'
@@ -383,7 +383,7 @@ jobs:
 
       - name: Upload debug artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: visual-test-results
           path: |
@@ -465,7 +465,7 @@ jobs:
           REDIS_URL: 127.0.0.1:6379
           MONGO_URL: mongodb://127.0.0.1:27017
           JWT_SECRET: ${{ env.JWT_SECRET }}
-          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
           GRAPH_SERVICE_URL: ""
           SKIP_AUTH: "false"
         run: |
@@ -485,7 +485,7 @@ jobs:
           REDIS_URL: 127.0.0.1:6379
           HTTP_PORT: 9091
           GRPC_PORT: 9090
-          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
         run: |
           docker run -d --network host --name kg-graph-service \
             -e POSTGRES_URL="$POSTGRES_URL" \
