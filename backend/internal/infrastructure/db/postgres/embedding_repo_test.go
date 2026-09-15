@@ -10,6 +10,7 @@ import (
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/testutil"
 
+	"github.com/google/uuid"
 	"github.com/pgvector/pgvector-go"
 )
 
@@ -187,5 +188,164 @@ func TestEmbeddingRepository_ModelFiltering(t *testing.T) {
 	}
 	if len(missing) != 1 || missing[0] != n3.ID() {
 		t.Errorf("expected [%v] missing for current model, got %v", n3.ID(), missing)
+	}
+}
+
+func TestEmbeddingRepository_FindSimilarNotesBatch(t *testing.T) {
+	db, cleanup := testutil.SetupTestVectorDB(t)
+	defer cleanup()
+
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate models: %v", err)
+	}
+
+	currentRepo := NewEmbeddingRepository(db, "paraphrase-multilingual-MiniLM-L12-v2")
+	oldRepo := NewEmbeddingRepository(db, "all-MiniLM-L6-v2")
+	noteRepo := NewNoteRepository(db, nil)
+	ctx := context.Background()
+
+	// Fixed UUIDs let us reason about PostgreSQL's ORDER BY note_id.
+	// UUIDs sort by byte value, so the most-significant nibble determines order.
+	source1ID := uuid.MustParse("60000000-0000-0000-0000-000000000001")
+	source2ID := uuid.MustParse("70000000-0000-0000-0000-000000000001")
+	targetCloseSmallID := uuid.MustParse("10000000-0000-0000-0000-000000000001")
+	targetFarID := uuid.MustParse("20000000-0000-0000-0000-000000000001")
+	targetCloseLargeID := uuid.MustParse("30000000-0000-0000-0000-000000000001")
+	oldModelID := uuid.MustParse("40000000-0000-0000-0000-000000000001")
+	noEmbeddingID := uuid.MustParse("50000000-0000-0000-0000-000000000001")
+
+	closeVec := func() pgvector.Vector {
+		v := make([]float32, 384)
+		for i := range v {
+			v[i] = float32(i) / 100.0
+		}
+		return pgvector.NewVector(v)
+	}
+
+	// Negating closeVec gives cosine similarity -1, cosine distance 2,
+	// so the raw score (1 - distance) is -1 and clamping is required.
+	farVec := func() pgvector.Vector {
+		v := make([]float32, 384)
+		for i := range v {
+			v[i] = -float32(i) / 100.0
+		}
+		return pgvector.NewVector(v)
+	}
+
+	createNote := func(title string, id uuid.UUID) *note.Note {
+		titleV, _ := note.NewTitle(title)
+		content, _ := note.NewContent("content")
+		metadata, _ := note.NewMetadata(nil)
+		n := note.NewNote(titleV, content, note.MustType("star"), metadata, note.WithID(id))
+		if err := noteRepo.Save(ctx, n); err != nil {
+			t.Fatalf("Save note failed: %v", err)
+		}
+		return n
+	}
+
+	createNote("Source one", source1ID)
+	createNote("Source two", source2ID)
+	createNote("Close small", targetCloseSmallID)
+	createNote("Far middle", targetFarID)
+	createNote("Close large", targetCloseLargeID)
+	createNote("Old model", oldModelID)
+	createNote("No embedding", noEmbeddingID)
+
+	// Both sources and the two close targets share the same vector.
+	for _, id := range []uuid.UUID{source1ID, source2ID, targetCloseSmallID, targetCloseLargeID} {
+		if err := currentRepo.Upsert(ctx, id, closeVec()); err != nil {
+			t.Fatalf("Upsert close note %v failed: %v", id, err)
+		}
+	}
+
+	// Far target and the cross-model note use the distant vector.
+	if err := currentRepo.Upsert(ctx, targetFarID, farVec()); err != nil {
+		t.Fatalf("Upsert far target failed: %v", err)
+	}
+	if err := oldRepo.Upsert(ctx, oldModelID, farVec()); err != nil {
+		t.Fatalf("Upsert old-model note failed: %v", err)
+	}
+
+	// Three candidates per source, but limit is 2, so the per-source limit must cut
+	// off targetCloseLargeID (largest note_id). The selected far target proves clamping.
+	batch, err := currentRepo.FindSimilarNotesBatch(ctx, []uuid.UUID{source1ID, source2ID, noEmbeddingID}, 2)
+	if err != nil {
+		t.Fatalf("FindSimilarNotesBatch failed: %v", err)
+	}
+
+	// 1. Non-zero score in [0, 1] and one result per requested id.
+	for _, id := range []uuid.UUID{source1ID, source2ID} {
+		similar, ok := batch[id]
+		if !ok {
+			t.Errorf("source %v: missing from batch results", id)
+			continue
+		}
+		if len(similar) == 0 {
+			t.Errorf("source %v: expected at least one similar note, got none", id)
+			continue
+		}
+		foundPositive := false
+		for _, s := range similar {
+			if s.Score < 0 || s.Score > 1 {
+				t.Errorf("source %v: score %v out of [0, 1]", id, s.Score)
+			}
+			if s.Score > 0 {
+				foundPositive = true
+			}
+		}
+		if !foundPositive {
+			t.Errorf("source %v: expected at least one positive score", id)
+		}
+	}
+
+	// 2. Limit is per source, not global. With three candidates and limit=2, each
+	// source should get exactly two results; a global LIMIT 2 would only return
+	// results for the first source.
+	for _, id := range []uuid.UUID{source1ID, source2ID} {
+		similar, ok := batch[id]
+		if !ok || len(similar) != 2 {
+			t.Errorf("source %v: expected 2 results, got %d (ok=%v)", id, len(similar), ok)
+			continue
+		}
+
+		expected := map[uuid.UUID]bool{
+			targetCloseSmallID: true,
+			targetFarID:        true,
+		}
+		for _, s := range similar {
+			if !expected[s.NoteID] {
+				t.Errorf("source %v: unexpected note %v", id, s.NoteID)
+			}
+		}
+
+		// The first note by ORDER BY note_id is the close one, the second is the far one.
+		if similar[0].NoteID != targetCloseSmallID {
+			t.Errorf("source %v: expected first result to be %v, got %v", id, targetCloseSmallID, similar[0].NoteID)
+		}
+		if similar[0].Score != 1.0 {
+			t.Errorf("source %v: expected close score 1.0, got %v", id, similar[0].Score)
+		}
+		if similar[1].NoteID != targetFarID {
+			t.Errorf("source %v: expected second result to be %v, got %v", id, targetFarID, similar[1].NoteID)
+		}
+		if similar[1].Score != 0.0 {
+			t.Errorf("source %v: expected far score 0.0 after clamping, got %v", id, similar[1].Score)
+		}
+	}
+
+	// 3. Model filtering works: old-model note must not leak in.
+	for _, similar := range batch {
+		for _, s := range similar {
+			if s.NoteID == oldModelID {
+				t.Errorf("old-model note %v leaked into current-model batch", oldModelID)
+			}
+		}
+	}
+
+	// 4. A note without an embedding returns an empty slice, not an error.
+	empty, ok := batch[noEmbeddingID]
+	if ok && len(empty) != 0 {
+		t.Errorf("expected no results for no-embedding note, got %d", len(empty))
 	}
 }

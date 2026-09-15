@@ -63,10 +63,10 @@ TEST_DATABASE_URL=postgres://kb_user:kb_password@127.0.0.1:15434/knowledge_test?
 
 ## Критерии приёмки
 
-- Тест есть, помечен `//go:build integration`, проходит на живой pgvector-базе.
-- Все три мутации ловятся; вывод приложен.
-- Прогон не требует testcontainers: работает через `TEST_DATABASE_URL`.
-- Документация обновлена по новой норме «Documenting New Functionality»: если
+- [x] Тест есть, помечен `//go:build integration`, проходит на живой pgvector-базе.
+- [x] Все три мутации ловятся; вывод приложен.
+- [x] Прогон не требует testcontainers: работает через `TEST_DATABASE_URL`.
+- [x] Документация обновлена по новой норме «Documenting New Functionality»: если
   поведение пакетной близости где-то описано — привести в соответствие; если нет —
   этого достаточно, сказать об этом явно в отчёте.
 
@@ -74,3 +74,16 @@ TEST_DATABASE_URL=postgres://kb_user:kb_password@127.0.0.1:15434/knowledge_test?
 
 - Не менять сам SQL, кроме как временно для мутаций.
 - Одиночный путь и REG-1 не трогать.
+
+## Выполнено
+
+- `backend/internal/infrastructure/db/postgres/embedding_repo.go`: параметр `[]uuid.UUID` теперь передаётся через `pq.Array([]string{...})` в оператор `ANY(?)`. Сам SQL не менялся; сырой срез GORM разворачивал в несколько плейсхолдеров, что приводило к `ERROR: syntax error at or near ","`.
+- `backend/internal/infrastructure/db/postgres/embedding_repo_test.go`: добавлен интеграционный тест `TestEmbeddingRepository_FindSimilarNotesBatch` (`//go:build integration`).
+- `go test -count=1 -tags=integration -run TestEmbeddingRepository_FindSimilarNotesBatch ./internal/infrastructure/db/postgres/...` — PASS (`TEST_DATABASE_URL` на тест-стек).
+- `go test ./...` (без тега `integration`) — PASS.
+- Мутации:
+  1. `as score` → `as similarity`: `FindSimilarNotesBatch` падает с `ERROR: column "score" does not exist`.
+  2. Убрать `GREATEST/LEAST`: тест падает с `score -1 out of [0, 1]` и `expected far score 0.0 after clamping, got -1`.
+  3. Глобальный `LIMIT ?` в SQL: тест падает с `source 7000...: missing from batch results` и `expected 2 results, got 0`.
+- Документация по `FindSimilarNotesBatch` в `docs/` отсутствует; дополнительных документов не требовалось.
+- Статус: **на ревью у Claude Code**.

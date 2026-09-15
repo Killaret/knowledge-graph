@@ -7,6 +7,7 @@ import (
 	apprec "knowledge-graph/internal/application/recommendation"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -82,9 +83,16 @@ func (r *EmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs
 
 	var results []BatchSimilarNote
 
-	// DISTINCT ON is used to get top-N for each source_id
+	// pq.Array lets pgx bind a PostgreSQL array to the ANY(?) operator.
+	// A raw []uuid.UUID slice is expanded by GORM into multiple placeholders,
+	// which produces a syntax error inside ANY(...).
+	idStrings := make([]string, len(noteIDs))
+	for i, id := range noteIDs {
+		idStrings[i] = id.String()
+	}
+
 	err := r.db.WithContext(ctx).Raw(`
-        SELECT DISTINCT ON (e1.note_id, e2.note_id) 
+        SELECT DISTINCT ON (e1.note_id, e2.note_id)
             e1.note_id as source_id,
             e2.note_id,
             GREATEST(0.0, LEAST(1.0, 1 - (e1.embedding <=> e2.embedding))) as score
@@ -92,7 +100,7 @@ func (r *EmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs
         JOIN note_embeddings e2 ON e1.note_id != e2.note_id AND e1.model_name = e2.model_name
         WHERE e1.note_id = ANY(?) AND e1.model_name = ? AND e2.model_name = ?
         ORDER BY e1.note_id, e2.note_id, score DESC
-    `, noteIDs, r.modelName, r.modelName).Scan(&results).Error
+    `, pq.Array(idStrings), r.modelName, r.modelName).Scan(&results).Error
 
 	if err != nil {
 		return nil, err

@@ -1268,3 +1268,41 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 Также убран терминальный ряд доски `CI-4` (дата 2026-09-11), который превысил 3 дня и вызывал `check-decisions` FAIL.
 
 **Статус:** на ревью Claude Code.
+
+## 33. REG-2 — интеграционный тест пакетной близости
+
+### 33.1 Проблема
+
+`FindSimilarNotesBatch` используется в `embedding_loader.go` и `gamma_link_generator.go`, но до правки ни один тест не выполнял его SQL на настоящей pgvector-базе: все существующие тесты мокали репозиторий.
+
+### 33.2 Что изменено
+
+- `backend/internal/infrastructure/db/postgres/embedding_repo.go`: параметр `[]uuid.UUID` теперь передаётся через `pq.Array([]string{...})` в оператор `ANY(?)`. Сам SQL не менялся; сырой срез GORM разворачивал в несколько плейсхолдеров, что приводило к `ERROR: syntax error at or near ","`.
+- `backend/internal/infrastructure/db/postgres/embedding_repo_test.go`: новый интеграционный тест `TestEmbeddingRepository_FindSimilarNotesBatch` (`//go:build integration`) проверяет:
+  - оценку в `[0, 1]` и хотя бы одну ненулевую;
+  - один результат на каждый запрошенный `id`, у которого есть соседи;
+  - пустой результат для заметки без эмбеддинга;
+  - лимит именно на каждый `id`, а не на выдачу целиком;
+  - фильтрацию по `model_name` (заметка со старой моделью не просачивается).
+
+### 33.3 Данные теста
+
+- Источники: `6000...`, `7000...`.
+- Цели: `1000...` (близкая), `2000...` (далёкая, `cosine distance ≈ 2`), `3000...` (близкая, не влезает в лимит), `4000...` (старая модель), `5000...` (без эмбеддинга).
+- `limit = 2`, кандидатов 3: каждый источник получает ровно 2 результата.
+
+### 33.4 Мутации
+
+1. `as score` → `as similarity`: `FindSimilarNotesBatch` падает с `ERROR: column "score" does not exist` (потому что `ORDER BY score DESC` ссылается на алиас; поле `Score` структуры не заполняется).
+2. Убрать `GREATEST/LEAST`: тест падает с `score -1 out of [0, 1]` и `expected far score 0.0 after clamping, got -1`.
+3. Глобальный `LIMIT ?` в SQL: тест падает с `source 7000...: missing from batch results` и `expected 2 results, got 0`.
+
+Все три мутации откачены.
+
+### 33.5 Верификация
+
+- `go test -count=1 -tags=integration -run TestEmbeddingRepository_FindSimilarNotesBatch ./internal/infrastructure/db/postgres/...` — PASS (`TEST_DATABASE_URL` на тест-стек, testcontainers не используется).
+- `go test ./...` (без тега `integration`) — PASS.
+- Документация по поведению `FindSimilarNotesBatch` в `docs/` отсутствует; дополнительных документов не требовалось.
+
+**Статус:** на ревью Claude Code.
