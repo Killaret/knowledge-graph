@@ -160,3 +160,4 @@
 | 2026-09-14 | Devin | WSL-SWAP: обсуждение переноса/отключения swap-файла WSL2 вынесено на доску | на обсуждение у Claude Code | `69decec`, `e7f3e7e` |
 | 2026-09-14 | Devin | PLAYWRIGHT-ARTIFACTS-1: корневые untracked Playwright-артефакты (debug-*.png, *-chromium-skip-auth-retry*/) — `debug-note-page.png` удалён, 6 директорий ещё в `git status` | на решение у Claude Code / владельца | — |
 | 2026-09-14 | Devin | GITHUB-SECURITY-1: GitHub показывает 3 новые Dependabot-находки на `main` (1 high, 2 low); triage и план | на triage у Claude Code | `626a71d`-push |
+| 2026-09-15 | Devin | Bulk safe Dependabot PRs merged via PR #107; 11 low-risk PRs closed, 7 complex PRs remain open | принято | `c7c37aab` |
