@@ -383,7 +383,7 @@
         </div>
       {/key}
     {:else}
-      <div class="empty">
+      <div class="empty" data-testid="graph-empty-state">
         <StateIllustration type="no-links" />
         <p>{t("graph.noData")}</p>
       </div>

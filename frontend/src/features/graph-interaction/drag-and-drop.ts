@@ -67,10 +67,24 @@ export function handleMouseDown(
   simNodes: SimulationNode[],
   ghostNode: GhostNodeState,
   isTechnicalNode: (nodeId: string) => boolean,
-  callbacks: DragDropCallbacks
+  callbacks: DragDropCallbacks,
+  readonly = false
 ): void {
   const pos = getMouseWorldPosition(e, canvas, transform);
   dragDropState.mouseWorldPosition = pos;
+
+  // In readonly mode the user can pan and zoom, but cannot interact with nodes
+  // or create notes. Skip ghost and node drag logic and start panning immediately.
+  if (readonly) {
+    dragState.dragStart = {
+      x: e.clientX - transform.x,
+      y: e.clientY - transform.y,
+    };
+    dragState.dragging = true;
+    canvas.style.cursor = "grabbing";
+    e.preventDefault();
+    return;
+  }
 
   // Ghost node is drawn in screen coords — check in screen space
   const ghostScreenX = canvas.getBoundingClientRect().left + ghostNode.x;

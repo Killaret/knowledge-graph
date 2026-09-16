@@ -116,12 +116,9 @@ export async function loginAsTestUser(page: Page, request: APIRequestContext): P
   const token = await loginOrCreateTestUser(request);
 
   // Inject the token into the page context so it is available before scripts run.
-  // Use page-level init script to ensure it runs on the next navigation of the
-  // existing Playwright page; context-level init script covers any new pages.
+  // Use a page-level init script so the token is scoped to the test's own page
+  // and does not leak into other Playwright contexts/workers.
   await page.addInitScript((t: string) => {
-    (window as any).__ACCESS_TOKEN__ = t;
-  }, token);
-  await page.context().addInitScript((t: string) => {
     (window as any).__ACCESS_TOKEN__ = t;
   }, token);
 

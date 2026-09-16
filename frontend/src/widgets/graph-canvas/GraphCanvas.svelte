@@ -490,7 +490,7 @@
     const minWeight = graphStore.minLinkWeight;
     const dataKey = `${nodesCount}-${linksCount}-${hiddenTypesCount}-${minWeight}`;
 
-    if (dataKey === lastDataKey && simState.isRunning) {
+    if (dataKey === lastDataKey) {
       return;
     }
     lastDataKey = dataKey;

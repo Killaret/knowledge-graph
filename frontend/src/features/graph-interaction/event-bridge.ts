@@ -189,7 +189,6 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
   }
 
   function onMouseDown(e: MouseEvent) {
-    if (context.readonly) return;
     updateActivity(context.hotkeysState, () =>
       showRandomTip(context.hotkeysState, context.getKeyLines())
     );
@@ -212,7 +211,8 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
             context.redraw();
           }
         },
-      }
+      },
+      context.readonly
     );
 
     if (context.dragDropState.draggedNodeId) {
@@ -231,7 +231,6 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
   }
 
   function onMouseMove(e: MouseEvent) {
-    if (context.readonly) return;
     updateActivity(context.hotkeysState, () =>
       showRandomTip(context.hotkeysState, context.getKeyLines())
     );
@@ -381,7 +380,6 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
   }
 
   function onMouseUp(e: MouseEvent) {
-    if (context.readonly) return;
     updateActivity(context.hotkeysState, () =>
       showRandomTip(context.hotkeysState, context.getKeyLines())
     );
@@ -469,7 +467,6 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
   }
 
   function onDblClick(e: MouseEvent) {
-    if (context.readonly) return;
     const canvas = context.getCanvas();
     if (!canvas) return;
 
@@ -488,7 +485,6 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
   }
 
   function onWindowMouseUp(e: MouseEvent) {
-    if (context.readonly) return;
     if (!context.dragState.dragging) return;
     onMouseUp(e);
   }
@@ -515,7 +511,6 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
   }
 
   function onZoom(e: WheelEvent) {
-    if (context.readonly) return;
     updateActivity(context.hotkeysState, () =>
       showRandomTip(context.hotkeysState, context.getKeyLines())
     );
@@ -525,7 +520,7 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
   }
 
   function onTouchStart(e: TouchEvent) {
-    if (context.readonly || !context.browser) return;
+    if (!context.browser) return;
     updateActivity(context.hotkeysState, () =>
       showRandomTip(context.hotkeysState, context.getKeyLines())
     );

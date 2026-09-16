@@ -22,6 +22,7 @@ describe("GraphPageShell", () => {
   });
 
   it("renders with notes and computes type counts", async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(true);
     const { container } = render(GraphPageShellTestWrapper, {
       props: {
         notes: [
@@ -36,6 +37,7 @@ describe("GraphPageShell", () => {
   });
 
   it("falls back to nodes when notes are missing", () => {
+    vi.mocked(isAuthenticated).mockReturnValue(true);
     render(GraphPageShellTestWrapper, {
       props: {
         nodes: [{ id: "n3", title: "Node", type: "star" }],
@@ -54,6 +56,11 @@ describe("GraphPageShell", () => {
     expect(screen.getByTestId("top-bar-sign-in")).toBeInTheDocument();
     expect(screen.getByTestId("top-bar-register")).toBeInTheDocument();
     expect(screen.queryByTestId("menu-import")).not.toBeInTheDocument();
+    // The public top bar shows only view controls: search, type filter and
+    // the link legend are authenticated-only.
+    expect(screen.queryByTestId("top-bar-search-input")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("type-dropdown-toggle")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("link-dropdown-toggle")).not.toBeInTheDocument();
   });
 
   it("shows authenticated controls when user is signed in", () => {
