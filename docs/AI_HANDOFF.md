@@ -54,6 +54,8 @@
 | DEPENDABOT-BULK-107: объединить 11 безопасных Dependabot PR в один, смержить, прогнать `check-all.ps1` без `-Quick` | PR #107 | **принято** — 16 PASS, 1 SKIP (golangci-lint); закрыты #89, #90, #91, #93, #94, #97, #98, #99, #103, #104, #105; остаются #95, #101, #106, #102, #92, #100, #96 | 2026-09-15 |
 | **RECO-1:** формула рекомендаций реализована дважды и нигде целиком — воркер считает граф и слова со смыслом-нулём, graph-service граф и смысл без слов; пользователь видит воркер. Одна реализация, три компонента | [`tasks/RECO-1-recommendation-formula.md`](tasks/RECO-1-recommendation-formula.md) | **ждёт Devin** — решение владельца 2026-09-17: переделать. Автосвязи внутри не подключать без отдельного решения | 2026-09-17 |
 | **MODEL-1:** замер пяти вариантов модели эмбеддингов на реальных закладках владельца и тест-сиде: поиск, близость пар, ключевые слова, скорость, память | [`tasks/MODEL-1-embedding-model-measurement.md`](tasks/MODEL-1-embedding-model-measurement.md) | **ждёт Devin** — решение владельца 2026-09-17: замер до смены модели; пересчёт NLP-2 и автосвязи RECO-1 ждут его итога | 2026-09-17 |
+| **NLP-2 / DEPENDABOT-25:** заменить `yake` (GPL, копилефт в MIT-проекте) на `keybert` (MIT) с лемматизацией и пересчётом ключевых слов всех заметок | [`tasks/NLP-2-yake-replace-keybert-lemmatization.md`](tasks/NLP-2-yake-replace-keybert-lemmatization.md) | **ждёт Devin, до 1.0** — постановка готова с 16.09; строка вернулась в раздел Claude Code слиянием `main`, восстановлена 17.09. Пересчёт ждёт MODEL-1 | 2026-09-17 |
+| **LINKS-1:** подключить автосвязи — генератор готов, но нужны порог близости (сейчас его нет: каждая заметка получила бы две связи с любыми соседями), события `LinkCreated` для closure, пересчёт при смене модели | [`tasks/LINKS-1-wire-gamma-links.md`](tasks/LINKS-1-wire-gamma-links.md) | **ждёт Devin** — решение владельца 2026-09-17: подключить | 2026-09-17 |
 ## На Claude Code
 
 | Что | Где | Статус | Обновлено |
@@ -70,7 +72,6 @@
 
 
 | UX-2: ревью 500-страницы и аудита обработки ошибок | [`tasks/UX-2-500-error-page.md`](tasks/UX-2-500-error-page.md), [`frontend/src/routes/+error.svelte`](../frontend/src/routes/+error.svelte) | **принято** [`tasks/UX-2-review-findings.md`](tasks/UX-2-review-findings.md) | 2026-09-14 |
-| **NLP-2 / DEPENDABOT-25:** подготовить постановку замены `yake` на `keybert` (MIT) с обязательной лемматизацией рус/англ; PR #25 закрыт, `yake` остаётся `0.4.8` | [`tasks/NLP-2-yake-replace-keybert-lemmatization.md`](tasks/NLP-2-yake-replace-keybert-lemmatization.md), [`tasks/DEPENDABOT-25-yake-license.md`](tasks/DEPENDABOT-25-yake-license.md), [`nlp-service/app/nlp_utils.py`](../nlp-service/app/nlp_utils.py) | **ждёт** — решение владельца: keybert + лемматизация. Claude Code готовит постановку, Devin реализует после принятия | 2026-09-12 |
 | **BATCH-TEST-1:** adversarial-тестирование — смешанные позитивные/негативные тесты, маркировка, формализация "практического исчерпания" | [`tasks/BATCH-TEST-1-strategy.md`](tasks/BATCH-TEST-1-strategy.md) | **пункт 1 решён владельцем 2026-09-14** — маркировки нет, записываем находки. Фаза внесена в `.windsurfrules` как обязательная. Осталось: владелец не подтверждал формулировку «практического исчерпания» — чек-лист категорий работает как черновик | 2026-09-14 |
 | **URL-HEADING-1:** извлечение `title`/`content` из h1–h6; title-кандидаты; фильтрация шума; layout-эвристики | [`tasks/URL-HEADING-1-heading-extraction.md`](tasks/URL-HEADING-1-heading-extraction.md), [`tasks/URL-HEADING-1-findings-probe.md`](tasks/URL-HEADING-1-findings-probe.md) | **дубль** | 2026-09-14 |
 | **NOTE-QUALITY-1:** цикл проверки/нормализации/обогащения; health/quality; duplicate review; динамические веса | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **дубль** | 2026-09-14 |
@@ -93,7 +94,6 @@
 | DEPENDABOT-1: решение по 15 Dependabot PR (#21–#32, #38–#40) | см. `PROJECT_REVIEW_AI_AGENTS.md` §20 | **ждёт решения владельца** — 15 открытых PR; #33–#36, #38? не существуют/замёржены; группировка по риску ниже | 2026-09-12 |
 
 | **GORDON-1:** разобрать три внешних документа от Gordon (анализ, оптимизация деплоя, обзор проекта) | [`tasks/GORDON-1-gordon-documents-review.md`](tasks/GORDON-1-gordon-documents-review.md), [`docs/gordon/`](../docs/gordon/) | **ждёт человека** — обзор и вердикт: встроить в существующие документы, отклонить или оставить в `docs/gordon/` | 2026-09-15 |
-| Автосвязи: `GammaLinkGenerator` написан и покрыт тестами, но не подключён — связи создаются только руками и списком при импорте. Подключить (после RECO-1 и MODEL-1, степень 2) или удалить | [`tasks/RECO-1-recommendation-formula.md`](tasks/RECO-1-recommendation-formula.md), п. 3 | **решает владелец** — рекомендация Claude Code: подключить, но после замера модели | 2026-09-17 |
 
 ---
 
