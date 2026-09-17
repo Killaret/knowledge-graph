@@ -7,7 +7,7 @@
 # $LASTEXITCODE, the script exits non-zero when any step failed, and a failed
 # step prints the command's stderr. -DryRun previews each step and changes
 # nothing. Steps that can touch volumes (6, 7) refuse without a fresh
-# non-empty Personal-stack backup — the rule lives in
+# non-empty Personal-stack backup - the rule lives in
 # scripts/devops/check-personal-backup.ps1 and backup-policy.env, the same
 # policy the guard-personal-data.py hook enforces.
 
@@ -188,7 +188,7 @@ if (-not $RemoveVolumes) {
 
 # 7. Full cleanup mode. NOTE: step 1 stops every container and step 3
 # removes all stopped ones, so by this point NO container remains and
-# `docker system prune -af` treats every image on the machine as unused —
+# `docker system prune -af` treats every image on the machine as unused -
 # the price is the whole local image store, not just project layers.
 if ($Full) {
     Write-Host "`n7. Full cleanup mode (removing ALL unused images, not volumes)..." -ForegroundColor Cyan
@@ -216,13 +216,13 @@ if ($Full) {
     Register-Phase "full-cleanup" -Skipped -Reason "not requested"
 }
 
-# 8. WSL2 optimization (optional). Uses diskpart to compact the VHD —
+# 8. WSL2 optimization (optional). Uses diskpart to compact the VHD -
 # requires admin rights, but NOT Hyper-V.
 if ($WslOptimize) {
     Write-Host "`n8. Optimizing WSL2 disk..." -ForegroundColor Cyan
 
     # diskpart compacts a VHD only with elevated rights; without them the
-    # process does not even start, which is an exception — not an exit code —
+    # process does not even start, which is an exception - not an exit code -
     # so a missing admin check would report success having done nothing.
     $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
@@ -267,7 +267,7 @@ if ($WslOptimize) {
 
                 if ($fileLocked) {
                     Register-Phase "optimize-disk" -ExitCode 1
-                    Write-Host "    VHD still locked after 60s — refusing to compact. Close Docker Desktop and retry." -ForegroundColor Red
+                    Write-Host "    VHD still locked after 60s - refusing to compact. Close Docker Desktop and retry." -ForegroundColor Red
                 } else {
                     $diskpartScript = @"
 select vdisk file="$($vhdx_file.FullName)"
@@ -279,7 +279,7 @@ exit
                     $scriptPath = Join-Path $env:TEMP 'kg_diskpart_compress.txt'
                     $diskpartScript | Out-File -FilePath $scriptPath -Encoding ASCII
                     # A failed launch (no elevation) raises an exception and
-                    # never sets $LASTEXITCODE — handle both failure shapes.
+                    # never sets $LASTEXITCODE - handle both failure shapes.
                     $code = 0
                     try {
                         $output = & diskpart /s $scriptPath 2>&1

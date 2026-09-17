@@ -278,6 +278,43 @@ describe("event-bridge", () => {
     expect(context.noteFormState.showNoteForm).toBe(true);
   });
 
+  it("zooms on wheel in readonly mode", () => {
+    context.readonly = true;
+    bridge.onZoom(new WheelEvent("wheel", { deltaY: -100, clientX: 400, clientY: 300 }));
+    expect(context.transform.k).toBeGreaterThan(1);
+    expect(context.redraw).toHaveBeenCalled();
+  });
+
+  it("pans on empty space in readonly mode", () => {
+    context.readonly = true;
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 400, clientY: 300 }));
+    expect(context.dragState.dragging).toBe(true);
+    expect(context.dragDropState.draggedNodeId).toBeNull();
+
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 100, clientY: 50 }));
+    expect(context.transform.x).toBe(-300);
+    expect(context.transform.y).toBe(-250);
+  });
+
+  it("does not drag a node in readonly mode", () => {
+    context.readonly = true;
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 1, clientY: 11 }));
+    expect(context.dragDropState.draggedNodeId).toBeNull();
+  });
+
+  it("does not open note form on ghost node in readonly mode", () => {
+    context.readonly = true;
+    bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 80, clientY: 80 }));
+    expect(context.noteFormState.showNoteForm).toBe(false);
+  });
+
+  it("does not select a node on click in readonly mode", () => {
+    context.readonly = true;
+    bridge.onClick(new MouseEvent("click", { clientX: 1, clientY: 11 }));
+    expect(context.setSelectedNodeId).not.toHaveBeenCalled();
+    expect(context.onNodeClick).not.toHaveBeenCalled();
+  });
+
   it("cleanup cancels hover timeouts", () => {
     bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 50, clientY: 10 }));
     bridge.cleanup();

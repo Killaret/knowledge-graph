@@ -78,7 +78,7 @@ func (s *GraphHandlerIntegrationTestSuite) SetupSuite() {
 
 	// Регистрируем маршруты
 	s.router.GET("/notes/:id/graph", s.handler.GetGraph)
-	s.router.GET("/graph/all", s.handler.GetFullGraph)
+	s.router.GET("/graph/public", s.handler.GetFullGraph)
 }
 
 func (s *GraphHandlerIntegrationTestSuite) TearDownSuite() {
@@ -321,7 +321,7 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_Success() {
 
 	// Получаем полный граф
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/graph/all", nil)
+	req, _ := http.NewRequest("GET", "/graph/public", nil)
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(200, w.Code)
@@ -346,7 +346,7 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_Success() {
 // TestGetFullGraph_Empty - пустой граф
 func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_Empty() {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/graph/all", nil)
+	req, _ := http.NewRequest("GET", "/graph/public", nil)
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(200, w.Code)
@@ -370,7 +370,7 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_WithLimit() {
 
 	// Запрос с limit=3
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/graph/all?limit=3", nil)
+	req, _ := http.NewRequest("GET", "/graph/public?limit=3", nil)
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(200, w.Code)
@@ -392,7 +392,7 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_InvalidLimit() {
 
 	// Невалидный limit (строка)
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/graph/all?limit=invalid", nil)
+	req, _ := http.NewRequest("GET", "/graph/public?limit=invalid", nil)
 	s.router.ServeHTTP(w, req)
 
 	s.Equal(200, w.Code)

@@ -2,6 +2,7 @@ import ky, { HTTPError, TimeoutError } from "ky";
 import { api, refreshAccessToken } from "./client";
 import { apiConfig } from "$shared/config";
 import { accessToken, clearAuthState, isAuthenticated } from "$shared/stores/auth-session.svelte";
+import { graphView, type GraphViewMode } from "$shared/stores/graph-view.svelte";
 import { formatMessage } from "$shared/utils/i18n";
 
 const userLocale = "ru";
@@ -242,27 +243,29 @@ export async function getGraphData(
 export async function getFullGraphData(
   limit: number = apiConfig.default_limit,
   _userId?: string,
-  nocache?: boolean
+  nocache?: boolean,
+  viewMode: GraphViewMode = graphView.mode
 ): Promise<GraphData> {
   const query = buildQuery({
     limit,
     nocache: nocache ? 1 : undefined,
   });
+  const mode = isAuthenticated() ? viewMode : "community";
   try {
     // graph-service exposes a dedicated public endpoint for unauthenticated users
-    const endpoint = isAuthenticated() ? "v1/graph/full" : "v1/graph/public";
+    const endpoint = mode === "personal" ? "v1/graph/full" : "v1/graph/public";
     const raw = await getGraphApi()
-      .get(`${endpoint}${query ? `?${query}` : ""}`)
+      .get(`${endpoint}${query ? `?${query}` : ""}`, { cache: nocache ? "no-store" : "default" })
       .json<unknown>();
     const result = normalizeGraphData(raw);
     result.hash = (raw as GraphApiResponse).meta?.hash ?? result.hash;
     return result;
   } catch (error) {
-    if (shouldFallback(error)) {
-      return callBackendFallback(async () => {
-        const raw = await api.get(`v1/graph/all?${buildQuery({ limit })}`).json<unknown>();
-        return normalizeGraphData(raw);
-      }, "Failed to load full graph");
+    if (shouldFallback(error) && mode === "personal") {
+      return callBackendFallback(
+        async () => (await getFreshGraph()).fresh,
+        "Failed to load full graph"
+      );
     }
     handleGraphError(error, "Failed to load full graph");
   }

@@ -107,7 +107,7 @@ keywords = kw_extractor.extract_keywords(text)
 - PR #25 **не мержится**.
 - `yake` **остаётся `0.4.8`** до реализации замены.
 - Выбран путь: **заменить `yake` на `keybert` (MIT) с обязательной лемматизацией**.
-- Детальный план и открытые вопросы: [`YAKE-REPLACE-KEYBERT-LEMMATIZATION.md`](YAKE-REPLACE-KEYBERT-LEMMATIZATION.md).
+- Детальный план и открытые вопросы: [`NLP-2-yake-replace-keybert-lemmatization.md`](NLP-2-yake-replace-keybert-lemmatization.md).
 
 ## Следующее действие
 

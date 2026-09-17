@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "../../../vitest-setup";
+import { authState } from "$shared/stores/auth-session.svelte";
+import { graphView } from "$shared/stores/graph-view.svelte";
 import {
   getGraphData,
   getFullGraphData,
@@ -509,5 +511,136 @@ describe("graph API additional branches", () => {
     const result = await getFreshGraph();
     expect(result.fresh.nodes).toHaveLength(0);
     expect(result.fresh.links).toHaveLength(0);
+  });
+});
+
+describe("PUB-2 graph source", () => {
+  const privateNodes = Array.from({ length: 20 }, (_, i) => ({
+    id: `private-id-${i}`,
+    title: `Note ${i}`,
+    type: "star",
+  }));
+  const publicNodes = Array.from({ length: 10 }, (_, i) => privateNodes[i]);
+
+  const privateGraph = { nodes: privateNodes, links: [] };
+  const publicGraph = { nodes: publicNodes, links: [] };
+
+  beforeEach(() => {
+    (window as { __SKIP_AUTH__?: boolean }).__SKIP_AUTH__ = false;
+    authState.currentUser = null;
+    authState.accessToken = "pub2-test-token";
+    authState.apiKey = null;
+    localStorage.removeItem("graph-view-mode");
+    graphView.restore();
+    server.resetHandlers();
+  });
+
+  it("uses full by default when authenticated and switches to public by mode", async () => {
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/full", () =>
+        HttpResponse.json({ data: privateGraph, meta: { hash: "private-hash" } })
+      ),
+      http.get("http://localhost:9091/api/v1/graph/public", () =>
+        HttpResponse.json({ data: publicGraph, meta: { hash: "public-hash" } })
+      )
+    );
+
+    const personal = await getFullGraphData(100);
+    expect(personal.nodes).toHaveLength(20);
+    expect(personal.hash).toBe("private-hash");
+
+    graphView.mode = "community";
+    const community = await getFullGraphData(100);
+    expect(community.nodes).toHaveLength(10);
+    expect(community.hash).toBe("public-hash");
+
+    graphView.mode = "personal";
+    const again = await getFullGraphData(100);
+    expect(again.nodes).toHaveLength(20);
+    expect(again.hash).toBe("private-hash");
+  });
+
+  it("sends the same token on public requests and never calls full for community", async () => {
+    let fullCalled = false;
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/full", () => {
+        fullCalled = true;
+        return HttpResponse.json({ data: privateGraph });
+      }),
+      http.get("http://localhost:9091/api/v1/graph/public", ({ request }) => {
+        expect(request.headers.get("Authorization")).toBe("Bearer pub2-test-token");
+        return HttpResponse.json({ data: publicGraph });
+      })
+    );
+
+    graphView.mode = "community";
+    const result = await getFullGraphData(100);
+    expect(result.nodes).toHaveLength(10);
+    expect(fullCalled).toBe(false);
+  });
+
+  it("honors nocache on public requests", async () => {
+    let requestUrl = "";
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/public", ({ request }) => {
+        requestUrl = request.url;
+        return HttpResponse.json({ data: publicGraph });
+      })
+    );
+
+    graphView.mode = "community";
+    await getFullGraphData(100, undefined, true);
+    expect(requestUrl).toContain("nocache=1");
+  });
+
+  it("ignores stored personal preference when anonymous", async () => {
+    localStorage.setItem("graph-view-mode", "personal");
+    graphView.restore();
+    authState.accessToken = null;
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/public", () =>
+        HttpResponse.json({ data: publicGraph })
+      )
+    );
+
+    const result = await getFullGraphData(100);
+    expect(result.nodes).toHaveLength(10);
+  });
+
+  it("rejects for community when graph-service is unavailable and does not fall back to graph/public", async () => {
+    let graphAllCalled = false;
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/public", () =>
+        HttpResponse.json({ error: "Service Unavailable" }, { status: 503 })
+      ),
+      http.get("http://localhost:8080/api/v1/graph/public", () => {
+        graphAllCalled = true;
+        return HttpResponse.json(privateGraph);
+      })
+    );
+
+    graphView.mode = "community";
+    await expect(getFullGraphData(100)).rejects.toThrow();
+    expect(graphAllCalled).toBe(false);
+  });
+
+  it("falls back to fresh graph for personal when full is unavailable and does not call graph/public", async () => {
+    let graphAllCalled = false;
+    server.use(
+      http.get("http://localhost:9091/api/v1/graph/full", () =>
+        HttpResponse.json({ error: "Timeout" }, { status: 503 })
+      ),
+      http.get("http://localhost:8080/api/v1/graph/public", () => {
+        graphAllCalled = true;
+        return HttpResponse.json(privateGraph);
+      }),
+      http.get("http://localhost:8080/api/v1/me/graph/fresh", () =>
+        HttpResponse.json({ data: { fresh: privateGraph } })
+      )
+    );
+
+    const result = await getFullGraphData(100);
+    expect(result.nodes).toHaveLength(20);
+    expect(graphAllCalled).toBe(false);
   });
 });

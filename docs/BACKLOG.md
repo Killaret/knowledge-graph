@@ -106,7 +106,7 @@ hypotheses live in [IDEAS.md](IDEAS.md).
 
 - `note_handler` and `link_handler` publish `NoteCreated`/`Updated`/`Deleted` and `LinkCreated`/`Updated`/`Deleted` events via `internal/infrastructure/events/publisher.go` to the Redis `graph:events` channel.
 - `graph-service` (`internal/subscriber/pubsub.go`) listens and invalidates keys `graph-service:full:*`, `graph-service:note:*`, `graph-service:delta:*`.
-- Main backend endpoints `/graph/all`, `/me/graph/fresh`, `/me/graph/cached` become **fallback**: frontend/proxy checks `graph-service` health and switches to backend only on unavailability.
+- Main backend endpoints `/graph/public`, `/me/graph/fresh`, `/me/graph/cached` become **fallback**: frontend/proxy checks `graph-service` health and switches to backend only on unavailability.
 - This is critical because `events.Publisher` is currently not wired to handlers, so `graph-service` cache only expires by TTL.
 
 ### 2. Auth & user-scoped filtering in graph-service ✅

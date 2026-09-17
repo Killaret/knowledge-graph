@@ -7,7 +7,8 @@
 1. [`.windsurfrules`](.windsurfrules) — единственный нормативный источник: архитектура, безопасность, тестирование, язык, Docker, сохранность данных. Имя файла историческое, правила распространяются на всех агентов.
 2. [`docs/AI_AGENT_PROTOCOL.md`](docs/AI_AGENT_PROTOCOL.md) — распределение ролей и порядок передачи работы.
 3. [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md) — что сейчас в работе и чья очередь.
-4. [`docs/PROJECT_REVIEW_AI_AGENTS.md`](docs/PROJECT_REVIEW_AI_AGENTS.md) — состояние проекта, недавние правки, известные риски.
+4. [`docs/DECISIONS.md`](docs/DECISIONS.md) — решения владельца: что решили, когда и где разбор.
+5. [`docs/PROJECT_REVIEW_AI_AGENTS.md`](docs/PROJECT_REVIEW_AI_AGENTS.md) — состояние проекта, недавние правки, известные риски.
 
 По теме задачи дополнительно: [`docs/ARCHITECTURE_SUMMARY.md`](docs/ARCHITECTURE_SUMMARY.md), [`docs/TESTING.md`](docs/TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md), [`docs/BACKUP.md`](docs/BACKUP.md), [`docs/ARGOS.md`](docs/ARGOS.md).
 
@@ -19,7 +20,7 @@
 
 ## Обязательное в этом репозитории
 
-- **Коммиты** — с авторством `--author="Claude Opus 5 <noreply@anthropic.com>"`. Чужая работа коммитится с сохранением настоящего автора.
+- **Коммиты** — с авторством `--author="Claude Opus 5 <noreply@anthropic.com>"`. Чужая работа коммитится **с подписью настоящего автора**, а не под своей с трейлером `Co-Authored-By`: трейлер говорит «участвовал», а не «написал». Точные подписи — в [протоколе](docs/AI_AGENT_PROTOCOL.md).
 - **Ветки** — одна ветка, один агент. Перед началом работы `git status`: правящиеся файлы чужие.
 - **Свидетельства** — при ручной проверке заполняется поле «Screenshot / Logs» в [`docs/MANUAL_TEST_FEEDBACK.md`](docs/MANUAL_TEST_FEEDBACK.md).
 - **Personal-стек** — не запускается без явной просьбы. Команды, способные уничтожить его тома, блокируются хуком [`scripts/devops/guard-personal-data.py`](scripts/devops/guard-personal-data.py), пока нет свежего бэкапа.

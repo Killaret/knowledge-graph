@@ -46,7 +46,7 @@
    - дубли (id, link);
    - side effects (postprocess, metadata, source_url).
 2. **Нейминг.** Нужна ли обязательная маркировка adversarial-тестов?
-3. **Уровень unit для доменных инвариантов.** После переноса валидации типа в домен (`BATCH-DDD-VALIDATION.md`) появятся unit-тесты на `note.NewNote`/`SetType`, а handler-тесты упростятся.
+3. **Уровень unit для доменных инвариантов.** После переноса валидации типа в домен (`BATCH-DDD-1-validation.md`) появятся unit-тесты на `note.NewNote`/`SetType`, а handler-тесты упростятся.
 
 ## Следующее действие
 

@@ -54,17 +54,9 @@ jobs:
       - name: Run backend tests
         run: go test -v -coverprofile=cover.out ./...
 
-      - name: Check backend coverage threshold (min 64.8%)
+      - name: Check backend coverage threshold (min 70%)
         run: |
-          total=$(go tool cover -func=cover.out | awk '/^total:/ {gsub("%", "", $NF); print $NF}')
-          echo "Total backend coverage: ${total}% (required >= 64.8%)"
-          if awk "BEGIN{exit !($total >= 64.8)}"; then
-            rm -f cover.out
-          else
-            rm -f cover.out
-            echo "Backend coverage ${total}% is below the required minimum of 64.8%"
-            exit 1
-          fi
+          python3 ../scripts/testing/backend-coverage-total.py cover.out 70
 
       - name: Validate config
         env:
@@ -198,6 +190,10 @@ jobs:
         working-directory: ./frontend
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history required: check-decisions rule 3 and
+          # check-commit-authorship inspect git log for task identifiers.
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -241,6 +237,30 @@ jobs:
       - name: Check documentation links
         working-directory: .
         run: node scripts/testing/check-docs-links.mjs .
+
+      - name: Check decision index
+        working-directory: .
+        run: node scripts/testing/check-decisions.mjs .
+
+      - name: Check task index
+        working-directory: .
+        run: node scripts/testing/check-tasks-index.mjs .
+
+      - name: Check board size
+        working-directory: .
+        run: node scripts/testing/check-board-size.mjs .
+
+      - name: Check commit authorship
+        working-directory: .
+        run: node scripts/testing/check-commit-authorship.mjs .
+
+      - name: Check .ps1 files are ASCII or have a BOM
+        working-directory: .
+        run: python scripts/testing/check-ps1-ascii.py
+
+      - name: Check guard-personal-data.py
+        working-directory: .
+        run: python scripts/devops/test_guard_personal_data.py
 
       - name: Run unit tests
         run: npm run test:unit

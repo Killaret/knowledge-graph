@@ -1743,9 +1743,9 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/v1/graph/all:
+  /api/v1/graph/public:
     get:
-      summary: Get full graph
+      summary: Get public graph
       tags: [Graph]
       parameters:
         - name: limit

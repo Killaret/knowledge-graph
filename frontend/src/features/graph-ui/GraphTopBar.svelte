@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { LinkType, GraphMode } from "$entities";
   import { graphStore } from "$shared/stores/graph.svelte";
+  import { graphView, type GraphViewMode } from "$shared/stores/graph-view.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import GraphStats from "$features/graph-ui/GraphStats.svelte";
   import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
@@ -172,15 +173,38 @@
           class="top-bar-btn top-bar-btn--segment"
           class:active={currentView === option.id}
           aria-pressed={currentView === option.id}
+          aria-label={option.label}
           onclick={() => onToggleView(option.id)}
           data-testid="view-toggle-{option.id}"
           title={option.label}
         >
-          <span>{option.icon}</span>
+          <span aria-hidden="true">{option.icon}</span>
           <span class="view-label">{option.label}</span>
         </button>
       {/each}
     </div>
+
+    {#if isAuthenticated}
+      <div
+        class="view-toggle"
+        role="group"
+        aria-label={t("graphView.label")}
+        data-testid="graph-view-toggle"
+      >
+        {#each ["personal", "community"] as mode}
+          <button
+            type="button"
+            class="top-bar-btn top-bar-btn--segment"
+            class:active={graphView.mode === mode}
+            aria-pressed={graphView.mode === mode}
+            onclick={() => (graphView.mode = mode as GraphViewMode)}
+            data-testid="graph-view-{mode}"
+          >
+            {t(`graphView.${mode}`)}
+          </button>
+        {/each}
+      </div>
+    {/if}
 
     {#if currentView === "3d" && onToggleLayoutProvider}
       <div class="layout-toggle" role="group" aria-label={t("controls.layoutProviderTitle")}>
@@ -190,134 +214,141 @@
             class="top-bar-btn top-bar-btn--segment"
             class:active={layoutProvider === option.id}
             aria-pressed={layoutProvider === option.id}
+            aria-label={option.label}
             onclick={() => handleLayoutToggle(option.id)}
             data-testid="layout-provider-{option.id}"
             title={option.title}
           >
-            <span class="layout-label">{option.label}</span>
+            <span class="layout-label" aria-hidden="true">{option.label}</span>
           </button>
         {/each}
       </div>
     {/if}
 
-    <div class="search-box">
-      <input
-        type="text"
-        class="top-bar-input"
-        value={searchQuery}
-        oninput={handleSearchInput}
-        placeholder={t("search.placeholder")}
-        aria-label={t("search.inputAriaLabel")}
-        data-testid="top-bar-search-input"
-      />
-    </div>
+    {#if isAuthenticated}
+      <div class="search-box">
+        <input
+          type="text"
+          class="top-bar-input"
+          value={searchQuery}
+          oninput={handleSearchInput}
+          placeholder={t("search.placeholder")}
+          aria-label={t("search.inputAriaLabel")}
+          data-testid="top-bar-search-input"
+        />
+      </div>
+    {/if}
 
-    <div class="dropdown">
-      <button
-        type="button"
-        class="top-bar-btn"
-        onclick={toggleTypeDropdown}
-        aria-haspopup="listbox"
-        aria-expanded={typeDropdownOpen}
-        data-testid="type-dropdown-toggle"
-      >
-        <span class="type-label">{selectedTypeLabel()}</span>
-        <span class="chevron">▼</span>
-      </button>
-      {#if typeDropdownOpen}
-        <div class="dropdown-panel">
-          {#each typeFilters as filter}
-            <button
-              type="button"
-              class="dropdown-item"
-              class:active={selectedType === filter.id}
-              onclick={() => handleTypeSelect(filter.id)}
-              data-testid="filter-chip-{filter.id}"
-            >
-              <span class="dropdown-item-icon">{filter.emoji}</span>
-              <span class="dropdown-item-label">{filter.label}</span>
-              {#if typeCounts[filter.id] !== undefined}
-                <span class="dropdown-count">
-                  {typeCounts[filter.id]}
-                </span>
-              {/if}
-            </button>
-          {/each}
-        </div>
-      {/if}
-    </div>
-
-    <div class="dropdown">
-      <button
-        type="button"
-        class="top-bar-btn"
-        onclick={toggleLinkDropdown}
-        aria-haspopup="true"
-        aria-expanded={linkDropdownOpen}
-        data-testid="link-dropdown-toggle"
-      >
-        <span class="link-label">{t("linkLegend.title")}</span>
-        <span class="chevron">▼</span>
-      </button>
-      {#if linkDropdownOpen}
-        <div class="dropdown-panel dropdown-panel--right">
-          <div class="dropdown-actions">
-            <button
-              type="button"
-              class="dropdown-action"
-              disabled={areAllLinkTypesVisible}
-              onclick={showAllLinkTypes}
-              data-testid="link-types-show-all"
-            >
-              {t("linkLegend.showAll")}
-            </button>
-            <button
-              type="button"
-              class="dropdown-action"
-              disabled={areAllLinkTypesHidden}
-              onclick={hideAllLinkTypes}
-              data-testid="link-types-hide-all"
-            >
-              {t("linkLegend.hideAll")}
-            </button>
-          </div>
-
-          <div class="dropdown-section">
-            <label for="top-bar-min-weight" class="dropdown-label">
-              {t("linkLegend.minWeight", { weight: graphStore.minLinkWeight.toFixed(1) })}
-            </label>
-            <input
-              id="top-bar-min-weight"
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={graphStore.minLinkWeight}
-              oninput={handleMinWeightInput}
-              class="top-bar-range"
-              data-testid="top-bar-min-weight"
-            />
-          </div>
-
-          <div class="dropdown-list">
-            {#each linkTypes as lt}
+    {#if isAuthenticated}
+      <div class="dropdown">
+        <button
+          type="button"
+          class="top-bar-btn"
+          onclick={toggleTypeDropdown}
+          aria-haspopup="listbox"
+          aria-expanded={typeDropdownOpen}
+          data-testid="type-dropdown-toggle"
+        >
+          <span class="type-label">{selectedTypeLabel()}</span>
+          <span class="chevron">▼</span>
+        </button>
+        {#if typeDropdownOpen}
+          <div class="dropdown-panel">
+            {#each typeFilters as filter}
               <button
                 type="button"
                 class="dropdown-item"
-                class:active={!hiddenLinkSet.has(lt.type)}
-                onclick={() => toggleLinkType(lt.type)}
-                style="--type-color: {lt.color}"
-                data-testid="link-type-chip-{lt.type}"
+                class:active={selectedType === filter.id}
+                onclick={() => handleTypeSelect(filter.id)}
+                data-testid="filter-chip-{filter.id}"
               >
-                <span class="dropdown-line" style="background: {lt.color};"></span>
-                <span class="dropdown-item-icon">{lt.icon}</span>
-                <span class="dropdown-item-label">{lt.label}</span>
+                <span class="dropdown-item-icon">{filter.emoji}</span>
+                <span class="dropdown-item-label">{filter.label}</span>
+                {#if typeCounts[filter.id] !== undefined}
+                  <span class="dropdown-count">
+                    {typeCounts[filter.id]}
+                  </span>
+                {/if}
               </button>
             {/each}
           </div>
-        </div>
-      {/if}
-    </div>
+        {/if}
+      </div>
+
+      <div class="dropdown">
+        <button
+          type="button"
+          class="top-bar-btn"
+          onclick={toggleLinkDropdown}
+          aria-haspopup="true"
+          aria-expanded={linkDropdownOpen}
+          aria-label={t("linkLegend.title")}
+          data-testid="link-dropdown-toggle"
+          title={t("linkLegend.title")}
+        >
+          <span class="link-label">{t("linkLegend.title")}</span>
+          <span class="chevron">▼</span>
+        </button>
+        {#if linkDropdownOpen}
+          <div class="dropdown-panel dropdown-panel--right">
+            <div class="dropdown-actions">
+              <button
+                type="button"
+                class="dropdown-action"
+                disabled={areAllLinkTypesVisible}
+                onclick={showAllLinkTypes}
+                data-testid="link-types-show-all"
+              >
+                {t("linkLegend.showAll")}
+              </button>
+              <button
+                type="button"
+                class="dropdown-action"
+                disabled={areAllLinkTypesHidden}
+                onclick={hideAllLinkTypes}
+                data-testid="link-types-hide-all"
+              >
+                {t("linkLegend.hideAll")}
+              </button>
+            </div>
+
+            <div class="dropdown-section">
+              <label for="top-bar-min-weight" class="dropdown-label">
+                {t("linkLegend.minWeight", { weight: graphStore.minLinkWeight.toFixed(1) })}
+              </label>
+              <input
+                id="top-bar-min-weight"
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={graphStore.minLinkWeight}
+                oninput={handleMinWeightInput}
+                class="top-bar-range"
+                data-testid="top-bar-min-weight"
+              />
+            </div>
+
+            <div class="dropdown-list">
+              {#each linkTypes as lt}
+                <button
+                  type="button"
+                  class="dropdown-item"
+                  class:active={!hiddenLinkSet.has(lt.type)}
+                  onclick={() => toggleLinkType(lt.type)}
+                  style="--type-color: {lt.color}"
+                  data-testid="link-type-chip-{lt.type}"
+                >
+                  <span class="dropdown-line" style="background: {lt.color};"></span>
+                  <span class="dropdown-item-icon">{lt.icon}</span>
+                  <span class="dropdown-item-label">{lt.label}</span>
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
+    {/if}
 
     {#if canvasController}
       <div class="canvas-controls" role="group" aria-label={t("cockpit.left.graphControls")}>
@@ -476,6 +507,25 @@
     width: 100%;
     max-width: none;
     z-index: auto;
+  }
+
+  /* Floating (public) variant: keep the bar within the viewport and allow
+   * clusters to wrap instead of overflowing off-screen. */
+  .graph-top-bar--floating {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .graph-top-bar--floating .left-cluster,
+  .graph-top-bar--floating .right-cluster {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .graph-top-bar--floating .right-cluster {
+    margin-left: 0;
   }
 
   .left-cluster,
@@ -790,7 +840,7 @@
   }
 
   /* Large tablets / small laptops */
-  @media (max-width: 1100px) {
+  @media (max-width: 1320px) {
     .graph-top-bar {
       gap: 6px;
       padding: 6px 10px;
@@ -807,7 +857,14 @@
     }
 
     .top-bar-input {
-      width: 130px;
+      width: clamp(90px, 10vw, 120px);
+    }
+
+    /* Keep long auth action buttons from pushing the whole bar off-screen */
+    .right-cluster .top-bar-btn {
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 

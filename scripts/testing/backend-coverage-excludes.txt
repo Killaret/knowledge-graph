@@ -1,0 +1,13 @@
+# Packages excluded from the backend unit-coverage denominator.
+# These are not unit-testable in the CI sense: CLI main entrypoints,
+# generated clients, test helpers, and ad-hoc scripts.
+knowledge-graph/cmd/cli
+knowledge-graph/cmd/embed-recompute
+knowledge-graph/cmd/rotate-api-keys
+knowledge-graph/cmd/seed
+knowledge-graph/cmd/checkmigrations
+knowledge-graph/cmd/worker
+knowledge-graph/internal/testutil
+knowledge-graph/internal/domain/cache/cachetest
+knowledge-graph/internal/infrastructure/graph
+knowledge-graph/scripts

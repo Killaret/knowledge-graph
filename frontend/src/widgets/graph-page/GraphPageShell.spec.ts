@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/svelte";
+import { render, screen, fireEvent } from "@testing-library/svelte";
 import { isAuthenticated } from "$shared/stores/auth.svelte";
+import { authState } from "$shared/stores/auth-session.svelte";
+import { graphView } from "$shared/stores/graph-view.svelte";
 import GraphPageShellTestWrapper from "./GraphPageShellTestWrapper.svelte";
 
 vi.mock("$shared/stores/auth.svelte", async () => {
@@ -12,10 +14,15 @@ vi.mock("$shared/stores/auth.svelte", async () => {
 
 describe("GraphPageShell", () => {
   beforeEach(() => {
+    authState.currentUser = null;
+    authState.accessToken = null;
+    authState.apiKey = null;
+    graphView.clear();
     vi.mocked(isAuthenticated).mockReturnValue(false);
   });
 
   it("renders with notes and computes type counts", async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(true);
     const { container } = render(GraphPageShellTestWrapper, {
       props: {
         notes: [
@@ -30,6 +37,7 @@ describe("GraphPageShell", () => {
   });
 
   it("falls back to nodes when notes are missing", () => {
+    vi.mocked(isAuthenticated).mockReturnValue(true);
     render(GraphPageShellTestWrapper, {
       props: {
         nodes: [{ id: "n3", title: "Node", type: "star" }],
@@ -48,6 +56,11 @@ describe("GraphPageShell", () => {
     expect(screen.getByTestId("top-bar-sign-in")).toBeInTheDocument();
     expect(screen.getByTestId("top-bar-register")).toBeInTheDocument();
     expect(screen.queryByTestId("menu-import")).not.toBeInTheDocument();
+    // The public top bar shows only view controls: search, type filter and
+    // the link legend are authenticated-only.
+    expect(screen.queryByTestId("top-bar-search-input")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("type-dropdown-toggle")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("link-dropdown-toggle")).not.toBeInTheDocument();
   });
 
   it("shows authenticated controls when user is signed in", () => {
@@ -67,5 +80,41 @@ describe("GraphPageShell", () => {
     expect(screen.getByTestId("menu-import")).toBeInTheDocument();
     expect(screen.getByTestId("menu-export")).toBeInTheDocument();
     expect(screen.queryByTestId("top-bar-sign-in")).not.toBeInTheDocument();
+  });
+
+  it("PUB-2 renders personal/community toggle and selects personal for authenticated", () => {
+    authState.accessToken = "tok1";
+    vi.mocked(isAuthenticated).mockReturnValue(true);
+    render(GraphPageShellTestWrapper, {});
+
+    const personal = screen.getByTestId("graph-view-personal");
+    const community = screen.getByTestId("graph-view-community");
+    expect(personal).toBeInTheDocument();
+    expect(community).toBeInTheDocument();
+    expect(personal.getAttribute("aria-pressed")).toBe("true");
+    expect(community.getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("PUB-2 clicking community toggles the aria-pressed state", async () => {
+    authState.accessToken = "tok1";
+    vi.mocked(isAuthenticated).mockReturnValue(true);
+    render(GraphPageShellTestWrapper, {});
+
+    const community = screen.getByTestId("graph-view-community");
+    await fireEvent.click(community);
+
+    expect(community.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByTestId("graph-view-personal").getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("PUB-2 does not render graph-view-toggle for anonymous users even with stored personal", () => {
+    localStorage.setItem("graph-view-mode", "personal");
+    graphView.clear();
+    graphView.restore();
+    render(GraphPageShellTestWrapper, {});
+
+    expect(screen.queryByTestId("graph-view-toggle")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("graph-view-personal")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("graph-view-community")).not.toBeInTheDocument();
   });
 });

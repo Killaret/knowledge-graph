@@ -67,7 +67,7 @@ test.describe("PreloadService Full Cycle E2E", () => {
 
   test("should handle preload errors gracefully", async ({ page }) => {
     // Mock API errors via page
-    await page.route("**/api/v1/graph/all**", (route) => {
+    await page.route("**/api/v1/graph/public**", (route) => {
       route.fulfill({
         status: 500,
         contentType: "application/json",
@@ -291,7 +291,7 @@ test.describe("PreloadService Full Cycle E2E", () => {
     await page.goto("/auth/login");
 
     // Simulate network interruption during preload
-    await page.route("**/api/v1/graph/all**", (route) => {
+    await page.route("**/api/v1/graph/public**", (route) => {
       // Abort connection
       route.abort("failed");
     });
@@ -300,7 +300,7 @@ test.describe("PreloadService Full Cycle E2E", () => {
     await page.waitForTimeout(2000);
 
     // Remove blocking
-    await page.unroute("**/api/v1/graph/all**");
+    await page.unroute("**/api/v1/graph/public**");
 
     // Execute login
     await page.fill('input[name="login"]', "testuser");

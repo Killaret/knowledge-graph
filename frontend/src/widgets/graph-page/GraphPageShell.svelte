@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import CosmicCockpitLayout from "$widgets/cosmic-cockpit/CosmicCockpitLayout.svelte";
   import { isAuthenticated } from "$shared/stores/auth.svelte";
+  import { graphView } from "$shared/stores/graph-view.svelte";
   import type { GraphLink } from "$shared/api/graph";
 
   interface NoteItem {
@@ -102,6 +103,7 @@
   );
 
   const auth = $derived(isAuthenticated());
+  const canMutate = $derived(auth && graphView.mode === "personal");
 </script>
 
 <CosmicCockpitLayout
@@ -128,9 +130,9 @@
   onExport={auth ? onExport : undefined}
   {onToggleFullGraph}
   onNoteCreate={auth ? onNoteCreate : undefined}
-  onNoteDelete={auth ? onNoteDelete : undefined}
-  onNoteEdit={auth ? onNoteEdit : undefined}
-  onCreateChildNote={auth ? onCreateChildNote : undefined}
+  onNoteDelete={canMutate ? onNoteDelete : undefined}
+  onNoteEdit={canMutate ? onNoteEdit : undefined}
+  onCreateChildNote={canMutate ? onCreateChildNote : undefined}
   onSignIn={!auth ? onSignIn : undefined}
   onRegister={!auth ? onRegister : undefined}
 >

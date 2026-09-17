@@ -50,3 +50,106 @@ const endpoint = isAuthenticated() ? "v1/graph/full" : "v1/graph/public";
 ## Что приложить к результату
 
 Числа узлов в обоих режимах под одной и той же сессией — это единственное доказательство, что переключатель действительно меняет источник, а не подпись на кнопке.
+
+## Технические решения реализации, 2026-09-14
+
+- Выбор `personal` / `community` хранится в `localStorage` (`graph-view-mode`), отдельно от сессии. Аноним всегда получает `community`; сохранённое предпочтение применяется только после авторизации.
+- Один переключатель рядом с 2D/3D/списком управляет главной страницей, `/graph` и `/graph/3d`. Режим сообщества не подменяет авторизацию: токен остаётся в запросе к публичному graph-service.
+- Кэш предзагрузки и его `lastHash` относятся к конкретному режиму и сессии. Запоздавшие ответы после переключения, смены пользователя или очистки кэша не должны записываться в новый контекст.
+- В режиме сообщества загрузчик не запрашивает личный список заметок, не добавляет Knowledge Core и не достраивает граф из личных заметок. Операции над узлами в этом режиме доступны только для чтения; создание новой заметки остаётся отдельным действием авторизованного пользователя.
+- `/graph/delta` применяется только к личному графу. Применять его к графу сообщества под токеном владельца нельзя: сервер выбирает личные данные по сессии, а не по выбранному на клиенте режиму.
+- `nocache` обходит и предзагрузку, и кэш публичного graph-service. Имена маршрутов и публичный фильтр данных не меняются.
+- Резервный источник личного графа — существующий `/api/v1/me/graph/fresh`. При недоступности graph-service режим сообщества показывает ошибку, а не подставляет сессионно-зависимый ответ `/api/v1/graph/public`.
+
+### Уже зафиксированная локальная проверка
+
+Мутация выбора эндпоинта обратно на `isAuthenticated() ? ... : ...` роняет три теста блока `PUB-2 graph source` в `frontend/src/shared/api/graph.test.ts` (exit 1). После восстановления выбора по режиму все шесть тестов блока проходят (exit 0). Числа 20/10 в этих тестах — **MSW-фикстуры**, не доказательство живого прогона.
+
+Живое свидетельство по критериям 3–5 добавляется отдельно после прогона изолированного стека с `SKIP_AUTH=false`; до него задача не считается завершённой.
+
+## Живое свидетельство
+
+**Дата:** 2026-09-14. **Агент:** Devin. **Стек:** изолированный `docker-compose.test.yml`, `SKIP_AUTH=false`.
+
+### Подготовка
+
+```powershell
+$env:SKIP_AUTH='false'
+.\scripts\testing\start-test.ps1
+.\scripts\testing\seed-test-data.ps1 -NoteCount 20 -LinkCount 10 -Seed 42 -PublicPercent 50
+```
+
+- Создано 20 заметок; 10 опубликовано, 10 приватных.
+- Создано 10 связей.
+- Вход под `testuser` / `TestPassword123!`.
+
+### Результаты под одной сессией
+
+| Режим | Узлы | Связи | Источник |
+|---|---|---|---|
+| `personal`, первый вход | 20 | 10 | `graph-service/api/v1/graph/full` |
+| `community` | 10 | 10 | `graph-service/api/v1/graph/public` |
+| `personal`, возврат | 20 | 10 | `graph-service/api/v1/graph/full` |
+| Аноним | 10 | 10 | `graph-service/api/v1/graph/public` |
+
+- Переключатель `graph-view-toggle` отображается только у авторизованного пользователя.
+- Анонимный просмотр: переключатель отсутствует, граф рисуется в режиме `community`.
+- В режиме `community` **не** запрашивается `graph/full` и **не** запрашивается `/v1/graph/delta`.
+- Временный Playwright-тест `frontend/tests/pub2-live-check.spec.ts` удалён после фиксации свидетельства.
+
+### Исправленная локальная регрессия
+
+Полный прогон `check-all.ps1` без `-Quick` после первой реализации упал только на фронтенд-юнитах:
+
+```
+Test Files  1 failed | 138 passed
+Tests       6 failed  | 1424 passed
+```
+
+Файл `frontend/src/routes/page.spec.ts` ожидал list view с тремя карточками, а рендерился граф. Причина: в `beforeEach` не инициализировались `authState.currentUser` и `authState.accessToken`, поэтому `graphView.mode` fallback’ом уходил в `community`, а мок `getGraphWithPreload` возвращал непустые узлы, перекрывающие список.
+
+**Исправление:** в обоих `beforeEach` блоках `page.spec.ts` добавлено:
+
+```ts
+authState.currentUser = { id: "u1", login: "test", role: "user" } as any;
+authState.accessToken = "test-token";
+graphView.clear();
+```
+
+### Итоговая локальная верификация
+
+```powershell
+.\scripts\testing\check-all.ps1
+```
+
+Результат (2026-09-14):
+
+```
+[PASS] Core workflow sync
+[PASS] PS1 ASCII encoding guard
+[SKIP] Backend golangci-lint - golangci-lint is not installed or not in PATH
+[PASS] Backend unit tests
+[PASS] Backend coverage >= 64.8%
+[PASS] Backend config validation
+[PASS] Backend integration tests
+[PASS] Graph-service unit tests
+[PASS] Graph-service integration tests
+[PASS] Frontend circular dependencies
+[PASS] Frontend ESLint
+[PASS] Frontend formatting
+[PASS] Frontend TypeScript
+[PASS] Generated config sync
+[PASS] Documentation links
+[PASS] Frontend unit tests  (139 files, 1430 tests)
+[PASS] BDD TypeScript
+[PASS] NLP tests
+```
+
+- 17 фаз PASS, 1 SKIP (`golangci-lint` недоступен в окружении).
+- Код выхода: 0.
+
+### Ограничения и следующие шаги
+
+- Публичный эндпоинт графа переименован в `/graph/public` в PUB-3; в этой задаче конечные имена не затрагивались.
+- `frontend/src/routes/page.spec.ts` теперь привязан к состоянию `authState`/`graphView`; при расширении стора новые тесты должны сами подготавливать сессию.
+- Изолированный стек остановлен и уничтожен (`stop-test.ps1`); Personal-контейнеры и тома не тронуты.

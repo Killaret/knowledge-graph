@@ -44,7 +44,7 @@ errors=0
 
 check_api() {
     local port=$1
-    if curl -s -f "http://127.0.0.1:$port/api/v1/notes?limit=1" > /dev/null || curl -s -f "http://127.0.0.1:$port/api/v1/graph/all?limit=1" > /dev/null; then
+    if curl -s -f "http://127.0.0.1:$port/api/v1/notes?limit=1" > /dev/null || curl -s -f "http://127.0.0.1:$port/api/v1/graph/public?limit=1" > /dev/null; then
         echo "  API: OK"
         return 0
     else

@@ -183,8 +183,8 @@ redis.Options{
 
 | Layer | Command | Tool | Coverage |
 |-------|---------|------|----------|
-| Go backend | `cd backend && go test ./...` | testify + testcontainers | Target 70% (enforced min 64.8%, measured 66.8% on 2026-09-07) |
-| Frontend | `cd frontend && npm run test:unit` | Vitest + @testing-library | Target 70% (enforced min 60% lines/branches, 55% functions) |
+| Go backend | `cd backend && go test ./...` | testify + testcontainers | Target 70% (enforced min 70%; measured 72.2% on 2026-09-15 after excluding CLI mains, generated gRPC client, test helpers, and scripts from the unit denominator) |
+| Frontend | `cd frontend && npm run test:unit` | Vitest + @testing-library | Target 70% (enforced min 70% lines/branches/functions/statements) |
 | E2E | `cd frontend && npm run test` | Playwright | - |
 | BDD | `cd frontend && npm run test:bdd` | Cucumber | - |
 | NLP | `cd nlp-service && pytest tests/ -v` | pytest | - |
@@ -211,6 +211,32 @@ redis.Options{
   - **E2E / Playwright** — full user scenario spanning frontend, backend, and data (e.g. public graph, achievements, SSE fallback).
 - The test should fail before the fix (where safe) and pass after the fix.
 - If the defect depends on manual data or config setup, fix the seed/config script — not just the instructions.
+
+**Adversarial Phase (MANDATORY for new surfaces):**
+
+Green tests prove the code does what you thought. They cannot tell you what you
+did not think of. So covering a new surface has two phases, and the second is not
+optional:
+
+1. **Retrospective coverage.** Positive tests and the obvious negatives against
+   the implementation as it stands.
+2. **Adversarial phase.** Tests designed *to fail*, written from knowledge of the
+   implementation, the OpenAPI contract and the invariants you believe hold.
+   Every failing test either exposes a defect (fix the code) or proves the test
+   wrong (fix the test). Repeat while meaningful failures are still findable.
+
+Categories to work through: length boundaries (0, 1, max, max+1), enum validity
+including fallbacks, empty and maximal arrays, ownership and IDOR, duplicate ids
+and links, side effects (post-processing, metadata, `source_url`).
+
+**Adversarial tests carry no special name or marker.** A test earns its place by
+reddening on broken code, not by the intent it was written with; a marker in the
+name decays the moment someone forgets to add it, and then it lies. What is
+recorded instead is **what the phase found** — list the defects in the task file,
+as `tasks/BATCH-TEST-STRATEGY.md` does for the batch routes: a rune limit that
+contradicted the API, an unvalidated enum, a dropped `source_url`, links created
+to notes that did not exist, an empty array answering 200. Five defects that no
+amount of green testing would have surfaced.
 
 **Regression Testing (MANDATORY before production deployment):**
 - **ALWAYS** run full regression cycle before production deployment
@@ -249,6 +275,40 @@ func TestCreateNote(t *testing.T) {
 
 ---
 
+## Finishing Functionality (MANDATORY)
+
+A change is finished when it is **covered by tests and written down**. Both, not
+either — and this applies equally to new behaviour and to changed behaviour.
+
+**Tests.** Anything implemented carries at least a basic test of its own behaviour.
+"Basic" is the floor, not the target: one test that would fail if the change were
+reverted. A change whose test cannot fail is not covered — see "Verifying a Finding"
+and the mutation requirement in review.
+
+**Documentation.**
+
+Every change that adds or alters behaviour a user or another service can observe
+must, in the same change:
+
+- update the document that describes that area, if one exists;
+- or create it, if the area has none;
+- and update the derived copies when the change touches a norm
+  (`.windsurfrules` -> `.devin/skills/knowledge-graph/SKILL.md` and both master
+  prompts).
+
+Applies to API contracts (`backend/openAPI.yaml`, `docs/API_EN.md`), configuration
+(`docs/CONFIGURATION_EN.md`), operational behaviour (`docs/DEPLOYMENT_EN.md`,
+`docs/DOCKER.md`), and the skills when a trap is discovered that would cost the next
+person time.
+
+Reason: a feature nobody can find is indistinguishable from a feature that does not
+exist, and the person who pays for the omission is never the one who made it. The
+owner asked for this rule explicitly; it had never been written down, which is why
+it is here rather than in someone's memory.
+
+Reviewers: a change that adds behaviour and touches no documentation is rejected on
+that ground alone, unless the change itself says why none was needed.
+
 ## Verifying a Finding (MANDATORY)
 
 A search locates a candidate. It never confirms one.
@@ -257,6 +317,23 @@ A search locates a candidate. It never confirms one.
 appear", which is not the same question as "is this true". A hit inside a
 "do not do this" list, inside a code example, or inside a dated journal entry
 looks identical to a real defect. So does a miss caused by a bad pattern.
+
+**A zero is a measurement, and measurements break.** When a count comes back empty —
+no rows, no nodes, no matches — verify first that the thing being measured exists at
+all, and that the tool reporting it is working. Check the source of truth directly
+(the database, the file, the route table) before concluding the product is broken.
+
+Five times in one day this rule was the only thing standing between a false finding
+and a report: an exit code read through a pipe returned the pipe's status; `grep -i`
+silently matched nothing because the locale cannot fold non-ASCII case; a mutation
+placed outside the table read as a gap in the guard; a stack half-restarted left one
+service in the wrong mode; and a token parser that had lost its fallback made every
+write fail with 401 while the graph was declared empty. In each case the instrument
+was broken, not the subject.
+
+Corollary: **an operation that reports success has not been verified.** Check that it
+changed what you believe it changed — a script that matched zero lines still exits 0,
+and a commit message can claim work the diff does not contain.
 
 Before reporting a finding, or accepting someone else's:
 

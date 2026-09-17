@@ -23,6 +23,8 @@ from pathlib import Path
 
 PERSONAL_VOLUMES = ("pgdata_personal", "redisdata_personal", "mongodbdata_personal")
 
+BACKUP_GLOBS = ("backup-personal-*", "personal-volumes-raw-*")
+
 # Commands that sweep every unused volume, personal ones included.
 PRUNE_PATTERNS = (
     re.compile(r"\bdocker\s+volume\s+prune\b"),
@@ -43,8 +45,6 @@ PERSONAL_PATTERNS = (
     re.compile(r"\brm\s+-[a-z]*r"),
 )
 
-BACKUP_GLOBS = ("backup-personal-*", "personal-volumes-raw-*")
-
 
 def _max_age_hours() -> float:
     """Freshness threshold for a usable backup, in hours.
@@ -61,6 +61,34 @@ def _max_age_hours() -> float:
             if line.strip().startswith("KG_BACKUP_MAX_AGE_HOURS"):
                 return float(line.split("=", 1)[1].strip())
     return 24.0
+
+
+def resolve_backup_dir() -> Path:
+    """Absolute path to the local backup directory.
+
+    Single source of truth: the KG_BACKUP_DIR value from backup-policy.env
+    next to this script. The KG_BACKUP_DIR environment variable overrides it.
+    A leading ~ is expanded; a relative tail is joined to the user's home
+    directory; an absolute path is used as-is.
+    """
+    env_value = os.environ.get("KG_BACKUP_DIR")
+    value = env_value
+    if not value:
+        policy = Path(__file__).resolve().parent / "backup-policy.env"
+        if policy.is_file():
+            for line in policy.read_text().splitlines():
+                if line.strip().startswith("KG_BACKUP_DIR"):
+                    value = line.split("=", 1)[1].strip()
+                    break
+    if not value:
+        raise RuntimeError(
+            "KG_BACKUP_DIR is not set and not found in backup-policy.env"
+        )
+    value = os.path.expanduser(value)
+    p = Path(value)
+    if p.is_absolute():
+        return p
+    return Path.home() / p
 
 
 MAX_AGE_HOURS = _max_age_hours()
@@ -164,13 +192,12 @@ def targets_personal_data(command: str, depth: int = 0) -> bool:
     return False
 
 
-def newest_backup(root: Path) -> tuple[Path | None, float, int]:
-    backups = root / "backups"
+def newest_backup(backup_dir: Path) -> tuple[Path | None, float, int]:
     newest: Path | None = None
     newest_mtime = 0.0
-    if backups.is_dir():
+    if backup_dir.is_dir():
         for pattern in BACKUP_GLOBS:
-            for candidate in backups.glob(pattern):
+            for candidate in backup_dir.glob(pattern):
                 if not candidate.is_file() or candidate.stat().st_size == 0:
                     continue
                 mtime = candidate.stat().st_mtime
@@ -204,13 +231,19 @@ def main() -> None:
     if not command or not targets_personal_data(command):
         return
 
-    root = repo_root()
-    backup, mtime, size = newest_backup(root)
+    try:
+        backup_dir = resolve_backup_dir()
+    except RuntimeError as exc:
+        deny(f"Команда может уничтожить данные Personal-стека, но не удалось "
+             f"определить каталог бэкапа: {exc}. Проверьте "
+             "scripts/devops/backup-policy.env.")
+
+    backup, mtime, size = newest_backup(backup_dir)
 
     if backup is None:
         deny(
             "Команда может уничтожить данные Personal-стека, а непустого бэкапа "
-            f"в {root / 'backups'} нет. Сначала выполните "
+            f"в {backup_dir} нет. Сначала выполните "
             "scripts/devops/backup-personal.ps1 и убедитесь, что файл создан."
         )
 

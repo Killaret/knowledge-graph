@@ -23,7 +23,7 @@ function Check-Api {
         return 0
     } catch {
         try {
-            $null = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/api/v1/graph/all?limit=1" -Method Get -TimeoutSec 5
+            $null = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/api/v1/graph/public?limit=1" -Method Get -TimeoutSec 5
             Write-Host "  $Name API: OK (via public graph)" -ForegroundColor Green
             return 0
         } catch {

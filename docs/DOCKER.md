@@ -160,7 +160,7 @@ curl http://localhost:18080/api/v1/notes
 curl http://localhost:18080/graph-service/api/v1/graph/full
 
 # Full graph data
-curl http://localhost:18080/api/v1/graph/all
+curl http://localhost:18080/api/v1/graph/public
 ```
 
 ## Troubleshooting

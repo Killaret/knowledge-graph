@@ -11,6 +11,10 @@ $workflowPath = Join-Path $repoDir '.github\workflows\_core-checks.yml'
 $syncScript = Join-Path $scriptDir 'check-core-workflow-sync.mjs'
 
 . "$scriptDir\lib\phase-tracking.ps1"
+if (-not (Get-Command Register-Phase -ErrorAction SilentlyContinue)) {
+    Write-Host "FATAL: lib\phase-tracking.ps1 did not load (check encoding)" -ForegroundColor Red
+    exit 1
+}
 $script:PhaseResults.Clear()
 $script:SnapshotDir = $null
 $checks = Import-Csv -Path $manifestPath -Delimiter "`t"
@@ -50,14 +54,10 @@ function Invoke-Check {
                 Write-Host 'cover.out was not produced by backend tests' -ForegroundColor Red
                 return 1
             }
-            $coverageOutput = go tool cover '-func=cover.out'
-            if ($LASTEXITCODE -ne 0) { return $LASTEXITCODE }
-            $totalLine = $coverageOutput | Where-Object { $_ -match '^total:' } | Select-Object -Last 1
-            if (-not $totalLine -or $totalLine -notmatch '([0-9]+(?:\.[0-9]+)?)%') { return 1 }
-            $actual = [double]$Matches[1]
             $required = [double]($Check.command -replace '^@coverage:', '')
-            Write-Host "Backend coverage: $actual% (required >= $required%)"
-            return $(if ($actual -ge $required) { 0 } else { 1 })
+            $coverageArgs = "../scripts/testing/backend-coverage-total.py", "cover.out", "$required"
+            & python $coverageArgs | Out-Host
+            return $LASTEXITCODE
         }
         if ($Check.id -eq 'frontend-config') {
             npm run build-config | Out-Host

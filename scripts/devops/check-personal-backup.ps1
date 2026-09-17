@@ -1,20 +1,37 @@
 # Checks that a fresh, non-empty Personal-stack backup exists before a
 # destructive Docker operation. Mirrors the rule in
-# scripts/devops/guard-personal-data.py — the backup globs and the
+# scripts/devops/guard-personal-data.py - the backup globs and the
 # freshness threshold come from the same policy, so the two cannot drift.
 #
-# Exit code 0 — a usable backup exists (prints its path and age).
-# Exit code 1 — no usable backup (prints the reason and where to put one).
+# Exit code 0 - a usable backup exists (prints its path and age).
+# Exit code 1 - no usable backup (prints the reason and where to put one).
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = (git rev-parse --show-toplevel 2>$null)
-if (-not $repoRoot) { $repoRoot = (Resolve-Path "$PSScriptRoot\..\..").Path }
-$backupDir = Join-Path $repoRoot "backups"
 $policyFile = Join-Path $PSScriptRoot "backup-policy.env"
 
+# Resolve the backup directory: $env:KG_BACKUP_DIR overrides backup-policy.env.
+# A relative tail is expanded from the user's home directory.
+$KG_BACKUP_DIR = $env:KG_BACKUP_DIR
+if (-not $KG_BACKUP_DIR -and (Test-Path $policyFile)) {
+    $line = Get-Content $policyFile | Where-Object { $_ -match '^\s*KG_BACKUP_DIR\s*=' } | Select-Object -First 1
+    if ($line) { $KG_BACKUP_DIR = ($line -split '=', 2)[1].Trim() }
+}
+if (-not $KG_BACKUP_DIR) {
+    Write-Host "  [ERROR] KG_BACKUP_DIR not set and not found in $policyFile" -ForegroundColor Red
+    exit 1
+}
+if ($KG_BACKUP_DIR -match '^~') {
+    $KG_BACKUP_DIR = $KG_BACKUP_DIR -replace '^~', $env:USERPROFILE
+}
+if ([System.IO.Path]::IsPathRooted($KG_BACKUP_DIR)) {
+    $backupDir = $KG_BACKUP_DIR
+} else {
+    $backupDir = Join-Path $env:USERPROFILE $KG_BACKUP_DIR
+}
+
 # Threshold: env var first, then the shared policy file. Refuse rather than
-# guess — a cleanup that cannot tell how fresh the backup must be is not safe.
+# guess - a cleanup that cannot tell how fresh the backup must be is not safe.
 $maxAgeHours = $env:KG_BACKUP_MAX_AGE_HOURS
 if (-not $maxAgeHours) {
     if (-not (Test-Path $policyFile)) {

@@ -6,7 +6,7 @@
 #      This is the mutation anchor for the spec's criterion 8: if the script
 #      goes back to try/catch without checking the exit code, the stub's
 #      failure is swallowed, output shows [SUCCESS]/[PASS]-only and the exit
-#      code is 0 — this test goes red.
+#      code is 0 - this test goes red.
 #   2. -DryRun previews steps and removes nothing.
 #   3. -RemoveVolumes without a fresh backup refuses (phase FAIL, exit != 0);
 #      with a fresh non-empty backup the gate passes.
@@ -21,7 +21,7 @@ $script:Failures = 0
 function Check {
     param([string]$Name, [bool]$Ok, [string]$Detail = "")
     if ($Ok) { Write-Host "  [PASS] $Name" -ForegroundColor Green }
-    else { $script:Failures++; Write-Host "  [FAIL] $Name — $Detail" -ForegroundColor Red }
+    else { $script:Failures++; Write-Host "  [FAIL] $Name - $Detail" -ForegroundColor Red }
 }
 
 $stubDir = Join-Path $env:TEMP "kg-cleanup-stub-$(Get-Random)"
@@ -88,7 +88,7 @@ try {
 Write-Host "Case 4: -WslOptimize without elevation must not report success" -ForegroundColor Cyan
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if ($isAdmin) {
-    Write-Host "  [SKIP] running elevated — non-admin path cannot be exercised" -ForegroundColor Yellow
+    Write-Host "  [SKIP] running elevated - non-admin path cannot be exercised" -ForegroundColor Yellow
 } else {
     $out = pwsh -NoProfile -File $cleanupPs1 -WslOptimize 2>&1 | Out-String
     $code = $LASTEXITCODE
@@ -97,7 +97,7 @@ if ($isAdmin) {
     Check "ps1 -WslOptimize w/o admin: exit code reflects the failure" ($code -ne 0 -or $out -match '\[SKIP\] optimize-disk') "exit=$code"
 }
 
-# Bash version, when available — same contract. Prefer Git-bash: it
+# Bash version, when available - same contract. Prefer Git-bash: it
 # understands Windows paths; a bare `bash` here may be WSL.
 $bash = $null
 $gitBash = "C:\Program Files\Git\bin\bash.exe"
@@ -122,7 +122,7 @@ exit 1
         Check "sh phase '$phase' fails when docker is down" ($out -match "\[FAIL\] $phase") "phase output:`n$out"
     }
 } else {
-    Write-Host "  [SKIP] bash not available — sh cases skipped" -ForegroundColor Yellow
+    Write-Host "  [SKIP] bash not available - sh cases skipped" -ForegroundColor Yellow
 }
 
 Remove-Item $stubDir -Recurse -Force -ErrorAction SilentlyContinue

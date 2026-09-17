@@ -8,6 +8,8 @@ import {
   loadAppData,
 } from "./usePreloadedData";
 import { PreloadService } from "$shared/services/PreloadService";
+import { authState } from "$shared/stores/auth-session.svelte";
+import { graphView } from "$shared/stores/graph-view.svelte";
 import * as graphApi from "$shared/api/graph";
 import * as usersApi from "$shared/api/users";
 import { UserPoints } from "$entities";
@@ -33,20 +35,20 @@ describe("usePreloadedData Hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Полный сброс PreloadService
     delete (PreloadService as any).instance;
 
-    // Получаем новый инстанс сервиса
     const service = PreloadService;
-
-    // Принудительно очищаем все внутренние состояния
     (service as any).preloadedGraph = null;
     (service as any).preloadedAchievements = null;
     (service as any).isPreloading = false;
     (service as any).preloadPromise = null;
 
-    // Очищаем кэш
     service.clearCache();
+
+    authState.currentUser = null;
+    authState.accessToken = null;
+    authState.apiKey = null;
+    graphView.clear();
 
     vi.mocked(graphApi.getFullGraphData).mockResolvedValue(mockGraphData);
     vi.mocked(usersApi.getAllAchievements).mockResolvedValue(mockAchievementsData);
@@ -66,14 +68,19 @@ describe("usePreloadedData Hooks", () => {
 
       expect(result).toEqual(mockGraphData);
       // API не должен вызываться, так как есть предзагруженные данные
-      expect(graphApi.getFullGraphData).not.toHaveBeenCalledWith(500);
+      expect(graphApi.getFullGraphData).not.toHaveBeenCalledWith(
+        500,
+        undefined,
+        false,
+        "community"
+      );
     });
 
     it("should fetch from server when no preloaded data", async () => {
       const result = await getGraphWithPreload(500);
 
       expect(result).toEqual(mockGraphData);
-      expect(graphApi.getFullGraphData).toHaveBeenCalledWith(500);
+      expect(graphApi.getFullGraphData).toHaveBeenCalledWith(500, undefined, false, "community");
       // The fetched graph is seeded into PreloadService for future delta updates.
       expect(PreloadService.getPreloadedGraph()).toEqual(mockGraphData);
     });
@@ -82,7 +89,7 @@ describe("usePreloadedData Hooks", () => {
       const result = await getGraphWithPreload();
 
       expect(result).toEqual(mockGraphData);
-      expect(graphApi.getFullGraphData).toHaveBeenCalledWith(1000);
+      expect(graphApi.getFullGraphData).toHaveBeenCalledWith(1000, undefined, false, "community");
     });
 
     it("should handle server errors gracefully", async () => {
@@ -255,7 +262,7 @@ describe("usePreloadedData Hooks", () => {
       const result = await loadAppData({ limit: 500 });
 
       expect(result.graph).toEqual(mockGraphData);
-      expect(graphApi.getFullGraphData).toHaveBeenCalledWith(500);
+      expect(graphApi.getFullGraphData).toHaveBeenCalledWith(500, undefined, false, "community");
     });
 
     it("should handle API errors when fallbackToServer is false", async () => {
@@ -298,7 +305,59 @@ describe("usePreloadedData Hooks", () => {
 
       expect(result.graph).toEqual(mockGraphData);
       expect(result.achievements).toEqual(mockAchievementsData.achievements);
-      expect(graphApi.getFullGraphData).toHaveBeenCalledWith(1000);
+      expect(graphApi.getFullGraphData).toHaveBeenCalledWith(1000, undefined, false, "community");
+    });
+  });
+
+  describe("PUB-2 getGraphWithPreload", () => {
+    it("bypasses public cache with nocache=true and reseeds it", async () => {
+      vi.mocked(graphApi.getFullGraphData).mockResolvedValue({ ...mockGraphData, hash: "fresh" });
+      await PreloadService.startPreload();
+      expect(PreloadService.getPreloadedGraph()).toEqual({ ...mockGraphData, hash: "fresh" });
+
+      const result = await getGraphWithPreload(1000, true);
+
+      expect(graphApi.getFullGraphData).toHaveBeenLastCalledWith(
+        1000,
+        undefined,
+        true,
+        "community"
+      );
+      expect(result).toEqual({ ...mockGraphData, hash: "fresh" });
+      expect(PreloadService.getPreloadedGraph()).toEqual({ ...mockGraphData, hash: "fresh" });
+    });
+
+    it("returns a stale private result but keeps the public cache after a mode switch", async () => {
+      authState.accessToken = "tok1";
+      graphView.mode = "personal";
+      let resolvePrivate: (data: any) => void = () => {};
+      vi.mocked(graphApi.getFullGraphData).mockImplementationOnce(
+        () => new Promise((r) => (resolvePrivate = r))
+      );
+
+      const pending = getGraphWithPreload(1000, true, "personal");
+      graphView.mode = "community";
+      PreloadService.seedGraph({ ...mockGraphData, hash: "public-hash" });
+      resolvePrivate({ nodes: [{ id: "stale-private" }], links: [], hash: "stale" });
+
+      const result = await pending;
+      expect(result).toEqual({ nodes: [{ id: "stale-private" }], links: [], hash: "stale" });
+      expect(PreloadService.getPreloadedGraph()).toEqual({ ...mockGraphData, hash: "public-hash" });
+    });
+
+    it("does not repopulate cache when clearCache is called during a pending fetch", async () => {
+      let resolvePublic: (data: any) => void = () => {};
+      vi.mocked(graphApi.getFullGraphData).mockImplementationOnce(
+        () => new Promise((r) => (resolvePublic = r))
+      );
+
+      const pending = getGraphWithPreload(1000, true);
+      PreloadService.clearCache();
+      resolvePublic(mockGraphData);
+
+      const result = await pending;
+      expect(result).toEqual(mockGraphData);
+      expect(PreloadService.getPreloadedGraph()).toBeNull();
     });
   });
 });

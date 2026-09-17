@@ -103,9 +103,9 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 
 | Layer | Command | Notes |
 |-------|---------|-------|
-| Go backend unit | `cd backend && go test ./...` | Target 70% coverage, min 60% |
+| Go backend unit | `cd backend && go test ./...` | Target 70% coverage, min 70% |
 | Go backend integration | `cd backend && go test -tags=integration ./...` | testcontainers-go |
-| Frontend unit | `cd frontend && npm run test:unit` | Vitest; target 70% coverage |
+| Frontend unit | `cd frontend && npm run test:unit` | Vitest; target 70% coverage, min 70% |
 | Local core checks | `.\scripts\testing\check-all.ps1 [-Quick]` / `./scripts/testing/check-all.sh [--quick]` | Mirrors `_core-checks.yml`; skipped tools are reported explicitly |
 | E2E | `cd frontend && npm run test` | Playwright; only on isolated test stack |
 | BDD | `cd frontend && npm run test:bdd` | Cucumber; only on isolated test stack |
@@ -116,6 +116,37 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 - Stop dev and personal stacks before starting the test stack.
 - Add a regression test for every defect discovered in manual testing.
 - Before committing backend changes: `go test ./...`, `go vet ./...`, and clean up `coverage.out`, `*.cov`, `*.tmp`, `*.log`.
+
+### Adversarial phase (mandatory for new surfaces)
+
+Green tests prove the code does what you thought. They cannot tell you what you
+misunderstood. So covering a new surface has two phases, and the second is not
+optional:
+
+1. **Retrospective coverage.** Positive tests and the obvious negatives against the implementation as it stands.
+2. **Adversarial phase.** Tests designed *to fail*, written from knowledge of the implementation, the OpenAPI contract and the invariants you believe hold. Every failing test either exposes a defect (fix the code) or proves the test wrong (fix the test). Repeat while meaningful failures are still findable.
+
+Categories to work through: length boundaries (0, 1, max, max+1), enum validity including fallbacks, empty and maximal arrays, ownership and IDOR, duplicate ids and links, side effects (post-processing, metadata, `source_url`).
+
+**Adversarial tests carry no special name or marker.** A test earns its place by reddening on broken code, not by the intent it was written with; a marker in the name decays the moment someone forgets to add it, and then it lies. What is recorded instead is **what the phase found** — list the defects in the task file, as `tasks/BATCH-TEST-1-strategy.md` does for the batch routes.
+
+## Finishing functionality
+
+A change is finished when it is **covered by tests and written down**. Both, not either — and this applies equally to new behaviour and to changed behaviour.
+
+**Tests.** Anything implemented carries at least a basic test of its own behaviour. "Basic" is the floor, not the target: one test that would fail if the change were reverted. A change whose test cannot fail is not covered — see "Verifying a Finding" and the mutation requirement in review.
+
+**Documentation.** Every change that adds or alters behaviour a user or another service can observe must, in the same change:
+
+- update the document that describes that area, if one exists;
+- or create it, if the area has none;
+- and update the derived copies when the change touches a norm (`.windsurfrules` -> `.devin/skills/knowledge-graph/SKILL.md` and both master prompts).
+
+Applies to API contracts (`backend/openAPI.yaml`, `docs/API_EN.md`), configuration (`docs/CONFIGURATION_EN.md`), operational behaviour (`docs/DEPLOYMENT_EN.md`, `docs/DOCKER.md`), and the skills when a trap is discovered that would cost the next person time.
+
+Reason: a feature nobody can find is indistinguishable from a feature that does not exist, and the person who pays for the omission is never the one who made it.
+
+Reviewers: a change that adds behaviour and touches no documentation is rejected on that ground alone, unless the change itself says why none was needed.
 
 ## Documentation and configuration rules
 
@@ -165,6 +196,10 @@ For new AI tooling configuration (skills, prompts, rules, MCP configs, project s
 A search locates a candidate. It never confirms one. Before reporting a
 finding — or accepting someone else's — follow "Verifying a Finding" in
 `.windsurfrules`:
+
+**A zero is a measurement, and measurements break.** When a count comes back empty — no rows, no nodes, no matches — verify first that the thing being measured exists at all, and that the tool reporting it is working. Check the source of truth directly (the database, the file, the route table) before concluding the product is broken.
+
+Corollary: **an operation that reports success has not been verified.** Check that it changed what you believe it changed — a script that matched zero lines still exits 0, and a commit message can claim work the diff does not contain.
 
 - Read the surrounding context, not the matching line. A hit inside a
   "do not do this" list, a code example, or a dated journal entry is not a

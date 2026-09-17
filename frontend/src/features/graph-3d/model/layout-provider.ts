@@ -1,5 +1,6 @@
 import type { GraphData, GraphLink } from "$shared/api/graph";
 import { getFullGraphData, getGraphData } from "$shared/api/graph";
+import { type GraphViewMode } from "$shared/stores/graph-view.svelte";
 import { toSimulationNodes, type Graph3DRuntimeConfig } from "../config";
 import type { SimulationNode } from "./types";
 
@@ -18,6 +19,8 @@ export interface GraphLayoutParams {
   depth?: number;
   userId?: string;
   limit?: number;
+  viewMode?: GraphViewMode;
+  nocache?: boolean;
 }
 
 /**
@@ -31,7 +34,7 @@ export class D3ForceLayoutProvider implements GraphLayoutProvider {
     if (params.noteId) {
       return getGraphData(params.noteId, params.depth ?? 2, params.userId);
     }
-    return getFullGraphData(params.limit, params.userId);
+    return getFullGraphData(params.limit, params.userId, params.nocache, params.viewMode);
   }
 }
 
@@ -46,7 +49,7 @@ export class GraphServiceLayoutProvider implements GraphLayoutProvider {
     if (params.noteId) {
       return getGraphData(params.noteId, params.depth ?? 2, params.userId, "3d");
     }
-    return getFullGraphData(params.limit, params.userId);
+    return getFullGraphData(params.limit, params.userId, params.nocache, params.viewMode);
   }
 }
 

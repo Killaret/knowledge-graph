@@ -147,7 +147,7 @@ for (const entry of manifest) {
     if (entry.command.startsWith("@coverage:")) {
         const threshold = entry.command.slice("@coverage:".length);
         // The bare number must appear in a comparison, not only inside an
-        // echoed "64.8%" label: exclude matches followed by % or digits.
+        // echoed "70%" label: exclude matches followed by % or digits.
         // Escape the threshold so any regex metacharacters (including \)
         // are treated literally.
         const escapedThreshold = threshold.replace(

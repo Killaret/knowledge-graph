@@ -37,7 +37,7 @@
 
 - **Go 1.25** — основной язык (`backend/go.mod`).
 - **Gin v1.12** — HTTP-роутер/фреймворк.
-- **GORM v1.25** — ORM для PostgreSQL.
+- **GORM v1.31.2** — ORM для PostgreSQL.
 - **pgx/v5** — драйвер PostgreSQL.
 - **go-redis/v9** — клиент Redis (запрещён v8 API, `.windsurfrules`).
 - **asynq v0.26.0** — очереди задач на Redis (обновлён с v0.23.0, `backend/go.mod`).
@@ -217,7 +217,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 | Уровень         | Команда                                         | Инструмент                       | Покрытие            |
 | --------------- | ----------------------------------------------- | -------------------------------- | ------------------- |
-| Go unit         | `cd backend && go test ./...`                   | testify                          | min 60%, target 70% |
+| Go unit         | `cd backend && go test ./...`                   | testify                          | min 70%, target 70% |
 | Go integration  | `cd backend && go test -tags=integration ./...` | testcontainers-go, miniredis     | —                   |
 | Frontend unit   | `cd frontend && npm run test:unit`              | Vitest                           | target 70%          |
 | E2E             | `cd frontend && npm run test`                   | Playwright                       | —                   |
@@ -266,7 +266,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 5. **Несоответствия в compose/документации**: неправильные порты graph-service, отсутствовал `redis_data` volume, устаревшие ссылки на `src/shared/three/`.
 6. **Frontend i18n и `any`**: `SidebarWidget.svelte` содержал хардкодный русский; `auth-session` и `auth` использовали `as any`.
 7. **Formatter/ESLint**: `npm run format:check` и `npx eslint .` сообщали о проблемах.
-8. **Coverage thresholds**: в `vitest.config.ts` стояли 60% (target — 70%).
+8. **Coverage thresholds**: frontend и backend enforced min подняты до 70% (было 60% в `vitest.config.ts` и 64.8% в backend CI).
 9. **go-redis v8 transitive**: устаревший `github.com/go-redis/redis/v8` тянулся через `asynq`.
 10. **Пропуски миграций**: отсутствовали файлы `015` и `021`.
 11. **CORS**: `CORS_ALLOWED_ORIGINS` был настроен, но methods/headers/max-age захардкожены в middleware.
@@ -723,8 +723,8 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 **Открытые риски / вопросы.**
 
 - Контракт ссылок в `/import/batch`: внешний Java/source-text handler не имеет UUID новых заметок. Текущий механизм клиентских `id` работает, но неудобен. Нужно решить: индексы массива, `external_id` с маппингом в ответе или упорядоченные операции. Обсуждается с Claude Code / владельцем.
-- **Adversarial-тестирование:** процесс зафиксирован в `docs/tasks/BATCH-TEST-STRATEGY.md`; осталось договориться о маркировке и формализации "практического исчерпания".
-- **DDD / Clean Architecture:** валидация `noteType` сейчас в `interfaces`, нужен перенос в `domain`. Варианты описаны в `docs/tasks/BATCH-DDD-VALIDATION.md`.
+- **Adversarial-тестирование:** процесс зафиксирован в `docs/tasks/BATCH-TEST-1-strategy.md`; осталось договориться о маркировке и формализации "практического исчерпания".
+- **DDD / Clean Architecture:** валидация `noteType` сейчас в `interfaces`, нужен перенос в `domain`. Варианты описаны в `docs/tasks/BATCH-DDD-1-validation.md`.
 - **Таксономия типов заметок:** обсуждена в `docs/tasks/NOTE-TYPE-TAXONOMY.md`; нужно согласовать `scaleRank`, состав `UI_TYPES` и единый порядок во всех списках (backend, frontend, OpenAPI) перед реализацией `BATCH-DDD-1`.
 
 ## 18. AUD-4: контракт входа через Яндекс (2026-09-06)
@@ -838,7 +838,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 | #30 | backend Go | `pgvector-go` | 0.2.0 | 0.4.1 | Средний | ✅ замёржен (разрешён конфликт go.mod, `go test -p 1 ./...` pass) |
 | #32 | backend Go | `testcontainers-go` | 0.40.0 | 0.44.0 | Средний-высокий | ❌ закрыт как дублирующий #28 |
 | #56 | NLP Python | `httpx` | 0.25.2 | 0.28.1 | Низкий-средний | ✅ замёржен |
-| #25 | NLP Python | `yake` | 0.4.8 | — | Средний | ❌ отклонён — вместо обновления до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ); см. [`tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md`](tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md) |
+| #25 | NLP Python | `yake` | 0.4.8 | — | Средний | ❌ отклонён — вместо обновления до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ); см. [`tasks/NLP-2-yake-replace-keybert-lemmatization.md`](tasks/NLP-2-yake-replace-keybert-lemmatization.md) |
 | #27 | NLP Python | `python-dotenv` | 1.0.0 | 1.2.3 | Низкий | ✅ замёржен |
 | #29 | NLP Python | `pydantic` | 2.5.2 | 2.13.5 | Средний | ✅ замёржен |
 | #31 | NLP Python | `sentence-transformers` | 2.2.2 | 2.7.0 | Высокий | ✅ замёржен; пересчёт embeddings не потребовался |
@@ -874,7 +874,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 8. ✅ Новая волна Dependabot (#70–#77), #79 (`nltk`) и #85 (`go_modules`) — все смержены после фикса CI.
 
 **Следующий шаг:**
-- **#25** (`yake`): отклонён — вместо обновления `yake` до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ). PR #25 закрыт, `yake` остаётся 0.4.8. Подробности: [`tasks/DEPENDABOT-25-yake-license.md`](tasks/DEPENDABOT-25-yake-license.md), [`tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md`](tasks/YAKE-REPLACE-KEYBERT-LEMMATIZATION.md).
+- **#25** (`yake`): отклонён — вместо обновления `yake` до 0.7.3 будет замена на `keybert` (MIT) с лемматизацией (рус/англ). PR #25 закрыт, `yake` остаётся 0.4.8. Подробности: [`tasks/DEPENDABOT-25-yake-license.md`](tasks/DEPENDABOT-25-yake-license.md), [`tasks/NLP-2-yake-replace-keybert-lemmatization.md`](tasks/NLP-2-yake-replace-keybert-lemmatization.md).
 - **#79** (`nltk` 3.8.1 → 3.10.3): ✅ замёржен — добавлен `allow-ghsas: GHSA-8mgp-746c-j5xp`; остаточный риск принят и задокументирован. Подробности: [`tasks/DEPENDABOT-79-nltk-vulnerability.md`](tasks/DEPENDABOT-79-nltk-vulnerability.md).
 
 ## 22. Правки CI под PR #36, 2026-09-11
@@ -1086,31 +1086,333 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 **Статус:** всё передано на ревью/обсуждение Claude Code.
 
-## 26. FE-DEPS-106: совместимое обновление frontend-зависимостей и верификация GORM (2026-09-15)
+## 26. Test stack JWT, PowerShell check runner, publish API documentation (2026-09-14)
 
-**Контекст.** Новая волна Dependabot-PR (2026-09-14) принесла 18 PR. Безопасные смержены через PR #107. Сложные остались открытыми: frontend toolchain (#106), конфликтующие GORM (#95, #101) и четырка NLP (#102, #92, #100, #96).
+### 26.1 ENV-1 — `JWT_SECRET` for clean-machine test stack
 
-**FE-DEPS-106 — реализация Devin.**
+- `docker-compose.test.yml`: `${JWT_SECRET:-test-jwt-secret-32-characters-long}` in backend, worker and e2e.
+- `scripts/testing/start-test.ps1` and `start-test.sh` load `.env.test` without overwriting exported process variables, then set the default if `JWT_SECRET` is still empty.
+- `.env.test.example` and `.gitignore` added so a real `.env.test` stays local.
+- Verified: test stack starts on a machine with no manual `.env`, services become healthy, only expected Yandex OAuth warnings remain.
 
-- Ветка: `feat/frontend-toolchain-106`; смерджено в `main` 2026-09-16 (PR #110, merge commit `5afb66f`).
-- `vite` `^8.2.2` → `^8.3.0`, `happy-dom` `^20.14.0` → `^20.14.3`, `@types/node` `^26.5.0` → `^26.5.1`.
-- `typescript` `7.0.2`, `eslint` `10.10.0` и `@eslint/js` `10.10.0` — отложены из-за peer-конфликтов (`@sveltejs/kit`, `typescript-eslint`, `madge`, `eslint-plugin-jsx-a11y`).
-- `vite.config.ts` теперь определяет `__dirname` через `import.meta.url`, убирая предупреждение Vite 8.3.
-- Frontend-проверки зелёные: `npm run check`, `build`, `lint`, `test:unit`, `test:coverage`, `format:check`, `check:circular`.
-- Постановка: [`tasks/FE-DEPS-106-frontend-toolchain-update.md`](tasks/FE-DEPS-106-frontend-toolchain-update.md).
-- Статус: **принято** — PR #110 смерджен; после CI прошёл с правками docs link и smoke test host 127.0.0.1.
+### 26.2 CHECK-ALL-1 — PowerShell 5.1 phase tracking
 
-**Верификация GORM.**
+- `scripts/testing/lib/phase-tracking.ps1` converted to ASCII-safe output (removed UTF-8 em-dash without BOM).
+- `check-all.ps1` now fails loudly when `phase-tracking.ps1` cannot be dot-sourced and when required functions are missing.
+- Added a non-ASCII/BOM guard for `scripts/**/*.ps1`.
+- Verified by mutation: a deliberately broken phase prints `[FAIL]` and the final exit code is non-zero; a clean full run of `check-all.ps1` (without `-Quick`) is PASS, only `golangci-lint` skipped because the tool is not installed.
 
-- `gorm.io/gorm` — последняя стабильная `v1.31.2`; линии `v3.0.1` не существует.
-- `gorm.io/driver/postgres` — последняя стабильная `v1.6.3`.
-- `gorm.io/datatypes` — последняя стабильная `v1.2.7`.
-- PR #95 (driver 1.6.2) и PR #101 (datatypes 1.2.7) конфликтуют по `gorm.io/gorm` (`1.31.2` vs `1.30.0`). Смержить по отдельности нельзя; нужен единый комбинированный PR с backend-тестами.
+### 26.3 NOTE-PUBLISH-DOC — publish path in API guide
 
-**Остальные открытые Dependabot-PR.**
+- `docs/API_EN.md` explicitly documents `POST /api/v1/notes/{id}/publish` and `POST /api/v1/notes/{id}/unpublish`.
+- Notes are created private; `PUT /notes/{id}` does not accept `is_public` or `source_url` (the DTO and `UpdateNoteRequest` schema no longer include them).
+- `node scripts/testing/check-docs-links.mjs .` passes.
 
-- `#95` / `#101` — GORM (backend).
-- `#106` — frontend toolchain (теперь `FE-DEPS-106`).
-- `#102` (`sentence-transformers` 2.7.0 → 6.0.1), `#92` (`huggingface-hub` 0.23.0 → 1.31.0), `#100` (`uvicorn` 0.34.0 → 0.52.4), `#96` (`fastapi` 0.115.5 → 0.141.1) — NLP, рекомендуется обновлять одной группой на изолированном тест-стеке с реальным скачиванием модели.
+**Статус:** реализация выполнена, передана на ревью Claude Code.
 
-**Статус:** frontend-реализация передана Claude Code; GORM и NLP — в планировании/ожидании очереди.
+## 27. DECISIONS-1 — сторож указателя решений владельца (2026-09-14)
+
+### 27.1 Указатель
+
+- `docs/DECISIONS.md` дополнен до 29 записей; добавлены 7 ранее неиндексированных решений: `BOARD-1`, `DEPENDABOT-25`, `DEPENDABOT-79`, `NOTE-QUALITY-1`, `NOTE-TYPE-TAXONOMY`, `P11-1`, `SECURITY-1`.
+- Решения без кода (`NOTE-QUALITY-1`, `P11-1`) помечены `(кода не требует)`.
+- Исправлен парсинг идентификаторов, начинающихся с цифр (`P11-1`).
+
+### 27.2 Сторож
+
+- `scripts/testing/check-decisions.mjs` реализует 4 правила: резолв ссылок, соответствие маркеров указателю, след кода по идентификатору в коммите, архив терминальных строк старше трёх дней.
+- Интегрирован в `check-all.ps1` через `core-checks.tsv` (`decisions`) и в CI `frontend-checks` (`Check decision index`).
+- `check-core-workflow-sync.mjs`: 18 local phases match 18 CI steps.
+
+### 27.3 Протокол
+
+- В `docs/AI_AGENT_PROTOCOL.md` добавлено правило: коммит реализации называет идентификатор задачи в заголовке или теле; исключения — `(кода не требует)`.
+
+### 27.4 Мутации
+
+- Все 4 мутации пройдены: решение без записи в указателе, битая ссылка, решение без коммита, устаревшая терминальная строка. Выводы приложены в `docs/tasks/DECISIONS-1-decision-index-and-guard.md`.
+
+### 27.5 Верификация
+
+- `check-all.ps1` без `-Quick`: 17 PASS, 1 SKIP (`golangci-lint`), exit 0.
+- `node scripts/testing/check-decisions.mjs .` PASS.
+
+**Статус:** реализация выполнена, передана на ревью Claude Code.
+
+## 28. BOARD-1 — ретенция доски и сторож размера (2026-09-14)
+
+### 28.1 Правила
+
+- Правило ретенции распространено и на реплики: `docs/AI_HANDOFF.md` (шапка), `docs/AI_AGENT_PROTOCOL.md` (таблица обмена), `.claude/commands/kg-work.md`, `.devin/skills/kg-work/SKILL.md`.
+- Описан формат реплики: 3–4 предложения, указатель, ссылка на `docs/tasks/<id>-review-findings.md`.
+- Раздел «Решения владельца» из `docs/AI_HANDOFF.md` перенесён в `docs/DECISIONS.md` без изменений; в доске оставлена ссылка. `docs/DECISIONS.md` добавлен в список обязательного чтения `CLAUDE.md`.
+
+### 28.2 Сторож
+
+- `scripts/testing/check-board-size.mjs` проверяет, что `docs/AI_HANDOFF.md` не превышает 120 КБ (решение владельца 2026-09-14; было 40 КБ).
+- Интегрирован в `core-checks.tsv`, `_core-checks.yml` и `check-all.ps1`/`check-all.sh` через `frontend-checks` (`Check board size`).
+- `check-core-workflow-sync.mjs`: 19 local phases match 19 CI steps.
+
+### 28.3 Верификация
+
+- `node scripts/testing/check-board-size.mjs .` — FAIL: `AI_HANDOFF.md` ~208.0 КБ, порог 40 КБ. Это ожидаемое состояние: содержимое доски не чистил, первая чистка по постановке за владельцем.
+- `check-all.ps1` без `-Quick`: 17 PASS, 1 SKIP, 1 FAIL (board size); остальные фазы зелёные, включая backend и graph integration. В сообщении сторожа исправлена опечатка `replics` → `replies`.
+
+## 29. PUB-3 — переименование публичного эндпоинта графа (`all` → `public`) (2026-09-14)
+
+### 29.1 Что изменено
+
+- `backend/cmd/server/router.go`: маршрут переименован из `all` в `public`.
+- `backend/internal/interfaces/api/middleware/jwt.go`: `SkipPaths` обновлён на `/api/v1/graph/public`.
+- `backend/openAPI.yaml`: путь и summary (`Get public graph`).
+- Go-интеграционные тесты (`graphhandler/*_test.go`) используют `/graph/public`.
+- Фронтенд/E2E/Playwright тесты (`frontend/src/shared/api/graph.test.ts`, `frontend/tests/preload-full-cycle.spec.ts`, `frontend/tests/public-graph-real-auth.spec.ts`, `tests/e2e/api-contract.spec.ts`) обновлены на `/graph/public`.
+- Скрипты проверки стеков и регресса (`scripts/ci/check-stacks-health.*`, `scripts/testing/run-full-test-cycle.ps1`) обновлены.
+- Активная документация (`docs/API_EN.md`, `docs/API_ERRORS_EN.md`, `docs/CONFIGURATION_EN.md`, `docs/DOCKER.md`, `docs/GRAPH3D.md`, `docs/LINK_TYPES*.md`, `docs/MANUAL_TEST_CHECKLISTS_RU.md`, `docs/API_TEST_COVERAGE_PLAN.md`, `docs/BACKLOG.md`, `docs/assets/graph-loading-flow.*`, `docs/DECISIONS.md`, `CHANGELOG.md`) приведена в соответствие.
+- Постановки и review-findings (`docs/tasks/PUB-3-rename-graph-endpoints.md`, `PUB-2-graph-view-mode.md`, `PUB-2-review-findings.md`, `API-1-openapi-contract-and-handover.md`, `SPECS-1-review-findings.md`, `AUD-2-*`) обновлены.
+
+### 29.2 Живая верификация
+
+- Тест-стек поднят, данные засеяны (20 публичных заметок).
+- `curl -s -D - http://127.0.0.1:18083/api/v1/graph/public?limit=1` → `HTTP/1.1 200 OK` (анонимно, `Cache-Control: private, max-age=300`).
+- `GET /api/v1/graph/{old-public}?limit=1` → `HTTP/1.1 404 Not Found`.
+
+### 29.3 Поиск остатков
+
+- Активный код, тесты, скрипты и документация больше не содержат действующих ссылок на старый публичный путь.
+- Оставшиеся совпадения ограничены историческими/спецификационными документами: `docs/architecture/decisions/018-public-graph-access-model.md` (ADR), `docs/EXTERNAL_AUDIT_2026-09.md` (снапшот аудита), `docs/archive/TEST_EXECUTION_REPORT.md` (архив).
+
+### 29.4 Верификация
+
+- `go test ./internal/interfaces/api/graphhandler/... -v` — PASS.
+- `go test ./internal/interfaces/api/graphhandler/... -v -tags=integration` — PASS.
+- `npm run test:unit -- src/shared/api/graph.test.ts` — 41/41 PASS.
+- `check-all.ps1` без `-Quick`: 19 PASS, 1 SKIP (`golangci-lint` не установлен), exit 0.
+
+**Статус:** реализация выполнена, передана на ревью Claude Code.
+
+## 30. AUTHOR-1 — сторож авторства коммитов (2026-09-14)
+
+### 30.1 Что изменено
+
+- `scripts/testing/check-commit-authorship.mjs`: читает `docs/AI_AGENT_PROTOCOL.md`, проверяет `main..HEAD` (или CI range), ловит коммит, у которого `Co-Authored-By:` — агент, а автор — другой.
+- `scripts/testing/core-checks.tsv` и `.github/workflows/_core-checks.yml`: добавлена фаза `commit-authorship` (`Check commit authorship`) в `frontend-checks`.
+- `scripts/testing/check-agent-session-tree.mjs`: не позволяет начать сессию агента, если `git status --porcelain` не пуст. Это второй сигнал AUTHOR-1: убирает условие, при котором чужая работа попадает в чужой коммит.
+- `.devin/skills/kg-work/SKILL.md` и `docs/AI_AGENT_PROTOCOL.md`: шаг 0 `/kg-work` теперь требует чистого дерева.
+- `docs/AI_LOG.md` и `docs/tasks/AUTHOR-1-commit-authorship-guard.md` дополнены исправлением атрибуции и итогом.
+
+### 30.2 Атрибуция
+
+- Первая реализация сторожа трейлеров (`check-commit-authorship.mjs`, строка в `core-checks.tsv`, шаг в `_core-checks.yml`) была написана Devin, но попала в коммит `d3f3e17`, автором в git указан Claude Code, потому что Claude Code закоммитил широким захватом поверх незакоммиченного дерева Devin. Это иллюстрация дыры, описанной в дополнении постановки. История не переписывается: коммит в `origin/ai-agents`. Исправление записано в `docs/AI_LOG.md`.
+
+### 30.3 Мутации
+
+1. Claude Opus 5 + `Co-Authored-By: Devin` → FAIL (нарушение).
+2. Devin + `Co-Authored-By: Devin` → OK.
+3. Человек без трейлера → OK.
+
+Все три мутации отработали и откачены `git reset --hard`; история не изменилась.
+
+### 30.4 Верификация
+
+- `node scripts/testing/check-commit-authorship.mjs .` — `Commit authorship OK for 33 commit(s) in main..HEAD.`
+- `node scripts/testing/check-core-workflow-sync.mjs` — `Workflow sync OK: 20 local phases match 20 CI steps.`
+- `check-all.ps1` без `-Quick` — 20 PASS, 1 SKIP (`golangci-lint`), exit 0. В том числе новая фаза `Commit authorship guard`.
+
+**Статус:** реализация выполнена, передана на ревью Claude Code.
+
+## 31. BACKUP-2 — canonical backup directory
+
+**Коммит:** `b7070c8`.
+
+### 31.1 Задача
+
+Единый источник каталога бэкапа Personal-стека: скрипты, сторож и compose должны смотреть в `Desktop\\my items`, а не в `<repo>/backups`.
+
+### 31.2 Что изменилось
+
+- `scripts/devops/backup-policy.env` теперь содержит `KG_BACKUP_DIR=Desktop/my items` и `KG_BACKUP_MAX_AGE_HOURS=24`.
+- `backup-personal.{ps1,sh}`, `check-personal-backup.{ps1,sh}`, `guard-personal-data.py` и `docker-compose.personal.yml` читают `KG_BACKUP_DIR`.
+- Относительный путь разворачивается от домашнего каталога; абсолютный (`C:/...`, `/...`, `\\\\...`) остаётся без изменений.
+- `check-personal-backup.sh` починен: убран сломанный `REPO_ROOT` (`A || B && C`), исправлена тильда-развёртка, которая дублировала `$HOME` на путях вида `/c/Users/...`.
+- `guard-personal-data.py` теперь использует `resolve_backup_dir()` вместо хардкода `<repo>/backups`.
+- Тесты сторожа (`test_guard_personal_data.py`) расширены с 36 до 39 assertions.
+- Подключены в `core-checks.tsv` и `_core-checks.yml` как фаза `Personal data guard tests`.
+
+### 31.3 Мутации
+
+1. Свежий бэкап → `[PASS]` (PowerShell, shell, guard).
+2. Состаренный тот же файл → `[ERROR] ... h old` (PowerShell, shell, guard deny).
+3. Пустой каталог → `[ERROR] No backup directory` (PowerShell, shell, guard deny).
+4. Нулевой свежий файл → `[ERROR] No non-empty backup` (PowerShell, guard deny; shell — то же).
+5. Shell до/после: до — «No backup directory» при полном каталоге; после — тот же `[ERROR]`, что и PowerShell.
+
+### 31.4 Верификация
+
+- `python scripts/devops/test_guard_personal_data.py` — `All checks passed (39 assertions)`.
+- `bash -n scripts/devops/backup-personal.sh` / `check-personal-backup.sh` — зелёно.
+- `node scripts/testing/check-core-workflow-sync.mjs` — `21 local phases match 21 CI steps`.
+- `check-all.ps1 -Quick` — 21 PASS, 3 SKIP (`golangci-lint`, backend integration, graph integration), exit 0.
+
+**Статус:** реализация выполнена, передана на ревью Claude Code.
+
+## 32. DOC-SYNC-2 — Adversarial Phase norm mirrored
+
+**Коммит:** `5376f9c`.
+
+Раздел `.windsurfrules` **Adversarial Phase (MANDATORY for new surfaces)** зеркалирован в:
+- `.devin/skills/knowledge-graph/SKILL.md`
+- `.devin/prompts/MASTER_PROMPT.md`
+- `.devin/prompts/MASTER_PROMPT_RU.md`
+
+Также убран терминальный ряд доски `CI-4` (дата 2026-09-11), который превысил 3 дня и вызывал `check-decisions` FAIL.
+
+**Статус:** на ревью Claude Code.
+
+## 33. REG-2 — интеграционный тест пакетной близости
+
+### 33.1 Проблема
+
+`FindSimilarNotesBatch` используется в `embedding_loader.go` и `gamma_link_generator.go`, но до правки ни один тест не выполнял его SQL на настоящей pgvector-базе: все существующие тесты мокали репозиторий.
+
+### 33.2 Что изменено
+
+- `backend/internal/infrastructure/db/postgres/embedding_repo.go`: параметр `[]uuid.UUID` теперь передаётся через `pq.Array([]string{...})` в оператор `ANY(?)`. Сам SQL не менялся; сырой срез GORM разворачивал в несколько плейсхолдеров, что приводило к `ERROR: syntax error at or near ","`.
+- `backend/internal/infrastructure/db/postgres/embedding_repo_test.go`: новый интеграционный тест `TestEmbeddingRepository_FindSimilarNotesBatch` (`//go:build integration`) проверяет:
+  - оценку в `[0, 1]` и хотя бы одну ненулевую;
+  - один результат на каждый запрошенный `id`, у которого есть соседи;
+  - пустой результат для заметки без эмбеддинга;
+  - лимит именно на каждый `id`, а не на выдачу целиком;
+  - фильтрацию по `model_name` (заметка со старой моделью не просачивается).
+
+### 33.3 Данные теста
+
+- Источники: `6000...`, `7000...`.
+- Цели: `1000...` (близкая), `2000...` (далёкая, `cosine distance ≈ 2`), `3000...` (близкая, не влезает в лимит), `4000...` (старая модель), `5000...` (без эмбеддинга).
+- `limit = 2`, кандидатов 3: каждый источник получает ровно 2 результата.
+
+### 33.4 Мутации
+
+1. `as score` → `as similarity`: `FindSimilarNotesBatch` падает с `ERROR: column "score" does not exist` (потому что `ORDER BY score DESC` ссылается на алиас; поле `Score` структуры не заполняется).
+2. Убрать `GREATEST/LEAST`: тест падает с `score -1 out of [0, 1]` и `expected far score 0.0 after clamping, got -1`.
+3. Глобальный `LIMIT ?` в SQL: тест падает с `source 7000...: missing from batch results` и `expected 2 results, got 0`.
+
+Все три мутации откачены.
+
+### 33.5 Верификация
+
+- `go test -count=1 -tags=integration -run TestEmbeddingRepository_FindSimilarNotesBatch ./internal/infrastructure/db/postgres/...` — PASS (`TEST_DATABASE_URL` на тест-стек, testcontainers не используется).
+- `go test ./...` (без тега `integration`) — PASS.
+- Документация по поведению `FindSimilarNotesBatch` в `docs/` отсутствует; дополнительных документов не требовалось.
+
+**Статус:** на ревью Claude Code.
+
+## 34. TASKS-INDEX-1 — генератор указателя постановок
+
+### 34.1 Что изменено
+
+- `scripts/testing/generate-tasks-index.mjs`: генерирует `docs/tasks/README.md` из `docs/tasks/*.md`, `docs/AI_HANDOFF.md` и `docs/AI_LOG.md`; идентификатор выбирается по самому длинному известному доске/журналу префиксу файла; поддерживает суффиксы `AUD-7a`/`AUD-7b`; ссылки статуса нормализуются от `tasks/X.md` к `X.md`.
+- `scripts/testing/check-tasks-index.mjs`: сторож дрейфа — ловит файлы без известного идентификатора, расхождение между каталогом и `docs/tasks/README.md`, ссылки доски/журнала на отсутствующие файлы.
+- `scripts/testing/core-checks.tsv` и `.github/workflows/_core-checks.yml`: добавлена фаза `tasks-index` в `frontend-checks`.
+- Переименованы 10 файлов, чьи имена не начинались с доски/журнала: `BATCH-1-api-design.md`, `BATCH-DDD-1-validation.md`, `BATCH-TEST-1-strategy.md`, `AUD-1-review-findings.md`, `DOCS-LINKS-1-review-findings.md`, `SPECS-1-review-findings.md`, `VERIFY-FINDING-MIRROR-1-review-findings.md`, `NLP-2-yake-replace-keybert-lemmatization.md`, `PROJECT-SKILLS-1-review-findings.md`. Три файла из исходного списка 13 (`AUD-7a-enforce-boundaries.md`, `AUD-7b-lint-tests-and-coverage-denominator.md`, `NOTE-TYPE-TAXONOMY.md`) после исправления парсера оказались корректными.
+- Установлены идентификаторы в `docs/AI_LOG.md` и `docs/AI_HANDOFF.md` для `PROJECT-SKILLS-1`, `DOCS-LINKS-1`, `SPECS-1`, `VERIFY-FINDING-MIRROR-1`, `DEPENDABOT-79`, `MONGO-1`.
+
+### 34.2 Мутации
+
+1. `MUTATION-1-temp.md` без обновления указателя → `check-tasks-index.mjs` FAIL: `Unknown identifier: MUTATION-1-temp.md` + drift.
+2. `mutation-no-id.md` без идентификатора → FAIL: `Unknown identifier: mutation-no-id.md`.
+3. Строка доски со ссылкой `tasks/NONEXISTENT-999.md` → FAIL: `docs\AI_HANDOFF.md links to missing task file: NONEXISTENT-999.md`.
+4. Удаление всех мутаций и повторная генерация → `Task index OK: 89 entries, no drift, no broken board links.`
+
+### 34.3 Верификация
+
+- `node scripts/testing/generate-tasks-index.mjs .` — `Generated 89 task index entries at docs\tasks\README.md.`
+- `node scripts/testing/check-tasks-index.mjs .` — `Task index OK: 89 entries, no drift, no broken board links.`
+- `node scripts/testing/check-docs-links.mjs .` — `Docs OK`.
+- `node scripts/testing/check-core-workflow-sync.mjs` — число фаз сходится с CI.
+
+**Статус:** на ревью Claude Code.
+
+## 35. GORDON-1 — внешние документы Gordon и полный локальный прогон
+
+### 35.1 Что изменено
+
+- Три внешних AI-документа, ранее лежавших в корне (`DEPLOYMENT_OPTIMIZATION_MAP.md`, `PROJECT_REVIEW_COMPREHENSIVE.md`, `docs/GORDON_ANALYSIS.md`), перенесены в `docs/gordon/`.
+- Создана постановка [`tasks/GORDON-1-gordon-documents-review.md`](tasks/GORDON-1-gordon-documents-review.md) — ожидает обзора и вердикта владельца.
+- `docs/tasks/README.md` перегенерирован: 90 записей, `check-tasks-index.mjs` зелёный.
+
+### 35.2 Верификация
+
+- Полный `scripts/testing/check-all.ps1` (не `-Quick`) прошёл: **21 PASS**, **1 SKIP** (`golangci-lint` не установлен), **exit 0**.
+- Frontend unit tests: 139 файлов / 1430 тестов PASS.
+- Backend coverage: 66.4% (порог на тот момент 64.8%).
+- Task index, decision index, board size, commit authorship, documentation links — все зелёные.
+
+**Статус:** GORDON-1 ждёт человека.
+
+## 36. DEPLOY-2 — публикация Docker-образов из CI
+
+### 36.1 Что изменено
+
+- `.github/workflows/deploy.yml` публикует 5 образов на Docker Hub после успешной проверки deploy-стека:
+  - тег `YYYY-MM-DD-<short-sha>`;
+  - тег `main`, который двигается на каждый зелёный push в `main`.
+- Публикация только из `main`; `ai-agents` проверяется, но не публикует.
+- При отсутствии `DOCKER_USERNAME`/`DOCKER_PASSWORD` шаг публикации пропускается с сообщением, workflow остаётся зелёным.
+- `deploy` job перестал быть `echo`: теперь он верифицирует манифесты опубликованных образов и имеет `environment: production`.
+- `docker-compose.deploy.yml` по умолчанию использует `main` вместо застывшего `2026-09-08`, с комментарием про семантику тегов.
+- `docs/API_EN.md` и `docs/DEPLOYMENT_EN.md` описывают: `main` = последний зелёный `main`, датированный тег = заморозка.
+
+### 36.2 Верификация
+
+- `docker compose -f docker-compose.deploy.yml config` валиден.
+- `.github/workflows/deploy.yml` валиден (`python -c "import yaml; ..."`).
+- `check-all -Quick` — 18 PASS, 3 SKIP, exit 0.
+
+**Статус:** на ревью у Claude Code.
+
+## 37. COVERAGE-1 — пороги покрытия unit-тестов подняты до 70%
+
+### 37.1 Решение владельца
+
+- Все пороги unit coverage — **70% как цель, так и enforced min** (frontend и backend).
+- Backend измеряется по unit-testable пакетам; из знаменателя исключены CLI main, generated gRPC client (`internal/infrastructure/graph`), test helpers (`internal/testutil`, `internal/domain/cache/cachetest`) и `scripts`.
+
+### 37.2 Изменения
+
+- `.windsurfrules`: обновлена таблица покрытия.
+- `docs/TESTING.md`: актуальные цифры и пояснение по знаменателю backend.
+- `docs/PROJECT_REVIEW_AI_AGENTS.md` §6: Go unit min 70%, frontend unit target/min 70%.
+- `.devin/prompts/MASTER_PROMPT.md` и `MASTER_PROMPT_RU.md`: Go backend min 70%, frontend target/min 70%.
+- `scripts/testing/core-checks.tsv` и `.github/workflows/_core-checks.yml`: backend coverage threshold 70%.
+- `scripts/testing/check-all.ps1` и `check-all.sh`: используют `backend-coverage-total.py`.
+- `scripts/testing/backend-coverage-total.py` + `backend-coverage-excludes.txt`: вычисляет backend unit coverage по `cover.out` с фильтром.
+- `docs/DECISIONS.md`: решение #38.
+- `docs/tasks/COVERAGE-1-align-backend-coverage-threshold.md` и `docs/AI_HANDOFF.md`/`docs/AI_LOG.md` обновлены.
+
+### 37.3 Верификация
+
+- `python scripts/testing/backend-coverage-total.py backend/cover.out 70` → **72.2%** [PASS].
+- Frontend `npm run test:coverage` → statements **82.21%**, branches **70.7%**, functions **82.38%**, lines **84.01%** — все выше 70%.
+
+**Статус:** на ревью у Claude Code.
+
+---
+
+## 38. FE-DEPS-106, GORM-COMBINED-1 и E2E-CANVAS-1 (2026-09-16)
+
+### 38.1 FE-DEPS-106
+
+Совместимое обновление frontend-инструментария (PR #110, смерджен в main): `vite` 8.3, `happy-dom` 20.14.3, `@types/node` 26.5.1. TypeScript 7.0.2 и ESLint 10.10.0 отложены из-за peer-конфликтов. Перед мержом починены: битая относительная ссылка в `docs/PROJECT_REVIEW_AI_AGENTS.md` и smoke test host 127.0.0.1 в `.github/workflows/ci.yml`.
+
+### 38.2 GORM-COMBINED-1
+
+Комбинированное обновление backend в `ai-agents`: `gorm.io/gorm` 1.31.2, `gorm.io/driver/postgres` 1.6.3, `gorm.io/datatypes` 1.2.7. Прогнаны `go mod tidy`, `go mod verify`, `go build ./...`, `go vet ./...`, `go test ./...` и `go test -tags=integration ./...` — PASS. `check-all.ps1 -Quick` — PASS (кроме отсутствующего `node_modules`, который CI установит).
+
+### 38.3 E2E-CANVAS-1
+
+Заведена постановка по двум падающим real-auth тестам `cockpit-canvas-controls.spec.ts` (`fog toggle`, `zoom transform`). Зафиксированы селекторы, URL, ожидания по туману и масштабу, гипотезы и план локализации.
+
+2026-09-17 — исполнено Devin, на ревью у Claude Code. Корень: `readonly` (режим `community` для анонима) в `event-bridge.ts` ранним `return` отсекал не только редактирование, но и все view-взаимодействия — публичный граф нельзя было зумить и панорамировать. Семантика исправлена: readonly = «не редактируется, но интерактивен» — pan инициализируется сразу в `handleMouseDown` до детекта узлов, zoom/dblclick/touch больше не отсекаются; защита сохранена для выбора узла, контекстного меню, клавиатуры, drag узлов и ghost-ноды. `GraphTopBar` получил вариант `floating`: анониму доступны view-контролы (reset/search-open/focus/fog) и `top-bar-sign-in`/`top-bar-register`; поиск, фильтры типов/связей и переключатель personal/community — только авторизованным. В `GraphCanvas` guard `dataKey === lastDataKey && simState.isRunning` упрощён до `dataKey === lastDataKey` — эффект пересоздавал остановленную симуляцию и сбрасывал состояние.
+
+Верификация: 1436 unit-тестов PASS (139 файлов), svelte-check PASS, lint 0 ошибок; Playwright `chromium-real-auth` `tests/cockpit-canvas-controls.spec.ts` — 7/7 PASS на изолированном стеке `SKIP_AUTH=false`. Ограничение среды: `nlp-test` не собирался — диск D: почти полон, модель ~4.4 ГБ рушила containerd (SIGBUS); для canvas-тестов NLP не нужен, DNS-имя закрыто stub-контейнером.

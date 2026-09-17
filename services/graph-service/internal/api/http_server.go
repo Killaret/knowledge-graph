@@ -230,14 +230,18 @@ func (s *HTTPServer) GetPublicGraphHandler(w http.ResponseWriter, r *http.Reques
 	}
 	layoutType := parseLayout(r)
 
+	nocache := r.URL.Query().Get("nocache") == "1" || r.URL.Query().Get("nocache") == "true"
+
 	filter := db.NotesFilter{IsPublic: true}
 
 	log.Printf("[GraphService] HTTP GetPublicGraph: limit=%d, layout=%s", limit, layoutType)
 
-	if cached, hash, err := s.cache.LoadFullLayout(ctx, "public"); err == nil && cached != nil {
-		log.Printf("[GraphService] Cache hit for public graph (took %v)", time.Since(startTime))
-		s.sendGraphData(w, cached, hash)
-		return
+	if !nocache {
+		if cached, hash, err := s.cache.LoadFullLayout(ctx, "public"); err == nil && cached != nil {
+			log.Printf("[GraphService] Cache hit for public graph (took %v)", time.Since(startTime))
+			s.sendGraphData(w, cached, hash)
+			return
+		}
 	}
 
 	notes, links, err := s.postgres.GetNotes(ctx, filter)

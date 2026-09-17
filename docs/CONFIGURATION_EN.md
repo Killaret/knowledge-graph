@@ -255,7 +255,8 @@ Achievements use JSON-based conditions stored in the `condition_json` field:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `BACKUP_LOCAL_PATH` | Local backup directory | `./backups` |
+| `KG_BACKUP_DIR` | Local backup directory used by scripts, guard and compose | `Desktop/my items` (resolved from `$HOME`) |
+| `BACKUP_LOCAL_PATH` | Local backup directory for the Go worker | `./backups` |
 | `BACKUP_CLOUD_ENABLED` | Enable cloud backup | `false` |
 | `BACKUP_CLOUD_PROVIDER` | Cloud provider (yandex) | `yandex` |
 | `BACKUP_YANDEX_OAUTH_TOKEN` | Yandex.Disk OAuth token | - |
@@ -505,8 +506,8 @@ See also: [RECOMMENDATION_ARCHITECTURE.md](RECOMMENDATION_ARCHITECTURE.md#migrat
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `GRAPH_LOAD_DEPTH` | Graph loading depth | `2` |
-| `GRAPH_DEFAULT_LIMIT` | Default `/graph/all` limit | `100` |
-| `GRAPH_MAX_LIMIT` | Max `/graph/all` limit | `1000` |
+| `GRAPH_DEFAULT_LIMIT` | Default `/graph/public` limit | `100` |
+| `GRAPH_MAX_LIMIT` | Max `/graph/public` limit | `1000` |
 | `GRAPH_LINK_DEFAULT_LIMIT` | Default link limit | `500` |
 | `GRAPH_LINK_MAX_LIMIT` | Max link limit | `5000` |
 

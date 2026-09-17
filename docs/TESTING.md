@@ -130,6 +130,19 @@ Starts the isolated test stack.
 **Windows:**
 ```powershell
 .\scripts\testing\start-test.ps1
+
+The stack no longer needs a secret supplied by hand. `JWT_SECRET` is resolved in this
+order: an existing process variable wins, then `.env.test` if you created one, then a
+built-in default for the test contour. Copy `.env.test.example` if you want your own;
+the real `.env.test` is git-ignored. Before this (ENV-1) the backend and worker
+crash-looped with `FATAL: JWT_SECRET must be set` on any machine without the variable,
+while compose only warned about defaulting to a blank string.
+
+`SKIP_AUTH` defaults to `true` on the test stack, which bypasses JWT validation on both
+the backend and graph-service. That is convenient for UI work and **wrong for testing
+anything about authentication**: under it every request is the seed user and no caller
+is anonymous. Set `SKIP_AUTH=false` on *both* services when checking anonymous access
+or view modes — restarting only the backend leaves graph-service still bypassing.
 ```
 
 **Linux/Mac:**
@@ -360,29 +373,17 @@ The manual test checklist covers:
 
 ### Current Code Coverage
 
-**Latest Coverage Results (run 2026-07-20):**
+**Latest Coverage Results (run 2026-09-15):**
 
 | Layer | Metric | Value | Target | Status |
 |-------|--------|-------|--------|--------|
-| Backend | Statements | **60.5%** | 70% (min 60%) | ⚠️ At minimum threshold |
-| Frontend | Statements | **63.63%** | 70% (min 60%) | ⚠️ Below target |
-| Frontend | Branches | **78.74%** | - | ✅ Good |
-| Frontend | Functions | **56.91%** | 55% (min) | ✅ Above minimum |
-| Frontend | Lines | **63.63%** | 60% (min) | ✅ Above minimum |
+| Backend | Statements | **72.2%** | 70% (min 70%) | ✅ Above minimum |
+| Frontend | Statements | **82.21%** | 70% (min 70%) | ✅ Above minimum |
+| Frontend | Branches | **70.7%** | 70% (min 70%) | ✅ Above minimum |
+| Frontend | Functions | **82.38%** | 70% (min 70%) | ✅ Above minimum |
+| Frontend | Lines | **84.01%** | 70% (min 70%) | ✅ Above minimum |
 
-**Backend coverage gaps (packages below 60%):**
-- `cmd/worker` (14.6%), `internal/infrastructure/mongo` (15.3%), `internal/infrastructure/db` (20.0%)
-- `internal/infrastructure/cloud` (34.3%), `internal/infrastructure/db/postgres` (37.2%)
-- `internal/interfaces/api/handlers/auth` (43.5%), `internal/infrastructure/queue` (46.0%)
-- `cmd/checkconfig` (47.2%), `internal/domain/user` (50.7%)
-- `internal/interfaces/api/handlers/share` (56.7%), `internal/application/cache` (57.1%)
-- `internal/interfaces/api/handlers/draft` (58.7%), `internal/interfaces/api/notehandler` (59.8%)
-
-**Frontend coverage gaps (files/directories below 60%):**
-- `features/graph-interaction` (~28%), `features/graph-forms` (~22%), `features/graph-canvas` (~41%)
-- `shared/stores` (~43%), `shared/api` (~54%), `shared/services` (~59%)
-- Several form components (`ForgotPasswordForm`, `RegisterForm`, `ResetPasswordForm`) at 0%
-- `GraphCanvas.svelte` interaction/zoom-pan/pan handlers and `delta.ts` largely uncovered
+**Backend unit-coverage denominator:** measured over packages that contain unit-testable code. CLI main entrypoints (`cmd/cli`, `cmd/embed-recompute`, `cmd/rotate-api-keys`, `cmd/seed`, `cmd/checkmigrations`, `cmd/worker`), the generated gRPC client (`internal/infrastructure/graph`), test helpers (`internal/testutil`, `internal/domain/cache/cachetest`), and `scripts` are excluded from the threshold because they are covered by integration/E2E tests or are part of the test infrastructure.
 
 ### Backend Tests
 

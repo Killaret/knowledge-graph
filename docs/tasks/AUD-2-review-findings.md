@@ -79,7 +79,7 @@ APP_ENV=test        -> Config loaded: alpha=0.50, ... (старт продолж
 ```
 /api/v1/notes             Cache-Control: private, max-age=60   Vary: Authorization, Cookie
 /api/v1/notes/search      Cache-Control: private, max-age=30   Vary: Authorization, Cookie
-/api/v1/graph/all         Cache-Control: private, max-age=300  Vary: Authorization, Cookie
+/api/v1/graph/public      Cache-Control: private, max-age=300  Vary: Authorization, Cookie
 /api/v1/me/graph/fresh    Cache-Control: private, max-age=0    Vary: Authorization, Cookie
 /api/v1/graph/analytics   Cache-Control: private, max-age=300  Vary: Authorization, Cookie
 ```

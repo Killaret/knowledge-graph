@@ -483,15 +483,14 @@
 
   // Реактивно перезапускаем симуляцию при изменении данных
   $effect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _ = mounted; // track mounted state
+    void mounted;
     const nodesCount = nodes.length;
     const linksCount = visibleLinks.length;
     const hiddenTypesCount = graphStore.hiddenLinkTypes.length;
     const minWeight = graphStore.minLinkWeight;
     const dataKey = `${nodesCount}-${linksCount}-${hiddenTypesCount}-${minWeight}`;
 
-    if (dataKey === lastDataKey && simState.isRunning) {
+    if (dataKey === lastDataKey) {
       return;
     }
     lastDataKey = dataKey;

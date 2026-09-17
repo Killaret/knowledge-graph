@@ -30,7 +30,7 @@ register_phase() {
     if [[ "$skipped" -eq 1 && "$code" -eq 0 ]]; then
         PHASE_RESULTS["$name"]="skip|$reason"
         if [[ -n "$reason" ]]; then
-            echo "  [SKIP] $name — $reason"
+            echo "  [SKIP] $name - $reason"
         else
             echo "  [SKIP] $name"
         fi
@@ -74,7 +74,7 @@ write_final_summary() {
         if [[ "$value" == skip\|* ]]; then
             local reason="${value#skip|}"
             if [[ -n "$reason" ]]; then
-                echo "  [SKIP] $name — $reason"
+                echo "  [SKIP] $name - $reason"
             else
                 echo "  [SKIP] $name"
             fi

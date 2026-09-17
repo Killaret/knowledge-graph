@@ -1,6 +1,23 @@
 # Knowledge Graph Backup System
 
-Backup system for personal Knowledge Graph instance with support for local storage and cloud backup to Yandex.Disk.
+Backup system for the personal Knowledge Graph instance.
+
+> **How this actually runs (owner's decision, 2026-09-14).** The off-machine copy is made by a
+> **synced folder, not by the Yandex.Disk API**: backups are written to
+> `%USERPROFILE%\Desktop\my items`, and the owner's own client uploads that folder to the cloud.
+> No OAuth token is involved.
+>
+> `BACKUP_CLOUD_ENABLED` therefore defaults to `false` everywhere, `docker-compose.personal.yml`
+> included. The REST-API path below still works and is kept — set `BACKUP_CLOUD_ENABLED=true`
+> and supply a token to opt back in — but it is no longer the default and no longer required.
+>
+> The local backup directory, freshness threshold and glob patterns are configured in one place:
+> `scripts/devops/backup-policy.env`. `KG_BACKUP_DIR` is the canonical variable: it may be
+> an absolute path or a tail relative to the user's home directory (`Desktop/my items` by
+> default, which resolves to `%USERPROFILE%\Desktop\my items`). All consumers —
+> `backup-personal.{ps1,sh}`, `check-personal-backup.{ps1,sh}`, `guard-personal-data.py` and
+> `docker-compose.personal.yml` — use the same source. Set `KG_BACKUP_DIR` in `.env` to override
+> the default. Decisions 31-32 in [`DECISIONS.md`](DECISIONS.md).
 
 ## 📋 System Overview
 
@@ -32,13 +49,14 @@ The backup system includes:
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│               Local Storage                                   │
-│               ./backups/backup-personal-YYYY-MM-DD.sql.gz    │
+│               Local Storage (the synced folder)               │
+│               %USERPROFILE%\Desktop\my items\              │
+│               backup-personal-<mode>-<timestamp>.sql.gz       │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ▼ (if cloud backup enabled)
 ┌─────────────────────────────────────────────────────────────┐
-│               Yandex.Disk (REST API)                         │
+│               Yandex.Disk (REST API) - opt-in, off by default │
 │               /KnowledgeGraphBackups/                        │
 └─────────────────────────────────────────────────────────────┘
 
@@ -292,12 +310,12 @@ backup_scheduler:
   image: postgres:16-alpine
   container_name: kg-backup-scheduler
   volumes:
-    - ./backups:/backups
+    - "${KG_BACKUP_DIR:-C:/Users/<your-username>/Desktop/my items}:/backups"
     - ./scripts/devops:/scripts:ro
     - ./knowledge-graph.config.json:/config/config.json:ro
   environment:
     BACKUP_DIR: /backups
-    BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-true}
+    BACKUP_CLOUD_ENABLED: ${BACKUP_CLOUD_ENABLED:-false}
     BACKUP_YANDEX_OAUTH_TOKEN: ${BACKUP_YANDEX_OAUTH_TOKEN:-${BACKUP_YANDEX_TOKEN:-}}
     BACKUP_YANDEX_FOLDER: ${BACKUP_YANDEX_FOLDER:-/KnowledgeGraphBackups}
     BACKUP_DAILY_RETENTION_DAYS: ${BACKUP_DAILY_RETENTION_DAYS:-7}

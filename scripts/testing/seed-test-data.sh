@@ -188,7 +188,7 @@ if [ "$PUBLIC_COUNT" -gt 0 ]; then
     done
     echo "Published $PUBLISHED_COUNT notes."
 else
-    echo "PUBLIC_PERCENT is 0 — all notes remain private."
+    echo "PUBLIC_PERCENT is 0 - all notes remain private."
 fi
 
 PUBLISH_END=$(date +%s)

@@ -97,7 +97,7 @@ func (s *GraphHandlerCacheIntegrationTestSuite) SetupSuite() {
 	s.router.GET("/me/graph/cached", s.handler.GetCachedGraph)
 	s.router.GET("/me/graph/fresh", s.handler.GetFreshGraph)
 	s.router.GET("/notes/:id/graph", s.handler.GetGraph)
-	s.router.GET("/graph/all", s.handler.GetFullGraph)
+	s.router.GET("/graph/public", s.handler.GetFullGraph)
 }
 
 func (s *GraphHandlerCacheIntegrationTestSuite) TearDownSuite() {

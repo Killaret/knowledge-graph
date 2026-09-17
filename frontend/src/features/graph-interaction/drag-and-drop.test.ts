@@ -150,6 +150,42 @@ describe("drag-and-drop", () => {
     expect(dragState.dragStart).toEqual({ x: 400, y: 300 });
   });
 
+  it("pans in readonly mode without dragging a node", () => {
+    const canvas = createCanvas();
+    const dragState = { dragging: false, dragStart: { x: 0, y: 0 } };
+    const dragDropState = createDragDropState();
+    const ghostNode = {
+      x: 60,
+      y: 60,
+      radius: GHOST_NODE_RADIUS,
+      hovered: false,
+      pulsePhase: 0,
+      active: true,
+    };
+    const simNodes = [{ id: "n1", x: 10, y: 10, title: "A" }];
+
+    const event = createMouseEvent(10, 10);
+    const callbacks = { onNodeDragStart: vi.fn() };
+
+    handleMouseDown(
+      event,
+      canvas,
+      { x: 5, y: 5, k: 1 },
+      dragState as any,
+      dragDropState,
+      simNodes as any,
+      ghostNode,
+      () => false,
+      callbacks,
+      /* readonly */ true
+    );
+
+    expect(dragDropState.draggedNodeId).toBeNull();
+    expect(callbacks.onNodeDragStart).not.toHaveBeenCalled();
+    expect(dragState.dragging).toBe(true);
+    expect(dragState.dragStart).toEqual({ x: 5, y: 5 });
+  });
+
   it("ghost node click opens note form", () => {
     const canvas = createCanvas();
     const dragState = { dragging: false, dragStart: { x: 0, y: 0 } };

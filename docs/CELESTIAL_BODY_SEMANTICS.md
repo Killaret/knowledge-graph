@@ -43,12 +43,16 @@ Galaxy          # broad domain
 
 Types exposed in the note creation / type selector:
 
-- `star`, `planet`, `comet`, `asteroid`, `nebula`, `galaxy`, `satellite`, `blackhole`, `dust`
+- `galaxy`, `nebula`, `blackhole`, `star`, `planet`, `moon`, `comet`, `satellite`, `asteroid`, `dust`, `debris`
+
+The order is not arbitrary: types are sorted by `scaleRank`, largest first, so the
+selector reads from the widest scope to the narrowest. The canonical list and the ranks
+live in the domain (`backend/internal/domain/note/type.go`) and the frontend derives
+`UI_TYPES` from it — see `NOTE-TYPE-TAXONOMY`.
 
 Hidden / automatic types:
 
-- `moon` — assigned automatically when a small note is created from a planet.
-- `debris` — assigned automatically when a note is archived via the Singularity.
+- `technical`, `unknown` and the anomaly types are not user-selectable.
 - `technical` — reserved for system-generated notes.
 - `unknown` — fallback.
 - anomaly types — reserved for graph-state visual effects.
@@ -117,5 +121,8 @@ Each celestial body type has a deterministic palette inspired by real-world cosm
 
 - A user should be able to read the type description in the type selector and pick the right one without guessing.
 - `blackhole` is intentionally exposed: users often need a place to park hard, ill-defined problems.
-- `moon` stays hidden because manual classification at that granularity creates noise; the system can promote a note to planet later.
+- `moon` **is** user-selectable as of `NOTE-TYPE-TAXONOMY` (2026-09-13). It was hidden
+  before, on the argument that manual classification at that granularity creates noise;
+  the owner decided the detail level is worth having, and `planet` now suggests `moon`
+  as the next step down.
 - Descriptions and examples live in `frontend/src/shared/utils/i18n.ts` and are rendered by `TypeSelector` and `CockpitTypeFilter`.

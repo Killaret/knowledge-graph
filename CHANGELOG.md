@@ -24,6 +24,7 @@ This file covers July 2026 onward. Earlier history lives in the git log.
 
 ### Changed
 
+- **BREAKING:** Renamed the public graph endpoint on the main backend from the old `all` name to `/api/v1/graph/public`, hard, with no compatibility alias. The graph-service `public` and `full` endpoints are unchanged.
 - The canonical regression cycle now reports the real status of every phase. Previously failing
   integration, E2E, BDD and visual tests only printed a warning and the run still ended with a
   success summary.

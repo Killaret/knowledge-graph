@@ -4,6 +4,25 @@
 $repoDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $repoDir
 
+# Use .env.test if the user has created one, otherwise fall back to a default test secret.
+$envFile = "$repoDir\.env.test"
+if (Test-Path $envFile) {
+    Write-Host "Loading $envFile..." -ForegroundColor Gray
+    foreach ($line in Get-Content $envFile) {
+        if ($line -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$') {
+            $name = $matches[1]
+            $value = $matches[2]
+            if (-not (Get-Item "Env:$name" -ErrorAction SilentlyContinue)) {
+                [Environment]::SetEnvironmentVariable($name, $value, 'Process')
+            }
+        }
+    }
+}
+if (-not $env:JWT_SECRET) {
+    $env:JWT_SECRET = 'test-jwt-secret-32-characters-long'
+    Write-Host "JWT_SECRET not set; using default test secret." -ForegroundColor Yellow
+}
+
 Write-Host "Starting test stack setup..." -ForegroundColor Cyan
 
 # Stop and remove previous test stack
