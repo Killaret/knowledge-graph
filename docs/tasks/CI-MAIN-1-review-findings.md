@@ -55,7 +55,7 @@ deployments», за которыми нет ни одного развёрнут
 1. **Переименовать честно**: workflow → «Deploy Stack Verification», job → «Verify deploy
    stack», убрать `environment: production` до появления настоящей цели. Цена — ноль.
 2. **Сделать деплой настоящим**: после успешной проверки публиковать образы на Docker Hub
-   (см. `DEPLOY-2` в [`DEPLOY-review-findings.md`](DEPLOY-review-findings.md)) — тогда
+   (см. `DEPLOY-2` в [`DEPLOY-2-deploy-images-from-ci.md`](DEPLOY-2-deploy-images-from-ci.md)) — тогда
    «deployment» будет означать «опубликована проверенная версия», и environment станет
    правдой.
 
