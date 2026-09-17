@@ -23,7 +23,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "husky": "^9.0.0",
     "jsdom": "^30.0.1",
-    "lint-staged": "^17.5.0",
+    "lint-staged": "^17.5.1",
     "tsx": "^4.23.13"
   },
   "lint-staged": {
@@ -36,6 +36,6 @@
     ]
   },
   "dependencies": {
-    "thesvg": "^3.3.3"
+    "thesvg": "^3.3.4"
   }
 }

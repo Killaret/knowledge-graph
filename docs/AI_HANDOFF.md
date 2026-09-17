@@ -82,6 +82,8 @@
 |
 ||| **WSL-SWAP:** перенести/отключить swap-файл WSL2, чтобы освободить место на `D:\`; сейчас `D:\wsl-swap\swap.vhdx` (309 МБ, max 8 ГБ) прописан в `C:\Users\89209\.wslconfig`; обсудить риски OOM и путь миграции | `C:\Users\89209\.wslconfig`, `D:\wsl-swap` | **обсуждается** — владелец с Devin разберутся, файл оставляем | 2026-09-14 |
 |
+|| DEPENDABOT-BULK-107: объединить 11 безопасных Dependabot PR в один, смержить, прогнать `check-all.ps1` без `-Quick` | PR #107 | **принято** — 16 PASS, 1 SKIP (golangci-lint); закрыты #89, #90, #91, #93, #94, #97, #98, #99, #103, #104, #105; остаются #95, #101, #106, #102, #92, #100, #96 | 2026-09-15 |
+
 ## На Claude Code
 
 | Что | Где | Статус | Обновлено |
@@ -132,6 +134,7 @@
 || **PLAYWRIGHT-ARTIFACTS-1:** cleanup корневых untracked Playwright-артефактов | `.gitignore`, корень репозитория | **на решении у Claude Code / владельца** — Devin удалил `debug-note-page.png`; 6 директорий `*-chromium-skip-auth-retry*/` ещё в `git status`; нужно удалить или загнорить | 2026-09-14 |
 || **GITHUB-SECURITY-1:** 3 новые Dependabot-находки на `main` (1 high, 2 low) | GitHub Security / Dependabot | **на triage у Claude Code** — Devin не трогал; нужен приоритет и план, возможно — отдельная security-задача | 2026-09-14 |
 || **CI-MAIN-1 / DEPLOY-1:** финальное ревью зелёного CI/DEPLOY | `.github/workflows/main.yml`, `.github/workflows/deploy.yml` | **на ревью у Claude Code** — Devin починил, run IDs 34758935365/34758935316/34758941321; Main Branch CI/CD и Production Deployment зелёные; нужен финальный approve | 2026-09-14 |
+|| **FE-DEPS-106:** совместимое обновление frontend-зависимостей из Dependabot #106 (Vite 8.3, happy-dom, @types/node); TS 7.0.2 и ESLint 10.10.0 отложены из-за peer-конфликтов | [`tasks/FE-DEPS-106-frontend-toolchain-update.md`](tasks/FE-DEPS-106-frontend-toolchain-update.md), `frontend/package.json`, `frontend/package-lock.json`, `frontend/vite.config.ts` | **принято** — PR #110 смерджен в main; перед мержем починены `docs/PROJECT_REVIEW_AI_AGENTS.md` (битая относительная ссылка) и `.github/workflows/ci.yml` (smoke tests хост 127.0.0.1); CI зелёный | 2026-09-16 |
 ||
 ## На человеке
 
