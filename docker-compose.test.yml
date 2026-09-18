@@ -70,10 +70,10 @@ services:
       - ./huggingface_cache:/root/.cache/huggingface
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 30
-      start_period: 600s
+      interval: 15s
+      timeout: 5s
+      retries: 24
+      start_period: 180s
     restart: on-failure
     deploy:
       resources:

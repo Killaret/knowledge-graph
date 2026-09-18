@@ -13,7 +13,7 @@
 - [`docs/gordon/gordon_infrastructure_discussion_guide.md`](../gordon/gordon_infrastructure_discussion_guide.md) — гайд для обсуждения решений.
 - [`docs/gordon/gordon_kubernetes_setup.md`](../gordon/gordon_kubernetes_setup.md) — Kubernetes и мониторинг для production.
 - [`docs/gordon/gordon_production_checklist.md`](../gordon/gordon_production_checklist.md) — чек-лист production и нагрузочное тестирование.
-- [`docs/gordon/gordon_training_guide.md`](../gordon/gordon_training_guide.md) — пошаговый обучающий гайд для команды.
+- `gordon_training_guide.md` — пошаговый обучающий гайд для команды (удалён решением владельца 2026-09-18).
 
 ## Что решить
 
@@ -23,6 +23,33 @@
 4. Связать с открытыми задачами деплоя: DEPLOY-2 (публикация образов), CI `deploy.yml`.
 5. Итоговый вердикт по `docs/gordon/` совместно с вопросом 4 из GORDON-1: оставить как архив внешних анализов или влить выводы и удалить.
 
+## Разбор Devin (2026-09-18)
+
+Каждое утверждение сверено с кодом. Пакет — это дорожная карта «production на Kubernetes» для команды, а не набор багов; полезны точечные оптимизации.
+
+### Принято к реализации
+
+| Предложение | Проверка в репо | Итог |
+|---|---|---|
+| `start_period: 600s` → 180s у NLP | подтверждено во всех трёх compose (`docker-compose.yml:75`, `test:76`, `personal:67`) | **сделано** — DEPLOY-3: 180s, interval 15s, retries 24 (запас на холодный кэш модели) |
+| Запинить `alpine:latest` | `backend/Dockerfile:13` был единственным непиннутым образом | **сделано** — `alpine:3.19`, как у graph-service |
+| Параметризовать пул БД (env-конфиг) | `db.go:29-31` захардкожено 25/5/5m | обсуждается — формула `(cores×4)+2` спорная, идея env-конфига разумная |
+| Circuit breaker для NLP client | timeout 10s + exponential backoff уже есть; `gobreaker` — новая зависимость | обсуждается — NLP и так best-effort в health |
+| Метрики пула (`GetPoolStats`) в health/metrics | метрик в проекте нет | обсуждается |
+
+### Решения владельца (2026-09-18)
+
+- **Kubernetes-трек — отложено.** Остаёмся на Docker Compose (`docker-compose.deploy.yml` + `deploy.yml` на Docker Hub). K8s-манифесты и Prometheus-стек оставлены в `docs/gordon/` как справочник на будущее.
+- **`gordon_training_guide.md` — удалён**, самостоятельной ценности нет.
+- **Production-чек-лист — не нужен отдельным документом:** ранбук деплоя покрыт `DEPLOYMENT_EN.md` + `REGRESSION_TEST_PLAN.md`.
+
+### Неточности пакета
+
+- Модель названа «~300MB» — реально ~4.4 ГБ (torch + safetensors).
+- Все «gains» (p95 850→400ms и т.п.) декларированы, не измерены.
+- Код из гайдов verbatim не переносить: `contains()` в его `db.go` проверяет только длину строки, не подстроку; readinessProbe ссылается на `/ready`, которого в NLP-сервисе нет.
+- `gordon_files_summary.md`, `gordon_index.md`, `gordon_visual_summary.md`, `gordon_complete_package.md` — мета-файлы, дублируют содержимое остальных; оставлены как навигация пакета.
+
 ## Статус
 
-Ждёт человека — обзор и вердикт. Собрано Devin 2026-09-18 с `D:\gordon_*.md` в `docs/gordon/`.
+Разбор выполнен Devin 2026-09-18; решения владельца записаны выше. Открытые вопросы (пул БД, circuit breaker, метрики) — в обсуждении.
