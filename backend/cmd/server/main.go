@@ -372,12 +372,18 @@ func run(
 }
 
 func connectDatabaseWithRetry(ctx context.Context, cfg *config.Config) (*gorm.DB, error) {
-	database, err := db.Connect(cfg.DatabaseURL)
+	pool := db.PoolConfig{
+		MaxOpenConns:           cfg.DatabasePoolMaxOpenConns,
+		MaxIdleConns:           cfg.DatabasePoolMaxIdleConns,
+		ConnMaxLifetimeSeconds: cfg.DatabasePoolConnMaxLifetimeSeconds,
+		ConnMaxIdleTimeSeconds: cfg.DatabasePoolConnMaxIdleTimeSeconds,
+	}
+	database, err := db.ConnectWithPool(cfg.DatabaseURL, pool)
 	if err != nil {
 		retryDelay := cfg.DatabaseRetryDelaySeconds
 		log.Printf("CRITICAL: database connection failed: %v, retrying in %ds...", err, retryDelay)
 		time.Sleep(time.Duration(retryDelay) * time.Second)
-		database, err = db.Connect(cfg.DatabaseURL)
+		database, err = db.ConnectWithPool(cfg.DatabaseURL, pool)
 		if err != nil {
 			return nil, fmt.Errorf("database connection failed after retry: %w", err)
 		}

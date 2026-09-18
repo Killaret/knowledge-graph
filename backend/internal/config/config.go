@@ -29,6 +29,12 @@ type JSONConfig struct {
 			RetryMaxAttempts      int  `json:"retry_max_attempts"`
 			RetryDelaySeconds     int  `json:"retry_delay_seconds"`
 			MigrationsFailOnError bool `json:"migrations_fail_on_error"`
+			Pool                  struct {
+				MaxOpenConns           int `json:"max_open_conns"`
+				MaxIdleConns           int `json:"max_idle_conns"`
+				ConnMaxLifetimeSeconds int `json:"conn_max_lifetime_seconds"`
+				ConnMaxIdleTimeSeconds int `json:"conn_max_idle_time_seconds"`
+			} `json:"pool"`
 		} `json:"database"`
 		Search struct {
 			FulltextLanguages []string           `json:"fulltext_languages"`
@@ -141,10 +147,14 @@ type Config struct {
 	ServerFallbackPorts          []string
 
 	// Database
-	DatabaseURL               string
-	DatabaseRetryMaxAttempts  int
-	DatabaseRetryDelaySeconds int
-	MigrationsFailOnError     bool
+	DatabaseURL                        string
+	DatabaseRetryMaxAttempts           int
+	DatabaseRetryDelaySeconds          int
+	MigrationsFailOnError              bool
+	DatabasePoolMaxOpenConns           int
+	DatabasePoolMaxIdleConns           int
+	DatabasePoolConnMaxLifetimeSeconds int
+	DatabasePoolConnMaxIdleTimeSeconds int
 
 	// Redis
 	RedisURL            string
@@ -393,6 +403,12 @@ func Load() (*Config, error) {
 		DatabaseRetryMaxAttempts:  getIntEnv("DATABASE_RETRY_MAX_ATTEMPTS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.RetryMaxAttempts }, 3)),
 		DatabaseRetryDelaySeconds: getIntEnv("DATABASE_RETRY_DELAY_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.RetryDelaySeconds }, 5)),
 		MigrationsFailOnError:     getBoolEnv("MIGRATIONS_FAIL_ON_ERROR", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Database.MigrationsFailOnError }, false)),
+
+		// Database connection pool
+		DatabasePoolMaxOpenConns:           getIntEnv("POSTGRES_MAX_OPEN_CONNS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.MaxOpenConns }, 25)),
+		DatabasePoolMaxIdleConns:           getIntEnv("POSTGRES_MAX_IDLE_CONNS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.MaxIdleConns }, 5)),
+		DatabasePoolConnMaxLifetimeSeconds: getIntEnv("POSTGRES_CONN_MAX_LIFETIME_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.ConnMaxLifetimeSeconds }, 300)),
+		DatabasePoolConnMaxIdleTimeSeconds: getIntEnv("POSTGRES_CONN_MAX_IDLE_TIME_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.ConnMaxIdleTimeSeconds }, 60)),
 
 		// Redis & NLP
 		RedisURL:            getEnv("REDIS_URL", "localhost:6379"),

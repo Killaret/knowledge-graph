@@ -33,7 +33,7 @@
 |---|---|---|
 | `start_period: 600s` → 180s у NLP | подтверждено во всех трёх compose (`docker-compose.yml:75`, `test:76`, `personal:67`) | **сделано** — DEPLOY-3: 180s, interval 15s, retries 24 (запас на холодный кэш модели) |
 | Запинить `alpine:latest` | `backend/Dockerfile:13` был единственным непиннутым образом | **сделано** — `alpine:3.19`, как у graph-service |
-| Параметризовать пул БД (env-конфиг) | `db.go:29-31` захардкожено 25/5/5m | обсуждается — формула `(cores×4)+2` спорная, идея env-конфига разумная |
+| Параметризовать пул БД | `db.go` — было захардкожено 25/5/5m/1m | **сделано** — секция `database.pool` в `config/backend.json`, env-оверрайды `POSTGRES_MAX_OPEN_CONNS` / `POSTGRES_MAX_IDLE_CONNS` / `POSTGRES_CONN_MAX_LIFETIME_SECONDS` / `POSTGRES_CONN_MAX_IDLE_TIME_SECONDS` (имена из `.env.example`, раньше были задокументированы, но не реализованы); дефолты = прежние значения; `db.ConnectWithPool` + нормализация неположительных значений; применено в `cmd/server` и `cmd/worker` |
 | Circuit breaker для NLP client | timeout 10s + exponential backoff уже есть; `gobreaker` — новая зависимость | обсуждается — NLP и так best-effort в health |
 | Метрики пула (`GetPoolStats`) в health/metrics | метрик в проекте нет | обсуждается |
 
@@ -52,4 +52,4 @@
 
 ## Статус
 
-Разбор выполнен Devin 2026-09-18; решения владельца записаны выше. Открытые вопросы (пул БД, circuit breaker, метрики) — в обсуждении.
+Разбор выполнен Devin 2026-09-18; решения владельца записаны выше. Пул БД реализован (см. таблицу). Открытые вопросы: circuit breaker для NLP-клиента и формат метрик пула (`GetPoolStats` пока только в логах раз в 5 минут).

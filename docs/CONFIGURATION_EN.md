@@ -540,7 +540,13 @@ Used by `List` and `Search` endpoints for note pagination.
     "database": {
       "retry_max_attempts": 3,
       "retry_delay_seconds": 5,
-      "migrations_fail_on_error": false
+      "migrations_fail_on_error": false,
+      "pool": {
+        "max_open_conns": 25,
+        "max_idle_conns": 5,
+        "conn_max_lifetime_seconds": 300,
+        "conn_max_idle_time_seconds": 60
+      }
     }
   }
 }
@@ -645,6 +651,12 @@ SERVER_FALLBACK_PORTS=8081,8082
 DATABASE_RETRY_MAX_ATTEMPTS=3
 DATABASE_RETRY_DELAY_SECONDS=5
 MIGRATIONS_FAIL_ON_ERROR=false
+
+# PostgreSQL connection pool (backend, worker)
+POSTGRES_MAX_OPEN_CONNS=25
+POSTGRES_MAX_IDLE_CONNS=5
+POSTGRES_CONN_MAX_LIFETIME_SECONDS=300
+POSTGRES_CONN_MAX_IDLE_TIME_SECONDS=60
 
 # Search
 SEARCH_FALLBACK_TO_ILIKE=true
