@@ -177,13 +177,10 @@ jobs:
       - name: Cache Go build
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-smoke-${{ hashFiles('backend/go.sum', 'services/graph-service/go.sum') }}
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-gobuild-smoke-${{ hashFiles('backend/go.sum', 'services/graph-service/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-smoke-
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-gobuild-smoke-
 
       - name: Cache node_modules
         uses: actions/cache@v4
