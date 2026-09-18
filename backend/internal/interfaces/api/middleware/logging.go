@@ -60,10 +60,12 @@ func LoggingMiddleware() gin.HandlerFunc {
 		var requestData map[string]interface{}
 		if c.Request.Body != nil && c.Request.Method != "GET" {
 			bodyBytes, err := io.ReadAll(c.Request.Body)
-			if err == nil && len(bodyBytes) > 0 && len(bodyBytes) < 10000 { // Limit to 10KB
+			if err == nil && len(bodyBytes) > 0 {
 				// Restore body for next handlers
 				c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-				_ = json.Unmarshal(bodyBytes, &requestData)
+				if len(bodyBytes) < 10000 { // Limit to 10KB
+					_ = json.Unmarshal(bodyBytes, &requestData)
+				}
 			}
 		}
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -70,6 +71,40 @@ func TestLoggingMiddlewareWithRequestBody(t *testing.T) {
 
 	requestBody := map[string]interface{}{"key": "value"}
 	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/test", bytes.NewBuffer(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestLoggingMiddlewareRestoresLargeRequestBody(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	router.Use(LoggingMiddleware())
+	router.POST("/test", func(c *gin.Context) {
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil || len(body) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "empty body"})
+			return
+		}
+		var parsed map[string]interface{}
+		if err := json.Unmarshal(body, &parsed); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	// Bodies >= 10KB must still reach the handler: the middleware consumes the
+	// body for logging and has to restore it regardless of size.
+	payload := map[string]string{"key": strings.Repeat("x", 11000)}
+	bodyBytes, _ := json.Marshal(payload)
+	require.Greater(t, len(bodyBytes), 10000)
+
 	req := httptest.NewRequest(http.MethodPost, "/test", bytes.NewBuffer(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
