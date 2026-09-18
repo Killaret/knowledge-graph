@@ -53,6 +53,7 @@ func TestRouterMatchesOpenAPISpec(t *testing.T) {
 		nil, nil, nil, nil, nil, &drafthandler.Handler{},
 		cfg,
 		newHealthHandler(nil, nil, nil),
+		newMetricsHandler(nil),
 		newWriteLimiter(cfg),
 		jwtConfig,
 		apiKeyConfig,

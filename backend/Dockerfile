@@ -10,7 +10,7 @@ RUN go build -ldflags="-s -w" -o /app/test-seed ./cmd/seed
 RUN go build -ldflags="-s -w" -o /app/cli ./cmd/cli
 RUN go build -ldflags="-s -w" -o /app/embed-recompute ./cmd/embed-recompute
 
-FROM alpine:latest AS base
+FROM alpine:3.19 AS base
 RUN apk --no-cache add ca-certificates curl wget postgresql16-client gzip
 WORKDIR /root/
 

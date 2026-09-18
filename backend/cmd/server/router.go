@@ -56,6 +56,7 @@ func setupRouter(
 	draftHandler *drafthandler.Handler,
 	cfg *config.Config,
 	healthHandler gin.HandlerFunc,
+	metricsHandler gin.HandlerFunc,
 	writeLimiter gin.HandlerFunc,
 	jwtConfig *middleware.JWTConfig,
 	apiKeyConfig *middleware.APIKeyConfig,
@@ -212,6 +213,9 @@ func setupRouter(
 		// Backup routes
 		v1.POST("/backup/cloud", writeLimiter, backupHandler.TriggerCloudBackup)
 		v1.GET("/backup/status", backupHandler.GetBackupStatus)
+
+		// Metrics routes (admin only)
+		v1.GET("/metrics/database", middleware.RequireAdmin(), metricsHandler)
 	}
 
 	return r

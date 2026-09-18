@@ -55,7 +55,12 @@ func main() {
 	log.Printf("Worker config loaded: DatabaseURL=%s, RedisURL=%s, NLPServiceURL=%s",
 		maskURL(cfg.DatabaseURL), cfg.RedisURL, cfg.NLPServiceURL)
 	// Инициализация БД
-	database, err := db.Connect(cfg.DatabaseURL)
+	database, err := db.ConnectWithPool(cfg.DatabaseURL, db.PoolConfig{
+		MaxOpenConns:           cfg.DatabasePoolMaxOpenConns,
+		MaxIdleConns:           cfg.DatabasePoolMaxIdleConns,
+		ConnMaxLifetimeSeconds: cfg.DatabasePoolConnMaxLifetimeSeconds,
+		ConnMaxIdleTimeSeconds: cfg.DatabasePoolConnMaxIdleTimeSeconds,
+	})
 	if err != nil {
 		log.Fatalf("database connection failed: %v", err)
 	}

@@ -24,7 +24,7 @@
 BATCH-1-api-design.md                    NOTE-TYPE-TAXONOMY.md
 BATCH-DDD-1-validation.md                NLP-2-yake-replace-keybert-lemmatization.md
 BATCH-TEST-1-strategy.md                 AUD-7a-enforce-boundaries.md
-DEPLOY-review-findings.md              AUD-7b-lint-tests-and-coverage-denominator.md
+DEPLOY-review-findings.md (→ DEPLOY-2-…)     AUD-7b-lint-tests-and-coverage-denominator.md
 AUD-1-review-findings.md        PROJECT-SKILLS-1-review-findings.md
 DOCS-LINKS-1-review-findings.md          SPECS-1-review-findings.md
 VERIFY-FINDING-MIRROR-1-review-findings.md

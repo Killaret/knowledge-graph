@@ -51,4 +51,4 @@
 Спецификация теперь правдива относительно кода в `main`. Но образы на Docker Hub, к
 которым `docs/API_EN.md` ведёт второго разработчика, собраны 2026-09-08 и **не содержат**
 batch-маршрутов, описанных в этой же спецификации. Подробно — в
-[`DEPLOY-review-findings.md`](DEPLOY-review-findings.md), там же постановка DEPLOY-2.
+[`DEPLOY-2-deploy-images-from-ci.md`](DEPLOY-2-deploy-images-from-ci.md), там же постановка DEPLOY-2.

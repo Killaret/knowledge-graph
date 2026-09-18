@@ -96,8 +96,12 @@ func main() {
 	quit := make(chan os.Signal, 1)
 
 	// Start periodic pool statistics logging
+	statsInterval := time.Duration(cfg.DatabasePoolStatsIntervalSeconds) * time.Second
+	if statsInterval <= 0 {
+		statsInterval = 5 * time.Minute
+	}
 	go func() {
-		ticker := time.NewTicker(5 * time.Minute)
+		ticker := time.NewTicker(statsInterval)
 		defer ticker.Stop()
 
 		for {
@@ -311,6 +315,7 @@ func run(
 		redisPinger = &redisPingAdapter{client: redisClient}
 	}
 	healthHandler := newHealthHandler(sqlDB, redisPinger, nlpClient)
+	metricsHandler := newMetricsHandler(database)
 
 	// Router setup with all middleware and routes
 	writeLimiter := newWriteLimiter(cfg)
@@ -332,6 +337,7 @@ func run(
 		draftHandler,
 		cfg,
 		healthHandler,
+		metricsHandler,
 		writeLimiter,
 		jwtConfig,
 		apiKeyConfig,
@@ -372,12 +378,18 @@ func run(
 }
 
 func connectDatabaseWithRetry(ctx context.Context, cfg *config.Config) (*gorm.DB, error) {
-	database, err := db.Connect(cfg.DatabaseURL)
+	pool := db.PoolConfig{
+		MaxOpenConns:           cfg.DatabasePoolMaxOpenConns,
+		MaxIdleConns:           cfg.DatabasePoolMaxIdleConns,
+		ConnMaxLifetimeSeconds: cfg.DatabasePoolConnMaxLifetimeSeconds,
+		ConnMaxIdleTimeSeconds: cfg.DatabasePoolConnMaxIdleTimeSeconds,
+	}
+	database, err := db.ConnectWithPool(cfg.DatabaseURL, pool)
 	if err != nil {
 		retryDelay := cfg.DatabaseRetryDelaySeconds
 		log.Printf("CRITICAL: database connection failed: %v, retrying in %ds...", err, retryDelay)
 		time.Sleep(time.Duration(retryDelay) * time.Second)
-		database, err = db.Connect(cfg.DatabaseURL)
+		database, err = db.ConnectWithPool(cfg.DatabaseURL, pool)
 		if err != nil {
 			return nil, fmt.Errorf("database connection failed after retry: %w", err)
 		}

@@ -32,12 +32,10 @@ jobs:
       - name: Cache Go build
         uses: actions/cache@v6
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-gobuild-${{ hashFiles('backend/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-gobuild-
 
       - name: Download dependencies
         run: go mod download
@@ -124,12 +122,10 @@ jobs:
       - name: Cache Go build
         uses: actions/cache@v6
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-gobuild-${{ hashFiles('backend/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-gobuild-
 
       - name: Download dependencies
         run: go mod download
@@ -158,12 +154,10 @@ jobs:
       - name: Cache Go build
         uses: actions/cache@v6
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-graph-${{ hashFiles('services/graph-service/go.sum') }}
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-gobuild-graph-${{ hashFiles('services/graph-service/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-graph-
+            ${{ runner.os }}-gobuild-graph-
 
       - name: Download dependencies
         run: go mod download
