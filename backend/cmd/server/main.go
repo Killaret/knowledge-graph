@@ -96,8 +96,12 @@ func main() {
 	quit := make(chan os.Signal, 1)
 
 	// Start periodic pool statistics logging
+	statsInterval := time.Duration(cfg.DatabasePoolStatsIntervalSeconds) * time.Second
+	if statsInterval <= 0 {
+		statsInterval = 5 * time.Minute
+	}
 	go func() {
-		ticker := time.NewTicker(5 * time.Minute)
+		ticker := time.NewTicker(statsInterval)
 		defer ticker.Stop()
 
 		for {
@@ -311,6 +315,7 @@ func run(
 		redisPinger = &redisPingAdapter{client: redisClient}
 	}
 	healthHandler := newHealthHandler(sqlDB, redisPinger, nlpClient)
+	metricsHandler := newMetricsHandler(database)
 
 	// Router setup with all middleware and routes
 	writeLimiter := newWriteLimiter(cfg)
@@ -332,6 +337,7 @@ func run(
 		draftHandler,
 		cfg,
 		healthHandler,
+		metricsHandler,
 		writeLimiter,
 		jwtConfig,
 		apiKeyConfig,

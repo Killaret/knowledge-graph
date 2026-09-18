@@ -2081,6 +2081,26 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/metrics/database:
+    get:
+      summary: Database connection pool statistics (admin only)
+      tags: [Metrics]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Connection pool statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
 components:
   securitySchemes:
     bearerAuth:

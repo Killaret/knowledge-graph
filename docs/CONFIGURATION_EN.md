@@ -545,7 +545,8 @@ Used by `List` and `Search` endpoints for note pagination.
         "max_open_conns": 25,
         "max_idle_conns": 5,
         "conn_max_lifetime_seconds": 300,
-        "conn_max_idle_time_seconds": 60
+        "conn_max_idle_time_seconds": 60,
+        "stats_interval_seconds": 300
       }
     }
   }
@@ -657,6 +658,7 @@ POSTGRES_MAX_OPEN_CONNS=25
 POSTGRES_MAX_IDLE_CONNS=5
 POSTGRES_CONN_MAX_LIFETIME_SECONDS=300
 POSTGRES_CONN_MAX_IDLE_TIME_SECONDS=60
+POSTGRES_POOL_STATS_INTERVAL_SECONDS=300
 
 # Search
 SEARCH_FALLBACK_TO_ILIKE=true

@@ -34,6 +34,7 @@ type JSONConfig struct {
 				MaxIdleConns           int `json:"max_idle_conns"`
 				ConnMaxLifetimeSeconds int `json:"conn_max_lifetime_seconds"`
 				ConnMaxIdleTimeSeconds int `json:"conn_max_idle_time_seconds"`
+				StatsIntervalSeconds   int `json:"stats_interval_seconds"`
 			} `json:"pool"`
 		} `json:"database"`
 		Search struct {
@@ -155,6 +156,7 @@ type Config struct {
 	DatabasePoolMaxIdleConns           int
 	DatabasePoolConnMaxLifetimeSeconds int
 	DatabasePoolConnMaxIdleTimeSeconds int
+	DatabasePoolStatsIntervalSeconds   int
 
 	// Redis
 	RedisURL            string
@@ -409,6 +411,7 @@ func Load() (*Config, error) {
 		DatabasePoolMaxIdleConns:           getIntEnv("POSTGRES_MAX_IDLE_CONNS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.MaxIdleConns }, 5)),
 		DatabasePoolConnMaxLifetimeSeconds: getIntEnv("POSTGRES_CONN_MAX_LIFETIME_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.ConnMaxLifetimeSeconds }, 300)),
 		DatabasePoolConnMaxIdleTimeSeconds: getIntEnv("POSTGRES_CONN_MAX_IDLE_TIME_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.ConnMaxIdleTimeSeconds }, 60)),
+		DatabasePoolStatsIntervalSeconds:   getIntEnv("POSTGRES_POOL_STATS_INTERVAL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.StatsIntervalSeconds }, 300)),
 
 		// Redis & NLP
 		RedisURL:            getEnv("REDIS_URL", "localhost:6379"),
