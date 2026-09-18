@@ -72,7 +72,12 @@ export async function previewBookmarks(
   options?: ImportOptions
 ): Promise<ImportPreviewResponse> {
   const res = await api
-    .post("v1/import/bookmarks/preview", { json: { items, options } })
+    .post("v1/import/bookmarks/preview", {
+      json: { items, options },
+      // Content extraction fetches every URL in the batch — a 50-item batch
+      // legitimately takes longer than the default 30s client timeout.
+      timeout: 120000,
+    })
     .json<{ data: ImportPreviewResponse }>();
   return res.data;
 }

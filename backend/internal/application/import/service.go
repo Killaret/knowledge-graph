@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"knowledge-graph/internal/application/common"
@@ -310,6 +311,11 @@ func (s *Service) maybeExtract(ctx context.Context, it Item) (Item, error) {
 	return it, nil
 }
 
+// previewConcurrency bounds parallel page fetches during preview so a 50-item
+// batch finishes within the client's request timeout instead of running
+// sequentially at up to the per-fetch timeout each.
+const previewConcurrency = 10
+
 // Preview validates, normalizes and deduplicates a list of bookmarks against
 // the user's existing notes. It does not persist anything.
 func (s *Service) Preview(ctx context.Context, userID uuid.UUID, items []Item) ([]PreviewItem, error) {
@@ -322,60 +328,69 @@ func (s *Service) Preview(ctx context.Context, userID uuid.UUID, items []Item) (
 		return nil, fmt.Errorf("failed to load existing notes: %w", err)
 	}
 
-	out := make([]PreviewItem, 0, len(items))
-	for _, it := range items {
-		it, err := s.maybeExtract(ctx, it)
-		if err != nil {
-			out = append(out, PreviewItem{
-				Title: it.Title,
-				URL:   it.URL,
-				Text:  it.Text,
-				Type:  it.Type,
-				Error: err.Error(),
-			})
-			continue
-		}
-
-		pi := PreviewItem{
-			Title: it.Title,
-			Text:  it.Text,
-			Type:  it.Type,
-			IsNew: true,
-		}
-
-		normalized, err := NormalizeURL(it.URL)
-		if err != nil {
-			pi.URL = it.URL
-			pi.Error = err.Error()
-			out = append(out, pi)
-			continue
-		}
-		pi.URL = normalized
-
-		if _, err := note.NewTitle(it.Title); err != nil {
-			pi.Error = err.Error()
-			out = append(out, pi)
-			continue
-		}
-
-		contentStr := BuildContent(it.Title, normalized, it.Text)
-		if _, err := note.NewContent(contentStr); err != nil {
-			pi.Error = err.Error()
-			out = append(out, pi)
-			continue
-		}
-
-		if noteID, ok := existing[normalized]; ok {
-			pi.IsNew = false
-			pi.ExistingNoteID = noteID
-		} else {
-			pi.IsNew = true
-		}
-
-		out = append(out, pi)
+	out := make([]PreviewItem, len(items))
+	sem := make(chan struct{}, previewConcurrency)
+	var wg sync.WaitGroup
+	for i, it := range items {
+		wg.Add(1)
+		go func(i int, it Item) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			out[i] = s.previewItem(ctx, it, existing)
+		}(i, it)
 	}
+	wg.Wait()
 
 	return out, nil
+}
+
+func (s *Service) previewItem(ctx context.Context, it Item, existing map[string]string) PreviewItem {
+	it, err := s.maybeExtract(ctx, it)
+	if err != nil {
+		return PreviewItem{
+			Title: it.Title,
+			URL:   it.URL,
+			Text:  it.Text,
+			Type:  it.Type,
+			Error: err.Error(),
+		}
+	}
+
+	pi := PreviewItem{
+		Title: it.Title,
+		Text:  it.Text,
+		Type:  it.Type,
+		IsNew: true,
+	}
+
+	normalized, err := NormalizeURL(it.URL)
+	if err != nil {
+		pi.URL = it.URL
+		pi.Error = err.Error()
+		return pi
+	}
+	pi.URL = normalized
+
+	if _, err := note.NewTitle(it.Title); err != nil {
+		pi.Error = err.Error()
+		return pi
+	}
+
+	contentStr := BuildContent(it.Title, normalized, it.Text)
+	if _, err := note.NewContent(contentStr); err != nil {
+		pi.Error = err.Error()
+		return pi
+	}
+
+	if noteID, ok := existing[normalized]; ok {
+		pi.IsNew = false
+		pi.ExistingNoteID = noteID
+	} else {
+		pi.IsNew = true
+	}
+
+	return pi
 }
 
 // StartImport validates a batch of bookmarks, creates a task, stores its

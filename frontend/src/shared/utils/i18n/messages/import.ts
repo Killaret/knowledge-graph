@@ -41,7 +41,7 @@ export const ru: Record<string, string> = {
   "import.noParams": "Не переданы данные страницы.",
   // Mass import
   "import.massTitle": "Массовый импорт",
-  "import.singleImport": "Одна страница (букмарклет)",
+  "import.singleImport": "Одна страница (bookmarklet)",
   "import.massImport": "Массовый импорт (URL / закладки)",
   "import.pasteList": "Вставьте список URL — по одному на строку, или 'title | url':",
   "import.extractContent": "Подгрузить заголовок и текст для каждого URL",
