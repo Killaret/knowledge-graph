@@ -29,6 +29,7 @@ export const en: Record<string, string> = {
   "import.status": "Status",
   "import.newBadge": "New",
   "import.duplicateBadge": "Duplicate",
+  "import.titleOnly": "title only",
   "import.doneTitle": "Import complete",
 };
 
@@ -59,5 +60,6 @@ export const ru: Record<string, string> = {
   "import.status": "Статус",
   "import.newBadge": "Новая",
   "import.duplicateBadge": "Дубликат",
+  "import.titleOnly": "только заголовок",
   "import.doneTitle": "Импорт завершён",
 };

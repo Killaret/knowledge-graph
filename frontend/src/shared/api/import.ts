@@ -25,6 +25,8 @@ export interface ImportPreviewItem extends ImportItem {
   is_new: boolean;
   existing_note_id?: string;
   error?: string;
+  /** Client-side opt-in: import this failed item with title only, no text. */
+  title_only?: boolean;
 }
 
 export interface ImportPreviewResponse {

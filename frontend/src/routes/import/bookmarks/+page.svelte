@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import { extractURLs, extractURLsFromHTML, chunk } from "$shared/utils/extract-urls";
+  import { isImportable, toImportItems } from "$shared/utils/import-preview-items";
   import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte.js";
   import { useRequireAuth } from "$shared/composables/auth";
   import {
@@ -124,15 +125,14 @@
     previewItems = previewItems.map((it, i) => (i === index ? { ...it, title } : it));
   }
 
+  function toggleTitleOnly(index: number) {
+    previewItems = previewItems.map((it, i) =>
+      i === index ? { ...it, title_only: !it.title_only } : it
+    );
+  }
+
   async function startImport() {
-    const items: ImportItem[] = previewItems
-      .filter((it) => it.is_new && !it.error)
-      .map(({ title, url, text, type }) => ({
-        title,
-        url,
-        text,
-        type: type || "asteroid",
-      }));
+    const items: ImportItem[] = toImportItems(previewItems);
 
     if (items.length === 0) {
       errorMessage = t("import.noNewItems");
@@ -263,7 +263,7 @@
       : 0
   );
 
-  const importableCount = $derived(previewItems.filter((i) => i.is_new && !i.error).length);
+  const importableCount = $derived(previewItems.filter(isImportable).length);
 </script>
 
 <div class="import-page">
@@ -361,7 +361,7 @@
                       class="table-input"
                       value={item.title}
                       oninput={(e) => updateItemTitle(index, e.currentTarget.value)}
-                      disabled={!item.is_new || !!item.error}
+                      disabled={!isImportable(item)}
                     />
                   </td>
                   <td class="url-cell">{item.url}</td>
@@ -370,7 +370,7 @@
                       class="table-select"
                       value={item.type || "asteroid"}
                       onchange={(e) => updateItemType(index, e.currentTarget.value)}
-                      disabled={!item.is_new || !!item.error}
+                      disabled={!isImportable(item)}
                     >
                       {#each noteTypes as nt}
                         <option value={nt}>{t(`filter.type.${nt}`)}</option>
@@ -380,6 +380,16 @@
                   <td>
                     {#if item.error}
                       <span class="badge error">{item.error}</span>
+                      {#if item.is_new}
+                        <label class="title-only-toggle">
+                          <input
+                            type="checkbox"
+                            checked={!!item.title_only}
+                            onchange={() => toggleTitleOnly(index)}
+                          />
+                          {t("import.titleOnly")}
+                        </label>
+                      {/if}
                     {:else if item.is_new}
                       <span class="badge new">{t("import.newBadge")}</span>
                     {:else}
@@ -765,6 +775,22 @@
     color: var(--carbon-glow-red, #ff3a2f);
     background: rgba(255, 58, 47, 0.1);
     border: 1px solid rgba(255, 58, 47, 0.25);
+  }
+
+  .title-only-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--carbon-text-muted, #8b8b9e);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .title-only-toggle input {
+    accent-color: var(--carbon-glow-cyan, #22d3ee);
+    cursor: pointer;
   }
 
   .remove-btn {
