@@ -870,7 +870,7 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 
 type importItem struct {
 	Title string `json:"title" binding:"max=1000"`
-	URL   string `json:"url"   binding:"required,url,max=16384"`
+	URL   string `json:"url"   binding:"required,max=16384"`
 	Text  string `json:"text"  binding:"max=50000"`
 	Type  string `json:"type"  binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 }

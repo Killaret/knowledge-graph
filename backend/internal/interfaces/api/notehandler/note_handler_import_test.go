@@ -141,6 +141,41 @@ func TestImportBookmarksPreview(t *testing.T) {
 	assert.NotEmpty(t, third["error"])
 }
 
+func TestImportBookmarksPreview_NonHTTPScheme(t *testing.T) {
+	r, _, _, _ := setupImportRouter()
+
+	// A bookmark file may contain javascript: bookmarklets or other non-http
+	// schemes. They must be flagged per item, not reject the whole batch.
+	body := `{
+		"items": [
+			{"title": "Good", "url": "https://example.com/good", "type": "asteroid"},
+			{"title": "Bookmarklet", "url": "javascript:(function(){})();", "type": "asteroid"}
+		]
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/import/bookmarks/preview", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	data, ok := resp["data"].(map[string]interface{})
+	require.True(t, ok)
+	items, ok := data["items"].([]interface{})
+	require.True(t, ok)
+	require.Len(t, items, 2)
+
+	first := items[0].(map[string]interface{})
+	assert.Empty(t, first["error"])
+	assert.True(t, first["is_new"].(bool))
+
+	second := items[1].(map[string]interface{})
+	assert.NotEmpty(t, second["error"])
+}
+
 func TestImportBookmarksPreview_BatchTooLarge(t *testing.T) {
 	r, _, _, _ := setupImportRouter()
 

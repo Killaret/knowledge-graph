@@ -2264,7 +2264,6 @@ components:
           maxLength: 200
         url:
           type: string
-          format: uri
           maxLength: 2048
         text:
           type: string
