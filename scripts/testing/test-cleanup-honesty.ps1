@@ -67,22 +67,25 @@ Check "ps1 dry-run marks steps skipped" ($out -match 'dry-run') "no dry-run mark
 Check "ps1 dry-run does not call prune/rm/stop" ($out -notmatch 'Removed') "unexpected removal output`n$out"
 
 Write-Host "Case 3: -RemoveVolumes gated by backup freshness" -ForegroundColor Cyan
-$backupDir = Join-Path $repoRoot "backups"
+# Isolate the backup location so the case is deterministic regardless of
+# real backups in the configured KG_BACKUP_DIR: point it at a fresh temp dir.
+$backupDir = Join-Path $env:TEMP "kg-clean1-backups-$(Get-Random)"
 $fakeBackup = Join-Path $backupDir "backup-personal-clean1-test.tar"
-$hadDir = Test-Path $backupDir
+$prevBackupDirEnv = $env:KG_BACKUP_DIR
+$env:KG_BACKUP_DIR = $backupDir
 try {
+    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
     $out = pwsh -NoProfile -File $cleanupPs1 -RemoveVolumes 2>&1 | Out-String
     $code = $LASTEXITCODE
     Check "ps1 -RemoveVolumes without backup refuses" ($code -ne 0 -and $out -match 'backup') "exit=$code`n$out"
 
-    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
     "fake" | Set-Content $fakeBackup -Encoding ASCII
     $out = pwsh -NoProfile -File $cleanupPs1 -RemoveVolumes 2>&1 | Out-String
     $code = $LASTEXITCODE
     Check "ps1 -RemoveVolumes with fresh backup proceeds" ($code -eq 0 -and $out -match 'volume-cleanup') "exit=$code`n$out"
 } finally {
-    Remove-Item $fakeBackup -ErrorAction SilentlyContinue
-    if (-not $hadDir) { Remove-Item $backupDir -Recurse -Force -ErrorAction SilentlyContinue }
+    $env:KG_BACKUP_DIR = $prevBackupDirEnv
+    Remove-Item $backupDir -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host "Case 4: -WslOptimize without elevation must not report success" -ForegroundColor Cyan
