@@ -53,6 +53,49 @@ func TestKeywordRepository_GetKeywordsBatchWithWeights(t *testing.T) {
 	assert.Equal(t, 0.5, result[noteID2]["test"])
 }
 
+func TestKeywordRepository_FindNoteIDsMissingExtractor(t *testing.T) {
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	repo := NewKeywordRepository(db)
+	id1, id2 := uuid.New(), uuid.New()
+
+	rows := sqlmock.NewRows([]string{"id"}).AddRow(id1).AddRow(id2)
+
+	mock.ExpectQuery(`SELECT n\.id FROM notes n[\s\S]+k\.extractor = \$1`).
+		WithArgs("keybert-hybrid-0.9").
+		WillReturnRows(rows)
+
+	ids, err := repo.FindNoteIDsMissingExtractor(context.Background(), "keybert-hybrid-0.9")
+	require.NoError(t, err)
+	assert.Equal(t, []uuid.UUID{id1, id2}, ids)
+}
+
+func TestKeywordRepository_SaveAll_PersistsSurfaceAndExtractor(t *testing.T) {
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	repo := NewKeywordRepository(db)
+	noteID := uuid.New()
+
+	keywords := []NoteKeywordModel{
+		{NoteID: noteID, Keyword: "дерево", Surface: "деревья", Extractor: "keybert-hybrid-0.9", Weight: 0.8},
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM "note_keywords" WHERE note_id = \$1`).
+		WithArgs(noteID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec(`INSERT INTO "note_keywords"`).
+		WithArgs(noteID, "дерево", "деревья", "keybert-hybrid-0.9", 0.8).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	err := repo.SaveAll(context.Background(), noteID, keywords)
+	require.NoError(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
 func TestKeywordRepository_DeleteAll(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()

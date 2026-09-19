@@ -17,8 +17,16 @@ import (
 
 // Keyword представляет одно ключевое слово с весом
 type Keyword struct {
-	Keyword string  `json:"keyword"`
+	Keyword string  `json:"keyword"` // canonical lemma
+	Surface string  `json:"surface"` // surface form as written in the text
 	Weight  float64 `json:"weight"`
+}
+
+// KeywordsResult — ответ /extract_keywords: слова + имя экстрактора,
+// которым они посчитаны (пишется в note_keywords.extractor).
+type KeywordsResult struct {
+	Extractor string    `json:"extractor"`
+	Keywords  []Keyword `json:"keywords"`
 }
 
 // NLPClient — клиент для вызова Python-микросервиса
@@ -110,7 +118,8 @@ func (c *NLPClient) doWithRetry(ctx context.Context, buildReq requestBuilder) (*
 }
 
 // ExtractKeywords вызывает /extract_keywords и возвращает список ключевых слов
-func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) ([]Keyword, error) {
+// вместе с именем экстрактора, которым они посчитаны.
+func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) (*KeywordsResult, error) {
 	reqBody := map[string]interface{}{
 		"text":  text,
 		"top_n": topN,
@@ -144,13 +153,11 @@ func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) 
 		return nil, fmt.Errorf("nlp service returned %d: %s", resp.StatusCode, body)
 	}
 
-	var result struct {
-		Keywords []Keyword `json:"keywords"`
-	}
+	var result KeywordsResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
-	return result.Keywords, nil
+	return &result, nil
 }
 
 // Embed вызывает /embed и возвращает вектор ([]float32)

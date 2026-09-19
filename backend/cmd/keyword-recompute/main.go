@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"knowledge-graph/internal/config"
@@ -13,22 +16,49 @@ import (
 	"knowledge-graph/internal/infrastructure/recompute"
 )
 
+// healthResponse is the subset of the nlp-service /health payload we need:
+// the name of the extractor currently deployed, so the recompute filter
+// targets exactly the rows it would produce.
+type healthResponse struct {
+	Extractor string `json:"extractor"`
+}
+
+func currentExtractor(nlpURL string) (string, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(nlpURL + "/health")
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("nlp-service health returned %s", resp.Status)
+	}
+	var h healthResponse
+	if err := json.NewDecoder(resp.Body).Decode(&h); err != nil {
+		return "", err
+	}
+	if h.Extractor == "" {
+		return "", fmt.Errorf("nlp-service did not report an extractor name")
+	}
+	return h.Extractor, nil
+}
+
 func main() {
 	dryRun := flag.Bool("dry-run", false, "Print tasks that would be enqueued without actually enqueuing them")
 	batchDelay := flag.Int("batch-delay", 30, "Delay in seconds for batch processing when more than 1000 notes")
 	post := flag.Bool("post", false, "Run post-recompute steps: reindex ivfflat, clear stale recommendations, invalidate Redis cache, recalculate link weights")
 	flag.Parse()
 
-	log.Println("Embedding recompute CLI")
-	log.Println("=======================")
+	log.Println("Keyword recompute CLI")
+	log.Println("=====================")
 
 	cfg, err := config.Load()
 	if err != nil {
 		log.Printf("FATAL: Failed to load configuration: %v", err)
 		return
 	}
-	log.Printf("Configuration loaded: Model=%s, Database=%s, Redis=%s",
-		cfg.NLPModelName, recompute.DBLocation(cfg.DatabaseURL), cfg.RedisURL)
+	log.Printf("Configuration loaded: NLPService=%s, Database=%s, Redis=%s",
+		cfg.NLPServiceURL, recompute.DBLocation(cfg.DatabaseURL), cfg.RedisURL)
 
 	database, err := db.Connect(cfg.DatabaseURL)
 	if err != nil {
@@ -43,13 +73,18 @@ func main() {
 		return
 	}
 
-	embeddingRepo := postgres.NewEmbeddingRepository(database, cfg.NLPModelName)
-
-	missing, err := embeddingRepo.FindNoteIDsMissingModel(ctx)
+	extractor, err := currentExtractor(cfg.NLPServiceURL)
 	if err != nil {
-		log.Fatalf("failed to find notes missing embeddings: %v", err)
+		log.Fatalf("failed to query nlp-service extractor: %v", err)
 	}
-	log.Printf("Found %d notes without embedding for model %s", len(missing), cfg.NLPModelName)
+	log.Printf("nlp-service reports extractor %q", extractor)
+
+	keywordRepo := postgres.NewKeywordRepository(database)
+	missing, err := keywordRepo.FindNoteIDsMissingExtractor(ctx, extractor)
+	if err != nil {
+		log.Fatalf("failed to find notes missing keywords: %v", err)
+	}
+	log.Printf("Found %d notes without keywords for extractor %s", len(missing), extractor)
 
 	if len(missing) == 0 {
 		log.Println("Nothing to do. Exiting.")
@@ -86,7 +121,7 @@ func main() {
 	failed := 0
 
 	for i, noteID := range missing {
-		err := taskQueue.EnqueueComputeEmbeddingDelayed(ctx, noteID.String(), delay)
+		err := taskQueue.EnqueueExtractKeywordsDelayed(ctx, noteID.String(), 0, delay)
 		if err != nil {
 			log.Printf("Failed to enqueue task for note %s: %v", noteID, err)
 			failed++
@@ -104,8 +139,8 @@ func main() {
 		}
 	}
 
-	log.Println("=======================")
+	log.Println("=====================")
 	log.Printf("Completed: %d tasks enqueued, %d failed", enqueued, failed)
-	log.Println("Embeddings will be computed in the background by workers")
-	log.Println("After workers finish, run again with -post to rebuild the ivfflat index, refresh recommendations and recalculate link weights")
+	log.Println("Keywords will be extracted in the background by workers")
+	log.Println("After workers finish, run again with -post to rebuild the index, refresh recommendations and recalculate link weights")
 }

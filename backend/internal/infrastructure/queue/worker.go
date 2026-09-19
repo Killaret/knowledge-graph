@@ -84,20 +84,23 @@ func (w *Worker) HandleExtractKeywords(ctx context.Context, t *asynq.Task) error
 			topN = dynamic
 		}
 	}
-	keywords, err := w.nlpClient.ExtractKeywords(ctx, text, topN)
+	kwResult, err := w.nlpClient.ExtractKeywords(ctx, text, topN)
 	if err != nil {
 		log.Printf("HandleExtractKeywords: failed to extract keywords: %v", err)
 		return fmt.Errorf("failed to extract keywords: %w", err)
 	}
+	keywords := kwResult.Keywords
 	log.Printf("HandleExtractKeywords: extracted %d keywords for note %s", len(keywords), p.NoteID)
 
 	// Преобразуем в модели GORM
 	models := make([]postgres.NoteKeywordModel, 0, len(keywords))
 	for _, kw := range keywords {
 		models = append(models, postgres.NoteKeywordModel{
-			NoteID:  noteID,
-			Keyword: kw.Keyword,
-			Weight:  kw.Weight,
+			NoteID:    noteID,
+			Keyword:   kw.Keyword,
+			Surface:   kw.Surface,
+			Extractor: kwResult.Extractor,
+			Weight:    kw.Weight,
 		})
 	}
 	err = w.keywordRepo.SaveAll(ctx, noteID, models)

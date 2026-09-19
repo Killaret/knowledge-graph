@@ -32,30 +32,32 @@ class TestKeywordsEndpoint:
     @patch('app.main.extract_keywords')
     def test_extract_keywords_success(self, mock_extract):
         """Test successful keyword extraction"""
-        # Mock the extract_keywords function
-        mock_extract.return_value = [("machine", 0.8), ("learning", 0.7)]
-        
+        # NLP-2 contract: (lemma, surface, weight) triples
+        mock_extract.return_value = [("machine", "machines", 0.8), ("learning", "learning", 0.7)]
+
         request_data = {
             "text": "Machine learning is great",
             "top_n": 5
         }
-        
+
         response = client.post("/extract_keywords", json=request_data)
-        
+
         assert response.status_code == 200
         data = response.json()
+        assert data["extractor"] != ""
         assert "keywords" in data
         assert len(data["keywords"]) == 2
         assert data["keywords"][0]["keyword"] == "machine"
+        assert data["keywords"][0]["surface"] == "machines"
         assert data["keywords"][0]["weight"] == 0.8
-        
+
         # Verify the mock was called with correct parameters
         mock_extract.assert_called_once_with("Machine learning is great", 5)
 
     @patch('app.main.extract_keywords')
     def test_extract_keywords_default_top_n(self, mock_extract):
         """Test keyword extraction with default top_n"""
-        mock_extract.return_value = [("test", 0.5)]
+        mock_extract.return_value = [("test", "test", 0.5)]
         
         request_data = {
             "text": "Test text"

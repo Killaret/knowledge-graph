@@ -13,6 +13,7 @@ from .models import (
     SimilarityResponse,
 )
 from .nlp_utils import (
+    EXTRACTOR_NAME,
     compute_similarity,
     ensure_model_loaded,
     extract_keywords,
@@ -46,6 +47,7 @@ async def health():
         "status": "healthy",
         "model_loaded": True,
         "version": "1.0.0",
+        "extractor": EXTRACTOR_NAME,
     }
 
 
@@ -54,7 +56,11 @@ async def extract_keywords_endpoint(req: ExtractKeywordsRequest):
     try:
         keywords = extract_keywords(req.text, req.top_n)
         return ExtractKeywordsResponse(
-            keywords=[Keyword(keyword=kw, weight=w) for kw, w in keywords]
+            extractor=EXTRACTOR_NAME,
+            keywords=[
+                Keyword(keyword=lemma, surface=surface, weight=w)
+                for lemma, surface, w in keywords
+            ],
         )
     except Exception as e:
         logger.exception("Error extracting keywords")

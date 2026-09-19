@@ -7,9 +7,11 @@ class ExtractKeywordsRequest(BaseModel):
 
 class Keyword(BaseModel):
     keyword: str
+    surface: str = ""
     weight: float
 
 class ExtractKeywordsResponse(BaseModel):
+    extractor: str = ""
     keywords: List[Keyword]
 
 class EmbedRequest(BaseModel):

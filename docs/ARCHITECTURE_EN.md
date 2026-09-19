@@ -316,7 +316,7 @@ AggregateWeighted(graphScore, semanticScore, keywordScore, alpha, beta, gamma)
 - `client_test.go` — Tests with mocks
 
 **Endpoints:**
-- `POST /extract_keywords` — YAKE keyword extraction
+- `POST /extract_keywords` — KeyBERT-hybrid keyword extraction with lemmatization (NLP-2)
 - `POST /embed` — SentenceTransformers embeddings
 
 ##### Queue (`infrastructure/queue/`)
@@ -482,7 +482,7 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 
 **Location:** `nlp-service/`
 
-**Stack:** FastAPI + spaCy + sentence-transformers + YAKE + NLTK
+**Stack:** FastAPI + sentence-transformers + KeyBERT + pymorphy3 + NLTK
 
 #### 3.1 API Endpoints (`app/main.py`)
 
@@ -505,7 +505,7 @@ EmbedResponse:         {embedding: float[]}
 
 | Function | Library | Purpose |
 |----------|---------|---------|
-| `extract_keywords()` | YAKE | Keyword extraction (RU/EN) |
+| `extract_keywords()` | KeyBERT-hybrid + pymorphy3/WordNet | Keyword extraction + lemmatization (RU/EN) |
 | `embedding_model.encode()` | sentence-transformers | Text vectorization |
 
 **Model:** `paraphrase-multilingual-MiniLM-L12-v2` (384 dimensions) via `NLP_MODEL_NAME`
@@ -750,9 +750,9 @@ ky                              # HTTP client
 ```
 fastapi                         # Web framework
 sentence-transformers           # Embeddings
-yake                            # Keywords
-spacy                           # NLP
-nltk                            # Text processing
+keybert                         # Keywords (semantic ranking)
+pymorphy3                       # Russian lemmatization
+nltk                            # English lemmatization + stopwords
 ```
 
 ---

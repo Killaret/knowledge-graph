@@ -38,11 +38,13 @@ func TestNLPClient_ExtractKeywords_Success(t *testing.T) {
 			t.Fatalf("failed to decode request: %v", err)
 		}
 
-		// Возвращаем тестовый ответ
+		// Возвращаем тестовый ответ — новый контракт NLP-2: keyword = лемма,
+		// surface = форма из текста, extractor = чем посчитано
 		response := map[string]interface{}{
+			"extractor": "keybert-hybrid-0.9",
 			"keywords": []Keyword{
-				{Keyword: "machine", Weight: 0.8},
-				{Keyword: "learning", Weight: 0.7},
+				{Keyword: "machine", Surface: "machine", Weight: 0.8},
+				{Keyword: "learning", Surface: "learning", Weight: 0.7},
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -56,17 +58,24 @@ func TestNLPClient_ExtractKeywords_Success(t *testing.T) {
 
 	// Вызываем метод
 	ctx := context.Background()
-	keywords, err := client.ExtractKeywords(ctx, "machine learning", 5)
+	res, err := client.ExtractKeywords(ctx, "machine learning", 5)
 
 	// Проверяем результат
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	if res.Extractor != "keybert-hybrid-0.9" {
+		t.Errorf("expected extractor 'keybert-hybrid-0.9', got %s", res.Extractor)
+	}
+	keywords := res.Keywords
 	if len(keywords) != 2 {
 		t.Errorf("expected 2 keywords, got %d", len(keywords))
 	}
 	if keywords[0].Keyword != "machine" {
 		t.Errorf("expected first keyword 'machine', got %s", keywords[0].Keyword)
+	}
+	if keywords[0].Surface != "machine" {
+		t.Errorf("expected surface 'machine', got %s", keywords[0].Surface)
 	}
 	if keywords[0].Weight != 0.8 {
 		t.Errorf("expected weight 0.8, got %f", keywords[0].Weight)
@@ -233,13 +242,13 @@ func TestNLPClient_ExtractKeywords_EmptyResponse(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	keywords, err := client.ExtractKeywords(ctx, "test", 5)
+	res, err := client.ExtractKeywords(ctx, "test", 5)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(keywords) != 0 {
-		t.Errorf("expected 0 keywords, got %d", len(keywords))
+	if len(res.Keywords) != 0 {
+		t.Errorf("expected 0 keywords, got %d", len(res.Keywords))
 	}
 }
 
@@ -471,11 +480,11 @@ func TestNLPClient_ExtractKeywords_Retry(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	keywords, err := client.ExtractKeywords(ctx, "test", 5)
+	res, err := client.ExtractKeywords(ctx, "test", 5)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(keywords) != 1 || keywords[0].Keyword != "retry" {
-		t.Errorf("unexpected keywords: %v", keywords)
+	if len(res.Keywords) != 1 || res.Keywords[0].Keyword != "retry" {
+		t.Errorf("unexpected keywords: %v", res.Keywords)
 	}
 }

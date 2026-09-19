@@ -188,7 +188,7 @@ recorded in [`docs/EXTERNAL_AUDIT_2026-09.md`](docs/EXTERNAL_AUDIT_2026-09.md).
 | **Backend** | Go 1.25, Gin, GORM, pgx/v5, asynq |
 | **Frontend** | SvelteKit, Svelte 5 runes, TypeScript, Three.js |
 | **Graph Service** | Go 1.25, gRPC + HTTP |
-| **NLP** | Python 3.11, FastAPI, sentence-transformers, YAKE |
+| **NLP** | Python 3.11, FastAPI, sentence-transformers, KeyBERT + pymorphy3/NLTK |
 | **Data** | PostgreSQL 16 + pgvector, Redis 7, MongoDB |
 | **Infrastructure** | Docker Compose, nginx |
 | **Testing** | testify + testcontainers, Vitest, Playwright, Cucumber, Argos |

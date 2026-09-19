@@ -36,7 +36,7 @@ ARG NLP_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
 ENV NLP_MODEL_NAME=${NLP_MODEL_NAME}
 
 # Download NLTK data during build
-RUN python -c "import nltk; nltk.download('punkt', download_dir='/root/nltk_data'); nltk.download('stopwords', download_dir='/root/nltk_data')"
+RUN python -c "import nltk; nltk.download('punkt', download_dir='/root/nltk_data'); nltk.download('stopwords', download_dir='/root/nltk_data'); nltk.download('wordnet', download_dir='/root/nltk_data')"
 
 # Pre-download embedding model so the service can start offline (HF_HUB_OFFLINE=1)
 RUN python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='sentence-transformers/${NLP_MODEL_NAME}', cache_dir='${HF_HOME}/hub')"

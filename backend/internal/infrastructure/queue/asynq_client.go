@@ -68,13 +68,22 @@ func (c *AsynqClient) EnqueueRecalculateLinkWeights(ctx context.Context, noteID 
 }
 
 func (c *AsynqClient) EnqueueExtractKeywords(ctx context.Context, noteID string, topN int) error {
-	log.Printf("EnqueueExtractKeywords called for note %s", noteID)
+	return c.EnqueueExtractKeywordsDelayed(ctx, noteID, topN, 0)
+}
+
+// EnqueueExtractKeywordsDelayed schedules keyword extraction with a delay.
+func (c *AsynqClient) EnqueueExtractKeywordsDelayed(ctx context.Context, noteID string, topN int, delay time.Duration) error {
+	log.Printf("EnqueueExtractKeywords called for note %s (delay=%v)", noteID, delay)
 	payload, err := json.Marshal(ExtractKeywordsTaskPayload{NoteID: noteID, TopN: topN})
 	if err != nil {
 		log.Printf("Marshal error: %v", err)
 		return err
 	}
-	task := asynq.NewTask(TypeExtractKeywords, payload)
+	var opts []asynq.Option
+	if delay > 0 {
+		opts = append(opts, asynq.ProcessIn(delay))
+	}
+	task := asynq.NewTask(TypeExtractKeywords, payload, opts...)
 	info, err := c.client.EnqueueContext(ctx, task)
 	if err != nil {
 		log.Printf("Enqueue error: %v", err)

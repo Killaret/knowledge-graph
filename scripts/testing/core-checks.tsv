@@ -21,3 +21,4 @@ commit-authorship	Commit authorship guard	frontend-checks	Check commit authorshi
 frontend-unit	Frontend unit tests	frontend-checks	Run unit tests	frontend	npm run test:unit	npm run test:unit	0	npm
 frontend-bdd-types	BDD TypeScript	frontend-checks	Check root BDD TypeScript	frontend	npx tsc --noEmit -p ../tests/tsconfig.json	npx tsc --noEmit -p ../tests/tsconfig.json	0	npx
 nlp-unit	NLP tests	nlp-checks	Run NLP tests	nlp-service	pytest tests/ -v	pytest tests/ -v	0	pytest
+licenses	Dependency license inventory	frontend-checks	Check dependency licenses	.	node scripts/testing/check-licenses.mjs	node scripts/testing/check-licenses.mjs	0	node

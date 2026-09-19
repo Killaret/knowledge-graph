@@ -34,6 +34,10 @@ paths:
                   version:
                     type: string
                     example: "1.0.0"
+                  extractor:
+                    type: string
+                    description: Name/version of the keyword extractor currently deployed
+                    example: "keybert-hybrid-0.9"
         '503':
           description: Service unhealthy or model not loaded
           content:
@@ -48,7 +52,11 @@ paths:
   /extract_keywords:
     post:
       summary: Extract keywords from text
-      description: Extracts keywords from the given text using YAKE algorithm with Russian and English stopwords
+      description: |
+        Extracts keyphrases using a KeyBERT-style hybrid (NLP-2): a statistical
+        short-list over the whole document is ranked by embedding similarity to
+        a chunked document vector; each result is lemmatized (pymorphy3 for
+        Russian, WordNet for English) with the surface form preserved.
       requestBody:
         required: true
         content:
@@ -131,6 +139,10 @@ components:
       type: object
       description: Response containing extracted keywords
       properties:
+        extractor:
+          type: string
+          description: Name/version of the extractor that produced the keywords
+          example: "keybert-hybrid-0.9"
         keywords:
           type: array
           description: List of extracted keywords with weights
@@ -141,12 +153,20 @@ components:
 
     Keyword:
       type: object
-      description: Keyword with its weight/importance score
+      description: |
+        Keyword with its weight/importance score. Since NLP-2 `keyword` is the
+        canonical LEMMA (normalized form), while `surface` keeps the form as
+        written in the text — the field name is unchanged but its semantics
+        changed from surface form to lemma.
       properties:
         keyword:
           type: string
-          description: The extracted keyword
+          description: Canonical lemma of the extracted keyphrase
           example: "machine learning"
+        surface:
+          type: string
+          description: Surface form as written in the source text
+          example: "machine learnings"
         weight:
           type: number
           format: float
