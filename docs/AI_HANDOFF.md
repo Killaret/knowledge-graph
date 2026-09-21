@@ -23,6 +23,7 @@
 | **DOC-AUDIT-1:** инспекция документации — структура, стейловые документы, нюанс дефолтов конфига | [`tasks/DOC-AUDIT-1-documentation-inspection.md`](tasks/DOC-AUDIT-1-documentation-inspection.md) | **на ревью** — 9 исправлений внесено (баннеры устаревания, указатели, индекс, нюанс `getJSONFloatOrDefault` в обеих конфиг-доках); 7 пунктов оставлены на решение — слияние командных доков, три чек-листа, AGENTS/AGENTS_EN, `gordon/` в archive, планы с июльским статусом | 2026-09-21 |
 | **BOARD-2:** сторож лимитов доски, словарь статусов, `.gitattributes`, правило слияний | [`tasks/BOARD-2-board-size-and-backlog-policy.md`](tasks/BOARD-2-board-size-and-backlog-policy.md) | **на ревью** — `check-board-limits.mjs` + 7 мутаций зелёные, мутация на живой доске красная; `.gitattributes`+renormalize отдельным коммитом; протокол и kg-work обновлены | 2026-09-21 |
 
+| **AUTHOR-2:** хук авторства активен в каждом клоне без ручного шага | [`tasks/AUTHOR-2-hook-activation.md`](tasks/AUTHOR-2-hook-activation.md) | **в работе** — Devin | 2026-09-21 |
 ## На Claude Code
 
 Сейчас в работе ничего нет. Очередь Claude Code — строки раздела «Бэклог» с пометкой «ждёт Claude Code», сверху вниз.
@@ -46,7 +47,6 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 
-| **AUTHOR-2:** хук авторства активен в каждом клоне без ручного шага | [`tasks/AUTHOR-2-hook-activation.md`](tasks/AUTHOR-2-hook-activation.md) | **бэклог** — Devin, вторая: постановка готова (решение 44) | 2026-09-21 |
 | **BACKUP-3:** бэкап Personal — автоматический: событийный путь в папку, страховка на старте | [`tasks/BACKUP-3-automatic-backups.md`](tasks/BACKUP-3-automatic-backups.md) | **бэклог** — Devin, третья: постановка готова (решение 49); живые проверки — с разрешения владельца | 2026-09-21 |
 | **CHECK-ALL-2:** ложный пропуск интеграционных фаз «Docker daemon is unavailable» при живом стеке | `scripts/testing/check-all.ps1`, `lib/phase-tracking.ps1` | **бэклог** — Devin: воспроизвести под нагрузкой; пропуск обязан называть команду и её вывод | 2026-09-21 |
 | **RECO-1:** формула рекомендаций — одна реализация, три компонента (решение 40) | [`tasks/RECO-1-recommendation-formula.md`](tasks/RECO-1-recommendation-formula.md) | **бэклог** — ждёт Claude Code: ревью расширения объёма 19.09 (кандидаты = closure ∪ векторный топ-N) | 2026-09-21 |
