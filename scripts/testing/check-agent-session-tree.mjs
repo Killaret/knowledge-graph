@@ -9,9 +9,60 @@
 // it happen.
 
 import { execFileSync } from "node:child_process";
-import { resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { join, resolve, sep } from "node:path";
 
 const repoRoot = process.argv[2] ?? ".";
+
+// AUTHOR-2: a hook that is not active must say so itself. The pre-push
+// authorship guard only runs when core.hooksPath points at husky's directory;
+// `npm run prepare` sets that, and nothing else does.
+function checkHooksActive() {
+  let hooksPath = "";
+  try {
+    hooksPath = execFileSync(
+      "git",
+      ["config", "--get", "core.hooksPath"],
+      { cwd: repoRoot, encoding: "utf8" },
+    ).trim();
+  } catch {
+    hooksPath = ""; // unset -> git exits 1
+  }
+
+  const huskyDir = join(repoRoot, ".husky", "_");
+  const normalized = hooksPath.replace(/\\/g, "/");
+  const pointsAtHusky =
+    normalized === ".husky/_" ||
+    normalized === ".husky/_/" ||
+    normalized.endsWith("/.husky/_") ||
+    normalized.endsWith("/.husky/_/");
+
+  const problems = [];
+  if (!pointsAtHusky) {
+    problems.push(
+      `core.hooksPath is "${hooksPath || "(unset)"}", expected ".husky/_"`,
+    );
+  }
+  if (!existsSync(join(huskyDir, "pre-push"))) {
+    problems.push(".husky/_/pre-push is missing");
+  }
+
+  if (problems.length > 0) {
+    console.error(
+      "Agent session cannot start: git hooks are not activated.",
+    );
+    for (const problem of problems) {
+      console.error(`  ${problem}`);
+    }
+    console.error(
+      "Run `npm run prepare` in this clone (husky creates .husky/_ " +
+        "per worktree). The pre-push authorship guard stays silent until then.",
+    );
+    process.exit(1);
+  }
+}
+
+checkHooksActive();
 
 let status;
 try {
