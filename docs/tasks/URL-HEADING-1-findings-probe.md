@@ -1,5 +1,10 @@
 # URL-HEADING-1: Findings from bookmark export probe
 
+> **2026-09-21, ревью.** Из URL удалены персональные идентификаторы владельца: id рабочего
+> пространства и запроса Postman, реферальный токен Stepik (внутри — user id). Репозиторий
+> публичный; в истории git до этого коммита они остаются. Прототип, которым получен отчёт,
+> в репозиторий не попал — см. [`URL-HEADING-1-review-findings.md`](URL-HEADING-1-review-findings.md).
+
 - Source: `C:\Users\89209\Desktop\bookmarks_11.09.2026.html`
 - Total bookmarks: 135
 - Valid http(s): 134
@@ -13,7 +18,7 @@
 | 1 | tech_doc | https://web.postman.co/home | Postman API Platform |
 | 2 | tech_doc | https://developers.onelogin.com/openid-connect/guides/auth-flow-pkce | OpenId Connect Auth Code Flow + PKCE - OneLogin API |
 | 3 | tech_doc | https://www.keycloak.org/docs-api/latest/rest-api/index.html#_client_initial_access | Keycloak Admin REST API |
-| 4 | complex | https://web.postman.co/workspace/My-Workspace~9a0c960d-a650-4925-8948-e6e887b46747/request/29242437-13b41a22-412d-4e0c-ba62-be14e9efcca1 | Authorization Code Flow - My Workspace |
+| 4 | complex | https://web.postman.co/workspace/My-Workspace~<workspace-id>/request/<request-id> | Authorization Code Flow - My Workspace |
 | 5 | tech_doc | https://jwt.io/ | JSON Web Tokens - jwt.io |
 | 6 | tech_doc | https://developers.onelogin.com/openid-connect/api/authorization-code-grant | OpenID Connect Auth Code Flow pt. 2 - OneLogin API |
 | 7 | russian | https://visiology-doc.atlassian.net/wiki/spaces/trouble/pages/158728193/Keycloak+LDAP | Запуск Keycloak и подключение LDAP каталога - ViHelp |
@@ -31,7 +36,7 @@
 | 19 | complex | https://docs.id.itmo.pro/auth-oidc/requests/ | Описание запросов - Nuxt Content |
 | 20 | complex | https://www.manning.com/books/api-design-patterns?utm_source=frankel&utm_medium=affiliate&utm_campaign=affiliate&a_aid=frankel | API Design Patterns |
 | 21 | course | https://karpov.courses/systemdesign#Price | Курс системного дизайна System Design - проектирование систем \| karpov.courses |
-| 22 | complex | https://stepik.org/course/175243/promo?utm_medium=tg&referral=WzE3NTI0Myw5NzA2NzY4OTIsMTczNzIzNTY5OC4zNDgyODMzXQ%3A1tZGMc%3A2J7uJJ9I8lZMtOwJPN2VsnIZxtY#reviews | Проектирование архитектуры и интеграций (API / брокеры) сервисов – Stepik |
+| 22 | complex | https://stepik.org/course/175243/promo?utm_medium=tg&referral=<redacted>#reviews | Проектирование архитектуры и интеграций (API / брокеры) сервисов – Stepik |
 
 ## Results summary
 
@@ -40,7 +45,7 @@
 | 1 | tech_doc | https://web.postman.co/home |  |  | — | false | false | 0 | HTTP 401 |
 | 2 | tech_doc | https://developers.onelogin.com/openid-connect/guides/auth-flow-pkce | Auth Code Flow + PKCE \| OneLogin Developers | Auth Code Flow + PKCE | — | true | true | 0 |  |
 | 3 | tech_doc | https://www.keycloak.org/docs-api/latest/rest-api/index.html#_client_initial_access | Keycloak Admin REST API | Keycloak Admin REST API | — | false | false | 0 |  |
-| 4 | complex | https://web.postman.co/workspace/My-Workspace~9a0c960d-a650-4925-8948-e6e887b46747/request/29242437-13b41a22-412d-4e0c-ba62-be14e9efcca1 |  |  | — | false | false | 0 | HTTP 401 |
+| 4 | complex | https://web.postman.co/workspace/My-Workspace~<workspace-id>/request/<request-id> |  |  | — | false | false | 0 | HTTP 401 |
 | 5 | tech_doc | https://jwt.io/ | JSON Web Tokens - jwt.io | JSON Web Token (JWT) Debugger | — | true | false | 0 |  |
 | 6 | tech_doc | https://developers.onelogin.com/openid-connect/api/authorization-code-grant | Auth Code Flow pt. 2 \| OneLogin Developers | Auth Code Flow pt. 2 | — | true | true | 0 |  |
 | 7 | russian | https://visiology-doc.atlassian.net/wiki/spaces/trouble/pages/158728193/Keycloak+LDAP | Запуск Keycloak и подключение LDAP каталога - ViHelp | Запуск Keycloak и подключение LDAP каталога - ViHelp | — | false | true | 0 |  |
@@ -58,7 +63,7 @@
 | 19 | complex | https://docs.id.itmo.pro/auth-oidc/requests/ |  |  | — | false | false | 0 | HTTP 404 |
 | 20 | complex | https://www.manning.com/books/api-design-patterns?utm_source=frankel&utm_medium=affiliate&utm_campaign=affiliate&a_aid=frankel | API Design Patterns - JJ Geewax | API Design Patterns | — | false | false | 0 |  |
 | 21 | course | https://karpov.courses/systemdesign#Price | Курс Системный дизайн - обучение проектированию систем - Карпов Курсы | Системный дизайн = проектирование систем как в крупных технологических компаниях \| | — | false | false | 0 |  |
-| 22 | complex | https://stepik.org/course/175243/promo?utm_medium=tg&referral=WzE3NTI0Myw5NzA2NzY4OTIsMTczNzIzNTY5OC4zNDgyODMzXQ%3A1tZGMc%3A2J7uJJ9I8lZMtOwJPN2VsnIZxtY#reviews | Проектирование архитектуры и интеграций (API, брокеры) + ИИ: Начальный уровень, 13 990₽ \| курс на Stepik | Проектирование архитектуры и интеграций (API, брокеры) + ИИ: Начальный уровень, 13 990₽ \| курс на Stepik | — | false | false | 0 |  |
+| 22 | complex | https://stepik.org/course/175243/promo?utm_medium=tg&referral=<redacted>#reviews | Проектирование архитектуры и интеграций (API, брокеры) + ИИ: Начальный уровень, 13 990₽ \| курс на Stepik | Проектирование архитектуры и интеграций (API, брокеры) + ИИ: Начальный уровень, 13 990₽ \| курс на Stepik | — | false | false | 0 |  |
 
 ## Detail per page
 
@@ -114,7 +119,7 @@
       - **h3:** Clients [not main]
       - **h3:** Component [not main]
 
-### 4. [complex] https://web.postman.co/workspace/My-Workspace~9a0c960d-a650-4925-8948-e6e887b46747/request/29242437-13b41a22-412d-4e0c-ba62-be14e9efcca1
+### 4. [complex] https://web.postman.co/workspace/My-Workspace~<workspace-id>/request/<request-id>
 
 **Error:** HTTP 401
 
@@ -574,7 +579,7 @@
     - **h2:** Авторы курса > [not main]
       ВАЛЕРИЙ БАБУШКИН Старший главный начальник (Senior Principal) в BP Читать подробнее → ЕВГЕНИЙ НИЖИБИЦКИЙ Руководитель команды машинного обучения в AliExpress Читать подробнее → ЕГО…
 
-### 22. [complex] https://stepik.org/course/175243/promo?utm_medium=tg&referral=WzE3NTI0Myw5NzA2NzY4OTIsMTczNzIzNTY5OC4zNDgyODMzXQ%3A1tZGMc%3A2J7uJJ9I8lZMtOwJPN2VsnIZxtY#reviews
+### 22. [complex] https://stepik.org/course/175243/promo?utm_medium=tg&referral=<redacted>#reviews
 
 - **`<title>`:** Проектирование архитектуры и интеграций (API, брокеры) + ИИ: Начальный уровень, 13 990₽ \| курс на Stepik
 - **Best title:** Проектирование архитектуры и интеграций (API, брокеры) + ИИ: Начальный уровень, 13 990₽ \| курс на Stepik
