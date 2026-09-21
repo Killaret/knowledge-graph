@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-21 — 30f4ce3
-Прочитано: Devin — 2026-09-21 — 5adf09f
+Прочитано: Devin — 2026-09-21 — 2d7ba89
 ```
 
 ---
@@ -21,6 +21,7 @@
 |---|---|---|---|
 | **LINKS-1:** подключить автосвязи — генератор готов, но нужны порог близости (сейчас его нет: каждая заметка получила бы две связи с любыми соседями), события `LinkCreated` для closure, пересчёт при смене модели | [`tasks/LINKS-1-wire-gamma-links.md`](tasks/LINKS-1-wire-gamma-links.md), [`tasks/LINKS-1-findings.md`](tasks/LINKS-1-findings.md) | **на ревью** — порог `GAMMA_LINK_MIN_SCORE` (0.6) проведён, генерация в воркере после embedding, LinkCreated+refresh на каждую связь, `gamma-links-regenerate` с `--dry-run`; на сиде 200 связей/100 заметок, идемпотентно; найден и починен дефект closure-view (миграция 032), REFRESH 33–125 мс; три мутации красные | 2026-09-21 |
 | **DOC-AUDIT-1:** инспекция документации — структура, стейловые документы, нюанс дефолтов конфига | [`tasks/DOC-AUDIT-1-documentation-inspection.md`](tasks/DOC-AUDIT-1-documentation-inspection.md) | **на ревью** — 9 исправлений внесено (баннеры устаревания, указатели, индекс, нюанс `getJSONFloatOrDefault` в обеих конфиг-доках); 7 пунктов оставлены на решение — слияние командных доков, три чек-листа, AGENTS/AGENTS_EN, `gordon/` в archive, планы с июльским статусом | 2026-09-21 |
+| **BOARD-2:** сторож лимитов доски, словарь статусов, `.gitattributes`, правило слияний | [`tasks/BOARD-2-board-size-and-backlog-policy.md`](tasks/BOARD-2-board-size-and-backlog-policy.md) | **в работе** — Devin | 2026-09-21 |
 
 ## На Claude Code
 
@@ -44,7 +45,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **BOARD-2:** сторож лимитов доски, словарь статусов, `.gitattributes`, правило слияний | [`tasks/BOARD-2-board-size-and-backlog-policy.md`](tasks/BOARD-2-board-size-and-backlog-policy.md) | **бэклог** — Devin, первая в очереди: постановка готова 2026-09-21 (решение 48) | 2026-09-21 |
+
 | **AUTHOR-2:** хук авторства активен в каждом клоне без ручного шага | [`tasks/AUTHOR-2-hook-activation.md`](tasks/AUTHOR-2-hook-activation.md) | **бэклог** — Devin, вторая: постановка готова (решение 44) | 2026-09-21 |
 | **BACKUP-3:** бэкап Personal — автоматический: событийный путь в папку, страховка на старте | [`tasks/BACKUP-3-automatic-backups.md`](tasks/BACKUP-3-automatic-backups.md) | **бэклог** — Devin, третья: постановка готова (решение 49); живые проверки — с разрешения владельца | 2026-09-21 |
 | **CHECK-ALL-2:** ложный пропуск интеграционных фаз «Docker daemon is unavailable» при живом стеке | `scripts/testing/check-all.ps1`, `lib/phase-tracking.ps1` | **бэклог** — Devin: воспроизвести под нагрузкой; пропуск обязан называть команду и её вывод | 2026-09-21 |
@@ -53,7 +54,7 @@
 | **NOTE-QUALITY-1:** мера качества — контракт с Java (решение 42): объём, оконченность, логичность, присутствие мысли | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **бэклог** — обсуждение с владельцем вместе с URL-HEADING-1, дату назначит он; постановка для Java, критерии от нас | 2026-09-21 |
 | **NLP-3:** устройство nlp-service: 4 эндпоинта, карта вызовов, пути оптимизации | [`tasks/NLP-3-nlp-service-structure-review.md`](tasks/NLP-3-nlp-service-structure-review.md) | **бэклог** — ждёт Claude Code: верификация обхода Devin и карта вызывающих | 2026-09-21 |
 | **MODEL-2:** миграция на `multilingual-e5-base`: 384→768, префиксы, чанкование, пересчёт | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **бэклог** — ждёт решения по MODEL-1; черновик Devin, обсуждение с Claude Code | 2026-09-21 |
-| **CHUNK-1:** структурный чанкер текста заметки — иерархия границ, target 256 токенов, код/таблицы атомарны, параметры внешние, портируемость в Java | [`tasks/CHUNK-1-structure-aware-chunker.md`](tasks/CHUNK-1-structure-aware-chunker.md) | **ждёт Claude Code** — постановка + замер прототипа на корпусе владельца ([`tasks/CHUNK-1-measurement-findings.md`](tasks/CHUNK-1-measurement-findings.md)): усечение теряет 25% семантики, 82% заметок меняют top-2; mean-агрегация достаточна; title-инъекция меняет топологию у 46% | 2026-09-21 |
+| **CHUNK-1:** структурный чанкер текста заметки, target 256 токенов | [`tasks/CHUNK-1-structure-aware-chunker.md`](tasks/CHUNK-1-structure-aware-chunker.md) | **бэклог** — ждёт Claude Code: ревью постановки и замера прототипа | 2026-09-21 |
 | **NLP-4:** логическая форма заметки перед эмбеддингом | [`tasks/NLP-4-note-logical-form-normalization.md`](tasks/NLP-4-note-logical-form-normalization.md) | **бэклог** — ждёт Claude Code: ревью постановки Devin (решения 19.09) и замера итераций — неподвижная точка после первого прохода | 2026-09-21 |
 | **LOG-1:** backend на `rs/zerolog`, запрет секретов в логах (решение 35) | [`tasks/LOG-1-zerolog-integration.md`](tasks/LOG-1-zerolog-integration.md) | **бэклог** — черновик у Claude Code: сверка потребителей логгера и план миграции | 2026-09-21 |
 | **ACCESS-DOC-1:** нормативный документ о модели доступа к заметкам после SEC-1/PUB-1 | `CHANGELOG.md` | **бэклог** — ждёт Claude Code: модель описана только в CHANGELOG | 2026-09-21 |

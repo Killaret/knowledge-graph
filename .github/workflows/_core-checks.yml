@@ -244,6 +244,14 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-board-size.mjs .
 
+      - name: Check board limits
+        working-directory: .
+        run: node scripts/testing/check-board-limits.mjs .
+
+      - name: Run board limits guard tests
+        working-directory: .
+        run: node scripts/testing/check-board-limits.test.mjs
+
       - name: Check commit authorship
         working-directory: .
         run: node scripts/testing/check-commit-authorship.mjs .
