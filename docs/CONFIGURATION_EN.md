@@ -29,6 +29,15 @@ npm run build-config
 
 Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.config.json` with `npm run build-config`.
 
+> **Defaults apply only when no JSON config is loaded at all.** When
+> `knowledge-graph.config.json` exists, `getJSONFloatOrDefault`/`getJSONStringOrDefault`
+> return the raw field — a *missing key* deserializes as the zero value (`0`,
+> `""`, `false`), silently overriding the Go default. Example: dropping
+> `gamma_link_min_score` from the JSON yields `GAMMA_LINK_MIN_SCORE = 0.0` —
+> the threshold is disabled, not defaulted. New config keys must therefore be
+> added to `config/*.json` sources; the Go fallback is only a safety net for
+> running without the file.
+
 ### File Structure
 
 ```json

@@ -43,8 +43,9 @@
 | [CONFIGURATION_RU.md](CONFIGURATION_RU.md) | То же по-русски; версии разошлись по объёму, сверять по английской |
 | [STACK_CONFIGURATION_COMPARISON.md](STACK_CONFIGURATION_COMPARISON.md) | Чем отличаются dev, personal и test стеки |
 | [BACKUP.md](BACKUP.md) | Резервное копирование: что, куда и как восстанавливать |
-| [CLOUD_BACKUP_SETUP.md](CLOUD_BACKUP_SETUP.md) | Настройка облачного бэкапа |
-| [YANDEX_DISK_BACKUP.md](YANDEX_DISK_BACKUP.md) / [_EN](YANDEX_DISK_BACKUP_EN.md) | Бэкап на Яндекс.Диск |
+| [CLOUD_BACKUP_SETUP.md](CLOUD_BACKUP_SETUP.md) | **Архивный.** Настройка Cloudflare R2 — устаревший путь |
+| [YANDEX_DISK_BACKUP.md](YANDEX_DISK_BACKUP.md) / [_EN](YANDEX_DISK_BACKUP_EN.md) | **Частично устаревший.** REST API Яндекс.Диска — опциональный путь за `BACKUP_CLOUD_ENABLED`; основной — синхронизируемая папка (решение 31, см. BACKUP.md) |
+| [LICENSES.md](LICENSES.md) | Инвентарь лицензий зависимостей и сторож `check-licenses.mjs` |
 
 ## Тестирование
 
@@ -106,4 +107,10 @@
 ## Архив
 
 [archive/](archive/) — отчёты и планы, отработавшие своё. [3d-archive/](3d-archive/) — снятый с
-эксплуатации код 3D-визуализации.
+эксплуатации код 3D-визуализации. [gordon/](gordon/) — **архивный** пакет разборов и гайдов по
+деплою от Gordon (Docker AI Assistant), январь 2026; Kubernetes-ориентирован, к текущему
+self-hosted пути отношения не имеет.
+
+Корневой `TZ-Java-source-text-handler-2026-08-30.md` — согласованное ТЗ внешнего Java-сервиса
+(нет в этом репозитории), лежит в корне потому, что на него ссылаются постановки IMP-4 и
+NOTE-QUALITY-1.

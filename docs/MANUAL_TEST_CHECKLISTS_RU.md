@@ -1,6 +1,6 @@
 # Актуальный чек-лист ручного тестирования
 
-> **Дополнение:** для ветки `ai-agents` / 3D-рефакторинга см. [MANUAL_TEST_CHECKLIST_AI_AGENTS_3D_REFACTOR.md](MANUAL_TEST_CHECKLIST_AI_AGENTS_3D_REFACTOR.md).
+> **Дополнение:** для ручных прогонов текущего UI см. [MANUAL_TEST_CHECKLIST_COCKPIT.md](MANUAL_TEST_CHECKLIST_COCKPIT.md); чек-лист под 3D-рефакторинг июля 2026 — [архивный](MANUAL_TEST_CHECKLIST_AI_AGENTS_3D_REFACTOR.md).
 
 **Последнее обновление:** Allotropic-carbon theme (градиенты, свечение, углеродные поверхности), редизайн `Button`, `Modal`, `NoteForm`, `TypeSelector`, `NoteCard`, `BackButton`, `SearchBar`, `AuthCard`, `EditNoteModal`, `CreateNoteModal`; полная переработка страницы заметки `/notes/[id]` с метаданными, связями, похожими заметками, кнопками действий и переходами.
 

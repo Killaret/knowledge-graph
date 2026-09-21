@@ -1,7 +1,11 @@
 # План автоматического создания связей на основе NLP
 
 **Создано:** 29 июля 2026 г.  
-**Статус:** ⏳ Запланировано
+**Статус:** ✅ Частично реализовано — семантические автосвязи (`source_type='gamma'`,
+порог `GAMMA_LINK_MIN_SCORE`, степень 2) введены задачей LINKS-1, см.
+[`tasks/LINKS-1-wire-gamma-links.md`](tasks/LINKS-1-wire-gamma-links.md) и
+[`tasks/LINKS-1-findings.md`](tasks/LINKS-1-findings.md). Keyword- и
+граф-компоненты остаются планом (W-1/RECO-1).
 
 ## Обзор
 
