@@ -256,6 +256,10 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-commit-authorship.mjs .
 
+      - name: Check git hooks activation
+        working-directory: .
+        run: node scripts/testing/check-hooks-active.mjs .
+
       - name: Check dependency licenses
         working-directory: .
         run: node scripts/testing/check-licenses.mjs

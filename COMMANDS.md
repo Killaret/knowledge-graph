@@ -25,7 +25,7 @@ scripts/
 
 ### Основные команды (корень проекта)
 ```bash
-npm run prepare                    # Установка husky git hooks
+npm run prepare                    # Установка husky git hooks (обязательно в каждом клоне: сторож check-hooks-active.mjs)
 npm run lint                       # Линтинг frontend кода
 npm run lint:backend               # Линтинг backend Go кода
 npm run format                     # Форматирование frontend кода
@@ -294,6 +294,7 @@ docker compose exec postgres psql -U kb_user -d knowledge_base
 ```bash
 npm run prepare                   # Установка husky hooks
 ```
+Хуки активны только в клонах, где выполнен `npm run prepare` (он выставляет `core.hooksPath=.husky/_` и создаёт `.husky/_` в каждом worktree отдельно). Проверка — `node scripts/testing/check-hooks-active.mjs .`; она же входит в `check-agent-session-tree.mjs` и фазу `hooks-active` раннера. На ветке `main` файла `.husky/pre-push` пока нет — он придёт со слиянием `ai-agents` (AUTHOR-2), до того сторож там отвечает «файл не на этой ветке».
 
 ### Линтинг и форматирование
 ```bash
