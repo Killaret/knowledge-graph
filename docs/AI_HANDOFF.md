@@ -23,7 +23,7 @@
 | **DOC-AUDIT-1:** инспекция документации — структура, стейловые документы, нюанс дефолтов конфига | [`tasks/DOC-AUDIT-1-documentation-inspection.md`](tasks/DOC-AUDIT-1-documentation-inspection.md) | **на ревью** — 9 исправлений внесено (баннеры устаревания, указатели, индекс, нюанс `getJSONFloatOrDefault` в обеих конфиг-доках); 7 пунктов оставлены на решение — слияние командных доков, три чек-листа, AGENTS/AGENTS_EN, `gordon/` в archive, планы с июльским статусом | 2026-09-21 |
 | **BOARD-2:** сторож лимитов доски, словарь статусов, `.gitattributes`, правило слияний | [`tasks/BOARD-2-board-size-and-backlog-policy.md`](tasks/BOARD-2-board-size-and-backlog-policy.md) | **на ревью** — `check-board-limits.mjs` + 7 мутаций зелёные, мутация на живой доске красная; `.gitattributes`+renormalize отдельным коммитом; протокол и kg-work обновлены | 2026-09-21 |
 
-| **AUTHOR-2:** хук авторства активен в каждом клоне без ручного шага | [`tasks/AUTHOR-2-hook-activation.md`](tasks/AUTHOR-2-hook-activation.md) | **в работе** — Devin | 2026-09-21 |
+| **AUTHOR-2:** хук авторства активен в каждом клоне без ручного шага | [`tasks/AUTHOR-2-hook-activation.md`](tasks/AUTHOR-2-hook-activation.md) | **на ревью** — `check-hooks-active.mjs` (фаза check-all, CI-пропуск), session-tree отказывает до prepare; обе мутации красные, реальный push с плохим коммитом отклонён хуком впервые; активировано в 3 клонах | 2026-09-21 |
 ## На Claude Code
 
 Сейчас в работе ничего нет. Очередь Claude Code — строки раздела «Бэклог» с пометкой «ждёт Claude Code», сверху вниз.
