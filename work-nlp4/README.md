@@ -21,23 +21,14 @@
 - `seed_dataset.json` (100 заметок тест-сида): 0 изменений на всех итерациях, cos = 1.0 —
   чистый текст правила не ломают.
 
-## Чего не хватает — корпус владельца
+## Корпус владельца — выгружен и прогнан
 
-Тела 113 заметок из work-w1/work-nlp2 не сохранились (только счётчики). Экспорт Personal-стека:
+`notes_dataset.json` — 108 заметок из `knowledge_personal` (113 всего, 5 <100 символов —
+отброшены как stubs). Выгрузка read-only из `kg-postgres-personal`, контейнер потушен.
 
-```bash
-docker compose -f docker-compose.personal.yml up -d postgres
-docker exec kg-postgres-personal psql -U personal -d knowledge_personal -t -A \
-  -c "SELECT json_agg(json_build_object('id',id,'title',title,'content',content)) FROM notes WHERE length(content) >= 100" \
-  > work-nlp4/notes_dataset.json
-```
+Результаты: `measurements.md` (токены/символы), `measurements-emb.md` (+ косинусная
+близость e5-base), `raw_notes.json`, `raw_emb.json`.
 
-Затем:
-
-```bash
-python nlp-service/scripts/measure_normalization.py --dataset work-nlp4/notes_dataset.json \
-  --out work-nlp4/measurements.md --raw work-nlp4/raw_notes.json
-# ветка с эмбеддингами — внутри kg-test-nlp (модель уже в кэше)
-```
-
-Запуск Personal-стека — только по явному разрешению владельца.
+Главный вывод: **итерации 2+ — неподвижная точка на всех 108 заметках; один проход
+достаточен.** Худший дрейф эмбеддинга 0.452 — риск в агрессивности правил, не в
+итерациях. Разбор: `docs/tasks/NLP-4-normalization-measurement.md`.
