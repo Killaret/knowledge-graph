@@ -217,6 +217,7 @@ stateDiagram-v2
 - Self-links and targets already linked (manually or by gamma) are skipped, so the pass is idempotent; manual links are never modified.
 - Each created link produces a `LinkCreated` event on the graph channel — graph-service invalidates caches and refreshes `note_links_closure` — and a refresh-recommendations task is enqueued for the source and each target.
 - The out-degree cap exists because `note_links_closure` enumerates transitive paths; a higher degree grows it quadratically+.
+- Threshold `0.6` and degree `2` are the cautious start of the W-1-recommended range (0.55–0.6 cosine, degree 2–3) — derived from the autolink precision curve on the `folder_path` ground truth, see `docs/tasks/W-1-eval-findings.md`. Recalibration on a real corpus is part of MODEL-1 follow-up.
 - Regeneration after a model change: `go run ./cmd/gamma-links-regenerate --dry-run` reports how many gamma links would be deleted and created; without the flag it deletes only `source_type='gamma'` rows and regenerates for notes that have an embedding for the current model.
 
 ## Operational Considerations

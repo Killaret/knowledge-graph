@@ -232,13 +232,38 @@ if ($WslOptimize) {
     } elseif (-not $wsl_check) {
         Register-Phase "optimize-disk" -Skipped -Reason "WSL not found"
     } else {
-        # Only the Docker Desktop VHD is a valid target; the disk lives
-        # under %LOCALAPPDATA%\Docker\wsl. Anything else is not ours.
-        $vhdx_file = Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'Docker\wsl') -Filter *.vhdx -Recurse -ErrorAction SilentlyContinue |
-            Sort-Object Length -Descending | Select-Object -First 1
+        # Only the Docker Desktop VHD is a valid target. The disk image
+        # location may be moved off %LOCALAPPDATA% (e.g. to another drive) --
+        # resolve it from the docker-desktop distro registration in the WSL
+        # registry instead of assuming a fixed path. Fallback: the default
+        # %LOCALAPPDATA%\Docker\wsl. Anything else is not ours.
+        $vhdxRoots = @()
+        try {
+            $lxss = Get-ChildItem HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss -ErrorAction Stop
+            foreach ($entry in $lxss) {
+                $props = Get-ItemProperty $entry.PSPath
+                if ($props.DistributionName -eq 'docker-desktop' -and $props.BasePath) {
+                    $base = $props.BasePath -replace '^\\\\\?\\', ''
+                    $vhdxRoots += (Split-Path $base -Parent)
+                    $vhdxRoots += $base
+                }
+            }
+        } catch { }
+        $vhdxRoots += (Join-Path $env:LOCALAPPDATA 'Docker\wsl')
+
+        $vhdx_file = $null
+        foreach ($root in ($vhdxRoots | Select-Object -Unique)) {
+            if (Test-Path $root) {
+                $candidate = Get-ChildItem -Path $root -Filter *.vhdx -Recurse -ErrorAction SilentlyContinue |
+                    Sort-Object Length -Descending | Select-Object -First 1
+                if ($candidate -and (-not $vhdx_file -or $candidate.Length -gt $vhdx_file.Length)) {
+                    $vhdx_file = $candidate
+                }
+            }
+        }
 
         if (-not $vhdx_file) {
-            Register-Phase "optimize-disk" -Skipped -Reason "Docker WSL2 VHD not found under $env:LOCALAPPDATA\Docker\wsl"
+            Register-Phase "optimize-disk" -Skipped -Reason "Docker WSL2 VHD not found (searched: $($vhdxRoots -join ', '))"
         } else {
             $old_size = [math]::Round($vhdx_file.Length / 1GB, 2)
             Write-Host "  Target VHD: $($vhdx_file.FullName) ($old_size GB)" -ForegroundColor Gray
@@ -247,6 +272,17 @@ if ($WslOptimize) {
                 Write-Host "  Would shut down WSL and compact this disk" -ForegroundColor Yellow
                 Register-Phase "optimize-disk" -Skipped -Reason "dry-run"
             } else {
+                # Docker Desktop re-launches the docker-desktop distro the
+                # moment WSL shuts down, which re-locks the VHD and makes
+                # the lock wait below time out. Stop the app first; it is
+                # restarted after the compact.
+                $dockerProcs = @(Get-Process -Name 'com.docker.backend','Docker Desktop','com.docker.build' -ErrorAction SilentlyContinue)
+                if ($dockerProcs) {
+                    Write-Host "  Stopping Docker Desktop ($($dockerProcs.Count) process(es))..." -ForegroundColor Gray
+                    $dockerProcs | Stop-Process -Force -ErrorAction SilentlyContinue
+                    Start-Sleep -Seconds 3
+                }
+
                 Write-Host "  Shutting down WSL..." -ForegroundColor Gray
                 wsl --shutdown 2>$null
 
@@ -300,6 +336,16 @@ exit
 
                     Write-Host "  Restarting WSL..." -ForegroundColor Gray
                     wsl -e ls /home 2>$null | Out-Null
+
+                    if ($dockerProcs) {
+                        $desktopExe = Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'
+                        if (Test-Path $desktopExe) {
+                            Write-Host "  Restarting Docker Desktop..." -ForegroundColor Gray
+                            Start-Process $desktopExe
+                        } else {
+                            Write-Host "  Docker Desktop was stopped; start it manually when needed." -ForegroundColor Yellow
+                        }
+                    }
                 }
             }
         }
