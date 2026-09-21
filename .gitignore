@@ -190,3 +190,7 @@ coverage
 
 # Claude Code: personal overrides stay local
 .claude/settings.local.json
+
+# Корпус замеров NLP-4/CHUNK-1: дампы с телами заметок не коммитятся (решение 2026-09-21)
+work-nlp4/notes_dataset.json
+work-*/notes_dataset*.json
