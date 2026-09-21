@@ -25,6 +25,8 @@ mongodbdata_personal
 
 ## Как сделать бэкап
 
+Основной путь — **событийный** (BACKUP-3): воркер `worker_personal` делает дамп через ~30 с после любого изменения заметки и пишет `backup-personal-auto-<ts>.sql.gz` прямо в синхронизируемую папку (том `${KG_BACKUP_DIR}` → `/backups`, `BACKUP_LOCAL_PATH=/backups`). Ручной запуск нужен только как страховка — её же делает `start-personal.ps1`, когда свежайший бэкап старше `KG_BACKUP_MAX_AGE_HOURS`:
+
 ```powershell
 .\scripts\devops\backup-personal.ps1            # режим daily по умолчанию
 .\scripts\devops\backup-personal.ps1 -Mode weekly

@@ -154,6 +154,9 @@ services:
       APP_ENV: development
       SKIP_AUTH: ${SKIP_AUTH:-false}
       BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
+      BACKUP_LOCAL_PATH: /backups
+    volumes:
+      - "${KG_BACKUP_DIR:-C:/Users/89209/Desktop/my items}:/backups"
     depends_on:
       postgres_personal:
         condition: service_healthy

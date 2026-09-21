@@ -264,7 +264,7 @@ cfg := config.Load()
 
 | Переменная | Описание | Умолчание |
 |-----------|----------|-----------|
-| `BACKUP_LOCAL_PATH` | Локальная директория для бэкапов | `./backups` |
+| `BACKUP_LOCAL_PATH` | Локальная директория для бэкапов воркера. В Personal-стеке — `/backups` (том `${KG_BACKUP_DIR}` примонтирован в `worker_personal`, BACKUP-3) | `./backups` |
 | `BACKUP_CLOUD_ENABLED` | Включить облачное резервирование | `false` |
 | `BACKUP_CLOUD_PROVIDER` | Провайдер облака (`yandex`) | `yandex` |
 | `BACKUP_YANDEX_OAUTH_TOKEN` | OAuth-токен Яндекс.Диска | — |

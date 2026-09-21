@@ -82,7 +82,10 @@ func (r *Runner) Run(ctx context.Context) (string, error) {
 	}
 
 	ts := r.clock().UTC().Format("2006-01-02-150405")
-	baseName := fmt.Sprintf("backup-personal-%s", ts)
+	// Event-driven dumps get their own name space: the shared backup folder
+	// also holds daily/weekly snapshots from the cron scheduler, and the
+	// worker's short retention must not eat files with a longer lifetime.
+	baseName := fmt.Sprintf("backup-personal-auto-%s", ts)
 	sqlFile := filepath.Join(r.localPath, baseName+".sql")
 	gzFile := sqlFile + ".gz"
 
@@ -147,7 +150,7 @@ func (r *Runner) cleanupOldBackups() error {
 	}
 	cutoff := r.clock().Add(-time.Duration(r.retention) * 24 * time.Hour)
 	for _, e := range entries {
-		if e.IsDir() || !strings.HasPrefix(e.Name(), "backup-personal-") || !strings.HasSuffix(e.Name(), ".sql.gz") {
+		if e.IsDir() || !strings.HasPrefix(e.Name(), "backup-personal-auto-") || !strings.HasSuffix(e.Name(), ".sql.gz") {
 			continue
 		}
 		info, err := e.Info()

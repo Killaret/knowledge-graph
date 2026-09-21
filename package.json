@@ -32,7 +32,7 @@
       "cd frontend && npm run format"
     ],
     "backend/**/*.go": [
-      "cd backend && golangci-lint run --new-from-rev=HEAD~1"
+      "node scripts/devops/lint-backend.mjs"
     ]
   },
   "dependencies": {

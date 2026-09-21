@@ -60,6 +60,16 @@ The backup system includes:
 │               /KnowledgeGraphBackups/                        │
 └─────────────────────────────────────────────────────────────┘
 
+### Three producers — and which one is primary (BACKUP-3)
+
+| Producer | When it fires | Writes to | File name | Caveat |
+|---|---|---|---|---|
+| Worker on note change (`worker_personal`) | ~30 s after any note mutation, 5-min dedup | `/backups` = the synced host folder | `backup-personal-auto-<ts>.sql.gz` | **Primary path** — fires exactly when there is something to save |
+| `backup_scheduler` cron | 02:00 daily, 23:00 Sun weekly | `/backups` = synced folder | `backup-personal-{daily,weekly}-<ts>.sql.gz` | Only when the stack is up at that minute — on a laptop that sleeps at night it almost never fires |
+| `scripts/devops/backup-personal.ps1` by hand | When the owner remembers | synced folder | `backup-personal-<mode>-<ts>.sql.gz` | Not automation; also run as insurance by `start-personal.ps1` when the newest backup is stale |
+
+Retention is per-producer: the worker deletes only `backup-personal-auto-*` older than `BACKUP_RETENTION_DAYS`, the cron script only its own mode (`daily`/`weekly`), so one producer's cleanup cannot eat another's snapshots. `start-personal.ps1` additionally prints the freshness line (`check-personal-backup.ps1`) on every start and makes a `daily` dump when the newest backup is older than `KG_BACKUP_MAX_AGE_HOURS`.
+
 ### Event-driven backup flow
 
 ```
@@ -245,8 +255,10 @@ The worker automatically schedules a full database backup after any note change 
 Multiple changes within 5 minutes are deduplicated by Asynq's `Unique` option (the task payload is constant so the window works correctly). The actual dump is delayed by 30 seconds to avoid backing up in the middle of a burst of edits. The worker produces a timestamped file like:
 
 ```
-backups/backup-personal-YYYY-MM-DD-HHMMSS.sql.gz
+backup-personal-auto-YYYY-MM-DD-HHMMSS.sql.gz
 ```
+
+in the synced folder (`worker_personal` mounts the same `${KG_BACKUP_DIR}` at `/backups` and `BACKUP_LOCAL_PATH=/backups`)
 
 and uploads it to Yandex.Disk if `BACKUP_CLOUD_ENABLED=true`.
 

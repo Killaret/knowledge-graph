@@ -43,10 +43,10 @@ func TestRunnerCreatesAndCompressesBackup(t *testing.T) {
 	path, err := r.Run(context.Background())
 	require.NoError(t, err)
 	assert.FileExists(t, path)
-	assert.Contains(t, path, "backup-personal-2026-08-06-120000.sql.gz")
+	assert.Contains(t, path, "backup-personal-auto-2026-08-06-120000.sql.gz")
 
 	// Raw sql should be removed after compression.
-	raw := filepath.Join(tmp, "backup-personal-2026-08-06-120000.sql")
+	raw := filepath.Join(tmp, "backup-personal-auto-2026-08-06-120000.sql")
 	assert.NoFileExists(t, raw)
 }
 
@@ -68,7 +68,7 @@ func TestRunnerUploadsBackup(t *testing.T) {
 	_, err := r.Run(context.Background())
 	require.NoError(t, err)
 	require.Len(t, u.uploaded, 1)
-	assert.Equal(t, "backup-personal-2026-08-06-120000.sql.gz", u.uploaded[0])
+	assert.Equal(t, "backup-personal-auto-2026-08-06-120000.sql.gz", u.uploaded[0])
 }
 
 func TestRunnerUploadError(t *testing.T) {
@@ -95,7 +95,7 @@ func TestRunnerCleanupOldBackups(t *testing.T) {
 	tmp := t.TempDir()
 	clock := time.Date(2026, 8, 6, 12, 0, 0, 0, time.UTC)
 
-	oldFile := filepath.Join(tmp, "backup-personal-2026-07-01-120000.sql.gz")
+	oldFile := filepath.Join(tmp, "backup-personal-auto-2026-07-01-120000.sql.gz")
 	require.NoError(t, os.WriteFile(oldFile, []byte("old"), 0o644))
 	oldTime := clock.Add(-30 * 24 * time.Hour)
 	require.NoError(t, os.Chtimes(oldFile, oldTime, oldTime))
@@ -114,4 +114,37 @@ func TestRunnerCleanupOldBackups(t *testing.T) {
 	_, err := r.Run(context.Background())
 	require.NoError(t, err)
 	assert.NoFileExists(t, oldFile)
+}
+
+// The worker shares the backup folder with the cron scheduler: daily files
+// live 7 days by their own rules and weekly files 90 days. The worker's short
+// retention must remove only its own event-driven dumps.
+func TestRunnerCleanupKeepsSchedulerBackups(t *testing.T) {
+	tmp := t.TempDir()
+	clock := time.Date(2026, 8, 6, 12, 0, 0, 0, time.UTC)
+	oldTime := clock.Add(-30 * 24 * time.Hour)
+
+	oldAuto := filepath.Join(tmp, "backup-personal-auto-2026-07-01-120000.sql.gz")
+	oldDaily := filepath.Join(tmp, "backup-personal-daily-2026-07-01-120000.sql.gz")
+	oldWeekly := filepath.Join(tmp, "backup-personal-weekly-2026-07-01-120000.sql.gz")
+	for _, f := range []string{oldAuto, oldDaily, oldWeekly} {
+		require.NoError(t, os.WriteFile(f, []byte("old"), 0o644))
+		require.NoError(t, os.Chtimes(f, oldTime, oldTime))
+	}
+
+	r := NewRunner(
+		"postgresql://user:pass@localhost/db",
+		tmp,
+		7,
+		WithPgDumpExec(func(ctx context.Context, dsn, out string) error {
+			return os.WriteFile(out, []byte("-- test dump"), 0o644)
+		}),
+		WithClock(func() time.Time { return clock }),
+	)
+
+	_, err := r.Run(context.Background())
+	require.NoError(t, err)
+	assert.NoFileExists(t, oldAuto)
+	assert.FileExists(t, oldDaily)
+	assert.FileExists(t, oldWeekly)
 }

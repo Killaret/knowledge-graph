@@ -265,7 +265,7 @@ Achievements use JSON-based conditions stored in the `condition_json` field:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `KG_BACKUP_DIR` | Local backup directory used by scripts, guard and compose | `Desktop/my items` (resolved from `$HOME`) |
-| `BACKUP_LOCAL_PATH` | Local backup directory for the Go worker | `./backups` |
+| `BACKUP_LOCAL_PATH` | Local backup directory for the Go worker. In the personal stack it is `/backups` (`${KG_BACKUP_DIR}` is mounted into `worker_personal`, BACKUP-3) | `./backups` |
 | `BACKUP_CLOUD_ENABLED` | Enable cloud backup | `false` |
 | `BACKUP_CLOUD_PROVIDER` | Cloud provider (yandex) | `yandex` |
 | `BACKUP_YANDEX_OAUTH_TOKEN` | Yandex.Disk OAuth token | - |
