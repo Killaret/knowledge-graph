@@ -58,3 +58,9 @@ ok  	knowledge-graph/internal/interfaces/api/notehandler	3.536s
 
 Принять после теста для правки 2 и исправления постановки. Пользовательский результат —
 превью 135 закладок работает — по всей видимости достигнут, и достигнут правкой 1.
+
+## Доработка `5adf09f` — принято (2026-09-21, вечер)
+
+`TestImportBookmarksPreview_SchemelessURL` (`www.example.com` → 200 с per-item ошибкой). Мутация —
+валидатор `url` возвращён в binding: `--- FAIL: TestImportBookmarksPreview_SchemelessURL`. Абзац
+постановки исправлен с пометкой о ревью. Теперь все три правки охраняются.

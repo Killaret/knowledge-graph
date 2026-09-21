@@ -35,3 +35,9 @@ ok  	knowledge-graph/internal/infrastructure/db	0.125s
 
 - Умолчания не изменились — поведение стендов прежнее.
 - Метрики за админом, а не за обычной авторизацией.
+
+## Доработка `5adf09f` — принято (2026-09-21, вечер)
+
+`TestConnectWithPool_AppliesConfiguredValues_Integration` (testcontainers, 12 с) и
+`TestDatabasePoolEnvVars`. Мутация `SetMaxOpenConns(25)` вместо значения из конфига:
+`--- FAIL … expected: 7`. Параметризация охраняется.
