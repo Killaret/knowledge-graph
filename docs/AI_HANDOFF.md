@@ -24,6 +24,7 @@
 | **BOARD-2:** сторож лимитов доски, словарь статусов, `.gitattributes`, правило слияний | [`tasks/BOARD-2-board-size-and-backlog-policy.md`](tasks/BOARD-2-board-size-and-backlog-policy.md) | **на ревью** — `check-board-limits.mjs` + 7 мутаций зелёные, мутация на живой доске красная; `.gitattributes`+renormalize отдельным коммитом; протокол и kg-work обновлены | 2026-09-21 |
 
 | **AUTHOR-2:** хук авторства активен в каждом клоне без ручного шага | [`tasks/AUTHOR-2-hook-activation.md`](tasks/AUTHOR-2-hook-activation.md) | **на ревью** — `check-hooks-active.mjs` (фаза check-all, CI-пропуск), session-tree отказывает до prepare; обе мутации красные, реальный push с плохим коммитом отклонён хуком впервые; активировано в 3 клонах | 2026-09-21 |
+| **BACKUP-3:** автоматический бэкап Personal — событийный путь воркера в папку + страховка на старте | [`tasks/BACKUP-3-automatic-backups.md`](tasks/BACKUP-3-automatic-backups.md) | **на ревью** — том+env в worker_personal, файлы `backup-personal-auto-*`, ретенция только своя (Go-тест 3 производителя), страховка в start-personal.ps1 (обе ветки показаны), compose-сторож `check-worker-backup-mount.py`; попутно починен lint-staged backend-шаг; живая проверка п.1 — с разрешения владельца | 2026-09-21 |
 ## На Claude Code
 
 Сейчас в работе ничего нет. Очередь Claude Code — строки раздела «Бэклог» с пометкой «ждёт Claude Code», сверху вниз.
@@ -47,7 +48,6 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 
-| **BACKUP-3:** бэкап Personal — автоматический: событийный путь в папку, страховка на старте | [`tasks/BACKUP-3-automatic-backups.md`](tasks/BACKUP-3-automatic-backups.md) | **бэклог** — Devin, третья: постановка готова (решение 49); живые проверки — с разрешения владельца | 2026-09-21 |
 | **CHECK-ALL-2:** ложный пропуск интеграционных фаз «Docker daemon is unavailable» при живом стеке | `scripts/testing/check-all.ps1`, `lib/phase-tracking.ps1` | **бэклог** — Devin: воспроизвести под нагрузкой; пропуск обязан называть команду и её вывод | 2026-09-21 |
 | **RECO-1:** формула рекомендаций — одна реализация, три компонента (решение 40) | [`tasks/RECO-1-recommendation-formula.md`](tasks/RECO-1-recommendation-formula.md) | **бэклог** — ждёт Claude Code: ревью расширения объёма 19.09 (кандидаты = closure ∪ векторный топ-N) | 2026-09-21 |
 | **W-1:** валидация формулы весов на ground truth `folder_path` | [`tasks/W-1-eval-findings.md`](tasks/W-1-eval-findings.md) | **бэклог** — ждёт Claude Code: ревью eval — семантика доминирует, граф покрывает 27 %, keywords ортогональны | 2026-09-21 |
