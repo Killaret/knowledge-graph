@@ -450,6 +450,15 @@ pytest tests/ -v
 
 Visual regression tests are located in `frontend/tests/visual/visual-regression.spec.ts` and use `@argos-ci/playwright`. The reporter uploads screenshots to Argos automatically when `CI` or `ARGOS_UPLOAD_LOCAL` is set.
 
+### CSP Policy Check
+
+All Playwright projects run with `bypassCSP: true` (Argos injects a stabilization script), so they cannot see a broken Content-Security-Policy. The dedicated `csp` project (`frontend/tests/csp/csp-policy.spec.ts`) runs without the bypass and fails on any CSP console violation while walking the key screens. The policy itself is emitted by SvelteKit via `kit.csp` in `frontend/svelte.config.js` — do not duplicate the header in nginx. Set `CSP_REPORT_ONLY=true` at build time to emit the policy as `Content-Security-Policy-Report-Only` for measuring new directives.
+
+```bash
+cd frontend
+FRONTEND_URL=http://127.0.0.1:3002 npx playwright test --project=csp
+```
+
 **Run locally (test stack):**
 ```powershell
 # Windows

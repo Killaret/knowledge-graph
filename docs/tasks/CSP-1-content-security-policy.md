@@ -133,3 +133,24 @@ Vite в режиме разработки требует `'unsafe-eval'`. Пол
 ## Что приложить к результату
 
 Список нарушений, собранный в режиме отчётов на шаге 2, — до того, как политика была дополнена. Это единственное доказательство, что политика выведена из поведения приложения, а не переписана из статьи. Плюс вывод мутации по критерию 6.
+
+## Результат (Devin, 2026-09-21)
+
+**Реализация.** `kit.csp` в `frontend/svelte.config.js`, `mode: "auto"` (нонс для инлайнового скрипта гидратации считает SvelteKit). В nginx заголовок не дублируется — проверено по ответу `http://127.0.0.1:3002/`: ровно один `content-security-policy`, второго нет. `CSP_REPORT_ONLY=true` при сборке переводит целевую политику в `Report-Only` (SvelteKit требует `report-uri`, добавлен `/api/csp-report` — эндпоинт необязателен для сбора через консоль). Dev-режим получает свою политику: `script-src` +`'unsafe-eval'`, `connect-src` +`ws:` (Vite HMR); в прод-политике их нет.
+
+**Список нарушений из режима отчётов (до дополнения политики).** Прогон `CSP_REPORT_ONLY=true` сборки, Playwright-проект `csp` без `bypassCSP`, 9 экранов:
+
+- `/`, `/graph?full=1&nocache=1`, `/graph/3d` — по 8 одинаковых нарушений: `Applying inline style violates ... directive 'style-src 'self''` (один хеш `sha256-gARaAwN0PyuKNhuQHphC2hwMAsgazEBUEfdGTc2zCZ8=`). Chromium относит инлайновые стили к `style-src`, а не только к `style-src-attr` — концессия перенесена в `style-src 'self' 'unsafe-inline'` (та же запись TD-CSP-STYLES, комментарий в конфиге).
+- `/search`, `/auth/login`, `/auth/register`, `/notes/new`, `/import/bookmarks` — нарушений нет.
+- Нарушений по `script-src`, `connect-src`, `img-src`, `font-src` не зафиксировано ни на одном экране.
+
+**Проверки.**
+
+- Запрещающий режим, локальный прод-билд (`node build`): 9/9 экранов без нарушений.
+- Тест-стек (`start-test.ps1` + seed 20 заметок/10 связей), `FRONTEND_URL=http://127.0.0.1:3002`: 9/9 без нарушений — с реальными данными, 2D и 3D граф рисуются.
+- Мутация критерия 6: инлайн `<script>window.__cspMutation = true;</script>` в `search/+page.svelte` → тест красный, браузер: `Executing inline script violates ... 'script-src 'self' 'nonce-...''. The action has been blocked.` Мутация возвращена.
+- `npm run dev` — работает, dev-политика с `unsafe-eval`/`ws:`, экраны `/` и `/auth/login` без нарушений.
+- Визуальный набор: `visual` + `visual-real-auth` — 20/20 зелёных (`bypassCSP` не тронут).
+- `check-all` без `-Quick` — 21 PASS, 1 SKIP (`golangci-lint` не установлен локально), 3 FAIL: `Frontend formatting` и `Task index` — исправлены и перепроверены зелёными; `Commit authorship guard` красный на **истории ветки** (коммиты до этой задачи, в т.ч. мои `97ed560`/`58aab34` с автором `devin@cognition.ai` вместо протокольной подписи — зафиксировано в AUTHOR-1 как «на ветке красный без способа признать журналированную историю»). Коммит этой задачи подписан протокольной подписью.
+
+**Не покрыто прогоном:** вход через Яндекс — внешний OAuth-редирект, из экранов проверен `/auth/login` (точка входа); сам `oauth.yandex.ru` — навигация верхнего уровня, политикой не ограничивается.

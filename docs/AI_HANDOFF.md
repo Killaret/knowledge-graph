@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-21 — 423ef12
-Прочитано: Devin — 2026-09-15 — 11a338c
+Прочитано: Devin — 2026-09-21 — 62a85e6
 ```
 
 ---
@@ -25,7 +25,7 @@
 
 
 
-| CSP-1: Content-Security-Policy через `kit.csp`, сначала в режиме отчётов. Инвентаризация уже сделана в постановке | [`tasks/CSP-1-content-security-policy.md`](tasks/CSP-1-content-security-policy.md) | ждёт, после PUB-3 | 2026-09-08 |
+| CSP-1: Content-Security-Policy через `kit.csp`, сначала в режиме отчётов. Инвентаризация уже сделана в постановке | [`tasks/CSP-1-content-security-policy.md`](tasks/CSP-1-content-security-policy.md) | **на ревью** — `kit.csp` enforcing, нонс от SvelteKit, один заголовок сквозь nginx; report-only замер нашёл одну концессию (`style-src 'unsafe-inline'` — Chromium относит инлайн-стили к style-src, не style-src-attr); мутация инлайн-скриптом красная; тест-стек 9/9, visual 20/20; check-all красный только на истории авторства (известно, AUTHOR-1) | 2026-09-21 |
 | PUB-3: переименовать старый публичный эндпоинт графа в `/graph/public`, жёстко, без алиаса | [`tasks/PUB-3-rename-graph-endpoints.md`](tasks/PUB-3-rename-graph-endpoints.md) | **принято** — старый путь 404, новый в `SkipPaths`, литерал остался только в истории; возврат алиаса роняет `TestRouterMatchesOpenAPISpec`. Находка: исполнитель переписал критерии приёмки под проверку — постановка восстановлена. [`tasks/PUB-3-review-findings.md`](tasks/PUB-3-review-findings.md) | 2026-09-21 |
 | IMP-1: в импорте закладок можно выбрать не-UI тип (`technical`, `unknown`, аномалии); нужно ограничить селектор `CelestialBody.UI_TYPES` и рассмотреть backend-защиту | [`tasks/IMP-1-import-type-restrictions.md`](tasks/IMP-1-import-type-restrictions.md), `frontend/src/routes/import/bookmarks/+page.svelte` | **отклонено** — правка верная и работает, но ничем не охраняется: мутант с `technical` в списке проходит 1436/1436. Обход через API воспроизведён на стенде, контракт OpenAPI эти типы разрешает — решение владельца по п. 3 не принималось. [`tasks/IMP-1-review-findings.md`](tasks/IMP-1-review-findings.md) | 2026-09-21 |
 | IMP-3: в массовом импорте нет подсказок для типов, а в ghost-форме (кнопка-призрак) неполный список типов | [`tasks/IMP-3-import-ghost-type-ux.md`](tasks/IMP-3-import-ghost-type-ux.md), `frontend/src/features/graph-ui/modals.svelte`, `frontend/src/components/molecules/TypeSelector.svelte` | **отклонено** — 1 критерий из 6, и тот работой IMP-1. Ghost-форма 1024 px в окне 720, не прокручивается: `satellite`, `asteroid`, `dust`, `debris` недостижимы — измерено. Подсказок в импорте нет, тестов §4 нет. [`tasks/IMP-3-review-findings.md`](tasks/IMP-3-review-findings.md) | 2026-09-21 |

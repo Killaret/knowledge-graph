@@ -130,6 +130,21 @@ export default defineConfig({
       testMatch: "**/visual/visual-authenticated.spec.ts",
       dependencies: ["setup-auth"],
     },
+    // CSP-1: screens walked with the policy actually enforced. Every other
+    // project sets bypassCSP for Argos, so this is the only place a broken
+    // policy can be seen. No bypassCSP here.
+    {
+      name: "csp",
+      use: {
+        ...devices["Desktop Chrome"],
+        bypassCSP: false,
+        launchOptions: {
+          args: ["--disable-web-security"],
+        },
+      },
+      testMatch: "**/csp/csp-policy.spec.ts",
+      dependencies: ["setup-skip"],
+    },
   ],
   // Auto-start dev server for tests - enable with PLAYWRIGHT_DEV_SERVER=true
   webServer:
