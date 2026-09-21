@@ -55,3 +55,58 @@
 как постановки не проходила. Реализацию начинать после того, как Claude
 посмотрит спеку и подтвердит постановку (как RECO-1), либо по явному слову
 владельца.
+
+## Второй заход — предложение по объединению и иерархии
+
+Дополнительно исправлено: `API_ERRORS_EN.md` начинался со stray-байта «да»
+перед заголовком — убран.
+
+### Кластеры дублирования
+
+| Кластер | Файлы | Предложение |
+|---|---|---|
+| Команды и прогоны | `COMMANDS.md` (корень), `TESTING_COMMANDS.md`, разделы `TESTING.md`, `REGRESSION_TEST_PLAN.md` | `COMMANDS.md` — канонический список; `TESTING_COMMANDS.md` слить в `TESTING.md` и снять файл; в `REGRESSION_TEST_PLAN` оставить только порядок фаз |
+| Чек-листы ручного тестирования | `MANUAL_TEST_CHECKLISTS_RU` (32 КБ), `MANUAL_TEST_CHECKLIST_COCKPIT`, `MANUAL_TEST_CHECKLIST_MINIMAL` | один документ с двумя уровнями (полный/короткий); RU-файл несёт устаревшее «последнее обновление» |
+| Бэкап | `BACKUP.md`, `YANDEX_DISK_BACKUP.md`+`_EN`, `CLOUD_BACKUP_SETUP.md` | `BACKUP.md` — единственный актуальный; API-раздел Яндекса слить в него, оба файла → `archive/` |
+| Архитектура верхнего уровня | `ARCHITECTURE_SUMMARY`, `ARCHITECTURE_EN`, `ARCHITECTURE_PATTERNS`, `ARCHITECTURE_ROADMAP`(архив), `FRONTEND_ARCHITECTURE_EN`, `SaaS_DATABASE_SCHEMA`, `GRAPH_SERVICE_AUTH`, `GRAPH3D`, `RECOMMENDATION_ARCHITECTURE` | роль у каждого есть, но они плоские — вынести в `docs/architecture/` рядом с C4/ADR |
+| Деплой/стеки | `DEPLOY.md`+`.ru` (корень), `DEPLOYMENT_EN`, `DOCKER.md`, `STACK_CONFIGURATION_COMPARISON` | `DEPLOY*` — точка входа, `DOCKER`+`STACK_CONFIGURATION_COMPARISON` слить в один «стеки и порты»; `DEPLOYMENT_EN` (апрель, «Production Ready») проверить на стейл или в архив |
+| Агенты | `AGENTS.md`/`AGENTS_EN`, `CLAUDE.md`, `AI_AGENT_SETUP`, `AI_AGENT_PROTOCOL` | `AGENTS_EN` дублирует `AGENTS` и уже разошёлся — оставить RU каноническим (по правилу языка) или сделать EN тонким указателем |
+| Планы с июльским статусом | `AUTO_LINK_CREATION_PLAN` (исправлен), `NOTE_ERROR_CORRECTION_PLAN`, `UI_MODERNIZATION_ROADMAP`, `API_TEST_COVERAGE_PLAN`, `OBSIDIAN_IMPORT_SPEC` | сверить с кодом: сделанное → archive, живое → в BACKLOG |
+| Типы связей | `LINK_TYPES`+`_RU`, `LINKS_CHEATSHEET`, `GRAPH_LINKS_VISUALIZATION` | один документ «связи»: типы + отображение + `source_type` (user/gamma) — сейчас gamma в трёх местах не упомянут явно |
+| `docs/gordon/` | 11 файлов, январь 2026 | переместить в `archive/gordon/` — физически туда, где уже лежит архив |
+| `docs/3d-archive/` | снятый код | слить в `archive/3d/` — одна точка архива вместо двух |
+
+### Предлагаемая иерархия
+
+```
+docs/
+  README.md                  — индекс (уже есть, машинно проверяется)
+  architecture/              — C4/ADR/uml + SUMMARY, _EN, PATTERNS, FRONTEND,
+                               SaaS_SCHEMA, GRAPH_SERVICE_AUTH, GRAPH3D, RECOMMENDATION_*
+  api/                       — API_EN, API_ERRORS_EN, RECOMMENDATION_API
+  operations/                — DOCKER+стеки, DEPLOYMENT, CONFIGURATION_*, BACKUP,
+                               TESTING, REGRESSION, ARGOS
+  product/                   — LINK_TYPES(+cheatsheet+viz), CELESTIAL, ANOMALY,
+                               BOOKMARKLET, OBSIDIAN, UX, IDEAS, BACKLOG, FEATURES
+  agents/                    — AI_*, AGENTS, DECISIONS, PROJECT_REVIEW, аудиты,
+                               MANUAL_TEST_FEEDBACK
+  tasks/                     — как есть (130 постановок/ревью)
+  archive/                   — archive/ + gordon/ + 3d-archive/ + снятые планы
+```
+
+Плоские файлы верхнего уровня останутся только входные: `README`, `AGENTS`,
+`AI_HANDOFF`, `AI_LOG`, `DECISIONS` — то, что читается каждую сессию.
+
+### Что это ломает и почему решение не моё
+
+- Перемещения рвут ~все относительные ссылки — `check-docs-links.mjs` и
+  индекс задач ловят это, но правка ссылок объёмная;
+- 130 файлов `docs/tasks/` содержат ссылки `../FILE.md` на верхний уровень —
+  переезд в подпапки меняет глубину относительных путей;
+- соглашение об именах (UPPER_CASE vs kebab-case в `gordon/`, `architecture/`)
+  и языковые пары (EN может отставать — зафиксировано самим индексом) —
+  нормативный вопрос для `.windsurfrules`.
+
+Рекомендация: вынести как отдельную задачу DOC-REORG-1 — спека от Claude Code,
+исполнение Devin, прогон `check-docs-links` + регенерация индексов после
+каждого перемещения.

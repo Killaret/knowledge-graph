@@ -1,4 +1,4 @@
-да# API Errors Documentation
+# API Errors Documentation
 
 > **Version:** 1.1  
 > **Date:** April 2026  
