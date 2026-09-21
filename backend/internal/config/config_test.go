@@ -693,3 +693,42 @@ func TestDatabasePoolEnvVars(t *testing.T) {
 		t.Errorf("expected idle time 22, got %d", cfg.DatabasePoolConnMaxIdleTimeSeconds)
 	}
 }
+
+// TestGammaLinkMinScore ensures the LINKS-1 threshold is wired through env,
+// JSON config and the Go default of 0.6.
+func TestGammaLinkMinScore(t *testing.T) {
+	vars := []string{"DATABASE_URL", "GAMMA_LINK_MIN_SCORE"}
+	original := make(map[string]string)
+	for _, v := range vars {
+		original[v] = os.Getenv(v)
+	}
+	defer func() {
+		for k, v := range original {
+			if v == "" {
+				os.Unsetenv(k)
+			} else {
+				os.Setenv(k, v)
+			}
+		}
+	}()
+
+	os.Setenv("DATABASE_URL", "postgres://test@localhost/test")
+	os.Unsetenv("GAMMA_LINK_MIN_SCORE")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+	if cfg.GammaLinkMinScore != 0.6 {
+		t.Errorf("expected default GammaLinkMinScore 0.6, got %f", cfg.GammaLinkMinScore)
+	}
+
+	os.Setenv("GAMMA_LINK_MIN_SCORE", "0.55")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+	if cfg.GammaLinkMinScore != 0.55 {
+		t.Errorf("expected env override GammaLinkMinScore 0.55, got %f", cfg.GammaLinkMinScore)
+	}
+}

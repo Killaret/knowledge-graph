@@ -103,6 +103,8 @@ const isTest = typeof process !== "undefined" && process.env?.VITEST === "true";
 Фактически ни одного порога покрытия в CI не применяется.
 
 > **Статус 2026-09-15 (COVERAGE-1):** владелец решил, что цель и enforced min — 70% для frontend и backend. `core-checks.tsv`, `_core-checks.yml` и `check-all.ps1`/`check-all.sh` теперь применяют 70%. Backend unit coverage измеряется по фильтру `scripts/testing/backend-coverage-total.py`, исключая CLI main, generated gRPC client, test helpers и `scripts`; текущее значение 72.2%. Frontend `vitest.config.ts` остаётся на 70%, но `npm run test:unit` в CI всё ещё без coverage; для coverage в CI нужен отдельный PR.
+>
+> **Статус 2026-09-21 (COVERAGE-1 ревью):** исключение `internal/infrastructure/graph` было ошибочным — это рукописный gRPC-клиент, не generated; он убран из `backend-coverage-excludes.txt`. Честное значение без него — **70.36%** (при пороге 70).
 
 ### A-6. WebGL в headless-CI не гарантирован
 

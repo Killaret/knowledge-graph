@@ -20,6 +20,7 @@ import (
 	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/events"
 	"knowledge-graph/internal/infrastructure/nlp"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
@@ -117,11 +118,25 @@ func main() {
 
 	importSvc := importer.NewService(noteRepo, cacheClient, queueClient, web.NewImportFetcher())
 
+	linkRepo := postgres.NewLinkRepository(database)
+
+	// LINKS-1: gamma-link generation runs after a successful embedding upsert.
+	// LinkCreated events reach graph-service over the same Redis channel the
+	// API uses, so closure refresh and cache invalidation work unchanged.
+	var eventPublisher *events.Publisher
+	if cfg.EventChannel != "" {
+		eventPublisher = events.NewPublisher(redisClient, cfg.EventChannel)
+	} else {
+		log.Println("[Worker] EVENT_CHANNEL not set, gamma-link events will not be published")
+	}
+	gammaGen := recommendation.NewGammaLinkGenerator(embeddingRepo, linkRepo, 2, cfg.GammaLinkMinScore)
+	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
+
 	// Воркер (обработчик задач)
-	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc)
+	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc,
+		gammaGen, eventPublisher, queueClient, taskDelay)
 
 	// Graph traversal service for recommendations
-	linkRepo := postgres.NewLinkRepository(database)
 	neighborLoader := graph.NewNeighborLoader(linkRepo, noteRepo)
 
 	// Link weight recalculation service

@@ -9,6 +9,8 @@ RUN go build -ldflags="-s -w" -o /app/seed ./scripts/seed.go
 RUN go build -ldflags="-s -w" -o /app/test-seed ./cmd/seed
 RUN go build -ldflags="-s -w" -o /app/cli ./cmd/cli
 RUN go build -ldflags="-s -w" -o /app/embed-recompute ./cmd/embed-recompute
+RUN go build -ldflags="-s -w" -o /app/keyword-recompute ./cmd/keyword-recompute
+RUN go build -ldflags="-s -w" -o /app/gamma-links-regenerate ./cmd/gamma-links-regenerate
 
 FROM alpine:3.19 AS base
 RUN apk --no-cache add ca-certificates curl wget postgresql16-client gzip
@@ -38,5 +40,7 @@ CMD ["./seed"]
 FROM base AS cli
 COPY --from=builder /app/cli .
 COPY --from=builder /app/embed-recompute .
+COPY --from=builder /app/keyword-recompute .
+COPY --from=builder /app/gamma-links-regenerate .
 COPY --from=builder /app/knowledge-graph.config.json ./knowledge-graph.config.json
 CMD ["./cli"]

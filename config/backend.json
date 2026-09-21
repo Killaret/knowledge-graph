@@ -58,7 +58,8 @@
       "bfs_normalize": true,
       "keyword_similarity_method": "jaccard",
       "keyword_tversky_alpha": 0.5,
-      "keyword_tversky_beta": 0.5
+      "keyword_tversky_beta": 0.5,
+      "gamma_link_min_score": 0.6
     },
     "pagination": {
       "default_limit": 100,

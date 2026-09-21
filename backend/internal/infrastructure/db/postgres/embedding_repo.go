@@ -124,6 +124,34 @@ func (r *EmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs
 // FindNoteIDsMissingModel returns note IDs that do not have an embedding for the
 // current model. A note with an embedding from a different model is included,
 // because the PK is `note_id` and a single note only stores one vector at a time.
+// FindNoteIDsWithModel returns IDs of non-deleted notes that already have an
+// embedding for the current model — the candidate set for gamma-link
+// (re)generation.
+func (r *EmbeddingRepository) FindNoteIDsWithModel(ctx context.Context) ([]uuid.UUID, error) {
+	var noteIDs []string
+
+	err := r.db.WithContext(ctx).Raw(`
+        SELECT n.id
+        FROM notes n
+        JOIN note_embeddings e ON n.id = e.note_id AND e.model_name = ?
+        WHERE n.deleted_at IS NULL
+    `, r.modelName).Scan(&noteIDs).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	parsed := make([]uuid.UUID, 0, len(noteIDs))
+	for _, id := range noteIDs {
+		uid, err := uuid.Parse(id)
+		if err != nil {
+			continue
+		}
+		parsed = append(parsed, uid)
+	}
+	return parsed, nil
+}
+
 func (r *EmbeddingRepository) FindNoteIDsMissingModel(ctx context.Context) ([]uuid.UUID, error) {
 	var noteIDs []string
 

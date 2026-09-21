@@ -320,7 +320,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestDeleteBySource() {
 	s.Len(links, 0)
 }
 
-// TestConstraintProtection - проверка что FK constraint защищает от удаления
+// TestConstraintProtection - удаление заметки каскадно удаляет связи (ON DELETE CASCADE, миграция 002)
 func (s *LinkRepositoryIntegrationTestSuite) TestConstraintProtection() {
 	// Создаем связь
 	linkType, _ := link.NewLinkType("reference")
@@ -331,18 +331,17 @@ func (s *LinkRepositoryIntegrationTestSuite) TestConstraintProtection() {
 	err := s.repo.Save(s.ctx, l)
 	s.NoError(err)
 
-	// Пытаемся удалить source заметку - должно упасть из-за FK constraint
+	// Удаляем source заметку - каскад сносит связь, ошибки нет
 	err = s.noteRepo.Delete(s.ctx, s.sourceNote.ID())
-	s.Error(err, "should fail due to foreign key constraint")
-	s.Contains(err.Error(), "violates foreign key constraint")
+	s.NoError(err, "delete should cascade through ON DELETE CASCADE")
 
-	// Корректный порядок: сначала удаляем связи
-	err = s.repo.DeleteBySource(s.ctx, s.sourceNote.ID())
+	links, err := s.repo.FindBySource(s.ctx, s.sourceNote.ID())
 	s.NoError(err)
+	s.Len(links, 0, "cascade must remove outgoing links")
 
-	// Теперь можно удалить заметку
-	err = s.noteRepo.Delete(s.ctx, s.sourceNote.ID())
+	incoming, err := s.repo.FindByTarget(s.ctx, s.sourceNote.ID())
 	s.NoError(err)
+	s.Len(incoming, 0, "cascade must remove incoming links")
 }
 
 // TestDifferentLinkTypes - разные типы связей
@@ -373,6 +372,32 @@ func (s *LinkRepositoryIntegrationTestSuite) TestDifferentLinkTypes() {
 	}
 	s.True(types["reference"])
 	s.True(types["dependency"])
+}
+
+// TestDeleteBySourceType — LINKS-1: регенерация удаляет только gamma-связи,
+// ручные (source_type='user') сохраняются.
+func (s *LinkRepositoryIntegrationTestSuite) TestDeleteBySourceType() {
+	linkType, _ := link.NewLinkType("related")
+	weight, _ := link.NewWeight(0.9)
+	metadata, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+
+	gamma := link.NewGammaLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, weight, metadata)
+	s.Require().NoError(s.repo.Save(s.ctx, gamma))
+
+	// Ручная связь той же пары — другой link_type, чтобы не упираться в
+	// uniqueIndex (source, target, type).
+	depType, _ := link.NewLinkType("dependency")
+	manual := link.NewLink(s.sourceNote.ID(), s.targetNote.ID(), depType, weight, metadata)
+	s.Require().NoError(s.repo.Save(s.ctx, manual))
+
+	deleted, err := s.repo.DeleteBySourceType(s.ctx, "gamma")
+	s.Require().NoError(err)
+	s.Equal(int64(1), deleted)
+
+	remaining, err := s.repo.FindBySource(s.ctx, s.sourceNote.ID())
+	s.Require().NoError(err)
+	s.Require().Len(remaining, 1)
+	s.Equal("user", remaining[0].SourceType().String(), "manual link must survive gamma regeneration")
 }
 
 // Запускаем тесты

@@ -131,6 +131,9 @@ cd backend
 go run ./cmd/server                # Запуск сервера
 go run ./cmd/worker                # Запуск worker
 go run ./cmd/seed                  # Запуск seed скрипта
+go run ./cmd/embed-recompute       # Пересчёт эмбеддингов (-dry-run, -batch-delay, -post)
+go run ./cmd/keyword-recompute     # Пересчёт ключевых слов (те же флаги; NLP-2)
+go run ./cmd/gamma-links-regenerate # Пересоздание автосвязей (-dry-run; LINKS-1)
 ```
 
 ### Тестирование

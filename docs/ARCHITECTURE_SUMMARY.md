@@ -211,6 +211,14 @@ stateDiagram-v2
 | Permission check | < 10ms | JWT claims (no DB hit) |
 | Embedding generation | < 2s | Async worker, not blocking |
 
+## Automatic (Gamma) Links
+
+- After a `compute:embedding` task stores a note's embedding, the worker runs `GammaLinkGenerator` (`internal/application/recommendation`): up to `maxOutDegree = 2` nearest neighbours above `GAMMA_LINK_MIN_SCORE` (default `0.6`, env → `knowledge-graph.config.json` → `config.go`) become `links` rows with `source_type = 'gamma'`, `link_type = 'related'`, weight = cosine score.
+- Self-links and targets already linked (manually or by gamma) are skipped, so the pass is idempotent; manual links are never modified.
+- Each created link produces a `LinkCreated` event on the graph channel — graph-service invalidates caches and refreshes `note_links_closure` — and a refresh-recommendations task is enqueued for the source and each target.
+- The out-degree cap exists because `note_links_closure` enumerates transitive paths; a higher degree grows it quadratically+.
+- Regeneration after a model change: `go run ./cmd/gamma-links-regenerate --dry-run` reports how many gamma links would be deleted and created; without the flag it deletes only `source_type='gamma'` rows and regenerates for notes that have an embedding for the current model.
+
 ## Operational Considerations
 
 ### Monitoring

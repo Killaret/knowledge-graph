@@ -152,6 +152,40 @@ func (r *LinkRepository) DeleteBySource(ctx context.Context, sourceID uuid.UUID)
 	return r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Delete(&LinkModel{}).Error
 }
 
+// FindBySourceType returns all links carrying the given source_type
+// (e.g. "gamma"). Used by gamma-link regeneration to publish LinkDeleted
+// events with correct source/target pairs.
+func (r *LinkRepository) FindBySourceType(ctx context.Context, sourceType string) ([]*link.Link, error) {
+	var models []LinkModel
+	if err := r.db.WithContext(ctx).Where("source_type = ?", sourceType).Find(&models).Error; err != nil {
+		return nil, err
+	}
+	result := make([]*link.Link, 0, len(models))
+	for _, m := range models {
+		l, err := toDomainLink(&m)
+		if err != nil {
+			continue
+		}
+		result = append(result, l)
+	}
+	return result, nil
+}
+
+// DeleteBySourceType removes all links with the given source_type (e.g. "gamma")
+// and returns how many rows were deleted. Manual links have a different
+// source_type and are not touched.
+func (r *LinkRepository) DeleteBySourceType(ctx context.Context, sourceType string) (int64, error) {
+	res := r.db.WithContext(ctx).Where("source_type = ?", sourceType).Delete(&LinkModel{})
+	return res.RowsAffected, res.Error
+}
+
+// CountBySourceType returns how many links carry the given source_type.
+func (r *LinkRepository) CountBySourceType(ctx context.Context, sourceType string) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&LinkModel{}).Where("source_type = ?", sourceType).Count(&count).Error
+	return count, err
+}
+
 // FindAllPaginated возвращает связи с пагинацией на уровне БД
 // limit=0 означает "все записи"
 func (r *LinkRepository) FindAllPaginated(ctx context.Context, limit, offset int) ([]*link.Link, int64, error) {

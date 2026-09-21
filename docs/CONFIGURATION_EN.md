@@ -412,7 +412,8 @@ All other parameters can be configured via `knowledge-graph.config.json` or over
       "fallback_semantic_enabled": true,
       "keyword_enabled": true,
       "bfs_aggregation": "max",
-      "bfs_normalize": true
+      "bfs_normalize": true,
+      "gamma_link_min_score": 0.6
     }
   }
 }
@@ -430,6 +431,7 @@ All other parameters can be configured via `knowledge-graph.config.json` or over
 | `EMBEDDING_SIMILARITY_LIMIT` | pgvector candidates limit | `30` | 10 - 100 |
 | `RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED` | Enable semantic fallback | `true` | - |
 | `RECOMMENDATION_KEYWORD_ENABLED` | Enable keyword component (gamma) | `true` | - |
+| `GAMMA_LINK_MIN_SCORE` | Minimum cosine score for an automatic (gamma) link (LINKS-1) | `0.6` | 0.0 - 1.0 |
 
 ### Detailed Description
 
@@ -1077,6 +1079,7 @@ docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis
 | `JWT_ACCESS_TTL_SECONDS` | Access token TTL | `900` (15 min) |
 | `JWT_REFRESH_TTL_SECONDS` | Refresh token TTL | `604800` (7 days) |
 | `SKIP_AUTH` | Disable authentication (only for development/test) | `false` |
+| `CSP_REPORT_ONLY` | Frontend build-time flag: emit the Content-Security-Policy as `Content-Security-Policy-Report-Only` instead of enforcing — for measuring new directives before enforcing them | `false` |
 | `API_KEY_ENABLED` | Enable API key authentication | `true` |
 | `STATIC_API_KEY` | Static API key (generated if empty) | - |
 | `YANDEX_CLIENT_ID` | Yandex OAuth client ID | - |

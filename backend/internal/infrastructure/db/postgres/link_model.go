@@ -23,8 +23,8 @@ type LinkModel struct {
 	LastWeightUpdate *time.Time     `gorm:"column:last_weight_update"`
 	DeletedAt        *time.Time     `gorm:"column:deleted_at;index"`
 
-	SourceNote NoteModel `gorm:"foreignKey:SourceNoteID;references:ID"`
-	TargetNote NoteModel `gorm:"foreignKey:TargetNoteID;references:ID"`
+	SourceNote NoteModel `gorm:"foreignKey:SourceNoteID;references:ID;constraint:OnDelete:CASCADE"`
+	TargetNote NoteModel `gorm:"foreignKey:TargetNoteID;references:ID;constraint:OnDelete:CASCADE"`
 }
 
 func (LinkModel) TableName() string {

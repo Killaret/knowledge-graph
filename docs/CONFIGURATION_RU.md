@@ -411,7 +411,8 @@ MongoDB используется для хранения черновиков з
       "fallback_semantic_enabled": true,
       "keyword_enabled": true,
       "bfs_aggregation": "max",
-      "bfs_normalize": true
+      "bfs_normalize": true,
+      "gamma_link_min_score": 0.6
     }
   }
 }
@@ -429,6 +430,7 @@ MongoDB используется для хранения черновиков з
 | `EMBEDDING_SIMILARITY_LIMIT` | Лимит кандидатов pgvector | `30` | 10 – 100 |
 | `RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED` | Включить семантический fallback | `true` | — |
 | `RECOMMENDATION_KEYWORD_ENABLED` | Включить ключевую составляющую (gamma) | `true` | — |
+| `GAMMA_LINK_MIN_SCORE` | Минимальный косинусный score для автосвязи (LINKS-1) | `0.6` | 0.0 – 1.0 |
 
 ### Подробное описание
 
@@ -565,7 +567,8 @@ score = α × explicit_score + β × semantic_score
 | `JWT_SECRET` | Секрет для подписи JWT-токенов (**обязательно менять в продакшне**) | `change-me-in-production` |
 | `JWT_ACCESS_TTL_SECONDS` | TTL access-токена | `900` (15 мин) |
 | `JWT_REFRESH_TTL_SECONDS` | TTL refresh-токена | `604800` (7 дней) |
-| `AUTH_SKIP` | Отключить аутентификацию (только для разработки) | `false` |
+| `SKIP_AUTH` | Отключить аутентификацию (только `APP_ENV=test`, никогда в продакшне) | `false` |
+| `CSP_REPORT_ONLY` | Флаг сборки фронтенда: отдавать CSP как `Content-Security-Policy-Report-Only` вместо запрещающего — для замера новых директив | `false` |
 | `API_KEY_ENABLED` | Включить аутентификацию по API-ключу | `true` |
 | `STATIC_API_KEY` | Статический API-ключ (если пустой — генерируется) | — |
 | `YANDEX_CLIENT_ID` | OAuth client ID для входа через Яндекс | — |
