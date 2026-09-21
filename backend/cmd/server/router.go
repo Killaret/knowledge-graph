@@ -195,7 +195,7 @@ func setupRouter(
 		v1.DELETE("/notes/:id/links", writeLimiter, noteWrite, linkHandler.DeleteByNote)
 
 		v1.GET("/notes/:id/graph", cacheControlMiddleware(300), noteRead, graphHandler.GetGraph)
-		v1.GET("/graph/public", cacheControlMiddleware(300), graphHandler.GetFullGraph)
+		v1.GET("/graph/public", cacheControlMiddleware(300), graphHandler.GetPublicGraph)
 		v1.GET("/graph/analytics", cacheControlMiddleware(300), graphHandler.GetAnalytics)
 		v1.GET("/me/graph/cached", cacheControlMiddleware(60), graphHandler.GetCachedGraph)
 		v1.GET("/me/graph/fresh", cacheControlMiddleware(0), graphHandler.GetFreshGraph)

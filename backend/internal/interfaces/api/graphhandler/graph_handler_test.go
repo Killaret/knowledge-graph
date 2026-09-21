@@ -161,7 +161,7 @@ func setupGraphRouter() (*gin.Engine, *mockNoteRepo, *mockLinkRepo) {
 	handler := New(noteRepo, linkRepo, cfg, nil)
 	r := gin.Default()
 	r.GET("/graph/:id", handler.GetGraph)
-	r.GET("/graph", handler.GetFullGraph)
+	r.GET("/graph", handler.GetPublicGraph)
 	return r, noteRepo, linkRepo
 }
 
@@ -301,7 +301,7 @@ func TestHandler_GetGraph(t *testing.T) {
 	})
 }
 
-func TestHandler_GetFullGraph(t *testing.T) {
+func TestHandler_GetPublicGraph(t *testing.T) {
 	t.Run("successful full graph load", func(t *testing.T) {
 		r, noteRepo, linkRepo := setupGraphRouter()
 
@@ -392,7 +392,7 @@ func TestNew(t *testing.T) {
 	assert.NotNil(t, handler)
 }
 
-func TestHandler_GetFullGraph_ErrorCases(t *testing.T) {
+func TestHandler_GetPublicGraph_ErrorCases(t *testing.T) {
 	// Skip complex error cases that require complex mocking
 	// The handler handles invalid parameters internally
 }
@@ -459,7 +459,7 @@ func TestHandler_GetGraphDepthNegative(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestHandler_GetFullGraphLinkLimit(t *testing.T) {
+func TestHandler_GetPublicGraphLinkLimit(t *testing.T) {
 	r, noteRepo, linkRepo := setupGraphRouter()
 
 	title1, _ := note.NewTitle("Note 1")
@@ -478,7 +478,7 @@ func TestHandler_GetFullGraphLinkLimit(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestHandler_GetFullGraphLinkOffset(t *testing.T) {
+func TestHandler_GetPublicGraphLinkOffset(t *testing.T) {
 	r, noteRepo, linkRepo := setupGraphRouter()
 
 	title1, _ := note.NewTitle("Note 1")
@@ -537,7 +537,7 @@ func TestHandler_GetGraphLinkRepoError(t *testing.T) {
 	assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusInternalServerError)
 }
 
-func TestHandler_GetFullGraphNotesError(t *testing.T) {
+func TestHandler_GetPublicGraphNotesError(t *testing.T) {
 	r, noteRepo, _ := setupGraphRouter()
 
 	noteRepo.On("FindAllPaginated", mock.Anything, mock.Anything, 100, 0).Return([]*note.Note{}, int64(0), errors.New("db error"))
@@ -550,7 +550,7 @@ func TestHandler_GetFullGraphNotesError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
-func TestHandler_GetFullGraphLinksError(t *testing.T) {
+func TestHandler_GetPublicGraphLinksError(t *testing.T) {
 	r, noteRepo, linkRepo := setupGraphRouter()
 
 	title1, _ := note.NewTitle("Note 1")

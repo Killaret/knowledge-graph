@@ -182,7 +182,7 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 	return nodes, links
 }
 
-func (h *Handler) GetFullGraph(c *gin.Context) {
+func (h *Handler) GetPublicGraph(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	userID, _ := middleware.GetUserID(c)

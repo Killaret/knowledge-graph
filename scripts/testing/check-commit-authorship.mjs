@@ -9,7 +9,7 @@
 // stable identifier; display names may include model versions.
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const repoRoot = process.argv[2] ?? ".";
@@ -110,6 +110,34 @@ for (const record of records) {
     });
   }
 }
+
+// Acknowledged history: hashes listed in authorship-corrections.txt are
+// journaled violations — history is not rewritten, so each must be recorded
+// in docs/AI_LOG.md. A listed hash without a journal entry still fails.
+const correctionsPath = resolve(repoRoot, "scripts/testing/authorship-corrections.txt");
+let corrections = [];
+if (existsSync(correctionsPath)) {
+  corrections = readFileSync(correctionsPath, "utf8")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith("#"));
+}
+const acknowledged = new Set(corrections);
+
+const logPath = resolve(repoRoot, "docs/AI_LOG.md");
+const logText = existsSync(logPath) ? readFileSync(logPath, "utf8") : "";
+
+const freshViolations = violations.filter((v) => !acknowledged.has(v.hash));
+for (const hash of corrections) {
+  if (!logText.includes(hash) && !logText.includes(hash.slice(0, 7))) {
+    console.error(
+      `Correction ${hash} is listed in authorship-corrections.txt but has no entry in docs/AI_LOG.md — journaled acknowledgement is required.`,
+    );
+    process.exit(1);
+  }
+}
+violations.length = 0;
+violations.push(...freshViolations);
 
 if (violations.length > 0) {
   console.error("Commit authorship violations detected:");

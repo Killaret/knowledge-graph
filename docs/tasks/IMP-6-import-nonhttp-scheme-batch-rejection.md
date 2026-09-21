@@ -20,7 +20,7 @@
 
 - Файл содержит javascript-букмарклет `KG Saver` (77-я запись, `HREF="javascript:(function(){...})();"`).
 - HTML-парсер `extractURLsFromHTML` по дизайну не фильтрует схему — «preview/import will enforce policy» (комментарий в `extract-urls.test.ts`).
-- Но DTO `importItem.URL` имел `binding:"required,url,max=16384"`: валидатор Gin `url` требует схему+хост и отверг `javascript:` **на этапе binding** — до того, как `Service.Preview` успел пометить элемент per-item ошибкой.
+- Но DTO `importItem.URL` имел `binding:"required,url,max=16384"`: валидатор Gin `url` требует схему+хост и отвергал бы такую запись **на этапе binding** — до того, как `Service.Preview` успел пометить элемент per-item ошибкой. *(Исправлено по ревью 2026-09-21: исходный текст утверждал, что валидатор отверг `javascript:` — проверено, `validator/v10` принимает `javascript:`, `chrome:`, `about:`, `file:`; отвергает он адреса **без схемы** (`www.example.com`). Реальный 400 на стенде давал дефект 1, не валидатор. Правка остаётся верной: проверка URL перенесена с binding на поэлементную ошибку — её охраняет `TestImportBookmarksPreview_SchemelessURL`.)*
 
 ### Дефект 3: превью фетчило страницы последовательно — таймаут клиента 30 с
 
@@ -38,7 +38,8 @@
 - `frontend/src/shared/utils/i18n/messages/import.ts` — ru: «Одна страница (букмарклет)» → «Одна страница (bookmarklet)» — англицизм латиницей, просьба владельца.
 - Регрессионные тесты:
   - `TestLoggingMiddlewareRestoresLargeRequestBody` — тело >10 КБ доходит до хендлера целиком (адверсариал-фаза: на старом коде падает с 400).
-  - `TestImportBookmarksPreview_NonHTTPScheme` — `javascript:` URL → `200` с per-item `error` (до фикса — `400`).
+  - `TestImportBookmarksPreview_NonHTTPScheme` — `javascript:` URL → `200` с per-item `error` (документирует поведение; валидатор `javascript:` принимает, поэтому тест холостой к откату правки 2).
+  - `TestImportBookmarksPreview_SchemelessURL` — `www.example.com` без схемы → `200` с per-item `error`; при возврате валидатора `url` в `importItem` падает (`400` на всю пачку). Добавлен по ревью 2026-09-21.
 
 ## Что НЕ тронуто и почему
 

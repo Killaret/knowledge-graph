@@ -9,5 +9,4 @@ knowledge-graph/cmd/checkmigrations
 knowledge-graph/cmd/worker
 knowledge-graph/internal/testutil
 knowledge-graph/internal/domain/cache/cachetest
-knowledge-graph/internal/infrastructure/graph
 knowledge-graph/scripts

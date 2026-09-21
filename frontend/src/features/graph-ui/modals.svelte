@@ -151,6 +151,10 @@
     padding: 20px;
     min-width: 360px;
     max-width: min(420px, calc(100vw - 140px));
+    /* IMP-3: 11 типов по ~44 px каждый не влезают в окно 720 px — форма обязана
+       прокручиваться, иначе нижние типы недостижимы (измерено в ревью). */
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
     z-index: 100;
     color: var(--carbon-text, #f0f0f5);
   }

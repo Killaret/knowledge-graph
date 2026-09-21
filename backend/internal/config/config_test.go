@@ -645,3 +645,51 @@ func TestJSONDefaultHelpers(t *testing.T) {
 		t.Errorf("expected default string, got %q", got)
 	}
 }
+
+// DB-POOL-1: the env knob must reach the loaded config — POSTGRES_MAX_OPEN_CONNS=7
+// has to land in cfg.DatabasePoolMaxOpenConns.
+func TestDatabasePoolEnvVars(t *testing.T) {
+	vars := []string{
+		"DATABASE_URL",
+		"POSTGRES_MAX_OPEN_CONNS",
+		"POSTGRES_MAX_IDLE_CONNS",
+		"POSTGRES_CONN_MAX_LIFETIME_SECONDS",
+		"POSTGRES_CONN_MAX_IDLE_TIME_SECONDS",
+	}
+	original := make(map[string]string)
+	for _, v := range vars {
+		original[v] = os.Getenv(v)
+	}
+	defer func() {
+		for k, v := range original {
+			if v == "" {
+				os.Unsetenv(k)
+			} else {
+				os.Setenv(k, v)
+			}
+		}
+	}()
+
+	os.Setenv("DATABASE_URL", "postgres://test@localhost/test")
+	os.Setenv("POSTGRES_MAX_OPEN_CONNS", "7")
+	os.Setenv("POSTGRES_MAX_IDLE_CONNS", "3")
+	os.Setenv("POSTGRES_CONN_MAX_LIFETIME_SECONDS", "111")
+	os.Setenv("POSTGRES_CONN_MAX_IDLE_TIME_SECONDS", "22")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+	if cfg.DatabasePoolMaxOpenConns != 7 {
+		t.Errorf("expected DatabasePoolMaxOpenConns 7, got %d", cfg.DatabasePoolMaxOpenConns)
+	}
+	if cfg.DatabasePoolMaxIdleConns != 3 {
+		t.Errorf("expected DatabasePoolMaxIdleConns 3, got %d", cfg.DatabasePoolMaxIdleConns)
+	}
+	if cfg.DatabasePoolConnMaxLifetimeSeconds != 111 {
+		t.Errorf("expected lifetime 111, got %d", cfg.DatabasePoolConnMaxLifetimeSeconds)
+	}
+	if cfg.DatabasePoolConnMaxIdleTimeSeconds != 22 {
+		t.Errorf("expected idle time 22, got %d", cfg.DatabasePoolConnMaxIdleTimeSeconds)
+	}
+}

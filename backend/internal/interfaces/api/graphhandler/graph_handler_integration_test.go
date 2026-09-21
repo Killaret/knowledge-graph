@@ -78,7 +78,7 @@ func (s *GraphHandlerIntegrationTestSuite) SetupSuite() {
 
 	// Регистрируем маршруты
 	s.router.GET("/notes/:id/graph", s.handler.GetGraph)
-	s.router.GET("/graph/public", s.handler.GetFullGraph)
+	s.router.GET("/graph/public", s.handler.GetPublicGraph)
 }
 
 func (s *GraphHandlerIntegrationTestSuite) TearDownSuite() {
@@ -309,8 +309,8 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetGraph_InvalidDepth() {
 	s.Equal(200, w2.Code) // Отрицательный игнорируется, используется maxDepth
 }
 
-// TestGetFullGraph_Success - получение полного графа
-func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_Success() {
+// TestGetPublicGraph_Success - получение полного графа
+func (s *GraphHandlerIntegrationTestSuite) TestGetPublicGraph_Success() {
 	// Создаем несколько заметок и связей
 	note1 := s.createTestNote("Note 1", "content", "star")
 	note2 := s.createTestNote("Note 2", "content", "planet")
@@ -343,8 +343,8 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_Success() {
 	}
 }
 
-// TestGetFullGraph_Empty - пустой граф
-func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_Empty() {
+// TestGetPublicGraph_Empty - пустой граф
+func (s *GraphHandlerIntegrationTestSuite) TestGetPublicGraph_Empty() {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/graph/public", nil)
 	s.router.ServeHTTP(w, req)
@@ -361,8 +361,8 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_Empty() {
 	s.Len(wrappedResponse.Data.Links, 0)
 }
 
-// TestGetFullGraph_WithLimit - проверка query-параметра limit
-func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_WithLimit() {
+// TestGetPublicGraph_WithLimit - проверка query-параметра limit
+func (s *GraphHandlerIntegrationTestSuite) TestGetPublicGraph_WithLimit() {
 	// Создаем 5 заметок
 	for i := 1; i <= 5; i++ {
 		s.createTestNote("Note "+string(rune('0'+i)), "content", "star")
@@ -385,8 +385,8 @@ func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_WithLimit() {
 	s.Len(wrappedResponse.Data.Nodes, 3)
 }
 
-// TestGetFullGraph_InvalidLimit - невалидный limit
-func (s *GraphHandlerIntegrationTestSuite) TestGetFullGraph_InvalidLimit() {
+// TestGetPublicGraph_InvalidLimit - невалидный limit
+func (s *GraphHandlerIntegrationTestSuite) TestGetPublicGraph_InvalidLimit() {
 	s.createTestNote("Note 1", "content", "star")
 	s.createTestNote("Note 2", "content", "planet")
 

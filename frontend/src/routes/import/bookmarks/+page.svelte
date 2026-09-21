@@ -44,8 +44,6 @@
 
   import { CelestialBody } from "$entities/shared/model/celestial-body";
 
-  const noteTypes = CelestialBody.UI_TYPES.map((body) => body.type);
-
   let status = $state<
     "idle" | "loading" | "preview" | "importing" | "done" | "error" | "unauthorized"
   >("idle");
@@ -372,8 +370,13 @@
                       onchange={(e) => updateItemType(index, e.currentTarget.value)}
                       disabled={!isImportable(item)}
                     >
-                      {#each noteTypes as nt}
-                        <option value={nt}>{t(`filter.type.${nt}`)}</option>
+                      {#each CelestialBody.UI_TYPES as body}
+                        <option
+                          value={body.type}
+                          title={body.example
+                            ? `${body.description} — ${body.example}`
+                            : body.description}>{t(`filter.type.${body.type}`)}</option
+                        >
                       {/each}
                     </select>
                   </td>

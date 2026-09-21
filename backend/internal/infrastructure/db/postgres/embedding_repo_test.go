@@ -348,4 +348,20 @@ func TestEmbeddingRepository_FindSimilarNotesBatch(t *testing.T) {
 	if ok && len(empty) != 0 {
 		t.Errorf("expected no results for no-embedding note, got %d", len(empty))
 	}
+
+	// 5. Self-exclusion: without `e1.note_id != e2.note_id` the source itself
+	// would be its own closest match (identical vector, score 1.0). A separate
+	// call with a wide limit is required — at limit=2 the source's own note_id
+	// sorts past the window and the defect is unobservable.
+	wide, err := currentRepo.FindSimilarNotesBatch(ctx, []uuid.UUID{source1ID, source2ID}, 10)
+	if err != nil {
+		t.Fatalf("FindSimilarNotesBatch wide failed: %v", err)
+	}
+	for _, id := range []uuid.UUID{source1ID, source2ID} {
+		for _, s := range wide[id] {
+			if s.NoteID == id {
+				t.Errorf("source %v: self-match leaked into results", id)
+			}
+		}
+	}
 }

@@ -14,7 +14,7 @@ Knowledge Graph is a note-management system with graph relationships and NLP-pow
 | Data | PostgreSQL 16 + pgvector, Redis 7 with go-redis/v9.14.1, MongoDB 7 |
 | Async | Asynq v0.26.0 |
 | Frontend | SvelteKit, Svelte 5 runes, strict TypeScript, ky, D3-force, Three.js |
-| NLP | Python 3.11, FastAPI, sentence-transformers, YAKE, NLTK |
+| NLP | Python 3.11, FastAPI, sentence-transformers, KeyBERT, pymorphy3, NLTK |
 | Testing | Testify, testcontainers, Vitest, Playwright, Cucumber, pytest |
 | Infrastructure | Docker Compose, multi-stage images, nginx gateway |
 

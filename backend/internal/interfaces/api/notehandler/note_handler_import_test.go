@@ -176,6 +176,42 @@ func TestImportBookmarksPreview_NonHTTPScheme(t *testing.T) {
 	assert.NotEmpty(t, second["error"])
 }
 
+// IMP-6 fix 2 guard: a schemeless address (`www.example.com`) is invalid input,
+// but it must produce a per-item error, not reject the whole batch. With the
+// `url` binding validator restored on importItem this test goes red — the
+// validator would return 400 for the entire request.
+func TestImportBookmarksPreview_SchemelessURL(t *testing.T) {
+	r, _, _, _ := setupImportRouter()
+
+	body := `{
+		"items": [
+			{"title": "Good", "url": "https://example.com/good", "type": "asteroid"},
+			{"title": "No scheme", "url": "www.example.com", "type": "asteroid"}
+		]
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/import/bookmarks/preview", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	data, ok := resp["data"].(map[string]interface{})
+	require.True(t, ok)
+	items, ok := data["items"].([]interface{})
+	require.True(t, ok)
+	require.Len(t, items, 2)
+
+	first := items[0].(map[string]interface{})
+	assert.Empty(t, first["error"])
+
+	second := items[1].(map[string]interface{})
+	assert.NotEmpty(t, second["error"])
+}
+
 func TestImportBookmarksPreview_BatchTooLarge(t *testing.T) {
 	r, _, _, _ := setupImportRouter()
 
