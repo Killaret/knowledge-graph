@@ -15,7 +15,7 @@ import { join, dirname, resolve, relative, sep } from "node:path";
 
 const repoRoot = resolve(process.argv[2] ?? ".");
 
-const SKIP_DIRS = new Set(["node_modules", ".git", ".svelte-kit", "dist", "build", "coverage"]);
+const SKIP_DIRS = new Set(["node_modules", ".git", ".svelte-kit", "dist", "build", "coverage", "huggingface_cache"]);
 
 const EXTRA_FILES = new Set([".windsurfrules"]);
 
