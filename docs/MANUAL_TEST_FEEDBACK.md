@@ -442,3 +442,21 @@ Create a new bullet under the right section with:
 - **Regression test fix:** `frontend/src/routes/page.spec.ts` was failing in `npm run test:unit` because `authState`/`graphView` were not initialized; tests clicked the list-view toggle and saw graph content instead of note cards. Fixed by setting `authState.currentUser`, `authState.accessToken`, and `graphView.clear()` in `beforeEach`.
 - **Full local verification:** `scripts/testing/check-all.ps1` without `-Quick` — 17 phases PASS, 1 SKIP (`golangci-lint` not installed), exit 0.
 - **Cleanup:** `scripts/testing/stop-test.ps1` destroyed the isolated test stack; Personal containers/volumes untouched.
+
+## Verification
+
+### BACKUP-3 — event-driven backup writes to the synced host folder (live Personal stack)
+
+- **Scope:** acceptance criterion 1 of `docs/tasks/BACKUP-3-automatic-backups.md` — a note mutation produces `backup-personal-auto-*.sql.gz` in `Desktop\my items` within ≤ 1 min.
+- **Date:** 2026-09-22 (00:18–00:45 local, worker logs UTC)
+- **Agent:** Devin — with explicit owner permission to start the Personal stack
+- **Environment:** `docker compose -p knowledge-graph -f docker-compose.personal.yml up -d` on real volumes `knowledge-graph_pgdata_personal`/`redisdata`/`mongodbdata` (first attempt under the clone's own project name was stopped before it could create data; the empty `knowledge-graph-ai-agents_*personal` volumes it created were removed).
+- **Pre-checks:** `docker exec kg-worker-personal mount` → `/backups` bound to host `C:\` (`C:/Users/89209/Desktop/my items`); `printenv` → `BACKUP_LOCAL_PATH=/backups`, `BACKUP_ENABLED=true`. Baseline `ls` of the host folder: no `backup-personal-auto-*` files (latest `backup-personal-daily-2026-09-21.sql.gz`, 16:11).
+- **Mutation:** minted a short-lived access JWT for the owner account (`HS256`, `iss=knowledge-graph`, 15 min) and sent `PUT /api/v1/notes/f6ca578a-2019-4000-ad89-38a0fefd3867` on `:18085` with the note's **unchanged** `metadata` payload → `200`. Choosing a metadata-only update triggers `enqueueBackupOnNoteChange` without re-queuing keyword/embedding tasks.
+- **Observed:**
+  - `ls -la` after: `-rw-r--r-- … 666478 Sep 22 00:44 backup-personal-auto-2026-09-21-214357.sql.gz` — new file in the synced folder.
+  - Worker log: `[Asynq] Starting database backup (triggered at 2026-09-21T21:43:57Z)` → `Database backup completed: /backups/backup-personal-auto-2026-09-21-214357.sql.gz` — ~32 s after the mutation (expected ≈30 s delay).
+  - `gunzip`-equivalent read: 1 924 993 bytes decompressed, 2602 lines, starts with `PostgreSQL database dump`, contains `CREATE TABLE public.notes` (plus the other 14 tables).
+- **Cleanup:** `docker compose -p knowledge-graph -f docker-compose.personal.yml stop` — all containers stopped, named volumes untouched. The test stack (`kg-test-*`) was left running as before.
+- **Screenshot / Logs:** worker log lines and `ls -la` output above; file present at `C:\Users\89209\Desktop\my items\backup-personal-auto-2026-09-21-214357.sql.gz` (666 478 B).
+- **Note:** minting the JWT locally needed the owner's `JWT_SECRET` from `.env`; the token was used once for the PUT and expires 15 min after issue. No secret values were copied into docs or commits.
