@@ -172,6 +172,8 @@ export const en: Record<string, string> = {
   "linkTooltip.to": "To:",
   "linkTooltip.edit": "Edit",
   "linkTooltip.delete": "Delete",
+  "linkTooltip.confirm": "Confirm link",
+  "linkTooltip.notLinked": "Not related",
   "linkTooltip.lastWeightUpdate": "Updated:",
   // LinkTypeLegend
   "linkLegend.title": "Link types",
@@ -394,6 +396,8 @@ export const ru: Record<string, string> = {
   "linkTooltip.to": "К:",
   "linkTooltip.edit": "Редактировать",
   "linkTooltip.delete": "Удалить",
+  "linkTooltip.confirm": "Подтвердить связь",
+  "linkTooltip.notLinked": "Не связаны",
   "linkTooltip.lastWeightUpdate": "Обновлено:",
   // LinkTypeLegend
   "linkLegend.title": "Типы связей",

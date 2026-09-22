@@ -27,6 +27,7 @@
     onUpdateSearch,
     onLinkEdit,
     onLinkDelete,
+    onLinkConfirm,
   }: {
     canvas: HTMLCanvasElement | null;
     nodes: Array<{ id: string; title: string; type?: string }>;
@@ -58,6 +59,7 @@
     onUpdateSearch?: () => void;
     onLinkEdit?: () => void;
     onLinkDelete?: () => void;
+    onLinkConfirm?: () => void;
   } = $props();
 
   let graphTooltip: GraphTooltip | null = $state(null);
@@ -107,6 +109,7 @@
     lastWeightUpdate={hoveredLink.last_weight_update}
     onEdit={onLinkEdit}
     onDelete={onLinkDelete}
+    onConfirm={onLinkConfirm}
   />
 {/if}
 

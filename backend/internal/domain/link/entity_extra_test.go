@@ -143,3 +143,48 @@ func TestLink_UpdateLinkType(t *testing.T) {
 	assert.Equal(t, newLinkType, l.LinkType())
 	assert.True(t, l.UpdatedAt().After(beforeUpdate) || l.UpdatedAt().Equal(beforeUpdate))
 }
+
+// Promoting a gamma link to a manual one keeps the gamma origin in
+// metadata.gamma so provenance survives the source_type change (LINKS-2).
+func TestPromoteToUser_PreservesGammaProvenance(t *testing.T) {
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	linkType, _ := NewLinkType("related")
+	weight, _ := NewWeight(0.5)
+	metadata, _ := NewMetadata(nil)
+	l := NewGammaLink(sourceID, targetID, linkType, weight, metadata)
+	gammaCreatedAt := l.CreatedAt()
+
+	creatorID := uuid.New()
+	newWeight, _ := NewWeight(0.9)
+	newMD, _ := NewMetadata(map[string]interface{}{"note": "confirmed by hand"})
+	l.PromoteToUser(&creatorID, linkType, newWeight, newMD)
+
+	assert.True(t, l.SourceType().IsUser())
+	assert.Equal(t, &creatorID, l.CreatorID())
+	assert.Equal(t, gammaCreatedAt, l.CreatedAt(), "promotion must not reset created_at")
+	gamma, ok := l.Metadata().Value()["gamma"].(map[string]interface{})
+	assert.True(t, ok, "metadata.gamma must record the model origin")
+	assert.InDelta(t, 0.5, gamma["score"], 0.0001)
+	assert.Equal(t, "confirmed by hand", l.Metadata().Value()["note"])
+}
+
+// InheritGammaProvenance stamps the removed gamma link's origin onto a manual
+// link of a different type on the same pair.
+func TestInheritGammaProvenance(t *testing.T) {
+	linkType, _ := NewLinkType("related")
+	depType, _ := NewLinkType("dependency")
+	weight, _ := NewWeight(0.5)
+	md, _ := NewMetadata(nil)
+	gamma := NewGammaLink(uuid.New(), uuid.New(), linkType, weight, md)
+
+	manualMD, _ := NewMetadata(map[string]interface{}{"note": "mine"})
+	manual := NewLink(gamma.SourceNoteID(), gamma.TargetNoteID(), depType, weight, manualMD)
+	manual.InheritGammaProvenance(gamma)
+
+	gammaMD, ok := manual.Metadata().Value()["gamma"].(map[string]interface{})
+	assert.True(t, ok)
+	assert.InDelta(t, 0.5, gammaMD["score"], 0.0001)
+	assert.Equal(t, "mine", manual.Metadata().Value()["note"])
+	assert.True(t, manual.HasGammaProvenance())
+}

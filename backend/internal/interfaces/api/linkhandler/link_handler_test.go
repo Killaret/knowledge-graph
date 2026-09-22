@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
@@ -1085,4 +1086,260 @@ func TestUpdateLink_Forbidden(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
+}
+
+// --- LINKS-2: three states of a pair (proposed / confirmed / rejected) ---
+
+func addLinkTestNote(noteRepo *mockNoteRepoForLink, id uuid.UUID, title string) {
+	t, _ := note.NewTitle(title)
+	c, _ := note.NewContent("content")
+	md, _ := note.NewMetadata(nil)
+	noteRepo.notes[id] = note.ReconstructNote(id, t, c, note.MustType("star"), md, time.Now(), time.Now())
+}
+
+func postLinkBody(t *testing.T, r *gin.Engine, body map[string]interface{}) *httptest.ResponseRecorder {
+	jsonBody, err := json.Marshal(body)
+	require.NoError(t, err)
+	req := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	return w
+}
+
+// Promotion: POST on a pair with a gamma link upgrades the existing row to
+// source_type='user' instead of failing with 409.
+func TestCreateLink_PromotesGammaLink(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	addLinkTestNote(noteRepo, sourceID, "Source")
+	addLinkTestNote(noteRepo, targetID, "Target")
+
+	lt, _ := link.NewLinkType("related")
+	wt, _ := link.NewWeight(0.6)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	gamma := link.NewGammaLink(sourceID, targetID, lt, wt, md)
+	require.NoError(t, linkRepo.Save(context.Background(), gamma))
+	gammaID := gamma.ID()
+	gammaCreatedAt := gamma.CreatedAt()
+
+	rec := postLinkBody(t, r, map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+		"link_type":      "related",
+		"weight":         0.9,
+		"metadata":       map[string]interface{}{"note": "confirmed by hand"},
+	})
+
+	assert.Equal(t, http.StatusOK, rec.Code, "promotion must answer 200, not 201/409: %s", rec.Body.String())
+
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	data, ok := resp["data"].(map[string]interface{})
+	require.True(t, ok, "response must carry the link object")
+	assert.Equal(t, gammaID.String(), data["id"], "promotion keeps the same row id")
+	assert.Equal(t, "user", data["source_type"])
+	assert.InDelta(t, 0.9, data["weight"], 0.0001)
+
+	meta, ok := data["metadata"].(map[string]interface{})
+	require.True(t, ok, "response metadata must be an object")
+	assert.Equal(t, "confirmed by hand", meta["note"])
+	prov, ok := meta["gamma"].(map[string]interface{})
+	require.True(t, ok, "metadata.gamma provenance must be present")
+	assert.InDelta(t, 0.6, prov["score"], 0.0001, "provenance keeps the model's score")
+	assert.NotEmpty(t, prov["generated_at"], "provenance keeps the proposal timestamp")
+
+	// Exactly one row on the pair, created_at untouched.
+	pair, err := linkRepo.FindByPair(context.Background(), sourceID, targetID)
+	require.NoError(t, err)
+	require.Len(t, pair, 1)
+	assert.Equal(t, gammaCreatedAt, pair[0].CreatedAt())
+}
+
+// Manual link over a manual link still conflicts — promotion must not turn
+// into silent overwrite of someone else's link.
+func TestCreateLink_ManualOverManualStill409(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	addLinkTestNote(noteRepo, sourceID, "Source")
+	addLinkTestNote(noteRepo, targetID, "Target")
+
+	lt, _ := link.NewLinkType("related")
+	wt, _ := link.NewWeight(0.7)
+	md, _ := link.NewMetadata(nil)
+	require.NoError(t, linkRepo.Save(context.Background(), link.NewLink(sourceID, targetID, lt, wt, md)))
+
+	rec := postLinkBody(t, r, map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+		"link_type":      "related",
+		"weight":         0.9,
+	})
+	assert.Equal(t, http.StatusConflict, rec.Code)
+}
+
+// A gamma link of a different type does not survive next to the manual one:
+// its provenance moves into the new row, the gamma row is removed.
+func TestCreateLink_DifferentTypeGammaTransfersProvenance(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	addLinkTestNote(noteRepo, sourceID, "Source")
+	addLinkTestNote(noteRepo, targetID, "Target")
+
+	lt, _ := link.NewLinkType("related")
+	wt, _ := link.NewWeight(0.55)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	gamma := link.NewGammaLink(sourceID, targetID, lt, wt, md)
+	require.NoError(t, linkRepo.Save(context.Background(), gamma))
+
+	rec := postLinkBody(t, r, map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+		"link_type":      "dependency",
+		"weight":         0.8,
+	})
+	assert.Equal(t, http.StatusCreated, rec.Code)
+
+	pair, err := linkRepo.FindByPair(context.Background(), sourceID, targetID)
+	require.NoError(t, err)
+	require.Len(t, pair, 1, "the gamma row must not remain next to the manual one")
+	assert.Equal(t, "dependency", pair[0].LinkType().String())
+	assert.Equal(t, "user", pair[0].SourceType().String())
+
+	prov, ok := pair[0].Metadata().Value()["gamma"].(map[string]interface{})
+	require.True(t, ok, "provenance must move to the new row")
+	assert.InDelta(t, 0.55, prov["score"], 0.0001)
+}
+
+// Deleting a gamma link records the rejection "these notes are not related".
+func TestDeleteLink_GammaRecordsSuppression(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	addLinkTestNote(noteRepo, sourceID, "Source")
+	addLinkTestNote(noteRepo, targetID, "Target")
+
+	lt, _ := link.NewLinkType("related")
+	wt, _ := link.NewWeight(0.6)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	gamma := link.NewGammaLink(sourceID, targetID, lt, wt, md)
+	require.NoError(t, linkRepo.Save(context.Background(), gamma))
+
+	req := httptest.NewRequest("DELETE", "/links/"+gamma.ID().String(), nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNoContent, w.Code)
+
+	require.Len(t, linkRepo.suppressions, 1, "rejection must be recorded")
+	s := linkRepo.suppressions[0]
+	na, nb := link.NormalizePair(sourceID, targetID)
+	assert.Equal(t, na, s.NoteAID())
+	assert.Equal(t, nb, s.NoteBID())
+	require.NotNil(t, s.LinkType())
+	assert.Equal(t, "related", *s.LinkType())
+}
+
+// Deleting a promoted link (metadata.gamma present) also records a rejection.
+func TestDeleteLink_PromotedLinkRecordsSuppression(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	addLinkTestNote(noteRepo, sourceID, "Source")
+	addLinkTestNote(noteRepo, targetID, "Target")
+
+	lt, _ := link.NewLinkType("related")
+	wt, _ := link.NewWeight(0.6)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	gamma := link.NewGammaLink(sourceID, targetID, lt, wt, md)
+	require.NoError(t, linkRepo.Save(context.Background(), gamma))
+
+	// Promote first, then delete the now-user link.
+	postLinkBody(t, r, map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+		"link_type":      "related",
+		"weight":         0.9,
+	})
+
+	req := httptest.NewRequest("DELETE", "/links/"+gamma.ID().String(), nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	require.Len(t, linkRepo.suppressions, 1, "deleting a promoted link must record a rejection")
+}
+
+// Deleting a purely manual link records nothing — the user removed their own
+// link, and a later gamma proposal is new information, not an argument.
+func TestDeleteLink_ManualLinkRecordsNoSuppression(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	addLinkTestNote(noteRepo, sourceID, "Source")
+	addLinkTestNote(noteRepo, targetID, "Target")
+
+	lt, _ := link.NewLinkType("reference")
+	wt, _ := link.NewWeight(0.8)
+	md, _ := link.NewMetadata(nil)
+	l := link.NewLink(sourceID, targetID, lt, wt, md)
+	require.NoError(t, linkRepo.Save(context.Background(), l))
+
+	req := httptest.NewRequest("DELETE", "/links/"+l.ID().String(), nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Empty(t, linkRepo.suppressions)
+}
+
+// Creating a manual link on a rejected pair lifts the rejection.
+func TestCreateLink_LiftsSuppression(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	addLinkTestNote(noteRepo, sourceID, "Source")
+	addLinkTestNote(noteRepo, targetID, "Target")
+
+	rejectedType := "related"
+	require.NoError(t, linkRepo.SaveSuppression(context.Background(),
+		link.NewSuppression(sourceID, targetID, &rejectedType, nil)))
+
+	rec := postLinkBody(t, r, map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+		"link_type":      "related",
+		"weight":         0.8,
+	})
+	assert.Equal(t, http.StatusCreated, rec.Code)
+	assert.Empty(t, linkRepo.suppressions, "manual creation must lift the rejection")
+}
+
+// A NULL-type rejection ("no link at all") is lifted by creating any link.
+func TestCreateLink_LiftsNullTypeSuppression(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	addLinkTestNote(noteRepo, sourceID, "Source")
+	addLinkTestNote(noteRepo, targetID, "Target")
+
+	require.NoError(t, linkRepo.SaveSuppression(context.Background(),
+		link.NewSuppression(sourceID, targetID, nil, nil)))
+
+	rec := postLinkBody(t, r, map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+		"link_type":      "dependency",
+		"weight":         0.8,
+	})
+	assert.Equal(t, http.StatusCreated, rec.Code)
+	assert.Empty(t, linkRepo.suppressions)
 }

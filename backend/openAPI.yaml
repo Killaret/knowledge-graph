@@ -1187,6 +1187,12 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateLinkRequest'
       responses:
+        '200':
+          description: Existing gamma link promoted to a user link — no new row was created; the link keeps its id and created_at, gains the request's weight/type/metadata, and records its origin in metadata.gamma
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
         '201':
           description: Link created
           content:

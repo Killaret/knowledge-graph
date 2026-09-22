@@ -21,6 +21,7 @@
     lastWeightUpdate,
     onEdit,
     onDelete,
+    onConfirm,
   }: {
     visible: boolean;
     x: number;
@@ -33,6 +34,7 @@
     lastWeightUpdate?: string;
     onEdit?: () => void;
     onDelete?: () => void;
+    onConfirm?: () => void;
   } = $props();
 
   const resolvedLinkType = $derived(LinkType.fromString(linkType));
@@ -116,13 +118,26 @@
       {/if}
     </div>
     <div class="tooltip-actions">
-      {#if onEdit}
-        <button class="action-btn edit-btn" onmousedown={onEdit}>{t("linkTooltip.edit")}</button>
-      {/if}
-      {#if onDelete}
-        <button class="action-btn delete-btn" onmousedown={onDelete}
-          >{t("linkTooltip.delete")}</button
-        >
+      {#if sourceType === "gamma"}
+        {#if onConfirm}
+          <button class="action-btn confirm-btn" onmousedown={onConfirm}
+            >{t("linkTooltip.confirm")}</button
+          >
+        {/if}
+        {#if onDelete}
+          <button class="action-btn delete-btn" onmousedown={onDelete}
+            >{t("linkTooltip.notLinked")}</button
+          >
+        {/if}
+      {:else}
+        {#if onEdit}
+          <button class="action-btn edit-btn" onmousedown={onEdit}>{t("linkTooltip.edit")}</button>
+        {/if}
+        {#if onDelete}
+          <button class="action-btn delete-btn" onmousedown={onDelete}
+            >{t("linkTooltip.delete")}</button
+          >
+        {/if}
       {/if}
     </div>
   </div>
@@ -246,6 +261,15 @@
 
   .edit-btn:hover {
     background: rgba(59, 130, 246, 0.3);
+  }
+
+  .confirm-btn {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+
+  .confirm-btn:hover {
+    background: rgba(34, 197, 94, 0.3);
   }
 
   .delete-btn {

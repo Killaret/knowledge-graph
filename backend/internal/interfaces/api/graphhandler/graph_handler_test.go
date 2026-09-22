@@ -147,6 +147,27 @@ func (m *mockLinkRepo) DeleteBySource(ctx context.Context, sourceID uuid.UUID) e
 	return args.Error(0)
 }
 
+func (m *mockLinkRepo) FindByPair(ctx context.Context, sourceID, targetID uuid.UUID) ([]*link.Link, error) {
+	args := m.Called(ctx, sourceID, targetID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*link.Link), args.Error(1)
+}
+
+func (m *mockLinkRepo) SaveUserLink(ctx context.Context, l *link.Link) (*link.Link, bool, error) {
+	args := m.Called(ctx, l)
+	if args.Get(0) == nil {
+		return nil, args.Bool(1), args.Error(2)
+	}
+	return args.Get(0).(*link.Link), args.Bool(1), args.Error(2)
+}
+
+func (m *mockLinkRepo) DeleteAndSuppress(ctx context.Context, l *link.Link, s *link.Suppression) error {
+	args := m.Called(ctx, l, s)
+	return args.Error(0)
+}
+
 func setupGraphRouter() (*gin.Engine, *mockNoteRepo, *mockLinkRepo) {
 	gin.SetMode(gin.TestMode)
 	noteRepo := new(mockNoteRepo)

@@ -21,6 +21,11 @@ This file covers July 2026 onward. Earlier history lives in the git log.
   non-empty backup exists.
 - CI drift guard for build configuration, after a silent revert of 3D fog densities went unnoticed.
 - Seeded test user and an explicit `APP_ENV` profile for the isolated test stack.
+- Three states for a note pair (LINKS-2): a gamma-suggested link can be confirmed via `POST /links`
+  (the row is promoted to `source_type='user'`, HTTP 200, origin kept in `metadata.gamma`) or rejected
+  via `DELETE /links/{id}` which records the pair in `link_suppressions` — the generator skips
+  rejected pairs in both directions and `gamma-links-regenerate --dry-run` reports the count. A manual
+  link on a rejected pair lifts the rejection; note deletion cascades rejections.
 
 ### Changed
 

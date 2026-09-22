@@ -86,6 +86,7 @@ describe("createGraphCanvasState", () => {
       source: "a",
       target: "b",
       link_type: "related",
+      source_type: "star",
     });
     expect(state.hoveredLink).toBeNull();
   });

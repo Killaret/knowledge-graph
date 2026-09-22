@@ -168,7 +168,8 @@ func (h *Handler) Create(c *gin.Context) {
 		newLink = link.NewLink(sourceID, targetID, linkType, weightVO, metadata)
 	}
 
-	if err := h.linkRepo.Save(ctx, newLink); err != nil {
+	savedLink, created, err := h.linkRepo.SaveUserLink(ctx, newLink)
+	if err != nil {
 		log.Printf("[LinkHandler.Create] Failed to save link: source=%s target=%s type=%s error=%v",
 			newLink.SourceNoteID(), newLink.TargetNoteID(), newLink.LinkType().String(), err)
 		if errors.Is(err, link.ErrDuplicateLink) {
@@ -182,6 +183,7 @@ func (h *Handler) Create(c *gin.Context) {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveLink)
 		return
 	}
+	newLink = savedLink
 
 	if h.eventPublisher != nil {
 		if err := h.eventPublisher.PublishLinkCreated(context.Background(), newLink.SourceNoteID().String(), newLink.TargetNoteID().String(), getUserIDString(c)); err != nil {
@@ -208,6 +210,11 @@ func (h *Handler) Create(c *gin.Context) {
 	}
 
 	responseData := toLinkResponse(newLink)
+	if !created {
+		// An existing gamma link was promoted to a user link — no new row.
+		apicommon.JSON(c, 200, responseData)
+		return
+	}
 	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
 
@@ -428,7 +435,21 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.linkRepo.Delete(ctx, id); err != nil {
+	// Deleting a gamma link or a link carrying gamma provenance records the
+	// rejection "these notes are not related" so regeneration will not propose
+	// the pair again (LINKS-2). Purely manual links leave no rejection.
+	if l.SourceType().IsGamma() || l.HasGammaProvenance() {
+		linkType := l.LinkType().String()
+		var creatorID *uuid.UUID
+		if userID, exists := middleware.GetUserID(c); exists {
+			creatorID = &userID
+		}
+		suppression := link.NewSuppression(l.SourceNoteID(), l.TargetNoteID(), &linkType, creatorID)
+		if err := h.linkRepo.DeleteAndSuppress(ctx, l, suppression); err != nil {
+			apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
+			return
+		}
+	} else if err := h.linkRepo.Delete(ctx, id); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
 		return
 	}

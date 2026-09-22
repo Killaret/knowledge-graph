@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-22 — c3c5684
-Прочитано: Devin — 2026-09-22 — 0b5dacb
+Прочитано: Devin — 2026-09-22 — 5dfab1b
 ```
 
 ---
@@ -20,8 +20,9 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 
-| **DOC-REORG-1:** слияние дублей и иерархия `docs/` по DOC-AUDIT-1 (9 кластеров); рвёт ссылки в 130 постановках | [`tasks/DOC-AUDIT-1-documentation-inspection.md`](tasks/DOC-AUDIT-1-documentation-inspection.md), [`tasks/DOC-REORG-1-implementation-notes.md`](tasks/DOC-REORG-1-implementation-notes.md) | **в работе** — реализация готова и запушена (`15809ec`), статус `на ревью` не ставлю: очередь 5/5; перенесу при разгрузке. Отклонения от буквы разбора — в notes | 2026-09-22 |
-| **BACKUP-DIR-1:** выровнять дефолты под канонический `~/Desktop/my items` (решение 52) — compose-дефолт, `BACKUP_LOCAL_PATH` → `./backups`, доки; «мёртвый хвост» BACKUP-2 | `docker-compose.personal.yml`, `docs/operations/BACKUP.md`, `DEPLOY.md`, `DEPLOY.ru.md` | **в работе** — дефолт маунта теперь `${USERPROFILE:-${HOME}}/Desktop/my items` без зашитого имени; `./backups` в `local_path` оставлен как fallback голого `go run` (это путь процесса, не хоста) — различие задокументировано; ревью после разгрузки очереди | 2026-09-22 |
+| **DOC-REORG-1:** слияние дублей и иерархия `docs/` по DOC-AUDIT-1 (9 кластеров); рвёт ссылки в 130 постановках | [`tasks/DOC-AUDIT-1-documentation-inspection.md`](tasks/DOC-AUDIT-1-documentation-inspection.md), [`tasks/DOC-REORG-1-implementation-notes.md`](tasks/DOC-REORG-1-implementation-notes.md) | **на ревью** — `15809ec` + `1bdcd47`; отклонения от буквы разбора — в notes | 2026-09-22 |
+| **BACKUP-DIR-1:** выровнять дефолты под канонический `~/Desktop/my items` (решение 52) — compose-дефолт, `BACKUP_LOCAL_PATH` → `./backups`, доки; «мёртвый хвост» BACKUP-2 | `docker-compose.personal.yml`, `docs/operations/BACKUP.md`, `DEPLOY.md`, `DEPLOY.ru.md` | **на ревью** — `df18b67`; `./backups` в `local_path` оставлен как fallback голого `go run` (путь процесса, не хоста) — различие задокументировано. Попутно: сторож авторства научился не считать перепись ссылки новым claim (`061daef`) | 2026-09-22 |
+| **LINKS-2:** три состояния пары — модель предложила, человек подтвердил (повышение с происхождением), человек отказал | [`tasks/LINKS-2-manual-link-over-gamma.md`](tasks/LINKS-2-manual-link-over-gamma.md) | **в работе** — Devin; код+тесты+доки готовы, adversarial-разбор в постановке; остаётся ручная проверка с экрана (п. 11) | 2026-09-22 |
 
 ## На Claude Code
 
@@ -46,7 +47,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **LINKS-2:** три состояния пары — модель предложила, человек подтвердил (повышение с происхождением), человек отказал | [`tasks/LINKS-2-manual-link-over-gamma.md`](tasks/LINKS-2-manual-link-over-gamma.md) | **бэклог** — постановка готова по решению 53, владелец передаст Devin сам | 2026-09-22 |
+
 
 
 | **RECO-1:** формула рекомендаций — одна реализация, три компонента (решение 40) | [`tasks/RECO-1-recommendation-formula.md`](tasks/RECO-1-recommendation-formula.md) | **бэклог** — ждёт Claude Code: ревью расширения объёма 19.09 (кандидаты = closure ∪ векторный топ-N) | 2026-09-21 |

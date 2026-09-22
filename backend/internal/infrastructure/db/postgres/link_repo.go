@@ -144,6 +144,195 @@ func (r *LinkRepository) FindByTargetIDs(ctx context.Context, targetIDs []uuid.U
 	return result, nil
 }
 
+// FindByPair возвращает все связи направленной пары (source → target).
+func (r *LinkRepository) FindByPair(ctx context.Context, sourceID, targetID uuid.UUID) ([]*link.Link, error) {
+	var models []LinkModel
+	err := r.db.WithContext(ctx).
+		Where("source_note_id = ? AND target_note_id = ? AND deleted_at IS NULL", sourceID, targetID).
+		Find(&models).Error
+	if err != nil {
+		return nil, err
+	}
+	return toDomainLinks(models), nil
+}
+
+// SaveUserLink applies the manual-create rules atomically (LINKS-2):
+//   - a gamma row of the same type on the same directed pair is promoted in
+//     place (created=false) — the row keeps its id and created_at;
+//   - gamma rows of other types on the pair are removed and their provenance
+//     moves into the new row's metadata.gamma;
+//   - a manual row of the same type yields ErrDuplicateLink;
+//   - rejections (link_suppressions) for the normalized pair with NULL or
+//     matching link_type are lifted in the same transaction.
+func (r *LinkRepository) SaveUserLink(ctx context.Context, l *link.Link) (*link.Link, bool, error) {
+	var result *link.Link
+	created := true
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var models []LinkModel
+		if err := tx.
+			Where("source_note_id = ? AND target_note_id = ? AND deleted_at IS NULL", l.SourceNoteID(), l.TargetNoteID()).
+			Find(&models).Error; err != nil {
+			return err
+		}
+
+		var sameType *LinkModel
+		var gammas []LinkModel
+		for i := range models {
+			m := models[i]
+			if m.LinkType == l.LinkType().String() {
+				if m.SourceType == "user" {
+					return link.ErrDuplicateLink
+				}
+				sameType = &models[i]
+			}
+			if m.SourceType == "gamma" {
+				gammas = append(gammas, m)
+			}
+		}
+
+		if sameType != nil {
+			// Promotion: keep row id and created_at, take request fields.
+			gamma, err := toDomainLink(sameType)
+			if err != nil {
+				return err
+			}
+			gamma.PromoteToUser(l.CreatorID(), l.LinkType(), l.Weight(), l.Metadata())
+			promoted, err := toGormLink(gamma)
+			if err != nil {
+				return err
+			}
+			if err := tx.Model(&LinkModel{}).Where("id = ?", sameType.ID).Updates(map[string]interface{}{
+				"link_type":   promoted.LinkType,
+				"weight":      promoted.Weight,
+				"metadata":    promoted.Metadata,
+				"source_type": promoted.SourceType,
+				"creator_id":  promoted.CreatorID,
+				"updated_at":  promoted.UpdatedAt,
+			}).Error; err != nil {
+				return err
+			}
+			// Other gamma rows on the pair do not survive confirmation.
+			for _, g := range gammas {
+				if g.ID == sameType.ID {
+					continue
+				}
+				if err := tx.Delete(&LinkModel{}, "id = ?", g.ID).Error; err != nil {
+					return err
+				}
+			}
+			result = gamma
+			created = false
+		} else {
+			// New row: consume provenance of gamma rows on the pair.
+			if len(gammas) > 0 {
+				donor, err := toDomainLink(&gammas[0])
+				if err != nil {
+					return err
+				}
+				l.InheritGammaProvenance(donor)
+				for _, g := range gammas {
+					if err := tx.Delete(&LinkModel{}, "id = ?", g.ID).Error; err != nil {
+						return err
+					}
+				}
+			}
+			model, err := toGormLink(l)
+			if err != nil {
+				return err
+			}
+			if err := tx.Create(&model).Error; err != nil {
+				if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+					return link.ErrDuplicateLink
+				}
+				return err
+			}
+			result = l
+		}
+
+		// A manual link on a rejected pair lifts the rejection (NULL or same type).
+		return liftSuppressions(tx, l.SourceNoteID(), l.TargetNoteID(), l.LinkType().String())
+	})
+	if err != nil {
+		return nil, false, err
+	}
+	return result, created, nil
+}
+
+// DeleteAndSuppress removes the link and records the pair rejection atomically.
+func (r *LinkRepository) DeleteAndSuppress(ctx context.Context, l *link.Link, s *link.Suppression) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if s != nil {
+			if err := upsertSuppression(tx, s); err != nil {
+				return err
+			}
+		}
+		return tx.Delete(&LinkModel{}, "id = ?", l.ID()).Error
+	})
+}
+
+// SaveSuppression upserts a pair rejection.
+func (r *LinkRepository) SaveSuppression(ctx context.Context, s *link.Suppression) error {
+	return upsertSuppression(r.db.WithContext(ctx), s)
+}
+
+// FindSuppressionsForNotes returns all rejections that involve any of the notes.
+func (r *LinkRepository) FindSuppressionsForNotes(ctx context.Context, noteIDs []uuid.UUID) ([]*link.Suppression, error) {
+	if len(noteIDs) == 0 {
+		return nil, nil
+	}
+	var models []LinkSuppressionModel
+	err := r.db.WithContext(ctx).
+		Where("note_a_id IN ? OR note_b_id IN ?", noteIDs, noteIDs).
+		Find(&models).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*link.Suppression, 0, len(models))
+	for _, m := range models {
+		result = append(result, link.ReconstructSuppression(m.ID, m.NoteAID, m.NoteBID, m.LinkType, m.CreatorID, m.CreatedAt))
+	}
+	return result, nil
+}
+
+// upsertSuppression inserts or refreshes a rejection row. The unique index on
+// (note_a_id, note_b_id, COALESCE(link_type,”)) cannot be a GORM conflict
+// target, so deduplication is done inside the transaction.
+func upsertSuppression(tx *gorm.DB, s *link.Suppression) error {
+	linkType := s.LinkType()
+	var existing LinkSuppressionModel
+	q := tx.Where("note_a_id = ? AND note_b_id = ?", s.NoteAID(), s.NoteBID())
+	if linkType == nil {
+		q = q.Where("link_type IS NULL")
+	} else {
+		q = q.Where("link_type = ?", *linkType)
+	}
+	err := q.First(&existing).Error
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	return tx.Create(&LinkSuppressionModel{
+		ID:        s.ID(),
+		NoteAID:   s.NoteAID(),
+		NoteBID:   s.NoteBID(),
+		LinkType:  linkType,
+		CreatorID: s.CreatorID(),
+		CreatedAt: s.CreatedAt(),
+	}).Error
+}
+
+// liftSuppressions removes rejections of a normalized pair contradicted by a
+// manual link: NULL-type ("no link at all") and same-type rows.
+func liftSuppressions(tx *gorm.DB, sourceID, targetID uuid.UUID, linkType string) error {
+	noteA, noteB := link.NormalizePair(sourceID, targetID)
+	return tx.
+		Where("note_a_id = ? AND note_b_id = ? AND (link_type IS NULL OR link_type = ?)", noteA, noteB, linkType).
+		Delete(&LinkSuppressionModel{}).Error
+}
+
 func (r *LinkRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&LinkModel{}, "id = ?", id).Error
 }

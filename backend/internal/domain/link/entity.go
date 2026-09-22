@@ -169,3 +169,47 @@ func (l *Link) UpdateLinkType(newLinkType LinkType) {
 	l.linkType = newLinkType
 	l.updatedAt = time.Now()
 }
+
+// HasGammaProvenance reports whether the link records that the model once
+// proposed this pair (either still gamma, or promoted earlier).
+func (l *Link) HasGammaProvenance() bool {
+	_, ok := l.metadata.Value()["gamma"]
+	return ok
+}
+
+// gammaProvenance builds the metadata.gamma payload: the score the model
+// proposed the pair with and when the proposal was created.
+func (l *Link) gammaProvenance() map[string]interface{} {
+	return map[string]interface{}{
+		"score":        l.weight.Value(),
+		"generated_at": l.createdAt.UTC().Format(time.RFC3339Nano),
+	}
+}
+
+// PromoteToUser turns a gamma link into a user-confirmed link in place:
+// weight, type and metadata come from the manual request, created_at and id
+// are preserved, and the gamma origin is kept in metadata.gamma.
+func (l *Link) PromoteToUser(creatorID *uuid.UUID, newLinkType LinkType, newWeight Weight, newMetadata Metadata) {
+	provenance := l.gammaProvenance()
+	merged := map[string]interface{}{"gamma": provenance}
+	for k, v := range newMetadata.Value() {
+		merged[k] = v
+	}
+	l.metadata, _ = NewMetadata(merged)
+	l.linkType = newLinkType
+	l.weight = newWeight
+	l.sourceType = DefaultSourceType()
+	l.creatorID = creatorID
+	l.updatedAt = time.Now()
+}
+
+// InheritGammaProvenance copies the gamma origin of another (removed) link
+// into this link's metadata without overwriting request-provided keys.
+func (l *Link) InheritGammaProvenance(from *Link) {
+	merged := make(map[string]interface{}, len(l.metadata.Value())+1)
+	for k, v := range l.metadata.Value() {
+		merged[k] = v
+	}
+	merged["gamma"] = from.gammaProvenance()
+	l.metadata, _ = NewMetadata(merged)
+}

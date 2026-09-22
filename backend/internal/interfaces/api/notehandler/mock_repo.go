@@ -240,6 +240,67 @@ func (m *mockLinkRepo) Update(ctx context.Context, l *link.Link) error {
 	return nil
 }
 
+func (m *mockLinkRepo) FindByPair(ctx context.Context, sourceID, targetID uuid.UUID) ([]*link.Link, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []*link.Link
+	for _, l := range m.links {
+		if l.SourceNoteID() == sourceID && l.TargetNoteID() == targetID {
+			result = append(result, l)
+		}
+	}
+	return result, nil
+}
+
+// SaveUserLink mirrors the postgres create-or-promote semantics: same-type
+// gamma is promoted in place, other-type gammas transfer provenance.
+func (m *mockLinkRepo) SaveUserLink(ctx context.Context, l *link.Link) (*link.Link, bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var sameType *link.Link
+	var gammas []*link.Link
+	for _, existing := range m.links {
+		if existing.SourceNoteID() != l.SourceNoteID() || existing.TargetNoteID() != l.TargetNoteID() {
+			continue
+		}
+		if existing.LinkType().String() == l.LinkType().String() {
+			if existing.SourceType().IsUser() {
+				return nil, false, link.ErrDuplicateLink
+			}
+			sameType = existing
+		}
+		if existing.SourceType().IsGamma() {
+			gammas = append(gammas, existing)
+		}
+	}
+
+	if sameType != nil {
+		sameType.PromoteToUser(l.CreatorID(), l.LinkType(), l.Weight(), l.Metadata())
+		for _, g := range gammas {
+			if g.ID() != sameType.ID() {
+				delete(m.links, g.ID())
+			}
+		}
+		return sameType, false, nil
+	}
+	if len(gammas) > 0 {
+		l.InheritGammaProvenance(gammas[0])
+		for _, g := range gammas {
+			delete(m.links, g.ID())
+		}
+	}
+	m.links[l.ID()] = l
+	return l, true, nil
+}
+
+func (m *mockLinkRepo) DeleteAndSuppress(ctx context.Context, l *link.Link, s *link.Suppression) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.links, l.ID())
+	return nil
+}
+
 func (m *mockLinkRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

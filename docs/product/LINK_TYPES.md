@@ -97,7 +97,7 @@ Is one note a prerequisite for the other?
 
 - `LinkTypeSelector` (in `frontend/src/components/molecules/LinkTypeSelector.svelte`) shows all creatable types with icon, label, color and a short description.
 - `CockpitNoteDetails` lists links with type icon, weight bar, `source_type` badge and `last_weight_update`.
-- `LinkTooltip` on the graph shows the type icon, color, weight, source/target, `source_type` and `last_weight_update`.
+- `LinkTooltip` on the graph shows the type icon, color, weight, source/target, `source_type` and `last_weight_update`. For `source_type = "gamma"` links it offers **Confirm link** (promotes the row to `source_type='user'`, origin kept in `metadata.gamma`) and **Not related** (deletes the link and records a rejection in `link_suppressions`, so the pair is not proposed again).
 - `LinkTypeLegend` on the graph shows all types and allows filtering by type and minimum weight.
 
 ## API

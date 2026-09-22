@@ -89,6 +89,15 @@ func (m *mockLinkRepoForAnalytics) FindAllPaginated(ctx context.Context, limit, 
 	return m.links, int64(len(m.links)), nil
 }
 func (m *mockLinkRepoForAnalytics) Update(ctx context.Context, l *link.Link) error { return nil }
+func (m *mockLinkRepoForAnalytics) FindByPair(ctx context.Context, sourceID, targetID uuid.UUID) ([]*link.Link, error) {
+	return nil, nil
+}
+func (m *mockLinkRepoForAnalytics) SaveUserLink(ctx context.Context, l *link.Link) (*link.Link, bool, error) {
+	return l, true, nil
+}
+func (m *mockLinkRepoForAnalytics) DeleteAndSuppress(ctx context.Context, l *link.Link, s *link.Suppression) error {
+	return nil
+}
 
 type mockNoteRepoForAnalytics struct {
 	notes map[uuid.UUID]*note.Note

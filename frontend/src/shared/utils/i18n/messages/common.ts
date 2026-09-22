@@ -9,6 +9,8 @@ export const en: Record<string, string> = {
   "note.deleted": "Note deleted.",
   "link.created": 'Link from "{{source}}" to "{{target}}" created.',
   "link.deleted": "Link deleted.",
+  "link.deleteConfirmSuppress":
+    "Remove this suggested link? The pair will be marked as not related and will not be suggested again.",
   "settings.saved": "Settings saved.",
   "login.success": "Login successful.",
   "logout.success": "Logout successful.",
@@ -106,6 +108,8 @@ export const ru: Record<string, string> = {
   "note.deleted": "Заметка удалена.",
   "link.created": 'Связь от "{{source}}" к "{{target}}" создана.',
   "link.deleted": "Связь удалена.",
+  "link.deleteConfirmSuppress":
+    "Убрать предложенную связь? Пара будет помечена как несвязанная и больше не будет предлагаться.",
   "settings.saved": "Настройки сохранены.",
   "login.success": "Вход выполнен успешно.",
   "logout.success": "Выход выполнен успешно.",

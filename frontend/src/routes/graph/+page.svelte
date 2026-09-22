@@ -37,6 +37,8 @@
   let createChildParent: { id: string; title: string; type?: string } | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
+  let showLinkDeleteConfirm = $state(false);
+  let linkToDelete: { id: string; source_type?: string } | null = $state(null);
   let canvasController:
     | {
         focusMode: boolean;
@@ -303,11 +305,19 @@
     source: string;
     target: string;
     link_type: string;
+    source_type?: string;
   }) {
     if (!link.id) {
       if (import.meta.env.DEV) {
         console.error("Cannot delete link without id");
       }
+      return;
+    }
+    // Rejecting a gamma proposal is a decision, not cleanup: the pair is
+    // recorded as "not related" and will not be suggested again — explain it.
+    if (link.source_type === "gamma") {
+      linkToDelete = { id: link.id, source_type: link.source_type };
+      showLinkDeleteConfirm = true;
       return;
     }
     try {
@@ -316,6 +326,46 @@
     } catch (e) {
       if (import.meta.env.DEV) {
         console.error("Failed to delete link:", e);
+      }
+    }
+  }
+
+  async function handleConfirmLinkDelete() {
+    if (!linkToDelete) return;
+    try {
+      await deleteLink(linkToDelete.id);
+      await loadGraphData({ nocache: true });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to delete link:", e);
+      }
+    } finally {
+      linkToDelete = null;
+      showLinkDeleteConfirm = false;
+    }
+  }
+
+  // Confirming a gamma link promotes it to a user link (POST /links answers
+  // 200 on promotion) — the recommendation badge disappears.
+  async function handleLinkConfirm(link: {
+    id?: string;
+    source: string;
+    target: string;
+    link_type: string;
+    weight: number;
+    source_type?: string;
+  }) {
+    try {
+      await createLink({
+        source_note_id: link.source,
+        target_note_id: link.target,
+        link_type: link.link_type,
+        weight: link.weight,
+      });
+      await loadGraphData({ nocache: true });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("Failed to confirm link:", e);
       }
     }
   }
@@ -376,6 +426,7 @@
             onLinkCreate={handleLinkCreate}
             onLinkEdit={handleLinkEdit}
             onLinkDelete={handleLinkDelete}
+            onLinkConfirm={handleLinkConfirm}
             helpContent={knowledgeCore?.content}
             showLinkTypeLegend={false}
             bind:controller={canvasController}
@@ -425,6 +476,20 @@
     onCancel={() => {
       noteToDelete = null;
       showConfirmDelete = false;
+    }}
+  />
+{/if}
+
+{#if showLinkDeleteConfirm}
+  <ConfirmModal
+    bind:open={showLinkDeleteConfirm}
+    title={t("confirmModal.title")}
+    message={t("link.deleteConfirmSuppress")}
+    danger={true}
+    onConfirm={handleConfirmLinkDelete}
+    onCancel={() => {
+      linkToDelete = null;
+      showLinkDeleteConfirm = false;
     }}
   />
 {/if}

@@ -95,7 +95,7 @@
 
 - `LinkTypeSelector` (`frontend/src/components/molecules/LinkTypeSelector.svelte`) — выбор типа с иконкой, цветом и описанием.
 - `CockpitNoteDetails` — список связей заметки с иконкой, весом, `source_type` и `last_weight_update`.
-- `LinkTooltip` — тултип на графе с типом, цветом, весом, источником/целью и датой обновления.
+- `LinkTooltip` — тултип на графе с типом, цветом, весом, источником/целью и датой обновления. У связей с `source_type = "gamma"` — действия **«Подтвердить связь»** (строка повышается до `source_type='user'`, происхождение сохраняется в `metadata.gamma`) и **«Не связаны»** (удаление с записью отказа в `link_suppressions` — пара больше не предлагается).
 - `LinkTypeLegend` — легенда на графе с фильтрацией по типу и минимальному весу.
 
 ## API

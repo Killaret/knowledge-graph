@@ -1,6 +1,7 @@
 package recommendation
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -97,6 +98,38 @@ func (m *mockBatchLinkRepoForGamma) FindBySourceIDs(ctx context.Context, sourceI
 	return args.Get(0).(map[uuid.UUID][]*link.Link), args.Error(1)
 }
 
+func (m *mockBatchLinkRepoForGamma) FindByPair(ctx context.Context, sourceID, targetID uuid.UUID) ([]*link.Link, error) {
+	args := m.Called(ctx, sourceID, targetID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*link.Link), args.Error(1)
+}
+
+func (m *mockBatchLinkRepoForGamma) SaveUserLink(ctx context.Context, l *link.Link) (*link.Link, bool, error) {
+	args := m.Called(ctx, l)
+	if args.Get(0) == nil {
+		return nil, args.Bool(1), args.Error(2)
+	}
+	return args.Get(0).(*link.Link), args.Bool(1), args.Error(2)
+}
+
+func (m *mockBatchLinkRepoForGamma) DeleteAndSuppress(ctx context.Context, l *link.Link, s *link.Suppression) error {
+	return m.Called(ctx, l, s).Error(0)
+}
+
+func (m *mockBatchLinkRepoForGamma) SaveSuppression(ctx context.Context, s *link.Suppression) error {
+	return m.Called(ctx, s).Error(0)
+}
+
+func (m *mockBatchLinkRepoForGamma) FindSuppressionsForNotes(ctx context.Context, noteIDs []uuid.UUID) ([]*link.Suppression, error) {
+	args := m.Called(ctx, noteIDs)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*link.Suppression), args.Error(1)
+}
+
 func newNote(t *testing.T, title string) *note.Note {
 	titleV, err := note.NewTitle(title)
 	assert.NoError(t, err)
@@ -123,6 +156,7 @@ func TestGammaLinkGenerator_RespectsMaxOutDegree(t *testing.T) {
 		{NoteID: target3, Score: 0.7},
 	}, nil)
 	linkRepo.On("FindBySource", context.Background(), sourceID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return(nil, nil)
 
 	var saved []*link.Link
 	linkRepo.On("Save", context.Background(), mock.AnythingOfType("*link.Link")).Run(func(args mock.Arguments) {
@@ -167,6 +201,7 @@ func TestGammaLinkGenerator_SkipsSelfLoopsAndExistingLinks(t *testing.T) {
 		{NoteID: target3, Score: 0.7},
 	}, nil)
 	linkRepo.On("FindBySource", context.Background(), sourceID).Return([]*link.Link{existing}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return(nil, nil)
 
 	var saved []*link.Link
 	linkRepo.On("Save", context.Background(), mock.AnythingOfType("*link.Link")).Run(func(args mock.Arguments) {
@@ -200,6 +235,7 @@ func TestGammaLinkGenerator_EnforcesMinScore(t *testing.T) {
 		{NoteID: targetLow, Score: 0.4},
 	}, nil)
 	linkRepo.On("FindBySource", context.Background(), sourceID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return(nil, nil)
 
 	var saved []*link.Link
 	linkRepo.On("Save", context.Background(), mock.AnythingOfType("*link.Link")).Run(func(args mock.Arguments) {
@@ -229,6 +265,7 @@ func TestGammaLinkGenerator_IdempotentSecondRun(t *testing.T) {
 
 	// First run: no existing links, one created.
 	linkRepo.On("FindBySource", context.Background(), sourceID).Return([]*link.Link{}, nil).Once()
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return(nil, nil)
 	linkRepo.On("Save", context.Background(), mock.AnythingOfType("*link.Link")).Return(nil).Once()
 
 	created, err := gen.GenerateForNote(context.Background(), sourceID)
@@ -260,6 +297,7 @@ func TestGammaLinkGenerator_BatchCreatesAtMostMaxOutDegreePerNote(t *testing.T) 
 		noteB: {{NoteID: targetB, Score: 0.85}},
 	}, nil)
 	linkRepo.On("FindBySourceIDs", context.Background(), []uuid.UUID{noteA, noteB}).Return(map[uuid.UUID][]*link.Link{}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{noteA, noteB}).Return(nil, nil)
 
 	var saved []*link.Link
 	linkRepo.On("Save", context.Background(), mock.AnythingOfType("*link.Link")).Run(func(args mock.Arguments) {
@@ -296,6 +334,7 @@ func TestGammaLinkGenerator_ManualLinkBlocksTarget(t *testing.T) {
 		{NoteID: freeTarget, Score: 0.9},
 	}, nil)
 	linkRepo.On("FindBySource", context.Background(), sourceID).Return([]*link.Link{manual}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return(nil, nil)
 
 	var saved []*link.Link
 	linkRepo.On("Save", context.Background(), mock.AnythingOfType("*link.Link")).Run(func(args mock.Arguments) {
@@ -323,6 +362,7 @@ func TestGammaLinkGenerator_DuplicateEmbeddingCreatesLink(t *testing.T) {
 		{NoteID: dup, Score: 1.0},
 	}, nil)
 	linkRepo.On("FindBySource", context.Background(), sourceID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return(nil, nil)
 
 	var saved []*link.Link
 	linkRepo.On("Save", context.Background(), mock.AnythingOfType("*link.Link")).Run(func(args mock.Arguments) {
@@ -345,6 +385,7 @@ func TestGammaLinkGenerator_NoCandidatesNoError(t *testing.T) {
 	sourceID := uuid.New()
 	embRepo.On("FindSimilarNotes", context.Background(), sourceID, 2).Return([]SimilarNote{}, nil)
 	linkRepo.On("FindBySource", context.Background(), sourceID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return(nil, nil)
 
 	created, err := gen.GenerateForNote(context.Background(), sourceID)
 	assert.NoError(t, err)
@@ -380,12 +421,167 @@ func TestGammaLinkGenerator_PlanForNotesIgnoresGammaOnly(t *testing.T) {
 	linkRepo.On("FindBySourceIDs", context.Background(), []uuid.UUID{sourceID}).Return(map[uuid.UUID][]*link.Link{
 		sourceID: {oldGamma, manual},
 	}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return(nil, nil)
 
-	planned, err := gen.PlanForNotes(context.Background(), []uuid.UUID{sourceID})
+	planned, _, err := gen.PlanForNotes(context.Background(), []uuid.UUID{sourceID})
 	assert.NoError(t, err)
 	require.Len(t, planned[sourceID], 2)
 	targets := map[uuid.UUID]bool{planned[sourceID][0].TargetNoteID(): true, planned[sourceID][1].TargetNoteID(): true}
 	assert.True(t, targets[gammaTarget], "gamma-blocked target must be replanned")
 	assert.True(t, targets[freeTarget])
 	assert.False(t, targets[manualTarget], "manual link must still block")
+}
+
+// A recorded rejection blocks the candidate — "these notes are not related".
+func TestGammaLinkGenerator_SuppressionBlocksCandidate(t *testing.T) {
+	embRepo := new(mockEmbeddingRepoForGamma)
+	linkRepo := new(mockBatchLinkRepoForGamma)
+	gen := NewGammaLinkGenerator(embRepo, linkRepo, 2, 0.6)
+
+	sourceID := uuid.New()
+	rejected := uuid.New()
+	freeTarget := uuid.New()
+
+	rejectedType := "related"
+	suppression := link.NewSuppression(sourceID, rejected, &rejectedType, nil)
+
+	embRepo.On("FindSimilarNotes", context.Background(), sourceID, 2).Return([]SimilarNote{
+		{NoteID: rejected, Score: 0.95},
+		{NoteID: freeTarget, Score: 0.9},
+	}, nil)
+	linkRepo.On("FindBySource", context.Background(), sourceID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return([]*link.Suppression{suppression}, nil)
+
+	var saved []*link.Link
+	linkRepo.On("Save", context.Background(), mock.AnythingOfType("*link.Link")).Run(func(args mock.Arguments) {
+		saved = append(saved, args.Get(1).(*link.Link))
+	}).Return(nil)
+
+	created, err := gen.GenerateForNote(context.Background(), sourceID)
+	assert.NoError(t, err)
+	require.Len(t, created, 1)
+	assert.Equal(t, freeTarget, created[0].TargetNoteID(), "rejected pair must not be proposed again")
+}
+
+// Rejections are symmetric: a rejection recorded for A→B also blocks the
+// B→A proposal.
+func TestGammaLinkGenerator_SuppressionIsSymmetric(t *testing.T) {
+	embRepo := new(mockEmbeddingRepoForGamma)
+	linkRepo := new(mockBatchLinkRepoForGamma)
+	gen := NewGammaLinkGenerator(embRepo, linkRepo, 2, 0.6)
+
+	noteA := uuid.New()
+	noteB := uuid.New()
+	// Suppressions store the normalized pair (smaller uuid first). Force
+	// noteA to be the larger uuid so the proposal direction is the reverse
+	// of the stored order — a direction-only Blocks check would miss it.
+	if bytes.Compare(noteA[:], noteB[:]) < 0 {
+		noteA, noteB = noteB, noteA
+	}
+
+	// Rejection was recorded when the user deleted the B→A link; the model
+	// now proposes A→B — still blocked.
+	rejectedType := "related"
+	suppression := link.NewSuppression(noteB, noteA, &rejectedType, nil)
+
+	embRepo.On("FindSimilarNotes", context.Background(), noteA, 2).Return([]SimilarNote{
+		{NoteID: noteB, Score: 0.95},
+	}, nil)
+	linkRepo.On("FindBySource", context.Background(), noteA).Return([]*link.Link{}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{noteA}).Return([]*link.Suppression{suppression}, nil)
+
+	created, err := gen.GenerateForNote(context.Background(), noteA)
+	assert.NoError(t, err)
+	assert.Empty(t, created)
+	linkRepo.AssertNotCalled(t, "Save", mock.Anything, mock.Anything)
+}
+
+// A NULL-type rejection blocks any proposal; a typed rejection for another
+// type does not block "related".
+func TestGammaLinkGenerator_NullVsTypedSuppression(t *testing.T) {
+	embRepo := new(mockEmbeddingRepoForGamma)
+	linkRepo := new(mockBatchLinkRepoForGamma)
+	gen := NewGammaLinkGenerator(embRepo, linkRepo, 3, 0.6)
+
+	sourceID := uuid.New()
+	nullRejected := uuid.New()
+	otherTypeRejected := uuid.New()
+	freeTarget := uuid.New()
+
+	suppressNull := link.NewSuppression(sourceID, nullRejected, nil, nil)
+	customType := "custom"
+	suppressCustom := link.NewSuppression(sourceID, otherTypeRejected, &customType, nil)
+
+	embRepo.On("FindSimilarNotes", context.Background(), sourceID, 3).Return([]SimilarNote{
+		{NoteID: nullRejected, Score: 0.95},
+		{NoteID: otherTypeRejected, Score: 0.9},
+		{NoteID: freeTarget, Score: 0.85},
+	}, nil)
+	linkRepo.On("FindBySource", context.Background(), sourceID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return(
+		[]*link.Suppression{suppressNull, suppressCustom}, nil)
+
+	var saved []*link.Link
+	linkRepo.On("Save", context.Background(), mock.AnythingOfType("*link.Link")).Run(func(args mock.Arguments) {
+		saved = append(saved, args.Get(1).(*link.Link))
+	}).Return(nil)
+
+	created, err := gen.GenerateForNote(context.Background(), sourceID)
+	assert.NoError(t, err)
+	require.Len(t, created, 2)
+	assert.Equal(t, otherTypeRejected, created[0].TargetNoteID(),
+		"a 'custom' rejection must not block a 'related' proposal")
+	assert.Equal(t, freeTarget, created[1].TargetNoteID())
+}
+
+// PlanForNotes reports how many candidates were discarded by rejections —
+// the regenerate --dry-run output names this count.
+func TestGammaLinkGenerator_PlanForNotesCountsSuppressed(t *testing.T) {
+	embRepo := new(mockEmbeddingRepoForGamma)
+	linkRepo := new(mockBatchLinkRepoForGamma)
+	gen := NewGammaLinkGenerator(embRepo, linkRepo, 3, 0.6)
+
+	sourceID := uuid.New()
+	rejected := uuid.New()
+	freeTarget := uuid.New()
+
+	rejectedType := "related"
+	suppression := link.NewSuppression(sourceID, rejected, &rejectedType, nil)
+
+	embRepo.On("FindSimilarNotesBatch", context.Background(), []uuid.UUID{sourceID}, 3).Return(map[uuid.UUID][]SimilarNote{
+		sourceID: {
+			{NoteID: rejected, Score: 0.95},
+			{NoteID: freeTarget, Score: 0.9},
+		},
+	}, nil)
+	linkRepo.On("FindBySourceIDs", context.Background(), []uuid.UUID{sourceID}).Return(map[uuid.UUID][]*link.Link{}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return([]*link.Suppression{suppression}, nil)
+
+	planned, suppressedCount, err := gen.PlanForNotes(context.Background(), []uuid.UUID{sourceID})
+	assert.NoError(t, err)
+	assert.Equal(t, 1, suppressedCount, "dry-run must name the number of rejected candidates")
+	require.Len(t, planned[sourceID], 1)
+	assert.Equal(t, freeTarget, planned[sourceID][0].TargetNoteID())
+}
+
+// A manual link that won the race during regeneration produces a
+// duplicate-key error on Save — the proposal is skipped, not fatal.
+func TestGammaLinkGenerator_ConcurrentManualLinkSkipsDuplicate(t *testing.T) {
+	embRepo := new(mockEmbeddingRepoForGamma)
+	linkRepo := new(mockBatchLinkRepoForGamma)
+	gen := NewGammaLinkGenerator(embRepo, linkRepo, 2, 0.6)
+
+	sourceID := uuid.New()
+	target := uuid.New()
+
+	embRepo.On("FindSimilarNotes", context.Background(), sourceID, 2).Return([]SimilarNote{
+		{NoteID: target, Score: 0.9},
+	}, nil)
+	linkRepo.On("FindBySource", context.Background(), sourceID).Return([]*link.Link{}, nil)
+	linkRepo.On("FindSuppressionsForNotes", context.Background(), []uuid.UUID{sourceID}).Return(nil, nil)
+	linkRepo.On("Save", context.Background(), mock.AnythingOfType("*link.Link")).Return(link.ErrDuplicateLink)
+
+	created, err := gen.GenerateForNote(context.Background(), sourceID)
+	assert.NoError(t, err, "a duplicate from a concurrent manual link must not fail the run")
+	assert.Len(t, created, 1)
 }

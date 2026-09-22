@@ -145,6 +145,7 @@ export function createGraphCanvasState() {
       source: string;
       target: string;
       link_type: string;
+      source_type?: string;
     }) => void
   ) {
     if (hoveredLink && onLinkDelete) {
@@ -153,6 +154,30 @@ export function createGraphCanvasState() {
         source: hoveredLink.source,
         target: hoveredLink.target,
         link_type: hoveredLink.link_type,
+        source_type: hoveredLink.source_type,
+      });
+    }
+    hoveredLink = null;
+  }
+
+  function handleLinkConfirm(
+    onLinkConfirm?: (link: {
+      id?: string;
+      source: string;
+      target: string;
+      link_type: string;
+      weight: number;
+      source_type?: string;
+    }) => void
+  ) {
+    if (hoveredLink && onLinkConfirm) {
+      onLinkConfirm({
+        id: hoveredLink.id,
+        source: hoveredLink.source,
+        target: hoveredLink.target,
+        link_type: hoveredLink.link_type,
+        weight: hoveredLink.weight,
+        source_type: hoveredLink.source_type,
       });
     }
     hoveredLink = null;
@@ -249,6 +274,7 @@ export function createGraphCanvasState() {
     cancelUndo,
     handleLinkEdit,
     handleLinkDelete,
+    handleLinkConfirm,
     openHelpModal,
     closeHelpModal,
     handleCloseSearch,

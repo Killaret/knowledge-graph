@@ -73,7 +73,7 @@ func main() {
 		log.Fatalf("failed to list existing gamma links: %v", err)
 	}
 
-	planned, err := gammaGen.PlanForNotes(ctx, noteIDs)
+	planned, suppressedCount, err := gammaGen.PlanForNotes(ctx, noteIDs)
 	if err != nil {
 		log.Fatalf("failed to plan regeneration: %v", err)
 	}
@@ -86,6 +86,7 @@ func main() {
 		log.Println("DRY RUN MODE - nothing will be written")
 		log.Printf("Would delete %d gamma links (manual links untouched)", len(existing))
 		log.Printf("Would create %d gamma links across %d notes", wouldCreate, len(noteIDs))
+		log.Printf("%d candidates discarded by recorded rejections (link_suppressions)", suppressedCount)
 		return
 	}
 

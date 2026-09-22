@@ -2,6 +2,7 @@ package recommendation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"knowledge-graph/internal/domain/link"
@@ -12,6 +13,7 @@ import (
 // BatchLinkRepository extends the domain link repository with batch lookups.
 type BatchLinkRepository interface {
 	link.Repository
+	link.SuppressionRepository
 	FindBySourceIDs(ctx context.Context, sourceIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, error)
 }
 
@@ -63,7 +65,12 @@ func (g *GammaLinkGenerator) GenerateForNote(ctx context.Context, noteID uuid.UU
 		return nil, fmt.Errorf("finding existing links for %s: %w", noteID, err)
 	}
 
-	return g.saveMissingGammaLinks(ctx, noteID, similar, existing)
+	suppressed, err := g.suppressedPairs(ctx, []uuid.UUID{noteID})
+	if err != nil {
+		return nil, fmt.Errorf("finding suppressions for %s: %w", noteID, err)
+	}
+
+	return g.saveMissingGammaLinks(ctx, noteID, similar, existing, suppressed, nil)
 }
 
 // GenerateForNotes creates gamma links for multiple notes in a single batch
@@ -83,9 +90,14 @@ func (g *GammaLinkGenerator) GenerateForNotes(ctx context.Context, noteIDs []uui
 		return nil, fmt.Errorf("finding existing links in batch: %w", err)
 	}
 
+	suppressed, err := g.suppressedPairs(ctx, noteIDs)
+	if err != nil {
+		return nil, fmt.Errorf("finding suppressions in batch: %w", err)
+	}
+
 	created := make(map[uuid.UUID][]*link.Link, len(noteIDs))
 	for _, noteID := range noteIDs {
-		links, err := g.saveMissingGammaLinks(ctx, noteID, similarMap[noteID], existingMap[noteID])
+		links, err := g.saveMissingGammaLinks(ctx, noteID, similarMap[noteID], existingMap[noteID], suppressed, nil)
 		if err != nil {
 			return created, err
 		}
@@ -97,34 +109,69 @@ func (g *GammaLinkGenerator) GenerateForNotes(ctx context.Context, noteIDs []uui
 // PlanForNotes computes which gamma links would be created for each note if
 // all existing gamma links were deleted first. Nothing is saved — used by the
 // regenerate command's --dry-run mode. Existing gamma links are ignored as
-// blockers because regeneration removes them before generating.
-func (g *GammaLinkGenerator) PlanForNotes(ctx context.Context, noteIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, error) {
+// blockers because regeneration removes them before generating. The second
+// return value is how many candidates were discarded by pair rejections.
+func (g *GammaLinkGenerator) PlanForNotes(ctx context.Context, noteIDs []uuid.UUID) (map[uuid.UUID][]*link.Link, int, error) {
 	if len(noteIDs) == 0 {
-		return nil, nil
+		return nil, 0, nil
 	}
 
 	similarMap, err := g.embeddingRepo.FindSimilarNotesBatch(ctx, noteIDs, g.maxOutDegree)
 	if err != nil {
-		return nil, fmt.Errorf("finding similar notes in batch: %w", err)
+		return nil, 0, fmt.Errorf("finding similar notes in batch: %w", err)
 	}
 
 	existingMap, err := g.linkRepo.FindBySourceIDs(ctx, noteIDs)
 	if err != nil {
-		return nil, fmt.Errorf("finding existing links in batch: %w", err)
+		return nil, 0, fmt.Errorf("finding existing links in batch: %w", err)
+	}
+
+	suppressed, err := g.suppressedPairs(ctx, noteIDs)
+	if err != nil {
+		return nil, 0, fmt.Errorf("finding suppressions in batch: %w", err)
 	}
 
 	planned := make(map[uuid.UUID][]*link.Link, len(noteIDs))
+	suppressedCount := 0
 	for _, noteID := range noteIDs {
-		planned[noteID] = g.selectGammaLinks(noteID, similarMap[noteID], existingMap[noteID], true)
+		planned[noteID] = g.selectGammaLinks(noteID, similarMap[noteID], existingMap[noteID], suppressed, true, &suppressedCount)
 	}
-	return planned, nil
+	return planned, suppressedCount, nil
 }
 
-func (g *GammaLinkGenerator) saveMissingGammaLinks(ctx context.Context, sourceID uuid.UUID, similar []SimilarNote, existing []*link.Link) ([]*link.Link, error) {
-	planned := g.selectGammaLinks(sourceID, similar, existing, false)
+// pairKey is a normalized (direction-free) pair of note IDs.
+type pairKey struct{ a, b uuid.UUID }
+
+// suppressedPairs loads rejections involving the given notes and returns the
+// normalized pairs that block gamma ("related") proposals.
+func (g *GammaLinkGenerator) suppressedPairs(ctx context.Context, noteIDs []uuid.UUID) (map[pairKey]bool, error) {
+	suppressions, err := g.linkRepo.FindSuppressionsForNotes(ctx, noteIDs)
+	if err != nil {
+		return nil, err
+	}
+	set := make(map[pairKey]bool, len(suppressions))
+	for _, s := range suppressions {
+		// NULL-type rejections block any link; typed rejections block only
+		// that type — the generator only ever proposes "related".
+		if s.LinkType() == nil || *s.LinkType() == "related" {
+			set[pairKey{s.NoteAID(), s.NoteBID()}] = true
+		}
+	}
+	return set, nil
+}
+
+func (g *GammaLinkGenerator) saveMissingGammaLinks(ctx context.Context, sourceID uuid.UUID, similar []SimilarNote, existing []*link.Link, suppressed map[pairKey]bool, suppressedCount *int) ([]*link.Link, error) {
+	planned := g.selectGammaLinks(sourceID, similar, existing, suppressed, false, suppressedCount)
 
 	for _, l := range planned {
 		if err := g.linkRepo.Save(ctx, l); err != nil {
+			// A manual link created concurrently on the same pair wins the
+			// race (UNIQUE on source+target+type) — the human's decision is
+			// stronger than the proposal, so the duplicate is skipped instead
+			// of aborting the whole regeneration run.
+			if errors.Is(err, link.ErrDuplicateLink) {
+				continue
+			}
 			return nil, fmt.Errorf("saving gamma link %s -> %s: %w", sourceID, l.TargetNoteID(), err)
 		}
 	}
@@ -132,10 +179,13 @@ func (g *GammaLinkGenerator) saveMissingGammaLinks(ctx context.Context, sourceID
 }
 
 // selectGammaLinks picks up to maxOutDegree candidates from similar, skipping
-// the source itself, scores below minScore and targets that already have a
-// "related" link from this source. When ignoreGammaExisting is true, existing
-// gamma links do not block a candidate (they are about to be regenerated).
-func (g *GammaLinkGenerator) selectGammaLinks(sourceID uuid.UUID, similar []SimilarNote, existing []*link.Link, ignoreGammaExisting bool) []*link.Link {
+// the source itself, scores below minScore, targets that already have a
+// "related" link from this source and pairs rejected by a human (in either
+// direction, with this type or NULL). When ignoreGammaExisting is true,
+// existing gamma links do not block a candidate (they are about to be
+// regenerated). suppressedCount, when non-nil, is incremented for every
+// candidate discarded by a rejection.
+func (g *GammaLinkGenerator) selectGammaLinks(sourceID uuid.UUID, similar []SimilarNote, existing []*link.Link, suppressed map[pairKey]bool, ignoreGammaExisting bool, suppressedCount *int) []*link.Link {
 	relatedType, err := link.NewLinkType("related")
 	if err != nil {
 		return nil
@@ -166,6 +216,13 @@ func (g *GammaLinkGenerator) selectGammaLinks(sourceID uuid.UUID, similar []Simi
 			continue
 		}
 		if existingTargets[s.NoteID] {
+			continue
+		}
+		pa, pb := link.NormalizePair(sourceID, s.NoteID)
+		if suppressed[pairKey{pa, pb}] {
+			if suppressedCount != nil {
+				*suppressedCount++
+			}
 			continue
 		}
 		if s.Score < g.minScore {

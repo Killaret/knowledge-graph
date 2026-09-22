@@ -90,6 +90,7 @@
     onNodeClick,
     onLinkEdit,
     onLinkDelete,
+    onLinkConfirm,
     onNoteCreate,
     onLinkCreate,
     onNoteDelete,
@@ -142,6 +143,15 @@
       source: string;
       target: string;
       link_type: string;
+      source_type?: string;
+    }) => void;
+    onLinkConfirm?: (link: {
+      id?: string;
+      source: string;
+      target: string;
+      link_type: string;
+      weight: number;
+      source_type?: string;
     }) => void;
     onNoteCreate?: (data: { title: string; content: string; type: string }) => void;
     onLinkCreate?: (link: {
@@ -864,6 +874,7 @@
   }}
   onLinkEdit={onLinkEdit ? () => canvasState.handleLinkEdit(onLinkEdit) : undefined}
   onLinkDelete={onLinkDelete ? () => canvasState.handleLinkDelete(onLinkDelete) : undefined}
+  onLinkConfirm={onLinkConfirm ? () => canvasState.handleLinkConfirm(onLinkConfirm) : undefined}
 />
 {#if hotkeysState.showHelpModal}
   <HelpHotkeysModal

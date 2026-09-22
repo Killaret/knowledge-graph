@@ -156,3 +156,62 @@
 
 Ошибка сеялки «Failed to create link … already_exists» (1 из 60 на прогоне 2026-09-22)
 исчезнет: попадание в gamma-пару станет повышением, а не отказом.
+
+---
+
+## Исполнение (Devin, 2026-09-22)
+
+Реализовано:
+
+- **Миграция 034** `link_suppressions`: нормализованная пара (`note_a_id < note_b_id`),
+  `link_type` NULL = «никакой связи», каскад от `notes`, `ON CONFLICT` upsert.
+- **Домен:** `Suppression` с `NormalizePair`/`Blocks`; `Link.PromoteToUser` сохраняет
+  `metadata.gamma` (score + generated_at), `created_at` и `id`; `InheritGammaProvenance`
+  для ручной связи другого типа поверх gamma.
+- **Репозиторий:** `SaveUserLink` — в одной транзакции повышение gamma / перенос
+  происхождения при другом типе / снятие отказа; `DeleteAndSuppress`; симметричный
+  `FindSuppressionsForNotes` (`note_a IN ? OR note_b IN ?`).
+- **Хендлер:** `Create` — 200 при повышении, 201 при новой, 409 ручная-на-ручную;
+  `Delete` — пишет отказ для gamma и для связей с gamma-происхождением.
+- **Генератор:** отказы фильтруют кандидатов в `GenerateForNote`, `GenerateForNotes`,
+  `PlanForNotes`; dry-run считает отброшенных; `ErrDuplicateLink` при гонке с ручным
+  созданием пропускается, а не роняет прогон.
+- **UI:** «Подтвердить связь» / «Не связаны» в тултипе gamma-связи, i18n en+ru,
+  обновление графа после действия.
+- **OpenAPI:** `POST /links` — 200 (promotion) и 201 (created); контракт зелёный.
+
+## Adversarial Phase — что нашла
+
+1. **Гонка повышение ↔ регенерация:** `saveMissingGammaLinks` падал на `23505`, когда
+   ручная строка выигрывала уникальный индекс — весь прогон regenerate умирал.
+   Лечение: `errors.Is(err, link.ErrDuplicateLink)` → кандидат пропускается. Тест
+   `TestGammaLinkGenerator_ConcurrentManualLinkSkipsDuplicate` (красный до фикса).
+2. **Отказ на уже удалённой паре:** `DeleteAndSuppress` идемпотентен (upsert отказа +
+   delete по id); второй DELETE той же строки не падает и не дублирует отказ.
+   Тест `TestDeleteAndSuppress_AlreadyDeleted`.
+3. **`link_type=NULL` vs тип:** NULL блокирует любой тип, тип — только свой; round-trip
+   NULL через БД проверен `TestSuppression_NullTypeBlocksEverything`.
+4. **Флаки симметрии:** исходный тест `SuppressionIsSymmetric` проходил случайно —
+   `Blocks` нормализует, но генератор проверяет `pairKey` напрямую, и при
+   `noteA < noteB` direction-only мутация проходила. Тест теперь принудительно ставит
+   предложение в обратном от хранимого направлении — мутация «только A→B» красная.
+
+## Мутации — прогон
+
+| Мутация | Ловит | Статус |
+|---|---|---|
+| 409 вместо повышения | `TestCreateLink_PromotesGammaLink` (assert 200) | покрыто |
+| Без `metadata.gamma` | `TestPromoteToUser_PreservesGammaProvenance` | красный прогон подтверждён |
+| Генератор игнорирует отказы | `TestGammaLinkGenerator_SuppressionBlocksCandidate` | покрыто |
+| Только одно направление | `TestGammaLinkGenerator_SuppressionIsSymmetric` | красный прогон подтверждён |
+| Создание не снимает отказ | `TestSaveUserLink_LiftsSuppression` (repo+handler) | покрыто |
+
+## Прогоны
+
+- `go test ./...` — весь backend зелёный.
+- Интеграционный сьют `TestLinkRepositoryIntegrationSuite` (testcontainers, PG15):
+  19/19 PASS включая повышение, отказы, каскад, NULL-тип, идемпотентность.
+- `svelte-check` — 0 errors / 0 warnings.
+- `TestRouterMatchesOpenAPISpec` — зелёный.
+
+Остаётся: ручная проверка с экрана (п. 11) и `check-all` без `-Quick` (п. 12).

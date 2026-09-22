@@ -42,7 +42,7 @@ func TestWorker_ComputeEmbeddingCreatesGammaLinks(t *testing.T) {
 	defer cleanup()
 
 	database.Exec("CREATE EXTENSION IF NOT EXISTS vector")
-	if err := database.AutoMigrate(&postgres.UserModel{}, &postgres.NoteModel{}, &postgres.NoteEmbeddingModel{}, &postgres.LinkModel{}); err != nil {
+	if err := database.AutoMigrate(&postgres.UserModel{}, &postgres.NoteModel{}, &postgres.NoteEmbeddingModel{}, &postgres.LinkModel{}, &postgres.LinkSuppressionModel{}); err != nil {
 		t.Fatalf("failed to migrate models: %v", err)
 	}
 
@@ -136,7 +136,7 @@ func TestWorker_GammaLinkRemovedWithTarget(t *testing.T) {
 	defer cleanup()
 
 	database.Exec("CREATE EXTENSION IF NOT EXISTS vector")
-	if err := database.AutoMigrate(&postgres.UserModel{}, &postgres.NoteModel{}, &postgres.NoteEmbeddingModel{}, &postgres.LinkModel{}); err != nil {
+	if err := database.AutoMigrate(&postgres.UserModel{}, &postgres.NoteModel{}, &postgres.NoteEmbeddingModel{}, &postgres.LinkModel{}, &postgres.LinkSuppressionModel{}); err != nil {
 		t.Fatalf("failed to migrate models: %v", err)
 	}
 

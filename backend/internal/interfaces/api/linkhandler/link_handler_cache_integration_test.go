@@ -46,6 +46,7 @@ func (s *LinkHandlerCacheIntegrationTestSuite) SetupSuite() {
 	models := []interface{}{
 		&postgres.NoteModel{},
 		&postgres.LinkModel{},
+		&postgres.LinkSuppressionModel{},
 		&postgres.NoteKeywordModel{},
 		&postgres.UserModel{},
 		&postgres.TagModel{},
