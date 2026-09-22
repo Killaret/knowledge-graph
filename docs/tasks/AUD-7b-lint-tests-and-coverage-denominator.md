@@ -1,6 +1,6 @@
 # AUD-7b. Линтер на тестах и честный знаменатель покрытия
 
-Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md), находки A-1-AUD (часть про `run.tests`) и T-3. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
+Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../archive/EXTERNAL_AUDIT_2026-09.md), находки A-1-AUD (часть про `run.tests`) и T-3. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
 
 Ставит Claude Code, реализует Devin, проверяет Claude Code.
 

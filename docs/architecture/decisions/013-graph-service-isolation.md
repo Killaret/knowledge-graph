@@ -214,4 +214,4 @@ Graph service connects to PostgreSQL with read-only credentials:
 ## References
 - [ADR 001: Layered Architecture](./001-layered-architecture.md)
 - [ADR 014: Event-Driven Cache Invalidation](./014-event-driven-cache-invalidation.md)
-- [RECOMMENDATION_ARCHITECTURE.md](../../RECOMMENDATION_ARCHITECTURE.md)
+- [RECOMMENDATION_ARCHITECTURE.md](../RECOMMENDATION_ARCHITECTURE.md)

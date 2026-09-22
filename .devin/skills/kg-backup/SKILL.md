@@ -9,7 +9,7 @@ triggers:
 
 Использовать перед любой операцией, способной уничтожить данные, и при разборе отказа «команда заблокирована, нет свежего бэкапа».
 
-Выведено из: `scripts/devops/backup-personal.ps1`, `scripts/devops/guard-personal-data.py`, `.claude/settings.json`, `docs/BACKUP.md`. При их изменении скилл проверить.
+Выведено из: `scripts/devops/backup-personal.ps1`, `scripts/devops/guard-personal-data.py`, `.claude/settings.json`, `docs/operations/BACKUP.md`. При их изменении скилл проверить.
 
 ## Что защищается
 

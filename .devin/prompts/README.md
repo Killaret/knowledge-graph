@@ -20,7 +20,7 @@ Paste the relevant prompt at the start of a new chat with any AI assistant:
 | [`ANALYSIS_PROMPT.md`](./ANALYSIS_PROMPT.md) | Strategic analysis prompt for architecture, roadmap, and trade-off discussions | English |
 | [`README.md`](./README.md) | This file | English |
 
-AI working documents are maintained and authoritative in Russian. No English counterpart is required for `docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, or `CLAUDE.md`. Product, API, and architecture documentation remains in English.
+AI working documents are maintained and authoritative in Russian. No English counterpart is required for `docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/agents/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, or `CLAUDE.md`. Product, API, and architecture documentation remains in English.
 
 ## How to use
 

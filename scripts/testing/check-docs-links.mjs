@@ -22,13 +22,11 @@ const EXTRA_FILES = new Set([".windsurfrules"]);
 // Documents that record the past rather than describe the present.
 const HISTORICAL = [
     "docs/archive",
-    "docs/3d-archive",
     "docs/tasks",
     "docs/AI_LOG.md",
     "docs/AI_HANDOFF.md",
-    "docs/EXTERNAL_AUDIT_2026-09.md",
-    "docs/AI_PROCESS_AUDIT.md",
-    "docs/MANUAL_TEST_FEEDBACK.md",
+    "docs/agents/AI_PROCESS_AUDIT.md",
+    "docs/agents/MANUAL_TEST_FEEDBACK.md",
     "CHANGELOG.md",
 ];
 

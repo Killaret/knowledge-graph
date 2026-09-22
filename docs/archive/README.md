@@ -2,7 +2,7 @@
 
 **Статус:** Исторические файлы, сохранённые для понимания эволюции проекта. Не используйте как актуальные инструкции.
 
-**Дата последнего обновления:** 2026-08-10
+**Дата последнего обновления:** 2026-09-22
 
 ---
 
@@ -37,6 +37,25 @@
 | `ROUTE_AUTH_REPORT.md` | июль 2026 | Анализ защиты роутов и авторизации |
 | `TEST_EXECUTION_REPORT.md` | июль 2026 | Лог выполнения тестов, использованный в `FINAL_TEST_REPORT.md` |
 
+### Пополнение при DOC-REORG-1 (2026-09-22)
+
+| Файл | Почему архивирован |
+|------|-------------------|
+| `ARCHITECTURE_ROADMAP.md` | Уже был помечен архивным: фазы 1–6 от апреля 2026 не совпадают с текущим планом |
+| `EXTERNAL_AUDIT_2026-09.md` | Датированный снимок внешнего аудита |
+| `AUTO_LINK_CREATION_PLAN.md` | Реализован задачей LINKS-1 |
+| `API_TEST_COVERAGE_PLAN.md` | План от июля 2026, не актуализировался |
+| `UI_MODERNIZATION_ROADMAP.md` | Дорожная карта от июля 2026, вытеснена фактической работой |
+| `MASS_IMPORT_TEST_PLAN.md` | Функция импорта выпущена |
+| `TEST_PLAN_VALIDATION_AUTOMATION.md` | План от июля 2026, не реализован в этом виде |
+| `CRITICAL_FIXES.md` | Оперативный список исправлений от июля 2026 |
+| `MANUAL_TEST_CHECKLISTS_RU.md` | Полный набор чек-листов с устаревшими частями; актуальные — COCKPIT и MINIMAL в `operations/` |
+| `MANUAL_TEST_CHECKLIST_AI_AGENTS_3D_REFACTOR.md` | Чек-лист под слитую ветку `ai-agents` / 3D-рефакторинг |
+| `YANDEX_DISK_BACKUP.md`, `YANDEX_DISK_BACKUP_EN.md`, `CLOUD_BACKUP_SETUP.md` | Устаревшие пути облачного бэкапа; каноника — `operations/BACKUP.md` |
+| `REGRESSION_TEST_PLAN_SUMMARY.md` | Сокращённая копия канонического `operations/REGRESSION_TEST_PLAN.md` |
+| `gordon/` | Пакет разборов Gordon (Docker AI), январь 2026 — Kubernetes-ориентирован |
+| `3d/` | Снятый с эксплуатации код и документы 3D-визуализации (бывший `docs/3d-archive/`) |
+
 ### Удалённые при ревизии
 
 - `IMPLEMENTATION_SUMMARY.md` — историческая сводка, устарела; актуальная история в `../../CHANGELOG.md`
@@ -50,17 +69,14 @@
 
 ```
 📁 docs/
-├── ROADMAP.md                 ← Текущий план разработки
-├── ROADMAP.ru.md              ← Текущий план разработки (RU)
-├── TESTING.md                 ← Тестирование (Go, Playwright)
-├── REGRESSION_TEST_PLAN.md    ← План регрессионного тестирования
-├── TESTING_COMMANDS.md        ← Команды для запуска тестов
-├── CONFIGURATION_EN.md        ← Env-переменные
-├── CHANGELOG.md               ← История изменений
-├── DOCKER.md                  ← Docker-развёртывание
-├── AGENTS_EN.md               ← AI-агенты и зоны ответственности
-├── architecture/decisions/    ← ADR и архитектурные решения
-└── archive/                   ← 📦 Вы здесь
+├── README.md                  ← Указатель по каталогу
+├── operations/                ← TESTING.md, REGRESSION_TEST_PLAN.md, DOCKER.md,
+│                                CONFIGURATION_*.md, BACKUP.md, чек-листы
+├── architecture/              ← C4, UML, ADR, паттерны
+├── product/                   ← LINK_TYPES, BACKLOG, IDEAS, фичи
+├── agents/                    ← Обвязка AI-агентов, журналы проверок
+├── tasks/                     ← Постановки и разборы ревью
+└── archive/                   ← 📦 Вы здесь (включая 3d/ и gordon/)
 ```
 
 ---

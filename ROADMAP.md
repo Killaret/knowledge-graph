@@ -2,11 +2,11 @@
 
 Where Knowledge Graph is going. What the project is and how to run it — [README](README.md).
 What shipped — [CHANGELOG](CHANGELOG.md). The detailed plan behind each line below —
-[docs/BACKLOG.md](docs/BACKLOG.md). Untested hypotheses — [docs/IDEAS.md](docs/IDEAS.md).
+[docs/product/BACKLOG.md](docs/product/BACKLOG.md). Untested hypotheses — [docs/product/IDEAS.md](docs/product/IDEAS.md).
 
 **Stage:** alpha. Single-user and local by design at the moment. A September 2026 audit found
 issues that block any multi-user deployment — they are listed under *Now* and tracked in
-[docs/EXTERNAL_AUDIT_2026-09.md](docs/EXTERNAL_AUDIT_2026-09.md).
+[docs/archive/EXTERNAL_AUDIT_2026-09.md](docs/archive/EXTERNAL_AUDIT_2026-09.md).
 
 ## Now
 
@@ -32,13 +32,13 @@ Correctness of the foundation, before new surface area.
 
 Honeycomb and orbital 3D layouts, zoomable navigation into a cluster, note archive and hygiene,
 Obsidian import, PWA quick capture, periodic notes, sharing between users, external integrations.
-Each is described in [docs/BACKLOG.md](docs/BACKLOG.md).
+Each is described in [docs/product/BACKLOG.md](docs/product/BACKLOG.md).
 
 ## Exploring
 
 Guardians of a cluster, factory-line visualization, leaderboards and public universes, a social
 layer, graph motion driven by graph metrics. These are hypotheses, not commitments —
-[docs/IDEAS.md](docs/IDEAS.md).
+[docs/product/IDEAS.md](docs/product/IDEAS.md).
 
 ---
 

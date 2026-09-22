@@ -9,7 +9,7 @@ triggers:
 
 Использовать при запуске E2E, BDD, визуальных тестов, полного цикла, а также при правках `scripts/testing/`.
 
-Выведено из: `scripts/testing/run-full-test-cycle.ps1`, `scripts/testing/check-all.ps1`, `scripts/testing/core-checks.tsv`, `scripts/testing/lib/phase-tracking.ps1`, `.github/workflows/_core-checks.yml`, `.windsurfrules` (раздел Testing Requirements), `docs/TESTING.md`, `docs/tasks/A-3-review-findings.md`. При их изменении скилл проверить.
+Выведено из: `scripts/testing/run-full-test-cycle.ps1`, `scripts/testing/check-all.ps1`, `scripts/testing/core-checks.tsv`, `scripts/testing/lib/phase-tracking.ps1`, `.github/workflows/_core-checks.yml`, `.windsurfrules` (раздел Testing Requirements), `docs/operations/TESTING.md`, `docs/tasks/A-3-review-findings.md`. При их изменении скилл проверить.
 
 ## Железное правило
 

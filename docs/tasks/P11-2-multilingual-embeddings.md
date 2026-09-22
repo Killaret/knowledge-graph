@@ -102,13 +102,13 @@
 
 Обновляется в том же PR, что и код, иначе разойдётся. Места, где имя модели названо прямо:
 
-- [`../ARCHITECTURE_EN.md`](../ARCHITECTURE_EN.md), строка 511 — модель и размерность;
-- [`../CONFIGURATION_RU.md`](../CONFIGURATION_RU.md), строки 599 и 612 — `model_name` и переменная `NLP_MODEL_NAME`;
-- [`../DEPLOYMENT_EN.md`](../DEPLOYMENT_EN.md), строки 53 и 400 — требования к ресурсам и пример окружения;
+- [`../ARCHITECTURE_EN.md`](../architecture/ARCHITECTURE_EN.md), строка 511 — модель и размерность;
+- [`../CONFIGURATION_RU.md`](../operations/CONFIGURATION_RU.md), строки 599 и 612 — `model_name` и переменная `NLP_MODEL_NAME`;
+- [`../DEPLOYMENT_EN.md`](../operations/DEPLOYMENT_EN.md), строки 53 и 400 — требования к ресурсам и пример окружения;
 - [`../PROJECT_REVIEW_AI_AGENTS.md`](../PROJECT_REVIEW_AI_AGENTS.md), строка 67 — описание стека.
 
 Дополнительно: новая колонка описывается там же, где документирована схема; в `CHANGELOG.md` — запись о смене модели с указанием, что требуется пересчёт эмбеддингов; в журнале [`P11-1-clustering-design-notes.md`](P11-1-clustering-design-notes.md) — фактические числа сходства, они понадобятся при подборе порога для кластеризации.
 
 ## Верификация (Claude Code)
 
-На живом тестовом стеке: пары текстов на двух языках с выводом чисел, проверка отсутствия смешивания моделей в выдаче, проверка непустых рекомендаций после пересчёта. Свидетельства — в поле «Screenshot / Logs» файла [`../MANUAL_TEST_FEEDBACK.md`](../MANUAL_TEST_FEEDBACK.md).
+На живом тестовом стеке: пары текстов на двух языках с выводом чисел, проверка отсутствия смешивания моделей в выдаче, проверка непустых рекомендаций после пересчёта. Свидетельства — в поле «Screenshot / Logs» файла [`../MANUAL_TEST_FEEDBACK.md`](../agents/MANUAL_TEST_FEEDBACK.md).

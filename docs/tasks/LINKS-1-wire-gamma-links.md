@@ -90,7 +90,7 @@ score для top-2 по всем заметкам сида, гистограмм
 3. Время `REFRESH MATERIALIZED VIEW` до и после — приложено.
 4. В графе на стенде gamma-связи отличимы визуально (существующая ветка в `LinkTooltip`).
 5. `gamma-links-regenerate --dry-run` работает; полный прогон на сиде идемпотентен.
-6. `check-all` зелёный; `docs/ARCHITECTURE_SUMMARY.md` описывает автосвязи и порог.
+6. `check-all` зелёный; `docs/architecture/ARCHITECTURE_SUMMARY.md` описывает автосвязи и порог.
 
 ## Ограничения
 

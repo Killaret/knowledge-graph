@@ -478,4 +478,4 @@ Java-сервис должен быть **обязательным шагом** 
 
 - Текущий Go-импорт: `backend/internal/infrastructure/web/import_fetcher.go:87-119`.
 - Прямой `title + content` → NLP: `backend/internal/infrastructure/queue/worker.go:137-143` (эмбеддинг), `nlp-service/app/nlp_utils.py:104-112` (YAKE).
-- План авто-связей: `docs/AUTO_LINK_CREATION_PLAN.md`.
+- План авто-связей: `docs/archive/AUTO_LINK_CREATION_PLAN.md`.

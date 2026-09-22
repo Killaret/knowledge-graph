@@ -40,7 +40,7 @@
 - тесты Go и фронтенда, BDD-шаги, E2E;
 - `nginx.conf` и `nginx.personal.conf`, если путь там упомянут;
 - Swagger-аннотации и `openAPI.yaml`;
-- документация: `docs/ARCHITECTURE_*.md`, `docs/API*`, `docs/TESTING.md`.
+- документация: `docs/ARCHITECTURE_*.md`, `docs/API*`, `docs/operations/TESTING.md`.
 
 **Проверка полноты — машинная, а не глазами.** После правки поиск по репозиторию строки `graph/all` обязан давать ноль совпадений вне истории git и вне архива. Приложи вывод этого поиска.
 

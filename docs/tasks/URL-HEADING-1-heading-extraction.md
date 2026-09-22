@@ -168,7 +168,7 @@ iframe svg`, `[role=navigation|complementary|banner|contentinfo]`, `[aria-hidden
 5. Кириллица: страницы Habr, Skillbox, Практикума из набора — в `windows-1251` и `utf-8`,
    заголовки без кракозябр (проба, вывод 10 — не потерять).
 6. Adversarial Phase: раздел «что нашла фаза» в файле задачи — обязателен по `.windsurfrules`.
-7. Документация: `docs/MASS_IMPORT_TEST_PLAN.md` и описание API импорта — новый контракт превью;
+7. Документация: `docs/archive/MASS_IMPORT_TEST_PLAN.md` и описание API импорта — новый контракт превью;
    `CHANGELOG.md`.
 
 Этап B (отдельная приёмка, после MODEL-1):

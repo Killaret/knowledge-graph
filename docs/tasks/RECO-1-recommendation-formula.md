@@ -143,7 +143,7 @@ score := alpha*graphScore + beta*semanticScore
 5. Ответ `GET /notes/:id/suggestions` содержит все три составляющие (`graph`, `semantic`,
    `keyword`) с ненулевыми значениями там, где данные есть, — проверено живьём на тест-стеке,
    вывод приложен.
-6. `docs/ARCHITECTURE_SUMMARY.md` и ADR-013 описывают, где формула и почему; старая
+6. `docs/architecture/ARCHITECTURE_SUMMARY.md` и ADR-013 описывают, где формула и почему; старая
    картина «BFS в backend» из документов убрана.
 7. `check-all` зелёный.
 

@@ -167,7 +167,7 @@ Go-тест в `backend/cmd/server/`, который строит роутер �
 Swagger UI и коллекции в Postman.
 
 Общего документа об API в `docs/` нет — есть только
-[`../API_ERRORS_EN.md`](../API_ERRORS_EN.md) про ошибки. Завести `docs/API_EN.md` по
+[`../API_ERRORS_EN.md`](../api/API_ERRORS_EN.md) про ошибки. Завести `docs/api/API_EN.md` по
 принятому именованию (`ARCHITECTURE_EN`, `DEPLOYMENT_EN`, `CONFIGURATION_EN`), добавить
 строку в указатель [`../README.md`](../README.md) и в раздел Documentation корневого
 `README.md`.
@@ -222,6 +222,6 @@ PUB-3 переименовал публичный эндпоинт графа в
 5. Пакет `backend/docs`, слепой импорт и строка `COPY` убраны.
 6. **Живая проверка:** стек поднят, `/swagger/index.html` открывается, показывает
    операции, и `GET /openapi.yaml` отдаёт файл с кодом 200. Свидетельство — в
-   [`../MANUAL_TEST_FEEDBACK.md`](../MANUAL_TEST_FEEDBACK.md), поле «Screenshot / Logs».
+   [`../MANUAL_TEST_FEEDBACK.md`](../agents/MANUAL_TEST_FEEDBACK.md), поле «Screenshot / Logs».
 7. Раздел о передаче написан, порт и URL проверены запуском, а не памятью.
 8. `check-all` зелёный.

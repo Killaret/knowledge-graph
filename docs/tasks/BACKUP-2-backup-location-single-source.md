@@ -140,7 +140,7 @@ D:/knowledge-graph$
 - `scripts/devops/check-personal-backup.ps1` и `check-personal-backup.sh` теперь смотрят в `KG_BACKUP_DIR`, а не в `<repo>/backups`; `.sh` починен — убран сломанный `REPO_ROOT`.
 - `scripts/devops/guard-personal-data.py` читает `KG_BACKUP_DIR` из `backup-policy.env` или env, разворачивает `~`/относительный путь, ищет бэкапы в правильном каталоге.
 - `docker-compose.personal.yml` использует `${KG_BACKUP_DIR:-C:/Users/89209/Desktop/my items}` вместо захардкоженного пути; `BACKUP_CLOUD_ENABLED` остаётся `false`.
-- `.env.example` и `docs/BACKUP.md`, `docs/CONFIGURATION_EN.md` обновлены.
+- `.env.example` и `docs/operations/BACKUP.md`, `docs/operations/CONFIGURATION_EN.md` обновлены.
 
 ### Мутации
 

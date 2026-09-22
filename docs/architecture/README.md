@@ -23,7 +23,7 @@
    - [Sequence: рекомендации](uml/sequence-suggestions.puml)
 5. [Архитектурные решения (ADR)](#5-архитектурные-решения-adr)
 6. [ATAM анализ](atam.md)
-7. [Конфигурация системы](../CONFIGURATION_EN.md)
+7. [Конфигурация системы](../operations/CONFIGURATION_EN.md)
 8. [Иерархическая кластеризация (спецификация)](clustering.md)
 
 ---
@@ -119,7 +119,7 @@ Cache Check → BFS Links (α=0.5) + Semantic Search (β=0.5) → Combine → Ra
 
 ## 5. Архитектурные решения (ADR)
 
-Список принятых решений с обоснованием — в папке [`decisions/`](decisions/).
+Список принятых решений с обоснованием — в папке [`decisions/`](decisions).
 
 **Краткий список:**
 1. DDD с чёткими слоями
@@ -152,7 +152,7 @@ Cache Check → BFS Links (α=0.5) + Semantic Search (β=0.5) → Combine → Ra
 ## 7. Конфигурация системы
 
 Все настраиваемые параметры описаны в отдельном документе:  
-👉 [**CONFIGURATION_EN.md**](../CONFIGURATION_EN.md)
+👉 [**CONFIGURATION_EN.md**](../operations/CONFIGURATION_EN.md)
 
 ---
 

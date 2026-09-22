@@ -201,7 +201,7 @@ redis.Options{
 - **Stop dev/personal stacks before E2E/BDD/regression** — running all stacks simultaneously causes Docker instability, port/resource conflicts, and Windows `localhost` → `::1` resolution issues in Node/Playwright
 - On Windows, prefer `http://127.0.0.1:3002` for Playwright/BDD (frontend uses same-origin `/api` and `/graph-service/api` proxies; backend direct `http://127.0.0.1:18083` is used only for setup/health checks)
 - Ensure `.env` contains `JWT_SECRET` and DB passwords matching the existing `postgres_data` / `pgdata_personal` volumes
-- See `docs/TESTING.md` for complete test stack documentation
+- See `docs/operations/TESTING.md` for complete test stack documentation
 
 **Manual Found → Automated Covered (MANDATORY):**
 - If a defect or questionable behavior is discovered during manual testing, create at least one regression test before closing the issue.
@@ -241,12 +241,12 @@ amount of green testing would have surfaced.
 **Regression Testing (MANDATORY before production deployment):**
 - **ALWAYS** run full regression cycle before production deployment
 - Run: `.\scripts\testing\run-full-test-cycle.ps1` (includes stacks identity check)
-- Regression sequence: see the canonical `docs/REGRESSION_TEST_PLAN.md`
+- Regression sequence: see the canonical `docs/operations/REGRESSION_TEST_PLAN.md`
 - Parts: Stacks identity, Docker builds, dependencies, security, infrastructure, all test layers
 - Frequency: Full (release), Quick (PR), Smoke (daily), Identity (manual testing)
 - Stacks identity check: `.\scripts\ci\check-stacks-identity.ps1` (verifies dev/personal/test consistency)
 - Exit criteria: All stacks identical, all builds succeed, all tests pass, no vulnerabilities
-- See `docs/REGRESSION_TEST_PLAN.md` for complete regression testing procedures
+- See `docs/operations/REGRESSION_TEST_PLAN.md` for complete regression testing procedures
 
 **Go table-driven tests (mandatory pattern):**
 ```go
@@ -296,9 +296,9 @@ must, in the same change:
   (`.windsurfrules` -> `.devin/skills/knowledge-graph/SKILL.md` and both master
   prompts).
 
-Applies to API contracts (`backend/openAPI.yaml`, `docs/API_EN.md`), configuration
-(`docs/CONFIGURATION_EN.md`), operational behaviour (`docs/DEPLOYMENT_EN.md`,
-`docs/DOCKER.md`), and the skills when a trap is discovered that would cost the next
+Applies to API contracts (`backend/openAPI.yaml`, `docs/api/API_EN.md`), configuration
+(`docs/operations/CONFIGURATION_EN.md`), operational behaviour (`docs/operations/DEPLOYMENT_EN.md`,
+`docs/operations/DOCKER.md`), and the skills when a trap is discovered that would cost the next
 person time.
 
 Reason: a feature nobody can find is indistinguishable from a feature that does not
@@ -357,10 +357,10 @@ After completing any task that changes behavior, configuration, architecture, Do
 - Update the relevant documentation:
   - [`.windsurfrules`](.windsurfrules) — project conventions and rules.
   - [`docs/PROJECT_REVIEW_AI_AGENTS.md`](docs/PROJECT_REVIEW_AI_AGENTS.md) — AI knowledge transfer and current state.
-  - [`docs/BACKUP.md`](docs/BACKUP.md), [`docs/TESTING.md`](docs/TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md) — subsystem docs.
-  - [`ROADMAP.md`](ROADMAP.md) — scope and roadmap. One page; detailed plans live in [`docs/BACKLOG.md`](docs/BACKLOG.md).
+  - [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md), [`docs/operations/TESTING.md`](docs/operations/TESTING.md), [`docs/operations/REGRESSION_TEST_PLAN.md`](docs/operations/REGRESSION_TEST_PLAN.md) — subsystem docs.
+  - [`ROADMAP.md`](ROADMAP.md) — scope and roadmap. One page; detailed plans live in [`docs/product/BACKLOG.md`](docs/product/BACKLOG.md).
   - [`knowledge-graph.config.json`](knowledge-graph.config.json) — new configuration options (default values, schema).
-  - [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md) — environment variables and config reference.
+  - [`docs/operations/CONFIGURATION_EN.md`](docs/operations/CONFIGURATION_EN.md) — environment variables and config reference.
 - Authoritative product, API, and architecture documentation is in Russian by default; English translations may be maintained alongside.
 - User-facing runtime content uses the configured locale through i18n keys; the committed default is English (`en`) with Russian (`ru`) support.
 - Do not create standalone docs to describe changes; update existing project docs instead.
@@ -411,7 +411,7 @@ The committed default locale is English (`en`); Russian (`ru`) is supported thro
 - Code identifiers, variable names, commit messages, and API error codes must be in English.
 - User-created note titles and bodies may use any language.
 - Authoritative product, API, and architecture documentation is in Russian by default; English translations may be maintained alongside.
-- **AI working documents are maintained in Russian** and are authoritative in that language: `docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`. No English counterpart is required for them. `.devin/prompts/MASTER_PROMPT.md` stays English for English-language chats.
+- **AI working documents are maintained in Russian** and are authoritative in that language: `docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/agents/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`. No English counterpart is required for them. `.devin/prompts/MASTER_PROMPT.md` stays English for English-language chats.
 
 ---
 

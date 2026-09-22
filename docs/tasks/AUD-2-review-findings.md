@@ -105,7 +105,7 @@ gh auth login
 gh issue create --repo Killaret/knowledge-graph   --title "Seeder cannot create the test user: role lookup scans a UUID into uuid.UUID"   --body-file docs/tasks/AUD-2-seeder-issue.md --label bug
 ```
 
-Незакрытые находки безопасности из [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md) в тело тикета намеренно не вошли — на случай, если репозиторий публичный. Определить его видимость не удалось: GitHub API ответил 403.
+Незакрытые находки безопасности из [`../EXTERNAL_AUDIT_2026-09.md`](../archive/EXTERNAL_AUDIT_2026-09.md) в тело тикета намеренно не вошли — на случай, если репозиторий публичный. Определить его видимость не удалось: GitHub API ответил 403.
 
 ## Вопрос по конструкции, отдельно от блокера
 

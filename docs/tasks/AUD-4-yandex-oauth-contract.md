@@ -1,6 +1,6 @@
 # AUD-4. Вход через Яндекс: свести маршрут, исключения и формат ответа
 
-Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md), находка F-1. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
+Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../archive/EXTERNAL_AUDIT_2026-09.md), находка F-1. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
 
 Ставит Claude Code, реализует Devin, проверяет Claude Code на живом тест-стеке.
 
@@ -72,7 +72,7 @@
 - Не трогать `/api/v1/auth/yandex/callback` — он согласован во всех четырёх источниках.
 - Не менять генерацию и проверку `state` и PKCE: это сделано в AUD-3, повторная правка рискует регрессией.
 - Не добавлять совместимость со старым путём. Это не публичный API, потребитель один.
-- Не трогать `.claude/`, `docs/EXTERNAL_AUDIT_2026-09.md`, прочие `docs/tasks/AUD-*`.
+- Не трогать `.claude/`, `docs/archive/EXTERNAL_AUDIT_2026-09.md`, прочие `docs/tasks/AUD-*`.
 - Personal-стек не поднимать.
 
 ## Критерии приёмки

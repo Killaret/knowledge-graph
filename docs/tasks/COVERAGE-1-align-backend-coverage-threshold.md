@@ -8,7 +8,7 @@
 
 ## Выполнено
 
-- В `.windsurfrules`, `docs/TESTING.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md` и `.devin/prompts/MASTER_PROMPT*.md` пороги исправлены на 70%.
+- В `.windsurfrules`, `docs/operations/TESTING.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md` и `.devin/prompts/MASTER_PROMPT*.md` пороги исправлены на 70%.
 - `scripts/testing/core-checks.tsv` и `.github/workflows/_core-checks.yml` теперь требуют **backend coverage >= 70%**.
 - Локальные `check-all.ps1` и `check-all.sh` используют тот же порог и фильтр.
 - Создан `scripts/testing/backend-coverage-total.py` — скрипт, который считает покрытие по `cover.out`, исключая не-unit пакеты (список — `scripts/testing/backend-coverage-excludes.txt`).

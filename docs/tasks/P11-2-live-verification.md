@@ -3,7 +3,7 @@
 - **Дата:** 2026-09-07
 - **Агент:** Devin
 - **Коммиты:** `42f0289`, `1397c39` (реализация P11-2), `a112560` (доработки по результатам верификации)
-- **Связанные документы:** [`P11-2-multilingual-embeddings.md`](P11-2-multilingual-embeddings.md), [`../MANUAL_TEST_FEEDBACK.md`](../MANUAL_TEST_FEEDBACK.md)
+- **Связанные документы:** [`P11-2-multilingual-embeddings.md`](P11-2-multilingual-embeddings.md), [`../MANUAL_TEST_FEEDBACK.md`](../agents/MANUAL_TEST_FEEDBACK.md)
 
 ## Что проверялось
 
@@ -95,7 +95,7 @@ frontend unit + coverage (987/987), E2E SKIP_AUTH (75 пройдено), BDD (5 
   появляется в list view (`[data-testid="note-title"]` не находится за 20с).
 
 С P11-2 не связано (фронтенд/auth не менялись). Зафиксировано в
-[`../MANUAL_TEST_FEEDBACK.md`](../MANUAL_TEST_FEEDBACK.md) → «Urgent fixes»,
+[`../MANUAL_TEST_FEEDBACK.md`](../agents/MANUAL_TEST_FEEDBACK.md) → «Urgent fixes»,
 требует триажа.
 
 ## Данные Personal-стека (инвентаризация)

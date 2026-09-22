@@ -41,7 +41,7 @@
 связи между ними главным объектом, а не побочным, не нашлось.
 
 Продуктовая модель и архитектура — авторские, как и каждое решение в
-[`docs/architecture/decisions/`](docs/architecture/decisions/): сначала гипотеза,
+[`docs/architecture/decisions/`](docs/architecture/decisions): сначала гипотеза,
 затем проработка, обсуждение с коллегами там, где это помогало, и принятие или
 отклонение по существу. Отклонённые варианты записаны рядом с принятыми, потому
 что именно они показывают ход рассуждения. Систему построил автор.
@@ -103,7 +103,7 @@ docker compose -f docker-compose.test.yml up -d --build
 | Личный | http://localhost:18084 | http://localhost:18082 | здесь лежат настоящие данные |
 | Тестовый | http://localhost:3002 | http://localhost:18083 | изолирован, одноразовый |
 
-Полная карта портов — [`docs/DOCKER.md`](docs/DOCKER.md).
+Полная карта портов — [`docs/operations/DOCKER.md`](docs/operations/DOCKER.md).
 
 ### Прямой запуск сервисов
 
@@ -148,7 +148,7 @@ Design, правила импортов проверяет ESLint.
 инвалидирует кэш через pub/sub. **NLP Service** строит эмбеддинги и извлекает
 ключевые слова.
 
-Решения зафиксированы: 18 ADR в [`docs/architecture/decisions/`](docs/architecture/decisions/),
+Решения зафиксированы: 18 ADR в [`docs/architecture/decisions/`](docs/architecture/decisions),
 модель C4 и UML — в [`docs/architecture/`](docs/architecture/README.md).
 
 ---
@@ -178,7 +178,7 @@ Design, правила импортов проверяет ESLint.
 доска — в [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md).
 
 Внешний аудит репозитория, его 22 находки и их закрытие — в
-[`docs/EXTERNAL_AUDIT_2026-09.md`](docs/EXTERNAL_AUDIT_2026-09.md).
+[`docs/archive/EXTERNAL_AUDIT_2026-09.md`](docs/archive/EXTERNAL_AUDIT_2026-09.md).
 
 ---
 
@@ -244,7 +244,7 @@ cd nlp-service && pytest
 ```
 
 Полный регрессионный цикл, поднимающий изолированный стек и убирающий его за
-собой, описан в [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md).
+собой, описан в [`docs/operations/REGRESSION_TEST_PLAN.md`](docs/operations/REGRESSION_TEST_PLAN.md).
 
 ---
 
@@ -291,14 +291,14 @@ cd frontend && npm run check    # svelte-check
 
 | Тема | Документ |
 |---|---|
-| Куда идёт проект | [`ROADMAP.md`](ROADMAP.md), [`docs/BACKLOG.md`](docs/BACKLOG.md), [`docs/IDEAS.md`](docs/IDEAS.md) |
+| Куда идёт проект | [`ROADMAP.md`](ROADMAP.md), [`docs/product/BACKLOG.md`](docs/product/BACKLOG.md), [`docs/product/IDEAS.md`](docs/product/IDEAS.md) |
 | Что уже выпущено | [`CHANGELOG.md`](CHANGELOG.md) |
-| Архитектура | [`docs/architecture/README.md`](docs/architecture/README.md), [`docs/ARCHITECTURE_SUMMARY.md`](docs/ARCHITECTURE_SUMMARY.md) |
-| Развёртывание и конфигурация | [`DEPLOY.ru.md`](DEPLOY.ru.md) · [`DEPLOY.md`](DEPLOY.md), [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md), [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md), [`docs/DOCKER.md`](docs/DOCKER.md) |
-| Тестирование | [`docs/TESTING.md`](docs/TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md), [`docs/ARGOS.md`](docs/ARGOS.md) |
-| Резервное копирование | [`docs/BACKUP.md`](docs/BACKUP.md) |
-| Авторизация graph-service | [`docs/GRAPH_SERVICE_AUTH.md`](docs/GRAPH_SERVICE_AUTH.md) |
-| Рекомендации | [`docs/RECOMMENDATION_ARCHITECTURE.md`](docs/RECOMMENDATION_ARCHITECTURE.md) |
+| Архитектура | [`docs/architecture/README.md`](docs/architecture/README.md), [`docs/architecture/ARCHITECTURE_SUMMARY.md`](docs/architecture/ARCHITECTURE_SUMMARY.md) |
+| Развёртывание и конфигурация | [`DEPLOY.ru.md`](DEPLOY.ru.md) · [`DEPLOY.md`](DEPLOY.md), [`docs/operations/DEPLOYMENT_EN.md`](docs/operations/DEPLOYMENT_EN.md), [`docs/operations/CONFIGURATION_EN.md`](docs/operations/CONFIGURATION_EN.md), [`docs/operations/DOCKER.md`](docs/operations/DOCKER.md) |
+| Тестирование | [`docs/operations/TESTING.md`](docs/operations/TESTING.md), [`docs/operations/REGRESSION_TEST_PLAN.md`](docs/operations/REGRESSION_TEST_PLAN.md), [`docs/operations/ARGOS.md`](docs/operations/ARGOS.md) |
+| Резервное копирование | [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md) |
+| Авторизация graph-service | [`docs/architecture/GRAPH_SERVICE_AUTH.md`](docs/architecture/GRAPH_SERVICE_AUTH.md) |
+| Рекомендации | [`docs/architecture/RECOMMENDATION_ARCHITECTURE.md`](docs/architecture/RECOMMENDATION_ARCHITECTURE.md) |
 
 ---
 

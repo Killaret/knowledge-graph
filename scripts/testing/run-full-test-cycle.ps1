@@ -15,7 +15,7 @@ Write-Host "  Knowledge Graph Full Test Cycle" -ForegroundColor Cyan
 Write-Host "  (Isolated Testing Model)" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "For comprehensive regression testing, see docs/REGRESSION_TEST_PLAN.md" -ForegroundColor Cyan
+Write-Host "For comprehensive regression testing, see docs/operations/REGRESSION_TEST_PLAN.md" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "[WARN]  WARNING: Dev and personal stacks will be stopped during testing" -ForegroundColor Yellow
 Write-Host ""
@@ -421,7 +421,7 @@ try {
     Write-Host "  Backend API: http://127.0.0.1:18083" -ForegroundColor White
     Write-Host ""
     Write-Host "Follow the manual test checklist:" -ForegroundColor Yellow
-    Write-Host "  docs/MANUAL_TEST_CHECKLISTS_RU.md" -ForegroundColor White
+    Write-Host "  docs/archive/MANUAL_TEST_CHECKLISTS_RU.md" -ForegroundColor White
     Write-Host ""
     Write-Host "Test user credentials:" -ForegroundColor Yellow
     Write-Host "  Login: testuser" -ForegroundColor White

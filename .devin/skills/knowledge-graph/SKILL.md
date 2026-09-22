@@ -25,12 +25,12 @@ Knowledge Graph is a note-management system with graph relationships and NLP-pow
 - Frontend: `frontend/src/{shared,components,entities,features,widgets,routes}`
 - NLP: `nlp-service/app/{main.py,models.py,nlp_utils.py}`
 - Runtime configuration: `knowledge-graph.config.json`, `config/`
-- Architecture: `docs/ARCHITECTURE_SUMMARY.md`
-- Testing: `docs/TESTING.md`, `docs/REGRESSION_TEST_PLAN.md`
+- Architecture: `docs/architecture/ARCHITECTURE_SUMMARY.md`
+- Testing: `docs/operations/TESTING.md`, `docs/operations/REGRESSION_TEST_PLAN.md`
 - Agent handoff: `docs/AI_HANDOFF.md`
 - Agent protocol: `docs/AI_AGENT_PROTOCOL.md`
-- Current audit: `docs/AI_PROCESS_AUDIT.md`
-- Roadmap: `ROADMAP.md`; детальные планы: `docs/BACKLOG.md`
+- Current audit: `docs/agents/AI_PROCESS_AUDIT.md`
+- Roadmap: `ROADMAP.md`; детальные планы: `docs/product/BACKLOG.md`
 
 ## Project Skills
 
@@ -91,7 +91,7 @@ Adversarial tests carry no special name or marker; a test earns its place by fai
 | API contract | handler DTOs, frontend API client, OpenAPI docs | backend + frontend relevant tests |
 | NLP | `nlp-service/app/main.py`, `nlp_utils.py`, tests | `cd nlp-service && pytest tests/ -v` |
 | Docker/infrastructure | all affected Compose variants and health checks | config validation and relevant health checks |
-| E2E/BDD | `docs/TESTING.md` and test scripts | isolated test stack only |
+| E2E/BDD | `docs/operations/TESTING.md` and test scripts | isolated test stack only |
 | Security | middleware, validation, rate limiting, secret flow | targeted tests plus security review |
 
 ## Current Runtime Facts

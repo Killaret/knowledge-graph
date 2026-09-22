@@ -1,6 +1,6 @@
 # AUD-6. Разведка по 125 неисполняемым BDD-сценариям
 
-Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md), находка T-1. Пересекается с A-7 в [`../AI_PROCESS_AUDIT.md`](../AI_PROCESS_AUDIT.md). Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
+Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../archive/EXTERNAL_AUDIT_2026-09.md), находка T-1. Пересекается с A-7 в [`../AI_PROCESS_AUDIT.md`](../agents/AI_PROCESS_AUDIT.md). Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
 
 Ставит Claude Code, реализует Devin, решение по результату принимает владелец.
 

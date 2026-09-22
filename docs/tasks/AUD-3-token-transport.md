@@ -1,6 +1,6 @@
 # AUD-3. Транспорт токена: query-параметр, PKCE методом plain, state на чужом флаге
 
-Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md), находки S-5, S-6. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
+Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../archive/EXTERNAL_AUDIT_2026-09.md), находки S-5, S-6. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
 
 Ставит Claude Code, реализует Devin, проверяет Claude Code.
 
@@ -60,7 +60,7 @@ if token != "" {
 
 **Конфигурация и документация**
 
-- `.env.example` и `docs/CONFIGURATION_EN.md`: убрать упоминания query-токена, если есть; отразить, что PKCE использует `S256`.
+- `.env.example` и `docs/operations/CONFIGURATION_EN.md`: убрать упоминания query-токена, если есть; отразить, что PKCE использует `S256`.
 
 ## Ограничения
 
@@ -68,7 +68,7 @@ if token != "" {
 - Не трогать `internal/auth` в части Argon2 и refresh-токенов.
 - Не менять маршрут `/api/v1/auth/yandex` и список `SkipPaths` — это AUD-4, отдельная задача. Здесь правится только содержимое OAuth-запроса и проверка `state`.
 - Не трогать graph-service: его auth разбирается в AUD-5.
-- Не трогать `.claude/`, `.devin/`, `docs/EXTERNAL_AUDIT_2026-09.md`, `docs/tasks/AUD-*.md`, `README.md`, `docs/TESTING.md`, `ROADMAP.md`.
+- Не трогать `.claude/`, `.devin/`, `docs/archive/EXTERNAL_AUDIT_2026-09.md`, `docs/tasks/AUD-*.md`, `README.md`, `docs/operations/TESTING.md`, `ROADMAP.md`.
 - Personal-стек не поднимать.
 
 ## Критерии приёмки
@@ -110,7 +110,7 @@ if token != "" {
 
 ### Поправка к находке S-6 аудита — моя ошибка
 
-В [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md) я написал, что при `code_challenge_method=plain` «challenge равен verifier». Это неверно.
+В [`../EXTERNAL_AUDIT_2026-09.md`](../archive/EXTERNAL_AUDIT_2026-09.md) я написал, что при `code_challenge_method=plain` «challenge равен verifier». Это неверно.
 
 `auth.GeneratePKCE` (`internal/auth/jwt.go:158`) **и до правки** считал challenge как `base64url(SHA256(verifier))` и возвращал `CodeChallengeMethod: "S256"`. Хардкод `"plain"` был только в параметре исходящего запроса. То есть провайдеру уходил корректный S256-хеш, помеченный как `plain`, и провайдер сравнивал бы сырой verifier с хешем — **обмен кода отказал бы полностью**.
 

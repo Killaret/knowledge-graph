@@ -11,7 +11,7 @@ const cspDirectives = {
   // No 'unsafe-inline'/'unsafe-eval' here: scripts are the primary XSS vector.
   // Vite dev mode needs 'unsafe-eval'; it must never reach the production policy.
   "script-src": dev ? ["self", "unsafe-eval"] : ["self"],
-  // TD-CSP-STYLES (docs/BACKLOG.md): ~76 inline style attributes; nonce cannot
+  // TD-CSP-STYLES (docs/product/BACKLOG.md): ~76 inline style attributes; nonce cannot
   // apply to attributes, so 'unsafe-inline' is a documented concession by the
   // owner (2026-09-08). Report-only measurement showed Chromium attributes
   // inline-style use to style-src itself (not only style-src-attr), so the

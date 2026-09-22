@@ -22,7 +22,7 @@
 | `POSTGRES_CONN_MAX_IDLE_TIME_SECONDS` | 60 |
 | `POSTGRES_POOL_STATS_INTERVAL_SECONDS` | 300 |
 
-В `.env.example`, `DEPLOY.md`, `DEPLOY.ru.md` имена приведены в соответствие (было `*_MINUTES`, реализовано в секундах по конвенции проекта); `docs/CONFIGURATION_EN.md` — секция `database.pool` в JSON-примере и блок переменных.
+В `.env.example`, `DEPLOY.md`, `DEPLOY.ru.md` имена приведены в соответствие (было `*_MINUTES`, реализовано в секундах по конвенции проекта); `docs/operations/CONFIGURATION_EN.md` — секция `database.pool` в JSON-примере и блок переменных.
 
 ## Проверка
 

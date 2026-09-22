@@ -1,8 +1,8 @@
 # Развёртывание Knowledge Graph на новой машине
 
 > Практическое руководство по запуску трёх Docker-стеков: **dev** (разработка), **personal** (личные данные) и **test** (E2E/BDD).  
-> Для production, Kubernetes и CI/CD детали смотри [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md).  
-> Тестирование — [`docs/TESTING.md`](docs/TESTING.md), бэкапы — [`docs/BACKUP.md`](docs/BACKUP.md), конфигурация — [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md).
+> Для production, Kubernetes и CI/CD детали смотри [`docs/operations/DEPLOYMENT_EN.md`](docs/operations/DEPLOYMENT_EN.md).  
+> Тестирование — [`docs/operations/TESTING.md`](docs/operations/TESTING.md), бэкапы — [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md), конфигурация — [`docs/operations/CONFIGURATION_EN.md`](docs/operations/CONFIGURATION_EN.md).
 
 ---
 
@@ -211,7 +211,7 @@ cp .env.example .env
 | `MONGO_DATABASE` | `knowledge_graph` | Имя MongoDB базы. |
 
 Остальные переменные можно оставить по умолчанию.  
-Если планируешь облачный бэкап, добавь `BACKUP_YANDEX_TOKEN` **в окружение**, а не в `.env` — см. [`docs/BACKUP.md`](docs/BACKUP.md) и `SEC-2` в [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md).
+Если планируешь облачный бэкап, добавь `BACKUP_YANDEX_TOKEN` **в окружение**, а не в `.env` — см. [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md) и `SEC-2` в [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md).
 
 ---
 
@@ -2098,15 +2098,15 @@ docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "S
 - **Не удаляй** Personal-тома `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal` без бэкапа.
 - **Не коммить** `.env` и `huggingface_cache`.
 - **Не запускай** E2E/BDD против Personal-стека: для этого есть изолированный test-стек.
-- **Не правь** `docker-compose.personal.yml`, если не уверен в портах и томах — сначала прочитай [`docs/DOCKER.md`](docs/DOCKER.md).
+- **Не правь** `docker-compose.personal.yml`, если не уверен в портах и томах — сначала прочитай [`docs/operations/DOCKER.md`](docs/operations/DOCKER.md).
 
 ---
 
 ## Связанные документы
 
-- [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md) — production и Kubernetes.
-- [`docs/TESTING.md`](docs/TESTING.md) — тест-стек, регрессия, Playwright.
-- [`docs/BACKUP.md`](docs/BACKUP.md) — бэкапы Personal.
-- [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md) — переменные среды и `knowledge-graph.config.json`.
-- [`docs/DOCKER.md`](docs/DOCKER.md) — карта портов и томов.
-- [`docs/GRAPH_SERVICE_AUTH.md`](docs/GRAPH_SERVICE_AUTH.md) — авторизация graph-service.
+- [`docs/operations/DEPLOYMENT_EN.md`](docs/operations/DEPLOYMENT_EN.md) — production и Kubernetes.
+- [`docs/operations/TESTING.md`](docs/operations/TESTING.md) — тест-стек, регрессия, Playwright.
+- [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md) — бэкапы Personal.
+- [`docs/operations/CONFIGURATION_EN.md`](docs/operations/CONFIGURATION_EN.md) — переменные среды и `knowledge-graph.config.json`.
+- [`docs/operations/DOCKER.md`](docs/operations/DOCKER.md) — карта портов и томов.
+- [`docs/architecture/GRAPH_SERVICE_AUTH.md`](docs/architecture/GRAPH_SERVICE_AUTH.md) — авторизация graph-service.

@@ -5,7 +5,7 @@
 ## Что подтвердилось
 
 - `node scripts/testing/check-docs-links.mjs .` на текущем дереве — зелёный, exit 0.
-- Битая ссылка в актуальном документе ловится: `docs/TESTING.md` + `[dead](./no-such-file-xyz.md)` → `Broken local links (1): docs/TESTING.md -> ./no-such-file-xyz.md`, exit 1.
+- Битая ссылка в актуальном документе ловится: `docs/operations/TESTING.md` + `[dead](./no-such-file-xyz.md)` → `Broken local links (1): docs/operations/TESTING.md -> ./no-such-file-xyz.md`, exit 1.
 - Несуществующий npm-таргет в актуальном документе ловится: `npm run no-such-target-xyz` → `npm targets that do not exist`, exit 1.
 - npm-таргет в историческом документе (`docs/AI_LOG.md`) не ловится — exit 0, как заявлено.
 - Фаза `docs-links` есть и в манифесте `scripts/testing/core-checks.tsv`, и в CI: `.github/workflows/_core-checks.yml:239`.

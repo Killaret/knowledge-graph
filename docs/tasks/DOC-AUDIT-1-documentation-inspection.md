@@ -35,16 +35,16 @@
    обновление» про Allotropic-carbon. Свести или пометить роли.
 3. **`AGENTS.md` / `AGENTS_EN.md`** — индекс сам отмечает «версии расходятся,
    сведение запланировано»; задача не заведена.
-4. **`docs/gordon/`** — физически не в `archive/`, хотя по сути архив.
+4. **`docs/archive/gordon/`** — физически не в `archive/`, хотя по сути архив.
    Перемещение ломает ничего (ссылок нет), но это реструктуризация — на
    владельца/Claude.
-5. **`docs/bookmarklet.js`** — исполняемый код внутри `docs/`; на него
+5. **`docs/product/bookmarklet.js`** — исполняемый код внутри `docs/`; на него
    ссылается только `BOOKMARKLET.md`. Работает, но необычно.
 6. **`NOTE_ERROR_CORRECTION_PLAN.md`, `UI_MODERNIZATION_ROADMAP.md`,
    `OBSIDIAN_IMPORT_SPEC.md`, `API_TEST_COVERAGE_PLAN.md`** — статусы
    «⏳ Запланировано» с июля; не сверено, какие части уже сделаны. Массовая
    сверка планов с кодом — отдельная задача.
-7. **`docs/3d-archive/frontend`** — снятый с эксплуатации код рядом с доками;
+7. **`docs/archive/3d/frontend`** — снятый с эксплуатации код рядом с доками;
    индекс помечает, физическое место ок.
 
 ## NLP-4 — процессная находка
@@ -73,8 +73,8 @@
 | Агенты | `AGENTS.md`/`AGENTS_EN`, `CLAUDE.md`, `AI_AGENT_SETUP`, `AI_AGENT_PROTOCOL` | `AGENTS_EN` дублирует `AGENTS` и уже разошёлся — оставить RU каноническим (по правилу языка) или сделать EN тонким указателем |
 | Планы с июльским статусом | `AUTO_LINK_CREATION_PLAN` (исправлен), `NOTE_ERROR_CORRECTION_PLAN`, `UI_MODERNIZATION_ROADMAP`, `API_TEST_COVERAGE_PLAN`, `OBSIDIAN_IMPORT_SPEC` | сверить с кодом: сделанное → archive, живое → в BACKLOG |
 | Типы связей | `LINK_TYPES`+`_RU`, `LINKS_CHEATSHEET`, `GRAPH_LINKS_VISUALIZATION` | один документ «связи»: типы + отображение + `source_type` (user/gamma) — сейчас gamma в трёх местах не упомянут явно |
-| `docs/gordon/` | 11 файлов, январь 2026 | переместить в `archive/gordon/` — физически туда, где уже лежит архив |
-| `docs/3d-archive/` | снятый код | слить в `archive/3d/` — одна точка архива вместо двух |
+| `docs/archive/gordon/` | 11 файлов, январь 2026 | переместить в `archive/gordon/` — физически туда, где уже лежит архив |
+| `docs/archive/3d/` | снятый код | слить в `archive/3d/` — одна точка архива вместо двух |
 
 ### Предлагаемая иерархия
 

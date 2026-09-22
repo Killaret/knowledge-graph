@@ -11,7 +11,7 @@ Before proposing any code, design, or documentation change, read:
 1. [`.windsurfrules`](../../.windsurfrules) — the single normative source for AI-assisted development.
 2. [`.devin/skills/knowledge-graph/SKILL.md`](../skills/knowledge-graph/SKILL.md) — Devin-specific workflow and task routing.
 3. [`docs/PROJECT_REVIEW_AI_AGENTS.md`](../../docs/PROJECT_REVIEW_AI_AGENTS.md) — current project state, recent fixes, known risks, and roadmap snapshot.
-4. [`docs/ARCHITECTURE_SUMMARY.md`](../../docs/ARCHITECTURE_SUMMARY.md) — high-level architecture and subsystem boundaries.
+4. [`docs/architecture/ARCHITECTURE_SUMMARY.md`](../../docs/architecture/ARCHITECTURE_SUMMARY.md) — high-level architecture and subsystem boundaries.
 
 If the topic touches testing, security, Docker, backup, or regression, also read the relevant subsystem doc in `docs/`.
 
@@ -86,7 +86,7 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 
 - Code identifiers, variable names, commit messages, and API error codes are in English.
 - Authoritative product, API, and architecture documentation is in Russian by default; English translations may be maintained alongside.
-- AI working documents (`docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`) are maintained and authoritative in Russian; no English counterpart is required for them. For Russian-language chats, use `MASTER_PROMPT_RU.md`.
+- AI working documents (`docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/agents/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`) are maintained and authoritative in Russian; no English counterpart is required for them. For Russian-language chats, use `MASTER_PROMPT_RU.md`.
 - UI strings, labels, toasts, placeholders, errors, and tooltips use i18n keys.
 - The committed default locale is English (`en`); Russian (`ru`) is supported through the same i18n keys.
 - User-created note titles and bodies may use any language.
@@ -142,7 +142,7 @@ A change is finished when it is **covered by tests and written down**. Both, not
 - or create it, if the area has none;
 - and update the derived copies when the change touches a norm (`.windsurfrules` -> `.devin/skills/knowledge-graph/SKILL.md` and both master prompts).
 
-Applies to API contracts (`backend/openAPI.yaml`, `docs/API_EN.md`), configuration (`docs/CONFIGURATION_EN.md`), operational behaviour (`docs/DEPLOYMENT_EN.md`, `docs/DOCKER.md`), and the skills when a trap is discovered that would cost the next person time.
+Applies to API contracts (`backend/openAPI.yaml`, `docs/api/API_EN.md`), configuration (`docs/operations/CONFIGURATION_EN.md`), operational behaviour (`docs/operations/DEPLOYMENT_EN.md`, `docs/operations/DOCKER.md`), and the skills when a trap is discovered that would cost the next person time.
 
 Reason: a feature nobody can find is indistinguishable from a feature that does not exist, and the person who pays for the omission is never the one who made it.
 
@@ -154,10 +154,10 @@ After any change to behavior, configuration, architecture, Docker stack, or envi
 
 - [`.windsurfrules`](../../.windsurfrules) if conventions change.
 - [`docs/PROJECT_REVIEW_AI_AGENTS.md`](../../docs/PROJECT_REVIEW_AI_AGENTS.md) for AI knowledge transfer and current state.
-- Relevant subsystem docs: `docs/TESTING.md`, `docs/REGRESSION_TEST_PLAN.md`, `docs/BACKUP.md`, etc.
-- [`ROADMAP.md`](../../ROADMAP.md) and [`docs/BACKLOG.md`](../../docs/BACKLOG.md) if scope changes.
+- Relevant subsystem docs: `docs/operations/TESTING.md`, `docs/operations/REGRESSION_TEST_PLAN.md`, `docs/operations/BACKUP.md`, etc.
+- [`ROADMAP.md`](../../ROADMAP.md) and [`docs/product/BACKLOG.md`](../../docs/product/BACKLOG.md) if scope changes.
 - [`knowledge-graph.config.json`](../../knowledge-graph.config.json) for new configuration options.
-- [`docs/CONFIGURATION_EN.md`](../../docs/CONFIGURATION_EN.md) for environment variables and config reference.
+- [`docs/operations/CONFIGURATION_EN.md`](../../docs/operations/CONFIGURATION_EN.md) for environment variables and config reference.
 
 For new AI tooling configuration (skills, prompts, rules, MCP configs, project settings), use the `.devin/` directory.
 
@@ -181,7 +181,7 @@ For new AI tooling configuration (skills, prompts, rules, MCP configs, project s
 - **API contract** → read handler DTOs, frontend API client, OpenAPI docs; run backend + frontend relevant tests.
 - **NLP** → read `nlp-service/app/main.py`, `nlp_utils.py`, models, tests; run `cd nlp-service && pytest tests/ -v`.
 - **Docker / infrastructure** → read all affected Compose variants and health checks; validate config and run health checks.
-- **E2E / BDD** → read `docs/TESTING.md` and the test scripts; use only the isolated test stack.
+- **E2E / BDD** → read `docs/operations/TESTING.md` and the test scripts; use only the isolated test stack.
 - **Security** → read middleware, validation, rate limiting, and secret flow; run targeted tests and perform a security review.
 
 ## How to act

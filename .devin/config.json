@@ -1,5 +1,5 @@
 {
-  "_comment": "Проектные разрешения Devin. Личный оверрайд — .devin/config.local.json (не в git). Деструктивные команды запрещены здесь намеренно: удаление данных Personal-стека допускается только после проверки бэкапа, см. docs/AI_PROCESS_AUDIT.md, находка B-1, и docs/AI_AGENT_PROTOCOL.md.",
+  "_comment": "Проектные разрешения Devin. Личный оверрайд — .devin/config.local.json (не в git). Деструктивные команды запрещены здесь намеренно: удаление данных Personal-стека допускается только после проверки бэкапа, см. docs/agents/AI_PROCESS_AUDIT.md, находка B-1, и docs/AI_AGENT_PROTOCOL.md.",
   "permissions": {
     "allow": [
       "Exec(go test)",

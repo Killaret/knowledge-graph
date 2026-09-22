@@ -53,14 +53,14 @@ ARGOS_REFERENCE_BRANCH: main
 
 Но два пользовательских документа по-прежнему утверждают обратное:
 
-- `docs/ARGOS.md:23`: `ai-agents for this work`;
-- `docs/ARGOS.md:99`: baseline — `ai-agents`;
-- `docs/TESTING.md:467`: baseline branch — `ai-agents for this work`.
+- `docs/operations/ARGOS.md:23`: `ai-agents for this work`;
+- `docs/operations/ARGOS.md:99`: baseline — `ai-agents`;
+- `docs/operations/TESTING.md:467`: baseline branch — `ai-agents for this work`.
 
 Воспроизведение:
 
 ```powershell
-Select-String -Path docs/ARGOS.md,docs/TESTING.md -Pattern 'ARGOS_REFERENCE_BRANCH|ai-agents'
+Select-String -Path docs/operations/ARGOS.md,docs/operations/TESTING.md -Pattern 'ARGOS_REFERENCE_BRANCH|ai-agents'
 ```
 
 Это блокирует приёмку согласно `.windsurfrules` → Documentation: изменение workflow/configuration требует обновить релевантную документацию. Нужно заменить актуальное значение на `main` и описать, что CI пока сознательно запускает только старый SKIP_AUTH visual-проект до реализации VIS-1.
@@ -73,5 +73,5 @@ Select-String -Path docs/ARGOS.md,docs/TESTING.md -Pattern 'ARGOS_REFERENCE_BRAN
 
 1. Восстановить отдельные терминальные строки CI-1 и CI-2 на доске.
 2. Удалить дублирующую табличную строку из prose-раздела «Обмен репликами», вернув связный текст.
-3. Обновить `docs/ARGOS.md` и `docs/TESTING.md` на `ARGOS_REFERENCE_BRANCH=main` и зафиксировать временное сохранение одного SKIP_AUTH-проекта до VIS-1.
+3. Обновить `docs/operations/ARGOS.md` и `docs/operations/TESTING.md` на `ARGOS_REFERENCE_BRANCH=main` и зафиксировать временное сохранение одного SKIP_AUTH-проекта до VIS-1.
 4. Повторить `docker compose ... config --quiet`, `playwright --project=visual --list` и поиск устаревшего `ai-agents`.

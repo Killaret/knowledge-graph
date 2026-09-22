@@ -22,7 +22,7 @@ BOM), все функции учёта фаз оказывались неопр�
 
 ### Мутация, ради которой всё затевалось
 
-Внёс битую ссылку в `docs/API_EN.md`, прогнал `check-all.ps1 -Quick`:
+Внёс битую ссылку в `docs/api/API_EN.md`, прогнал `check-all.ps1 -Quick`:
 
 ```
   [PASS] Frontend TypeScript

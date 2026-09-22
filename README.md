@@ -37,7 +37,7 @@ than any structure to hold them, and no tool that treated the links between them
 as the primary object rather than an afterthought.
 
 The product model and the architecture are the author's, as is every decision in
-[`docs/architecture/decisions/`](docs/architecture/decisions/) — put forward as a
+[`docs/architecture/decisions/`](docs/architecture/decisions) — put forward as a
 hypothesis, worked through, argued with colleagues where that helped, then
 accepted or rejected on the merits. The rejected options are recorded next to the
 chosen ones, because they are the part that shows the reasoning. The system was
@@ -101,7 +101,7 @@ Convenience scripts for the test stack:
 | Personal | http://localhost:18084 | http://localhost:18082 | your real data lives here |
 | Test | http://localhost:3002 | http://localhost:18083 | isolated, disposable |
 
-Full port map: [`docs/DOCKER.md`](docs/DOCKER.md).
+Full port map: [`docs/operations/DOCKER.md`](docs/operations/DOCKER.md).
 
 ### Running services directly
 
@@ -146,7 +146,7 @@ over Atomic Design, with import rules enforced by ESLint.
 the note graph, with pub/sub cache invalidation. **NLP Service** produces
 embeddings and extracts keywords.
 
-Decision records: 18 ADRs in [`docs/architecture/decisions/`](docs/architecture/decisions/),
+Decision records: 18 ADRs in [`docs/architecture/decisions/`](docs/architecture/decisions),
 C4 model and UML in [`docs/architecture/`](docs/architecture/README.md).
 
 ---
@@ -177,7 +177,7 @@ board in [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md); both are kept in Russian by
 project convention.
 
 An external audit of the repository, its 22 findings and their resolution are
-recorded in [`docs/EXTERNAL_AUDIT_2026-09.md`](docs/EXTERNAL_AUDIT_2026-09.md).
+recorded in [`docs/archive/EXTERNAL_AUDIT_2026-09.md`](docs/archive/EXTERNAL_AUDIT_2026-09.md).
 
 ---
 
@@ -244,7 +244,7 @@ cd nlp-service && pytest
 ```
 
 The full regression cycle, which raises an isolated stack and tears it down
-afterwards, is documented in [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md).
+afterwards, is documented in [`docs/operations/REGRESSION_TEST_PLAN.md`](docs/operations/REGRESSION_TEST_PLAN.md).
 
 ---
 
@@ -291,15 +291,15 @@ Directory index: [`docs/README.md`](docs/README.md).
 
 | Topic | Document |
 |---|---|
-| Where the project is going | [`ROADMAP.md`](ROADMAP.md), [`docs/BACKLOG.md`](docs/BACKLOG.md), [`docs/IDEAS.md`](docs/IDEAS.md) |
+| Where the project is going | [`ROADMAP.md`](ROADMAP.md), [`docs/product/BACKLOG.md`](docs/product/BACKLOG.md), [`docs/product/IDEAS.md`](docs/product/IDEAS.md) |
 | What shipped | [`CHANGELOG.md`](CHANGELOG.md) |
-| Architecture | [`docs/architecture/README.md`](docs/architecture/README.md), [`docs/ARCHITECTURE_SUMMARY.md`](docs/ARCHITECTURE_SUMMARY.md) |
-| Deployment and configuration | [`DEPLOY.md`](DEPLOY.md) · [`DEPLOY.ru.md`](DEPLOY.ru.md), [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md), [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md), [`docs/DOCKER.md`](docs/DOCKER.md) |
-| API contract | [`docs/API_EN.md`](docs/API_EN.md), [`backend/openAPI.yaml`](backend/openAPI.yaml) |
-| Testing | [`docs/TESTING.md`](docs/TESTING.md), [`docs/REGRESSION_TEST_PLAN.md`](docs/REGRESSION_TEST_PLAN.md), [`docs/ARGOS.md`](docs/ARGOS.md) |
-| Backup | [`docs/BACKUP.md`](docs/BACKUP.md) |
-| Graph service auth | [`docs/GRAPH_SERVICE_AUTH.md`](docs/GRAPH_SERVICE_AUTH.md) |
-| Recommendations | [`docs/RECOMMENDATION_ARCHITECTURE.md`](docs/RECOMMENDATION_ARCHITECTURE.md) |
+| Architecture | [`docs/architecture/README.md`](docs/architecture/README.md), [`docs/architecture/ARCHITECTURE_SUMMARY.md`](docs/architecture/ARCHITECTURE_SUMMARY.md) |
+| Deployment and configuration | [`DEPLOY.md`](DEPLOY.md) · [`DEPLOY.ru.md`](DEPLOY.ru.md), [`docs/operations/DEPLOYMENT_EN.md`](docs/operations/DEPLOYMENT_EN.md), [`docs/operations/CONFIGURATION_EN.md`](docs/operations/CONFIGURATION_EN.md), [`docs/operations/DOCKER.md`](docs/operations/DOCKER.md) |
+| API contract | [`docs/api/API_EN.md`](docs/api/API_EN.md), [`backend/openAPI.yaml`](backend/openAPI.yaml) |
+| Testing | [`docs/operations/TESTING.md`](docs/operations/TESTING.md), [`docs/operations/REGRESSION_TEST_PLAN.md`](docs/operations/REGRESSION_TEST_PLAN.md), [`docs/operations/ARGOS.md`](docs/operations/ARGOS.md) |
+| Backup | [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md) |
+| Graph service auth | [`docs/architecture/GRAPH_SERVICE_AUTH.md`](docs/architecture/GRAPH_SERVICE_AUTH.md) |
+| Recommendations | [`docs/architecture/RECOMMENDATION_ARCHITECTURE.md`](docs/architecture/RECOMMENDATION_ARCHITECTURE.md) |
 
 ---
 

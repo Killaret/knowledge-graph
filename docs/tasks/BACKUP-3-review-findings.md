@@ -20,7 +20,7 @@ compose-сторож `check-worker-backup-mount.py` не подключён ни
 
 ## Условие: сторож без пайплайна
 
-`grep check-worker-backup-mount core-checks.tsv .github/workflows/*.yml COMMANDS.md docs/BACKUP.md`
+`grep check-worker-backup-mount core-checks.tsv .github/workflows/*.yml COMMANDS.md docs/operations/BACKUP.md`
 — пусто. Скрипт существует, краснеет на мутации — и не запускается никем. Нужно: фаза в
 `core-checks.tsv` и шаг в CI-джобе рядом с остальными сторожами; при этом скрипт требует
 `.env` (`docker compose config` без него падает, выход 2) — в CI файла нет, значит, сторож
@@ -29,7 +29,7 @@ compose-сторож `check-worker-backup-mount.py` не подключён ни
 
 ## Мелочи
 
-- `docs/BACKUP.md`: таблица трёх производителей есть, но верхняя схема документа по-прежнему
+- `docs/operations/BACKUP.md`: таблица трёх производителей есть, но верхняя схема документа по-прежнему
   рисует cron первым — читатель шапки унесёт старую картину. Переставить или подписать.
 - Имя `backup-personal-daily-2026-09-21.sql.gz` без времени (из наблюдения постановки) так и
   не объяснено — не блокер, вопрос владельцу остаётся.

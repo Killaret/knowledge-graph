@@ -23,7 +23,7 @@
   - `kg-layers` — layer boundaries and how to check them
 
   How to write new ones: `docs/AI_AGENT_PROTOCOL.md`, section «Как писать скиллы». A skill is written after an incident, must cite real artifacts, and never duplicates the norm.
-  - Roadmap: `ROADMAP.md`; детальные планы: `docs/BACKLOG.md`
+  - Roadmap: `ROADMAP.md`; детальные планы: `docs/product/BACKLOG.md`
 
   ## Devin Workflow
   ```
@@ -32,8 +32,8 @@
 
 **Как исправить.**
 
-1. Убрать строку `- Roadmap: ROADMAP.md; детальные планы: docs/BACKLOG.md` из конца раздела `## Project Skills`.
-2. Вернуть её в `## Primary Navigation` (после `Current audit: docs/AI_PROCESS_AUDIT.md`) — так было до коммита.
+1. Убрать строку `- Roadmap: ROADMAP.md; детальные планы: docs/product/BACKLOG.md` из конца раздела `## Project Skills`.
+2. Вернуть её в `## Primary Navigation` (после `Current audit: docs/agents/AI_PROCESS_AUDIT.md`) — так было до коммита.
 
 **Всё остальное в порядке.**
 

@@ -24,9 +24,9 @@ Cursor, Continue/Koda, GitHub Copilot, and GitHub custom-agent configurations ar
 | [`.devin/prompts/MASTER_PROMPT.md`](../.devin/prompts/MASTER_PROMPT.md) | Shared master prompt for Claude, DeepSeek, and Windsurf |
 | [`.devin/prompts/ANALYSIS_PROMPT.md`](../.devin/prompts/ANALYSIS_PROMPT.md) | Strategic analysis prompt for architecture and roadmap |
 | [`.windsurf/rules.md`](../.windsurf/rules.md) | Pointer to the normative rules |
-| [`ARCHITECTURE_SUMMARY.md`](ARCHITECTURE_SUMMARY.md) | Architecture reference |
-| [`TESTING.md`](TESTING.md) | Test environments and commands |
-| [`REGRESSION_TEST_PLAN.md`](REGRESSION_TEST_PLAN.md) | Canonical regression sequence |
+| [`ARCHITECTURE_SUMMARY.md`](architecture/ARCHITECTURE_SUMMARY.md) | Architecture reference |
+| [`TESTING.md`](operations/TESTING.md) | Test environments and commands |
+| [`REGRESSION_TEST_PLAN.md`](operations/REGRESSION_TEST_PLAN.md) | Canonical regression sequence |
 | [`../ROADMAP.md`](../ROADMAP.md) | Current roadmap |
 
 ## Shared Prompts

@@ -154,4 +154,4 @@ that nobody ever removes is the same drift, only politely dressed.
   `PUB-2-graph-view-mode.md`, `PUB-3-rename-graph-endpoints.md`
 - Related work: `docs/tasks/SEC-1-note-idor.md` — object-level authorisation,
   which had to land first because it removes the barrier this ADR then opens
-- Perimeter separation: `docs/GRAPH_SERVICE_AUTH.md`, ADR 013
+- Perimeter separation: `docs/architecture/GRAPH_SERVICE_AUTH.md`, ADR 013

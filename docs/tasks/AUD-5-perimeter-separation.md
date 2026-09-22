@@ -1,6 +1,6 @@
 # AUD-5. Разделить публичный периметр и внутренний канал graph-service
 
-Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md), находки S-3 и S-7. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
+Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../archive/EXTERNAL_AUDIT_2026-09.md), находки S-3 и S-7. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
 
 Ставит Claude Code, реализует Devin, проверяет Claude Code на живом тест-стеке.
 
@@ -73,7 +73,7 @@ proxy_set_header X-Internal-Auth $http_x_internal_auth;
 - Не менять способ, которым SSR ходит в graph-service: он идёт мимо nginx и работает.
 - Не трогать разбор `Authorization: Bearer` — он корректен и проверен в аудите.
 - Не вводить TLS и CSP в этой задаче.
-- Не трогать `.claude/`, `docs/tasks/AUD-*`, `docs/EXTERNAL_AUDIT_2026-09.md`.
+- Не трогать `.claude/`, `docs/tasks/AUD-*`, `docs/archive/EXTERNAL_AUDIT_2026-09.md`.
 - Personal-стек не поднимать.
 
 ## Критерии приёмки
@@ -129,4 +129,4 @@ proxy_set_header X-Internal-Auth $http_x_internal_auth;
 
 ### Мелочь
 
-nginx появился в тест-стеке (`kg-test-nginx`, порт 18086) — раньше его там не было, контейнеров стало девять. Это правильно: без него разделение периметра нечем было бы проверить. Стоит отразить в `docs/TESTING.md` в списке портов тестового стенда, если ещё не отражено.
+nginx появился в тест-стеке (`kg-test-nginx`, порт 18086) — раньше его там не было, контейнеров стало девять. Это правильно: без него разделение периметра нечем было бы проверить. Стоит отразить в `docs/operations/TESTING.md` в списке портов тестового стенда, если ещё не отражено.

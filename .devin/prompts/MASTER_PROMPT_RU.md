@@ -11,11 +11,11 @@
 1. [`.windsurfrules`](../../.windsurfrules) — единый нормативный источник правил AI-разработки.
 2. [`.devin/skills/knowledge-graph/SKILL.md`](../skills/knowledge-graph/SKILL.md) — Devin-специфичный workflow и маршрутизация задач.
 3. [`docs/PROJECT_REVIEW_AI_AGENTS.md`](../../docs/PROJECT_REVIEW_AI_AGENTS.md) — текущее состояние, недавние исправления, известные риски и roadmap.
-4. [`docs/ARCHITECTURE_SUMMARY.md`](../../docs/ARCHITECTURE_SUMMARY.md) — высокоуровневая архитектура.
+4. [`docs/architecture/ARCHITECTURE_SUMMARY.md`](../../docs/architecture/ARCHITECTURE_SUMMARY.md) — высокоуровневая архитектура.
 
 Если тема касается тестирования, безопасности, Docker, backup или регрессии, дополнительно читайте соответствующий подсистемный документ в `docs/`.
 
-> **Примечание:** Этот промпт — рабочая версия на русском. AI-документы проекта (`docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`) авторитетны на русском; английские дубликаты для них не требуются. Для англоязычных чатов используйте `MASTER_PROMPT.md`, но в случае расхождения приоритет имеет `.windsurfrules` и этот файл.
+> **Примечание:** Этот промпт — рабочая версия на русском. AI-документы проекта (`docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/agents/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`) авторитетны на русском; английские дубликаты для них не требуются. Для англоязычных чатов используйте `MASTER_PROMPT.md`, но в случае расхождения приоритет имеет `.windsurfrules` и этот файл.
 
 ## Идентичность и стек проекта
 
@@ -88,7 +88,7 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
 
 - Кодовые идентификаторы, имена переменных, сообщения коммитов и коды API-ошибок — на английском.
 - Авторитетная продуктовая, API- и архитектурная документация — на русском по умолчанию; английский перевод может поддерживаться параллельно.
-- AI-рабочие документы (`docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`) ведутся и авторитетны на русском; английские дубликаты для них не требуются.
+- AI-рабочие документы (`docs/AI_AGENT_PROTOCOL.md`, `docs/AI_HANDOFF.md`, `docs/agents/AI_PROCESS_AUDIT.md`, `docs/PROJECT_REVIEW_AI_AGENTS.md`, `docs/tasks/*`, `CLAUDE.md`) ведутся и авторитетны на русском; английские дубликаты для них не требуются.
 - UI-строки, лейблы, тосты, плейсхолдеры, ошибки и тултипы — через i18n-ключи.
 - Дефолтная локаль приложения — English (`en`); Russian (`ru`) поддерживается через те же i18n-ключи.
 - Заголовки и тела заметок от пользователя могут быть на любом языке.
@@ -142,7 +142,7 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
 - или создать его, если такого документа нет;
 - и обновить производные копии, если изменение касается нормы (`.windsurfrules` → `.devin/skills/knowledge-graph/SKILL.md` и оба мастер-промпта).
 
-Касается контрактов API (`backend/openAPI.yaml`, `docs/API_EN.md`), конфигурации (`docs/CONFIGURATION_EN.md`), операционного поведения (`docs/DEPLOYMENT_EN.md`, `docs/DOCKER.md`) и скиллов, когда обнаружена ловушка, которая может стоить времени следующему человеку.
+Касается контрактов API (`backend/openAPI.yaml`, `docs/api/API_EN.md`), конфигурации (`docs/operations/CONFIGURATION_EN.md`), операционного поведения (`docs/operations/DEPLOYMENT_EN.md`, `docs/operations/DOCKER.md`) и скиллов, когда обнаружена ловушка, которая может стоить времени следующему человеку.
 
 Причина: фича, которую никто не может найти, неотличима от фичи, которой нет, а платит за упущение не тот, кто его допустил.
 
@@ -154,10 +154,10 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
 
 - [`.windsurfrules`](../../.windsurfrules), если изменились конвенции.
 - [`docs/PROJECT_REVIEW_AI_AGENTS.md`](../../docs/PROJECT_REVIEW_AI_AGENTS.md) — AI knowledge transfer и текущее состояние.
-- Соответствующие подсистемные документы: `docs/TESTING.md`, `docs/REGRESSION_TEST_PLAN.md`, `docs/BACKUP.md` и т.д.
-- [`ROADMAP.md`](../../ROADMAP.md) и [`docs/BACKLOG.md`](../../docs/BACKLOG.md) — если изменился scope.
+- Соответствующие подсистемные документы: `docs/operations/TESTING.md`, `docs/operations/REGRESSION_TEST_PLAN.md`, `docs/operations/BACKUP.md` и т.д.
+- [`ROADMAP.md`](../../ROADMAP.md) и [`docs/product/BACKLOG.md`](../../docs/product/BACKLOG.md) — если изменился scope.
 - [`knowledge-graph.config.json`](../../knowledge-graph.config.json) — для новых опций конфигурации.
-- [`docs/CONFIGURATION_EN.md`](../../docs/CONFIGURATION_EN.md) — для env-переменных и конфиг reference.
+- [`docs/operations/CONFIGURATION_EN.md`](../../docs/operations/CONFIGURATION_EN.md) — для env-переменных и конфиг reference.
 
 Новая AI-инструментальная конфигурация (skills, prompts, rules, MCP configs, project settings) — в директории `.devin/`.
 
@@ -181,7 +181,7 @@ Cursor, Continue/Koda, GitHub Copilot и GitHub custom-agent конфигура�
 - **API contract** — читайте DTO хендлеров, frontend API client, OpenAPI-доку; запускайте backend + frontend тесты.
 - **NLP** — читайте `nlp-service/app/main.py`, `nlp_utils.py`, models, tests; запускайте `cd nlp-service && pytest tests/ -v`.
 - **Docker / infrastructure** — читайте все затронутые Compose-варианты и health checks; валидируйте конфиг и запускайте health checks.
-- **E2E / BDD** — читайте `docs/TESTING.md` и тестовые скрипты; используйте только изолированный test stack.
+- **E2E / BDD** — читайте `docs/operations/TESTING.md` и тестовые скрипты; используйте только изолированный test stack.
 - **Security** — читайте middleware, валидацию, rate limiting и поток секретов; запускайте target- тесты и делайте security review.
 
 ## Как вести себя

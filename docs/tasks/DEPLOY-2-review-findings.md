@@ -73,4 +73,4 @@ Error response from daemon: Get "https://registry-1.docker.io/v2/": unauthorized
 - Тег `YYYY-MM-DD-<sha>` плюс подвижный `main` — ровно то, что просила постановка.
 - Падение на просроченном токене — **красным**, а не молчаливым пропуском: правильно, иначе
   истёкший токен никто бы не заметил.
-- `docs/DEPLOYMENT_EN.md` и `docs/API_EN.md` описывают семантику тегов заранее.
+- `docs/operations/DEPLOYMENT_EN.md` и `docs/api/API_EN.md` описывают семантику тегов заранее.

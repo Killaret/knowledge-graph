@@ -559,6 +559,6 @@ func (s *ABTestStrategy) CalculateSimilarity(kw1, kw2 []KeywordWithWeight) float
 - **Hybrid approaches**: Combine embedding-based with keyword-based
 
 ## References
-- [RECOMMENDATION_ARCHITECTURE.md](../../RECOMMENDATION_ARCHITECTURE.md)
+- [RECOMMENDATION_ARCHITECTURE.md](../RECOMMENDATION_ARCHITECTURE.md)
 - [Strategy Pattern (GoF)](https://en.wikipedia.org/wiki/Strategy_pattern)
 - [Similarity Metrics in NLP](https://nlp.stanford.edu/IR-book/html/htmledition/definition-of-similarity-1.html)

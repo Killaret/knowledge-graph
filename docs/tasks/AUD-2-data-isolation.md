@@ -1,6 +1,6 @@
 # AUD-2. Изоляция данных: учётка в миграции, SKIP_AUTH без границ, публичный кеш приватных ответов
 
-Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md), находки S-1, S-2, S-4. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
+Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../archive/EXTERNAL_AUDIT_2026-09.md), находки S-1, S-2, S-4. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
 
 Ставит Claude Code, реализует Devin, проверяет Claude Code на изолированном тест-стеке.
 
@@ -58,7 +58,7 @@ return db.Where("creator_id = ?", userID.String())
 
 - Ввести `AppEnv` со значениями `development`, `test`, `production`. Источник — `APP_ENV`, затем JSON-конфиг, дефолт `development`.
 - Добавить предикат вида `IsTest()` / `IsProduction()` — им пользуется часть 2.
-- Отразить опцию в `knowledge-graph.config.json` и `docs/CONFIGURATION_EN.md`.
+- Отразить опцию в `knowledge-graph.config.json` и `docs/operations/CONFIGURATION_EN.md`.
 
 **Сидер** (`backend/cmd/seed/main.go`)
 
@@ -104,7 +104,7 @@ return db.Where("creator_id = ?", userID.String())
 - Не трогать анонимную ветку `applyNoteScope` (`note_repo.go:46-48`) — она работает верно и служит образцом.
 - Не менять состав ролей и разрешений из миграции 016.
 - Не переписывать `RunMigrations`: условная логика по окружению в раннере не нужна и не запрашивается.
-- Не трогать `.claude/`, `.devin/`, `docs/EXTERNAL_AUDIT_2026-09.md`, `docs/tasks/AUD-*.md`, `README.md`, `docs/TESTING.md`, `ROADMAP.md` — там параллельно работает Claude Code.
+- Не трогать `.claude/`, `.devin/`, `docs/archive/EXTERNAL_AUDIT_2026-09.md`, `docs/tasks/AUD-*.md`, `README.md`, `docs/operations/TESTING.md`, `ROADMAP.md` — там параллельно работает Claude Code.
 - Personal-стек не поднимать. Проверка — только на изолированном тест-стеке.
 - **Миграция 029 применится к personal-базе при следующем подъёме стека.** Перед этим нужен свежий бэкап — но поднимать personal-стек в рамках этой задачи не требуется, это делает владелец.
 

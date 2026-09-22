@@ -55,7 +55,7 @@
 
 - `docs/tasks/NOTE-TYPE-TAXONOMY.md`
 - `docs/tasks/NOTE-QUALITY-1-quality-loop.md`
-- `docs/CELESTIAL_BODY_SEMANTICS.md`
+- `docs/product/CELESTIAL_BODY_SEMANTICS.md`
 - `backend/internal/domain/note/entity.go`
 - `backend/internal/domain/note/type.go`
 - `frontend/src/entities/shared/model/celestial-body.ts`

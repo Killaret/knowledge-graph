@@ -9,7 +9,7 @@
 
 ## 1. Общее описание проекта
 
-**Knowledge Graph** — мультитенантное SaaS-приложение для управления заметками с графовой структурой, NLP-рекомендациями и 3D-визуализацией (`docs/ARCHITECTURE_SUMMARY.md`, `README.md`).
+**Knowledge Graph** — мультитенантное SaaS-приложение для управления заметками с графовой структурой, NLP-рекомендациями и 3D-визуализацией (`docs/architecture/ARCHITECTURE_SUMMARY.md`, `README.md`).
 
 Основные возможности:
 
@@ -303,7 +303,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 - `.windsurfrules` и `docker-compose.test.yml` — порт graph-service приведён к gRPC 19090 / HTTP 19091.
 - `docker-compose.yml` — добавлен volume `redis_data` для dev Redis.
-- Устаревшие ссылки на `src/shared/three/` актуализированы (Three.js-логика перенесена в `docs/3d-archive/frontend/src/lib/three/`).
+- Устаревшие ссылки на `src/shared/three/` актуализированы (Three.js-логика перенесена в `docs/archive/3d/frontend/src/lib/three/`).
 
 ### 9.6. Frontend i18n и строгая типизация
 
@@ -376,7 +376,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
    `CORS_ALLOWED_ORIGINS` вынесен в env, но `methods`, `headers`, `max-age` захардкожены. Для полной конфигурируемости стоит вынести их в переменные окружения.
 
 4. **Устаревшие ссылки на `src/shared/three/`**
-   Основные ссылки в `.windsurfrules` и документах исправлены, но в `docs/3d-archive/` остаётся старая иерархия (архив, не production).
+   Основные ссылки в `.windsurfrules` и документах исправлены, но в `docs/archive/3d/` остаётся старая иерархия (архив, не production).
 
 5. **Security alerts после включения Dependency graph / CodeQL**
    После включения Dependency graph, Dependabot alerts и CodeQL появился пул задач, вынесенных в отдельные issues:
@@ -401,16 +401,16 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ## 12. Ключевые файлы для быстрого старта
 
 - Главные правила: [`.windsurfrules`](../.windsurfrules).
-- Архитектура: [`docs/ARCHITECTURE_SUMMARY.md`](ARCHITECTURE_SUMMARY.md).
+- Архитектура: [`docs/architecture/ARCHITECTURE_SUMMARY.md`](architecture/ARCHITECTURE_SUMMARY.md).
 - Команды: [`COMMANDS.md`](../COMMANDS.md).
 - Backend wiring: [`backend/cmd/server/main.go`](../backend/cmd/server/main.go).
-- Frontend i18n: [`frontend/src/shared/utils/i18n.ts`](../frontend/src/shared/utils/i18n.ts), [`frontend/src/shared/utils/i18n/messages/`](../frontend/src/shared/utils/i18n/messages/).
+- Frontend i18n: [`frontend/src/shared/utils/i18n.ts`](../frontend/src/shared/utils/i18n.ts), [`frontend/src/shared/utils/i18n/messages/`](../frontend/src/shared/utils/i18n/messages).
 - Frontend entry: [`frontend/src/routes/+page.svelte`](../frontend/src/routes/+page.svelte), [`frontend/src/features/home-page/home-page.svelte.ts`](../frontend/src/features/home-page/home-page.svelte.ts).
 - NLP: [`nlp-service/Dockerfile`](../nlp-service/Dockerfile), [`nlp-service/app/main.py`](../nlp-service/app/main.py).
-- Backup: [`docs/BACKUP.md`](BACKUP.md), [`knowledge-graph.config.json`](../knowledge-graph.config.json).
+- Backup: [`docs/operations/BACKUP.md`](operations/BACKUP.md), [`knowledge-graph.config.json`](../knowledge-graph.config.json).
 - Regression: [`scripts/testing/run-full-test-cycle.ps1`](../scripts/testing/run-full-test-cycle.ps1).
-- Regression plan: [`docs/REGRESSION_TEST_PLAN.md`](REGRESSION_TEST_PLAN.md).
-- Roadmap: [`ROADMAP.md`](../ROADMAP.md), детальные планы — [`BACKLOG.md`](BACKLOG.md).
+- Regression plan: [`docs/operations/REGRESSION_TEST_PLAN.md`](operations/REGRESSION_TEST_PLAN.md).
+- Roadmap: [`ROADMAP.md`](../ROADMAP.md), детальные планы — [`BACKLOG.md`](product/BACKLOG.md).
 
 ---
 
@@ -525,7 +525,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `npm run test:unit` — 103 test files, 946 tests passed.
 - Test stack пересобран и поднят.
 - Playwright (test stack): `smoke-real-auth`, `cockpit-canvas-controls`, `floating-auth-panel`, `public-graph` — 10/10 passed.
-- Ручные сценарии: см. `docs/MANUAL_TEST_CHECKLISTS_RU.md` раздел `0.6` и `docs/TESTING.md` раздел `Manual Regression Scenarios`.
+- Ручные сценарии: см. `docs/archive/MANUAL_TEST_CHECKLISTS_RU.md` раздел `0.6` и `docs/operations/TESTING.md` раздел `Manual Regression Scenarios`.
 
 ---
 
@@ -635,7 +635,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 **Артефакты.**
 
-- Базовый и «туманный» снимки: [`docs/assets/a1-3d-visual-regression/`](assets/a1-3d-visual-regression/)
+- Базовый и «туманный» снимки: [`docs/assets/a1-3d-visual-regression/`](assets/a1-3d-visual-regression)
 - Скрипт сравнения: удалён после использования.
 
 **Осталось.**
@@ -738,7 +738,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - `frontend/src/shared/api/auth.ts` не требовал изменений — клиент уже звал `/auth/yandex/login` и ожидал JSON.
 - `YandexLoginButton.svelte` использует `window.location.href = result.url`, то есть переход происходит в браузере, а не через `fetch`.
 - `README.md` очищен от пометки «OAuth2 через Яндекс сейчас не работает».
-- `docs/CONFIGURATION_EN.md` дополнен разделом **Authentication** с JSON `backend.auth` и таблицей переменных окружения, включая `YANDEX_CLIENT_ID` и `YANDEX_CLIENT_SECRET`.
+- `docs/operations/CONFIGURATION_EN.md` дополнен разделом **Authentication** с JSON `backend.auth` и таблицей переменных окружения, включая `YANDEX_CLIENT_ID` и `YANDEX_CLIENT_SECRET`.
 - В `docker-compose.yml`, `docker-compose.personal.yml` и `docker-compose.test.yml` переменные `YANDEX_CLIENT_ID` и `YANDEX_CLIENT_SECRET` теперь прокидываются в backend-сервисы из окружения или `.env`.
 - Юнит-тест `TestYandexLogin_S256` обновлён: проверяет статус `200`, парсит JSON, разбирает URL и верифицирует параметры `client_id`, `response_type`, `state`, `code_challenge` и `code_challenge_method`. Добавлен `TestYandexLogin_NotConfigured` для случая без `YandexClientID`.
 
@@ -1104,7 +1104,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 ### 26.3 NOTE-PUBLISH-DOC — publish path in API guide
 
-- `docs/API_EN.md` explicitly documents `POST /api/v1/notes/{id}/publish` and `POST /api/v1/notes/{id}/unpublish`.
+- `docs/api/API_EN.md` explicitly documents `POST /api/v1/notes/{id}/publish` and `POST /api/v1/notes/{id}/unpublish`.
 - Notes are created private; `PUT /notes/{id}` does not accept `is_public` or `source_url` (the DTO and `UpdateNoteRequest` schema no longer include them).
 - `node scripts/testing/check-docs-links.mjs .` passes.
 
@@ -1168,7 +1168,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - Go-интеграционные тесты (`graphhandler/*_test.go`) используют `/graph/public`.
 - Фронтенд/E2E/Playwright тесты (`frontend/src/shared/api/graph.test.ts`, `frontend/tests/preload-full-cycle.spec.ts`, `frontend/tests/public-graph-real-auth.spec.ts`, `tests/e2e/api-contract.spec.ts`) обновлены на `/graph/public`.
 - Скрипты проверки стеков и регресса (`scripts/ci/check-stacks-health.*`, `scripts/testing/run-full-test-cycle.ps1`) обновлены.
-- Активная документация (`docs/API_EN.md`, `docs/API_ERRORS_EN.md`, `docs/CONFIGURATION_EN.md`, `docs/DOCKER.md`, `docs/GRAPH3D.md`, `docs/LINK_TYPES*.md`, `docs/MANUAL_TEST_CHECKLISTS_RU.md`, `docs/API_TEST_COVERAGE_PLAN.md`, `docs/BACKLOG.md`, `docs/assets/graph-loading-flow.*`, `docs/DECISIONS.md`, `CHANGELOG.md`) приведена в соответствие.
+- Активная документация (`docs/api/API_EN.md`, `docs/api/API_ERRORS_EN.md`, `docs/operations/CONFIGURATION_EN.md`, `docs/operations/DOCKER.md`, `docs/architecture/GRAPH3D.md`, `docs/LINK_TYPES*.md`, `docs/archive/MANUAL_TEST_CHECKLISTS_RU.md`, `docs/archive/API_TEST_COVERAGE_PLAN.md`, `docs/product/BACKLOG.md`, `docs/assets/graph-loading-flow.*`, `docs/DECISIONS.md`, `CHANGELOG.md`) приведена в соответствие.
 - Постановки и review-findings (`docs/tasks/PUB-3-rename-graph-endpoints.md`, `PUB-2-graph-view-mode.md`, `PUB-2-review-findings.md`, `API-1-openapi-contract-and-handover.md`, `SPECS-1-review-findings.md`, `AUD-2-*`) обновлены.
 
 ### 29.2 Живая верификация
@@ -1180,7 +1180,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ### 29.3 Поиск остатков
 
 - Активный код, тесты, скрипты и документация больше не содержат действующих ссылок на старый публичный путь.
-- Оставшиеся совпадения ограничены историческими/спецификационными документами: `docs/architecture/decisions/018-public-graph-access-model.md` (ADR), `docs/EXTERNAL_AUDIT_2026-09.md` (снапшот аудита), `docs/archive/TEST_EXECUTION_REPORT.md` (архив).
+- Оставшиеся совпадения ограничены историческими/спецификационными документами: `docs/architecture/decisions/018-public-graph-access-model.md` (ADR), `docs/archive/EXTERNAL_AUDIT_2026-09.md` (снапшот аудита), `docs/archive/TEST_EXECUTION_REPORT.md` (архив).
 
 ### 29.4 Верификация
 
@@ -1337,7 +1337,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 ### 35.1 Что изменено
 
-- Три внешних AI-документа, ранее лежавших в корне (`DEPLOYMENT_OPTIMIZATION_MAP.md`, `PROJECT_REVIEW_COMPREHENSIVE.md`, `docs/GORDON_ANALYSIS.md`), перенесены в `docs/gordon/`.
+- Три внешних AI-документа, ранее лежавших в корне (`DEPLOYMENT_OPTIMIZATION_MAP.md`, `PROJECT_REVIEW_COMPREHENSIVE.md`, `docs/GORDON_ANALYSIS.md`), перенесены в `docs/archive/gordon/`.
 - Создана постановка [`tasks/GORDON-1-gordon-documents-review.md`](tasks/GORDON-1-gordon-documents-review.md) — ожидает обзора и вердикта владельца.
 - `docs/tasks/README.md` перегенерирован: 90 записей, `check-tasks-index.mjs` зелёный.
 
@@ -1361,7 +1361,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 - При отсутствии `DOCKER_USERNAME`/`DOCKER_PASSWORD` шаг публикации пропускается с сообщением, workflow остаётся зелёным.
 - `deploy` job перестал быть `echo`: теперь он верифицирует манифесты опубликованных образов и имеет `environment: production`.
 - `docker-compose.deploy.yml` по умолчанию использует `main` вместо застывшего `2026-09-08`, с комментарием про семантику тегов.
-- `docs/API_EN.md` и `docs/DEPLOYMENT_EN.md` описывают: `main` = последний зелёный `main`, датированный тег = заморозка.
+- `docs/api/API_EN.md` и `docs/operations/DEPLOYMENT_EN.md` описывают: `main` = последний зелёный `main`, датированный тег = заморозка.
 
 ### 36.2 Верификация
 
@@ -1381,7 +1381,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 ### 37.2 Изменения
 
 - `.windsurfrules`: обновлена таблица покрытия.
-- `docs/TESTING.md`: актуальные цифры и пояснение по знаменателю backend.
+- `docs/operations/TESTING.md`: актуальные цифры и пояснение по знаменателю backend.
 - `docs/PROJECT_REVIEW_AI_AGENTS.md` §6: Go unit min 70%, frontend unit target/min 70%.
 - `.devin/prompts/MASTER_PROMPT.md` и `MASTER_PROMPT_RU.md`: Go backend min 70%, frontend target/min 70%.
 - `scripts/testing/core-checks.tsv` и `.github/workflows/_core-checks.yml`: backend coverage threshold 70%.

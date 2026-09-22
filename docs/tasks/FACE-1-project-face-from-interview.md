@@ -32,7 +32,7 @@
 - Ни одного хвалебного прилагательного о самом проекте (проверка — поиск по списку:
   мощный, элегантный, продуманный, уникальный, надёжный, удобный, лучший).
 - Раздел про овер-инжиниринг подписан как названный автором, а не рецензентом.
-- Заявления о готовности совпадают с [`../BACKLOG.md`](../BACKLOG.md); расхождение
+- Заявления о готовности совпадают с [`../BACKLOG.md`](../product/BACKLOG.md); расхождение
   «✅ Implemented» против «это заглушка» устранено — см. раздел «Расхождения».
 
 ---
@@ -158,14 +158,14 @@ Obsidian обновляет ссылки автоматически, обрат�
 
 ## Расхождения, требующие правки
 
-**Готовность захвата ссылок.** [`../BACKLOG.md`](../BACKLOG.md) объявляет букмарклет и
+**Готовность захвата ссылок.** [`../BACKLOG.md`](../product/BACKLOG.md) объявляет букмарклет и
 массовый импорт URL как «✅ Implemented». Владелец называет то же самое заглушкой:
 сделано ровно столько, чтобы он мог начать пользоваться сам. Правильная формулировка —
 вторая; галочку заменить текстом о фактической готовности.
 
 **Цена DDD.** Владелец считает, что применение DDD нигде не отражено. Проверено: сам
-метод описан — [`../ARCHITECTURE_PATTERNS.md`](../ARCHITECTURE_PATTERNS.md),
-[`../ARCHITECTURE_SUMMARY.md`](../ARCHITECTURE_SUMMARY.md), `.windsurfrules`, `README`,
+метод описан — [`../ARCHITECTURE_PATTERNS.md`](../architecture/ARCHITECTURE_PATTERNS.md),
+[`../ARCHITECTURE_SUMMARY.md`](../architecture/ARCHITECTURE_SUMMARY.md), `.windsurfrules`, `README`,
 и четыре ADR (001, 002, 005, 012). Не отражена **цена**: единственное признание стоит в
 [`../architecture/decisions/001-layered-architecture.md`](../architecture/decisions/001-layered-architecture.md),
 строка 55 — «Overkill for MVP/educational project», и относится к слоям, а не к DDD.

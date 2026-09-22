@@ -1,8 +1,8 @@
 # Knowledge Graph — Deployment Guide
 
 > Practical guide for starting the **dev**, **personal**, and **test** Docker Compose stacks on a new machine.  
-> For production, Kubernetes, and CI/CD details see [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md).  
-> Testing — [`docs/TESTING.md`](docs/TESTING.md), backups — [`docs/BACKUP.md`](docs/BACKUP.md).
+> For production, Kubernetes, and CI/CD details see [`docs/operations/DEPLOYMENT_EN.md`](docs/operations/DEPLOYMENT_EN.md).  
+> Testing — [`docs/operations/TESTING.md`](docs/operations/TESTING.md), backups — [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md).
 
 ---
 
@@ -103,7 +103,7 @@ cp .env.example .env
 | `MONGO_URL` | `mongodb://kg-mongo-personal:27017` | MongoDB connection. App reads `MONGO_URL`, not `MONGODB_URL`. |
 | `MONGO_DATABASE` | `knowledge_graph` | MongoDB database name. |
 
-If you plan cloud backups, set `BACKUP_YANDEX_TOKEN` as an **environment variable**, not inside `.env` — see [`docs/BACKUP.md`](docs/BACKUP.md).
+If you plan cloud backups, set `BACKUP_YANDEX_TOKEN` as an **environment variable**, not inside `.env` — see [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md).
 
 ---
 
@@ -1989,15 +1989,15 @@ docker exec -i kg-postgres-personal psql -U personal -d knowledge_personal -c "S
 - **Do not delete** Personal named volumes `pgdata_personal`, `redisdata_personal`, `mongodbdata_personal` without a backup.
 - **Do not commit** `.env` and `huggingface_cache`.
 - **Do not run** E2E/BDD against the Personal stack: use the isolated test stack for that.
-- **Do not edit** `docker-compose.personal.yml` unless you are sure about ports and volumes — first read [`docs/DOCKER.md`](docs/DOCKER.md).
+- **Do not edit** `docker-compose.personal.yml` unless you are sure about ports and volumes — first read [`docs/operations/DOCKER.md`](docs/operations/DOCKER.md).
 
 ---
 
 ## Related documents
 
-- [`docs/DEPLOYMENT_EN.md`](docs/DEPLOYMENT_EN.md) — production and Kubernetes.
-- [`docs/TESTING.md`](docs/TESTING.md) — test stack, regression, Playwright.
-- [`docs/BACKUP.md`](docs/BACKUP.md) — Personal backups.
-- [`docs/CONFIGURATION_EN.md`](docs/CONFIGURATION_EN.md) — environment variables and runtime config.
-- [`docs/DOCKER.md`](docs/DOCKER.md) — port and volume map.
-- [`docs/GRAPH_SERVICE_AUTH.md`](docs/GRAPH_SERVICE_AUTH.md) — graph service authentication.
+- [`docs/operations/DEPLOYMENT_EN.md`](docs/operations/DEPLOYMENT_EN.md) — production and Kubernetes.
+- [`docs/operations/TESTING.md`](docs/operations/TESTING.md) — test stack, regression, Playwright.
+- [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md) — Personal backups.
+- [`docs/operations/CONFIGURATION_EN.md`](docs/operations/CONFIGURATION_EN.md) — environment variables and runtime config.
+- [`docs/operations/DOCKER.md`](docs/operations/DOCKER.md) — port and volume map.
+- [`docs/architecture/GRAPH_SERVICE_AUTH.md`](docs/architecture/GRAPH_SERVICE_AUTH.md) — graph service authentication.

@@ -12,7 +12,7 @@
 
 - `docs/PROJECT_REVIEW_AI_AGENTS.md:615`
   ```markdown
-  - Базовый и «туманный» снимки: [`docs/assets/a1-3d-visual-regression/`](../assets/a1-3d-visual-regression/)
+  - Базовый и «туманный» снимки: [`docs/assets/a1-3d-visual-regression/`](../assets/a1-3d-visual-regression)
   ```
   Файл `docs/PROJECT_REVIEW_AI_AGENTS.md` находится в `docs/`, поэтому `../assets/...` ведёт в `D:\knowledge-graph\assets\`, которого нет. Реальная директория — `D:\knowledge-graph\docs\assets\a1-3d-visual-regression\`. Правильный относительный путь: `assets/a1-3d-visual-regression/`.
 
@@ -22,7 +22,7 @@
 
 **Ложноположительное срабатывание.**
 
-`docs/MASS_IMPORT_TEST_PLAN.md:9` содержит inline-код `` `[title](url)` ``, который скрипт без учёта обратных кавычек интерпретировал как ссылку. После фильтрации inline-кода это срабатывание исчезает.
+`docs/archive/MASS_IMPORT_TEST_PLAN.md:9` содержит inline-код `` `[title](url)` ``, который скрипт без учёта обратных кавычек интерпретировал как ссылку. После фильтрации inline-кода это срабатывание исчезает.
 
 **Что нужно исправить.**
 
@@ -31,7 +31,7 @@
 
 **Всё остальное в порядке.**
 
-- `README.md`, `ROADMAP.md`, `CHANGELOG.md`, `docs/BACKLOG.md`, `docs/IDEAS.md`, `docs/README.md` — структура и связи между файлами корректны.
-- `ROADMAP.ru.md` и `docs/IDEAS_EN.md` удалены; ссылки в промптах, скилле и трёх документах перенаправлены на `ROADMAP.md` и `docs/BACKLOG.md`.
+- `README.md`, `ROADMAP.md`, `CHANGELOG.md`, `docs/product/BACKLOG.md`, `docs/product/IDEAS.md`, `docs/README.md` — структура и связи между файлами корректны.
+- `ROADMAP.ru.md` и `docs/IDEAS_EN.md` удалены; ссылки в промптах, скилле и трёх документах перенаправлены на `ROADMAP.md` и `docs/product/BACKLOG.md`.
 - `docs/README.md` индексирует 60+ файлов, помечает архивные, все ссылки из индекса валидны.
-- `docs/ARCHITECTURE_ROADMAP.md` помечен как архивный в собственном заголовке.
+- `docs/archive/ARCHITECTURE_ROADMAP.md` помечен как архивный в собственном заголовке.

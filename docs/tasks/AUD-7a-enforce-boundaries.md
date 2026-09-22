@@ -1,6 +1,6 @@
 # AUD-7a. Сделать границы слоёв и порог покрытия проверяемыми
 
-Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../EXTERNAL_AUDIT_2026-09.md), находки A-1-AUD и T-2. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
+Постановка для Devin. Источник: [`../EXTERNAL_AUDIT_2026-09.md`](../archive/EXTERNAL_AUDIT_2026-09.md), находки A-1-AUD и T-2. Порядок работы: [`../AI_AGENT_PROTOCOL.md`](../AI_AGENT_PROTOCOL.md).
 
 Ставит Claude Code, реализует Devin, проверяет Claude Code.
 
@@ -84,7 +84,7 @@
 - Не трогать `run: tests: false` и знаменатель покрытия фронтенда — это AUD-7b.
 - Не подключать `eslint-plugin-boundaries` или иные новые зависимости без необходимости: `no-restricted-imports` входит в ESLint.
 - Не менять пороги покрытия фронтенда в `vitest.config.ts`.
-- Не трогать `.claude/`, `docs/tasks/AUD-*`, `docs/EXTERNAL_AUDIT_2026-09.md`.
+- Не трогать `.claude/`, `docs/tasks/AUD-*`, `docs/archive/EXTERNAL_AUDIT_2026-09.md`.
 - Personal-стек не поднимать.
 
 ## Критерии приёмки

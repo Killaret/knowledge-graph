@@ -115,7 +115,7 @@
 `/extract_keywords` отвечает `{extractor: "keybert-0.9.0", keywords: [{keyword, surface, weight}]}`.
 Поле `keyword` — лемма, `surface` — как было в тексте. Старое поле сохраняет имя, поэтому
 существующий потребитель не ломается, но его **семантика меняется** — записать это в
-`docs/API_EN.md` и в OpenAPI явно, а не оставить читателю догадываться.
+`docs/api/API_EN.md` и в OpenAPI явно, а не оставить читателю догадываться.
 
 `backend/internal/infrastructure/nlp/client.go`: `Keyword{Keyword, Surface, Weight}` плюс
 `extractor` из ответа; `worker.go` сохраняет все три колонки.
@@ -181,9 +181,9 @@ keybert зависит от модели эмбеддингов; если её �
 
 ### 8. Документация и уборка
 
-- `docs/ARCHITECTURE_SUMMARY.md`, `docs/ARCHITECTURE_*`, `README*.md`: `yake` → `keybert`, с
+- `docs/architecture/ARCHITECTURE_SUMMARY.md`, `docs/ARCHITECTURE_*`, `README*.md`: `yake` → `keybert`, с
   одной фразой, почему.
-- `docs/API_EN.md` и `backend/openAPI.yaml`: новые поля и смена семантики `keyword`.
+- `docs/api/API_EN.md` и `backend/openAPI.yaml`: новые поля и смена семантики `keyword`.
 - `nlp-service/Dockerfile`: `yake` убрать; `keybert` данных не качает, `pymorphy3-dicts-ru`
   ставится через pip — отдельного шага загрузки не требуется; проверить офлайн-старт
   (`HF_HUB_OFFLINE=1`), как в P11-2.
