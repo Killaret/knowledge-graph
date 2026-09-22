@@ -15,3 +15,56 @@
 # Работа Devin закоммичена под именем владельца (записано в AI_LOG 2026-09-21)
 d753580ec4b4d51326789f40f1e8fc568e81ebb7
 5b594b7871b8ffdeef53c00e6ab84d31c344be8b
+
+# Работа Devin (CHUNK-1, BOARD-2, AUTHOR-2, BACKUP-3 и журнал) закоммичена
+# под именем Claude Opus 5 без трейлеров — Devin взял подпись из CLAUDE.md,
+# где она написана буквально (разбор AUTHOR-2-review-findings.md, 2026-09-22).
+# Записано в AI_LOG 2026-09-22
+fd29ff612573ba0e3956fb695b44f91e6e4b4026
+8931fd5f30faba4707a65c183c8c0c0db508e8e7
+fac80a1b77afb12e068905f53c61e710c17ccd59
+a34393ec3c80dff425ff724573d20b6865f65931
+c2ab5d2b2a5e0305ec1d512cb331cf5581e7c205
+2d7ba89ec51725d4e04eba485f30b5a6e7e3d168
+2d6d7371d9cbed7233bd9f3b5f76536592f7df80
+43d61d4451f1ffed4be4ebaf7528cc875974350c
+fd07f141db1850ae286be7fa5cb479e9e1b259be
+efb6e2888896cc8c903e6e93eec13eff9868a1d4
+127b6955bfb76ad6aec8a6b682ae4c068d4cf2c5
+7fdbf48752872b4f967e8332d613645213419b0e
+d3e6e80de7deef78d582cd1e29984fa7a9ef82c1
+28c59500a6e96a0785687076d7347478a681d046
+4b6131fae67f23614361cd647389948ccb72270d
+d2a64a02ec57a87834772e8342e633b1290cf3e1
+
+# История, всплывшая вторым правилом сторожа (разбор AUTHOR-2, 2026-09-22):
+# — 12 коммитов Devin под старым адресом devin@cognition.ai добавляют строки
+#   журнала за Devin (та же группа, что выше: непротокольная подпись);
+# — 8 коммитов под подписью Claude и 3 под подписью Devin добавляют строки
+#   журнала за другого агента — в раннем процессе один агент при
+#   синхронизации доски переписывал строки второго; новое правило это
+#   запрещает, история признаётся, не переписывается.
+# Записано в AI_LOG 2026-09-22
+dd4b8964aa497bd84d73f5ab3716d428e50083c9
+fd54376cf3f7b3518cc0dc1795a8469782ca0446
+9eaec350f9ccf37bdc7d4dd795e0e015802302c9
+bbb16099a4b37efc4d5083243bab5fc3ec121268
+010eb44ce3974f818f7bd97a1a6fdb4c395eeaa2
+af9ac3cdfb6167f88184f4caebabcdd7f79d47d1
+417fc03784f637e10b7056bcde5550b87779635f
+6cc47d5b2657d3421cab35eb6d6270d823815103
+2d97d8e1d890566ebf5219d8bbc93e062e73af92
+31da94010dc9fb624103f8beda2c40c7cdc0212c
+3c78d4c8f1150399daaf3ceac4ea4393977b52b2
+0628dbe7a88f45a763e0947eb41c5619615aad7e
+ba88528f12e9f42367888b113587007a1dcd22ed
+9f6b77bff5644d08454decbe222d1ea818e76c2b
+0e939f262eff8ea4565d831d3fb152631a3d53cf
+7a77642d891b44f275344a664ced3ee5ae4b3af1
+4deee162a3fd47f01fee6c73dbd605b5d2e32fd8
+749b7d23bf20c21bce11d1e63eb72cb313708aa7
+9b850bbf3abfc9f1b65679c866a0552c2343f9ba
+586822529f49f60dc5e9c08d1edbdf93f26acad2
+88e5b77948d480ee9c33cc23f8843f0e42c2105d
+76b3ef8f7ce28116ca2efdcf64d0c965b21c1a82
+ae413424cfda6105854cad5037ae4eeb77f2ee74

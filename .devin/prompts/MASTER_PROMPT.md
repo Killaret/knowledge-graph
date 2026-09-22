@@ -170,7 +170,8 @@ For new AI tooling configuration (skills, prompts, rules, MCP configs, project s
 5. Add a regression test for any discovered defect.
 6. Run the narrowest relevant tests first, then the required subsystem tests.
 7. Review the diff for unrelated changes and secrets before committing.
-8. Do not start the Personal stack unless the user explicitly requests it.
+8. Commit under your own agent identity: Devin signs `--author="Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"`. Never reuse another agent's signature; a `Co-Authored-By` trailer does not substitute authorship. Exact signatures are in `docs/AI_AGENT_PROTOCOL.md`.
+9. Do not start the Personal stack unless the user explicitly requests it.
 
 ## Task routing
 

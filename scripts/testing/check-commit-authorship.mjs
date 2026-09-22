@@ -59,6 +59,12 @@ const protocol = readFileSync(protocolPath, "utf8").replace(/\r\n/g, "\n");
 const agentRows = [...protocol.matchAll(/^\|\s*([^|\n]+?)\s*\|\s*`([^`]+<[^`]+>)`\s*\|/gm)];
 const agentSignatures = agentRows.map((m) => m[2].trim());
 const agentEmails = new Set(agentSignatures.map(extractEmail).filter(Boolean));
+// Agent display name -> signature email ("Devin" -> bot address, etc.).
+const agentNameToEmail = new Map(
+  agentRows
+    .map((m) => [m[1].trim(), extractEmail(m[2].trim())])
+    .filter(([, email]) => email),
+);
 
 if (agentEmails.size === 0) {
   console.error("Could not find agent signatures in docs/AI_AGENT_PROTOCOL.md");
@@ -99,15 +105,61 @@ for (const record of records) {
     .map((c) => ({ raw: c, email: extractEmail(c) }))
     .filter((c) => c.email && agentEmails.has(c.email));
 
-  if (agentCoauthors.length === 0) continue;
-
   const allMatchAuthor = agentCoauthors.every((c) => c.email === authorEmail);
-  if (!allMatchAuthor) {
+  if (agentCoauthors.length > 0 && !allMatchAuthor) {
     violations.push({
       hash,
       author,
       trailers: agentCoauthors.map((c) => c.raw),
     });
+  }
+
+  // Second rule (AUTHOR-2 review, 2026-09-22): a commit that adds a journal
+  // row for an agent (`| date | Agent | ... |` in docs/AI_LOG.md) or updates
+  // that agent's "Прочитано:" marker in docs/AI_HANDOFF.md must be authored
+  // by that agent. Sessions start and end with exactly such commits, so a
+  // swapped identity fails on the very first one — even with no trailers.
+  let diff;
+  try {
+    diff = git(
+      ["show", "--format=", "--unified=0", hash, "--", "docs/AI_LOG.md", "docs/AI_HANDOFF.md"],
+    );
+  } catch {
+    continue;
+  }
+  // Whole-file rewrites (CRLF normalization, table rebuilds) re-add every
+  // existing row — those are not new claims. Only lines absent from the
+  // parent version count.
+  const parentLines = new Set();
+  for (const path of ["docs/AI_LOG.md", "docs/AI_HANDOFF.md"]) {
+    try {
+      for (const l of git(["show", `${hash}^:${path}`]).split(/\r?\n/)) {
+        parentLines.add(l);
+      }
+    } catch {
+      // No parent or file absent there — every added line counts.
+    }
+  }
+  const claimedAgents = new Set();
+  for (const line of diff.split(/\r?\n/)) {
+    if (!line.startsWith("+") || line.startsWith("+++")) continue;
+    const text = line.slice(1);
+    if (parentLines.has(text)) continue;
+    const rowMatch = text.match(/^\|[^|\n]*\|\s*([^|\n]+?)\s*\|/);
+    if (rowMatch && agentNameToEmail.has(rowMatch[1])) {
+      claimedAgents.add(rowMatch[1]);
+      continue;
+    }
+    const readMatch = text.match(/Прочитано:\s*([^—\n]+?)\s*—/);
+    if (readMatch && agentNameToEmail.has(readMatch[1].trim())) {
+      claimedAgents.add(readMatch[1].trim());
+    }
+  }
+  const wrongClaims = [...claimedAgents].filter(
+    (name) => agentNameToEmail.get(name) !== authorEmail,
+  );
+  if (wrongClaims.length > 0) {
+    violations.push({ hash, author, journalRows: wrongClaims });
   }
 }
 
@@ -144,8 +196,11 @@ if (violations.length > 0) {
   for (const v of violations) {
     console.error(`  ${v.hash}`);
     console.error(`    author: ${v.author}`);
-    for (const trailer of v.trailers) {
+    for (const trailer of v.trailers ?? []) {
       console.error(`    Co-Authored-By: ${trailer}`);
+    }
+    for (const name of v.journalRows ?? []) {
+      console.error(`    journal/board marker claims agent: ${name}`);
     }
   }
   process.exit(1);
