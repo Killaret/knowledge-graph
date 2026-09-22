@@ -129,12 +129,18 @@ for (const record of records) {
   }
   // Whole-file rewrites (CRLF normalization, table rebuilds) re-add every
   // existing row — those are not new claims. Only lines absent from the
-  // parent version count.
+  // parent version count. Link-target rewrites (DOC-REORG-1 moved docs/)
+  // also produce +lines that differ from the parent only inside ](...) —
+  // those are the same row, not a new claim, so parents are compared with
+  // link targets stripped.
+  const stripLinkTargets = (l) => l.replace(/\]\([^)\s]*\)/g, "]()");
   const parentLines = new Set();
+  const parentLinesNoLinks = new Set();
   for (const path of ["docs/AI_LOG.md", "docs/AI_HANDOFF.md"]) {
     try {
       for (const l of git(["show", `${hash}^:${path}`]).split(/\r?\n/)) {
         parentLines.add(l);
+        parentLinesNoLinks.add(stripLinkTargets(l));
       }
     } catch {
       // No parent or file absent there — every added line counts.
@@ -144,7 +150,7 @@ for (const record of records) {
   for (const line of diff.split(/\r?\n/)) {
     if (!line.startsWith("+") || line.startsWith("+++")) continue;
     const text = line.slice(1);
-    if (parentLines.has(text)) continue;
+    if (parentLines.has(text) || parentLinesNoLinks.has(stripLinkTargets(text))) continue;
     const rowMatch = text.match(/^\|[^|\n]*\|\s*([^|\n]+?)\s*\|/);
     if (rowMatch && agentNameToEmail.has(rowMatch[1])) {
       claimedAgents.add(rowMatch[1]);

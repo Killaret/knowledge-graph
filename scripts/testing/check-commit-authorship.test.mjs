@@ -43,7 +43,7 @@ try {
     let seq = 0;
     const appendLogRow = (agent) => {
         const p = join(repo, "docs/AI_LOG.md");
-        return { "docs/AI_LOG.md": readFileSync(p, "utf8") + `| 2026-09-22 | ${agent} | row ${++seq} |\n` };
+        return { "docs/AI_LOG.md": readFileSync(p, "utf8") + `| 2026-09-22 | ${agent} | row ${++seq} [t](old.md) |\n` };
     };
 
     const cases = [
@@ -65,6 +65,28 @@ try {
             author: CLAUDE,
             files: () => appendLogRow("Claude Code"),
             expectExit: 0,
+        },
+        {
+            // DOC-REORG-1 moved files and rewrote link targets inside old
+            // journal rows — the row itself is unchanged, so this is not a
+            // new claim and must not require the row's agent as author.
+            name: "link rewrite inside Claude row authored by Devin",
+            author: DEVIN,
+            files: () => ({
+                "docs/AI_LOG.md": readFileSync(join(repo, "docs/AI_LOG.md"), "utf8")
+                    .replaceAll("old.md", "moved/old.md"),
+            }),
+            expectExit: 0,
+        },
+        {
+            name: "edited Claude row text authored by Devin",
+            author: DEVIN,
+            files: () => ({
+                "docs/AI_LOG.md": readFileSync(join(repo, "docs/AI_LOG.md"), "utf8")
+                    .replace(/\| Claude Code \| row \d+/, "| Claude Code | edited row"),
+            }),
+            expectExit: 1,
+            stderrIncludes: "claims agent: Claude Code",
         },
         {
             name: "Devin read-marker update authored by Claude",
