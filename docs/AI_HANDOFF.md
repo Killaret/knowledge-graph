@@ -22,6 +22,7 @@
 | **LINKS-1:** подключить автосвязи — генератор готов, но нужны порог близости (сейчас его нет: каждая заметка получила бы две связи с любыми соседями), события `LinkCreated` для closure, пересчёт при смене модели | [`tasks/LINKS-1-wire-gamma-links.md`](tasks/LINKS-1-wire-gamma-links.md), [`tasks/LINKS-1-findings.md`](tasks/LINKS-1-findings.md) | **отклонено** — проводка верна, 4 мутации красные, на стенде 197 связей; но на сиде с ручными связями `REFRESH note_links_closure` ~9 минут (CTE «все пути до 10», ×4 на уровень), а graph-service делает его синхронно на каждое событие; порог из JSON без ключа = 0. [`tasks/LINKS-1-review-findings.md`](tasks/LINKS-1-review-findings.md) | 2026-09-22 |
 
 | **AUTHOR-2:** хук авторства активен в каждом клоне без ручного шага | [`tasks/AUTHOR-2-hook-activation.md`](tasks/AUTHOR-2-hook-activation.md) | **на ревью** — доработано: 39 хешей признаны в `authorship-corrections.txt` + журнал; второе правило сторожа по строкам журнала и маркеру `Прочитано:` (7 фикстур, мутация «убрать правило» красная); `CLAUDE.md` без конкретной подписи, подпись Devin в обоих мастер-промптах. [`tasks/AUTHOR-2-review-findings.md`](tasks/AUTHOR-2-review-findings.md) | 2026-09-22 |
+| **BACKUP-3 (условие):** `check-worker-backup-mount.py` в `core-checks.tsv` и CI | [`tasks/BACKUP-3-review-findings.md`](tasks/BACKUP-3-review-findings.md) | **на ревью** — сторож переписан на `config --format json` + stdlib (PyYAML не нужен в CI); без `.env` создаётся пустой временный (директива `env_file` требует файл, `--env-file` её не закрывает — ответ на замечание иначе, чем предполагалось). Фаза в TSV + шаг в `_core-checks.yml`, синк 27/27; мутация «убрать том» → exit 1 | 2026-09-22 |
 ## На Claude Code
 
 Сейчас в работе ничего нет. Очередь Claude Code — строки раздела «Бэклог» с пометкой «ждёт Claude Code», сверху вниз.
@@ -45,7 +46,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **BACKUP-3 (условие):** `check-worker-backup-mount.py` в `core-checks.tsv` и CI; без `.env` — пустой `--env-file` или пропуск с причиной | [`tasks/BACKUP-3-review-findings.md`](tasks/BACKUP-3-review-findings.md) | **бэклог** — Devin, вместе с доработками LINKS-1/AUTHOR-2 | 2026-09-22 |
 | **CONFIG-1:** `getJSON*OrDefault` отдаёт ноль за отсутствующий ключ при загруженном JSON — Go-умолчания мертвы (JSON вшит в образ) | `backend/internal/config/config.go:570` | **бэклог** — Devin, после доработки LINKS-1 | 2026-09-22 |
 | **DOC-REORG-1:** слияние дублей и иерархия `docs/` по DOC-AUDIT-1 (9 кластеров); рвёт ссылки в 130 постановках | [`tasks/DOC-AUDIT-1-documentation-inspection.md`](tasks/DOC-AUDIT-1-documentation-inspection.md) | **бэклог** — ждёт владельца: делать ли; постановка после решения | 2026-09-22 |
 

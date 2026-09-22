@@ -272,6 +272,10 @@ jobs:
         working-directory: .
         run: python scripts/devops/test_guard_personal_data.py
 
+      - name: Check worker backup mount
+        working-directory: .
+        run: python scripts/devops/check-worker-backup-mount.py
+
       - name: Run unit tests
         run: npm run test:unit
 

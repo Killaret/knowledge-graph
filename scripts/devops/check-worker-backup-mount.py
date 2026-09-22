@@ -3,27 +3,29 @@
 host folder, not into its own container layer.
 
 Machine check, not YAML-reading-by-eye: renders the compose file through
-`docker compose config` and asserts that worker_personal both mounts a host
-directory at /backups and points BACKUP_LOCAL_PATH at it. Without the mount the
-files land in the container layer - invisible to the host folder and lost on
-`docker compose down`.
+`docker compose config --format json` and asserts that worker_personal both
+mounts a host directory at /backups and points BACKUP_LOCAL_PATH at it.
+Without the mount the files land in the container layer - invisible to the
+host folder and lost on `docker compose down`.
+
+The compose file declares `env_file: .env`, and `config` fails when the file
+is absent (CI runners and fresh clones have none). An empty .env is created
+for the duration of the render and removed afterwards; every interpolated
+variable in the file carries a `:-` default, so the render is identical.
 
 Exit 0 - mount and env are wired. Exit 1 - either is missing.
+Exit 2 - the check itself could not run (no docker, render failed).
 """
 
+import json
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:
-    print("[ERROR] PyYAML is required (python -m pip install pyyaml)")
-    sys.exit(2)
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 COMPOSE_FILE = REPO_ROOT / "docker-compose.personal.yml"
+ENV_FILE = REPO_ROOT / ".env"
 SERVICE = "worker_personal"
 MOUNT_TARGET = "/backups"
 ENV_VAR = "BACKUP_LOCAL_PATH"
@@ -34,17 +36,29 @@ def main() -> int:
         print("[ERROR] docker CLI not found - cannot render compose config")
         return 2
 
-    result = subprocess.run(
-        ["docker", "compose", "-f", str(COMPOSE_FILE), "config"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-    )
+    created_env = False
+    if not ENV_FILE.exists():
+        ENV_FILE.touch()
+        created_env = True
+    try:
+        result = subprocess.run(
+            [
+                "docker", "compose", "-f", str(COMPOSE_FILE),
+                "config", "--format", "json",
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        if created_env:
+            ENV_FILE.unlink()
+
     if result.returncode != 0:
         print(f"[ERROR] docker compose config failed:\n{result.stderr.strip()}")
         return 2
 
-    config = yaml.safe_load(result.stdout)
+    config = json.loads(result.stdout)
     service = (config.get("services") or {}).get(SERVICE) or {}
 
     problems = []
