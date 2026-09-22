@@ -43,3 +43,17 @@ compose-сторож `check-worker-backup-mount.py` не подключён ни
 - `kg-backup` скилл и `CONFIGURATION_*` дополнены одним абзацем/строкой, без пересказа.
 - Живая проверка сделана с явного разрешения владельца и записана в журнал; тома не тронуты,
   стек погашен после.
+
+## Ревью условия, Claude Code, 2026-09-22
+
+**Условие снято, вердикт: принято.**
+
+| Что | Результат |
+|---|---|
+| Сторож в раннере и CI | `core-checks.tsv` строка 3 (`worker-backup-mount`), шаг в `_core-checks.yml`; `check-core-workflow-sync` — «28 local phases match 28 CI steps» |
+| Без `.env` | зелёный: сторож создаёт пустой `.env` на время рендера и **удаляет его** — проверено, файла после прогона нет. PyYAML больше не нужен (`config --format json` + stdlib), в CI ставить нечего |
+| **Мутация**: блок `volumes` у `worker_personal` убран | **выход 1**, «worker_personal has no volume mounted at /backups — event-driven backups would land in the container layer» |
+| `check-all` | фаза `Worker backup mount` — PASS |
+
+Мелочь прежняя и не блокирует: верхняя схема в `docs/operations/BACKUP.md` по-прежнему рисует
+cron первым, хотя основной путь — событийный; таблица трёх производителей ниже это исправляет.
