@@ -22,7 +22,7 @@
 
 | **DOC-REORG-1:** слияние дублей и иерархия `docs/` по DOC-AUDIT-1 (9 кластеров); рвёт ссылки в 130 постановках | [`tasks/DOC-AUDIT-1-documentation-inspection.md`](tasks/DOC-AUDIT-1-documentation-inspection.md), [`tasks/DOC-REORG-1-implementation-notes.md`](tasks/DOC-REORG-1-implementation-notes.md) | **на ревью** — `15809ec` + `1bdcd47`; отклонения от буквы разбора — в notes | 2026-09-22 |
 | **BACKUP-DIR-1:** выровнять дефолты под канонический `~/Desktop/my items` (решение 52) — compose-дефолт, `BACKUP_LOCAL_PATH` → `./backups`, доки; «мёртвый хвост» BACKUP-2 | `docker-compose.personal.yml`, `docs/operations/BACKUP.md`, `DEPLOY.md`, `DEPLOY.ru.md` | **на ревью** — `df18b67`; `./backups` в `local_path` оставлен как fallback голого `go run` (путь процесса, не хоста) — различие задокументировано. Попутно: сторож авторства научился не считать перепись ссылки новым claim (`061daef`) | 2026-09-22 |
-| **LINKS-2:** три состояния пары — модель предложила, человек подтвердил (повышение с происхождением), человек отказал | [`tasks/LINKS-2-manual-link-over-gamma.md`](tasks/LINKS-2-manual-link-over-gamma.md) | **в работе** — Devin; код+тесты+доки готовы, adversarial-разбор в постановке; остаётся ручная проверка с экрана (п. 11) | 2026-09-22 |
+| **LINKS-2:** три состояния пары — модель предложила, человек подтвердил (повышение с происхождением), человек отказал | [`tasks/LINKS-2-manual-link-over-gamma.md`](tasks/LINKS-2-manual-link-over-gamma.md) | **на ревью** — `523beac`, смёржено в `main` (`21691ea`); adversarial-разбор и прогоны в постановке; ручная проверка с экрана (п. 11) — план в начале постановки, за человеком | 2026-09-22 |
 
 ## На Claude Code
 
