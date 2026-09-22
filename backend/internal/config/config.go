@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -302,14 +304,17 @@ func loadJSONConfig() *JSONConfig {
 		return nil
 	}
 
-	var jsonCfg JSONConfig
-	if err := json.Unmarshal(data, &jsonCfg); err != nil {
+	// CONFIG-1: unmarshal onto a struct pre-seeded with the built-in defaults —
+	// keys the file omits keep their defaults instead of silently becoming
+	// zero values; values the file sets (including explicit 0/false/"") apply.
+	jsonCfg := defaultJSONConfig()
+	if err := json.Unmarshal(data, jsonCfg); err != nil {
 		log.Printf("[Config] Failed to parse knowledge-graph.config.json: %v, using env vars only", err)
 		return nil
 	}
 
 	log.Printf("[Config] JSON config loaded successfully")
-	return &jsonCfg
+	return jsonCfg
 }
 
 // Load loads configuration from environment variables.
@@ -350,13 +355,14 @@ func loadJSONConfigParts(configDir string) *JSONConfig {
 		merged = mergeJSONObjects(merged, part)
 	}
 
-	var jsonCfg JSONConfig
-	if err := json.Unmarshal([]byte(mustJSON(merged)), &jsonCfg); err != nil {
+	// Same pre-seed as the single-file path — merged parts may omit keys too.
+	jsonCfg := defaultJSONConfig()
+	if err := json.Unmarshal([]byte(mustJSON(merged)), jsonCfg); err != nil {
 		log.Printf("[Config] Failed to unmarshal merged config parts: %v", err)
 		return nil
 	}
 
-	return &jsonCfg
+	return jsonCfg
 }
 
 func mergeJSONObjects(dst, src map[string]any) map[string]any {
@@ -388,8 +394,14 @@ func (c *Config) IsProduction() bool { return c.AppEnv == "production" }
 
 func Load() (*Config, error) {
 	// Load JSON config as source of default values
-	jsonCfg := loadJSONConfig()
+	return resolveConfig(loadJSONConfig())
+}
 
+// resolveConfig builds the effective Config: env vars win over JSON fields,
+// JSON fields over built-in defaults. It is split from Load so tests can
+// compare the nil-config path against a defaults-seeded struct — the drift
+// guard for defaultJSONConfig.
+func resolveConfig(jsonCfg *JSONConfig) (*Config, error) {
 	cfg := &Config{
 		// App environment (env > JSON > development)
 		AppEnv: getEnv("APP_ENV", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.AppEnv }, "development")),
@@ -423,7 +435,7 @@ func Load() (*Config, error) {
 		NLPModelName:        getEnv("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2"),
 
 		// Search
-		SearchFulltextLanguages: getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Search.FulltextLanguages }, []string{"russian", "simple"}),
+		SearchFulltextLanguages: getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Search.FulltextLanguages }, slices.Clone(defaultFulltextLanguages)),
 		SearchRankingWeights:    nil, // Loaded separately below
 		SearchFallbackToILike:   getBoolEnv("SEARCH_FALLBACK_TO_ILIKE", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Search.FallbackToILike }, true)),
 
@@ -517,28 +529,14 @@ func Load() (*Config, error) {
 
 	// Load complex types from JSON (no env var override for these)
 	if jsonCfg != nil {
-		cfg.ServerRateLimitEndpoints = getJSONIntMapOrDefault(jsonCfg, func(j *JSONConfig) map[string]int { return j.Backend.Server.RateLimit.Endpoints }, map[string]int{
-			"notes_create": 30,
-			"links_create": 50,
-			"notes_update": 20,
-		})
-		cfg.ServerFallbackPorts = getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Server.RateLimit.FallbackPorts }, []string{"8081", "8082"})
-		cfg.SearchRankingWeights = getJSONFloatMapOrDefault(jsonCfg, func(j *JSONConfig) map[string]float64 { return j.Backend.Search.RankingWeights }, map[string]float64{
-			"russian": 1.0,
-			"simple":  1.0,
-		})
+		cfg.ServerRateLimitEndpoints = getJSONIntMapOrDefault(jsonCfg, func(j *JSONConfig) map[string]int { return j.Backend.Server.RateLimit.Endpoints }, maps.Clone(defaultRateLimitEndpoints))
+		cfg.ServerFallbackPorts = getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Server.RateLimit.FallbackPorts }, slices.Clone(defaultFallbackPorts))
+		cfg.SearchRankingWeights = getJSONFloatMapOrDefault(jsonCfg, func(j *JSONConfig) map[string]float64 { return j.Backend.Search.RankingWeights }, maps.Clone(defaultRankingWeights))
 	} else {
 		// Set defaults when no JSON config
-		cfg.ServerRateLimitEndpoints = map[string]int{
-			"notes_create": 30,
-			"links_create": 50,
-			"notes_update": 20,
-		}
-		cfg.ServerFallbackPorts = []string{"8081", "8082"}
-		cfg.SearchRankingWeights = map[string]float64{
-			"russian": 1.0,
-			"simple":  1.0,
-		}
+		cfg.ServerRateLimitEndpoints = maps.Clone(defaultRateLimitEndpoints)
+		cfg.ServerFallbackPorts = slices.Clone(defaultFallbackPorts)
+		cfg.SearchRankingWeights = maps.Clone(defaultRankingWeights)
 	}
 
 	// Load required environment variable
@@ -560,19 +558,131 @@ func Load() (*Config, error) {
 }
 
 // resolveGammaLinkMinScore wires env -> JSON -> default 0.6, plus a guard:
-// a JSON file that omits gamma_link_min_score unmarshals as 0.0, which would
-// silently link every note to any neighbour — the exact failure the threshold
-// exists to prevent. A non-positive value always falls back to the default.
+// an explicit non-positive value would silently link every note to any
+// neighbour — the exact failure the threshold exists to prevent — so it is
+// clamped to the default with a log line. (A *missing* key no longer reaches
+// here as zero: defaultJSONConfig seeds 0.6 before unmarshal, CONFIG-1.)
 func resolveGammaLinkMinScore(jsonCfg *JSONConfig) float64 {
 	const fallback = 0.6
 	v := getFloatEnv("GAMMA_LINK_MIN_SCORE", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 {
 		return j.Backend.Recommendation.GammaLinkMinScore
 	}, fallback))
 	if v <= 0 {
-		log.Printf("[Config] gamma_link_min_score resolved to %v (missing or non-positive); using default %v", v, fallback)
+		log.Printf("[Config] gamma_link_min_score resolved to %v (non-positive); using default %v", v, fallback)
 		return fallback
 	}
 	return v
+}
+
+// Shared defaults for JSON config's complex types — one source for the
+// no-file path (resolveConfig else-branch), the seeded struct, and the helper
+// fallback argument.
+var (
+	defaultRateLimitEndpoints = map[string]int{
+		"notes_create": 30,
+		"links_create": 50,
+		"notes_update": 20,
+	}
+	defaultFallbackPorts  = []string{"8081", "8082"}
+	defaultRankingWeights = map[string]float64{
+		"russian": 1.0,
+		"simple":  1.0,
+	}
+	defaultFulltextLanguages = []string{"russian", "simple"}
+)
+
+// defaultJSONConfig returns a JSONConfig pre-seeded with every built-in
+// default. Unmarshalling a config file on top of it leaves absent keys at
+// their defaults instead of the zero value — the failure behind CONFIG-1,
+// where a loaded JSON silently zeroed every key it did not mention. Fields
+// whose default IS the zero value ("" / false / 0) are not listed.
+func defaultJSONConfig() *JSONConfig {
+	cfg := &JSONConfig{}
+
+	cfg.Backend.AppEnv = "development"
+	cfg.Backend.Server.RateLimit.Enabled = true
+	cfg.Backend.Server.RateLimit.Requests = 100
+	cfg.Backend.Server.RateLimit.WindowSeconds = 60
+	// Cloned: json.Unmarshal merges maps and may replace slices in place —
+	// the package-level defaults must never be mutated through a loaded config.
+	cfg.Backend.Server.RateLimit.Endpoints = maps.Clone(defaultRateLimitEndpoints)
+	cfg.Backend.Server.RateLimit.FallbackPorts = slices.Clone(defaultFallbackPorts)
+
+	cfg.Backend.Database.RetryMaxAttempts = 3
+	cfg.Backend.Database.RetryDelaySeconds = 5
+	cfg.Backend.Database.Pool.MaxOpenConns = 25
+	cfg.Backend.Database.Pool.MaxIdleConns = 5
+	cfg.Backend.Database.Pool.ConnMaxLifetimeSeconds = 300
+	cfg.Backend.Database.Pool.ConnMaxIdleTimeSeconds = 60
+	cfg.Backend.Database.Pool.StatsIntervalSeconds = 300
+
+	cfg.Backend.Search.FulltextLanguages = slices.Clone(defaultFulltextLanguages)
+	cfg.Backend.Search.RankingWeights = maps.Clone(defaultRankingWeights)
+	cfg.Backend.Search.FallbackToILike = true
+
+	cfg.Backend.Recommendation.Depth = 3
+	cfg.Backend.Recommendation.Decay = 0.5
+	cfg.Backend.Recommendation.TopN = 20
+	cfg.Backend.Recommendation.Alpha = 0.5
+	cfg.Backend.Recommendation.Beta = 0.5
+	cfg.Backend.Recommendation.Gamma = 0.2
+	cfg.Backend.Recommendation.CacheTTLSeconds = 300
+	cfg.Backend.Recommendation.TaskDelaySeconds = 5
+	cfg.Backend.Recommendation.BatchRateLimit = 10
+	cfg.Backend.Recommendation.FallbackEnabled = true
+	cfg.Backend.Recommendation.FallbackTTLSeconds = 3600
+	cfg.Backend.Recommendation.FallbackSemanticEnabled = true
+	cfg.Backend.Recommendation.KeywordEnabled = true
+	cfg.Backend.Recommendation.BFSAggregation = "max"
+	cfg.Backend.Recommendation.BFSNormalize = true
+	cfg.Backend.Recommendation.KeywordSimilarityMethod = "jaccard"
+	cfg.Backend.Recommendation.KeywordTverskyAlpha = 0.5
+	cfg.Backend.Recommendation.KeywordTverskyBeta = 0.5
+	cfg.Backend.Recommendation.GammaLinkMinScore = 0.6
+
+	cfg.Backend.Pagination.DefaultLimit = 20
+	cfg.Backend.Pagination.MaxLimit = 100
+
+	cfg.Backend.Graph.LoadDepth = 2
+	cfg.Backend.Graph.DefaultLimit = 100
+	cfg.Backend.Graph.MaxLimit = 1000
+	cfg.Backend.Graph.LinkDefaultLimit = 500
+	cfg.Backend.Graph.LinkMaxLimit = 5000
+
+	cfg.Backend.Embedding.SimilarityLimit = 30
+
+	cfg.Backend.Asynq.Concurrency = 10
+	cfg.Backend.Asynq.QueueDefault = 1
+	cfg.Backend.Asynq.QueueMaxLen = 10000
+
+	cfg.Backend.Auth.JWTAccessTTLSeconds = 900
+	cfg.Backend.Auth.JWTRefreshTTLSeconds = 604800
+	cfg.Backend.Auth.Argon2Time = 3
+	cfg.Backend.Auth.Argon2Memory = 65536
+	cfg.Backend.Auth.Argon2Threads = 4
+	cfg.Backend.Auth.APIKeyEnabled = true
+	cfg.Backend.Auth.PKCEEnabled = true
+	cfg.Backend.Auth.PKCECodeChallengeLength = 128
+	cfg.Backend.Auth.SMTPPort = 587
+	cfg.Backend.Auth.SMTPFrom = "noreply@example.com"
+	cfg.Backend.Auth.PasswordResetTTLSeconds = 900
+	cfg.Backend.Auth.PasswordPolicyMinLength = 10
+	cfg.Backend.Auth.PasswordPolicyRequireUpper = true
+	cfg.Backend.Auth.PasswordPolicyRequireLower = true
+	cfg.Backend.Auth.PasswordPolicyRequireDigit = true
+	cfg.Backend.Auth.PasswordPolicyRequireSpecial = true
+
+	cfg.MongoDB.URL = "mongodb://localhost:27017"
+	cfg.MongoDB.Database = "knowledge_graph"
+
+	cfg.Backup.Cloud.Provider = "r2"
+	cfg.Backup.LocalPath = "./backups"
+	cfg.Backup.Schedule = "0 2 * * *"
+	cfg.Backup.RetentionDays = 7
+	cfg.Backup.Cloud.Yandex.BackupFolder = "/KnowledgeGraphBackups"
+	cfg.Backup.Cloud.Yandex.MaxBackups = 10
+
+	return cfg
 }
 
 // Helper functions for JSON config with fallbacks

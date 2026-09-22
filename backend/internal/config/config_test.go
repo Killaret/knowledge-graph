@@ -1,7 +1,9 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -733,9 +735,9 @@ func TestGammaLinkMinScore(t *testing.T) {
 	}
 }
 
-// A loaded JSON config without the gamma_link_min_score key unmarshals as 0.0
-// — getJSONFloatOrDefault returns that zero instead of the Go default, which
-// would link every note to any neighbour. The resolver must fall back to 0.6.
+// A loaded JSON config without the gamma_link_min_score key must resolve to
+// the 0.6 default — via the seeded struct for a real load, and via the <=0
+// guard for an explicit non-positive value.
 func TestGammaLinkMinScore_MissingJSONKey(t *testing.T) {
 	original := os.Getenv("GAMMA_LINK_MIN_SCORE")
 	defer func() {
@@ -747,10 +749,19 @@ func TestGammaLinkMinScore_MissingJSONKey(t *testing.T) {
 	}()
 	os.Unsetenv("GAMMA_LINK_MIN_SCORE")
 
-	// JSON config present but the key is absent -> zero value inside.
-	jsonCfg := &JSONConfig{}
+	// CONFIG-1 path: seeded struct + file that omits the key -> default kept.
+	jsonCfg := defaultJSONConfig()
+	require.NoError(t, json.Unmarshal([]byte(`{"backend":{"pagination":{"default_limit":50}}}`), jsonCfg))
 	if v := resolveGammaLinkMinScore(jsonCfg); v != 0.6 {
 		t.Errorf("expected fallback 0.6 for missing JSON key, got %f", v)
+	}
+	assert.Equal(t, 50, jsonCfg.Backend.Pagination.DefaultLimit, "present key must override the seed")
+	assert.Equal(t, 100, jsonCfg.Backend.Pagination.MaxLimit, "absent sibling key must keep its default")
+
+	// Explicit non-positive still clamps through the guard.
+	jsonCfg.Backend.Recommendation.GammaLinkMinScore = 0
+	if v := resolveGammaLinkMinScore(jsonCfg); v != 0.6 {
+		t.Errorf("expected fallback 0.6 for explicit 0, got %f", v)
 	}
 
 	// An explicit positive value still wins.
@@ -758,4 +769,51 @@ func TestGammaLinkMinScore_MissingJSONKey(t *testing.T) {
 	if v := resolveGammaLinkMinScore(jsonCfg); v != 0.7 {
 		t.Errorf("expected JSON value 0.7, got %f", v)
 	}
+}
+
+// CONFIG-1 drift guard: the seeded struct must mirror every call-site
+// default. resolveConfig(nil) resolves through the helpers' defaultValue
+// arguments; resolveConfig(defaultJSONConfig()) resolves through the seed —
+// any default added to one but not the other shows up as a diff here.
+func TestDefaultJSONConfig_MatchesCallSiteDefaults(t *testing.T) {
+	saved := os.Environ()
+	os.Clearenv()
+	t.Cleanup(func() {
+		os.Clearenv()
+		for _, kv := range saved {
+			if k, v, ok := strings.Cut(kv, "="); ok {
+				os.Setenv(k, v)
+			}
+		}
+	})
+	t.Setenv("DATABASE_URL", "postgres://test:test@localhost/test")
+	t.Setenv("JWT_SECRET", "test-jwt-secret")
+
+	withoutFile, err := resolveConfig(nil)
+	require.NoError(t, err)
+	withSeed, err := resolveConfig(defaultJSONConfig())
+	require.NoError(t, err)
+
+	assert.Equal(t, *withoutFile, *withSeed,
+		"seeded JSONConfig must reproduce every built-in default — a missing field means defaultJSONConfig drifted from the call sites")
+}
+
+// CONFIG-1: explicit zero-values in the file must still apply — the fix is
+// pre-seeding, not zero-detection, so `false`/`0`/`""` are real settings.
+func TestDefaultJSONConfig_ExplicitValuesWin(t *testing.T) {
+	jsonCfg := defaultJSONConfig()
+	require.NoError(t, json.Unmarshal([]byte(`{
+		"backend": {
+			"search": {"fallback_to_ilike": false},
+			"server": {"rate_limit": {"enabled": false, "endpoints": {"notes_create": 5}}}
+		}
+	}`), jsonCfg))
+
+	assert.False(t, jsonCfg.Backend.Search.FallbackToILike, "explicit false must override the seeded true")
+	assert.False(t, jsonCfg.Backend.Server.RateLimit.Enabled)
+	// Partial maps merge onto the seeded defaults: unspecified entries keep
+	// their default rates instead of disappearing.
+	assert.Equal(t, 5, jsonCfg.Backend.Server.RateLimit.Endpoints["notes_create"])
+	assert.Equal(t, 50, jsonCfg.Backend.Server.RateLimit.Endpoints["links_create"],
+		"absent map entry must keep its seeded default")
 }

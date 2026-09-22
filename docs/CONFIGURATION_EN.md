@@ -29,16 +29,15 @@ npm run build-config
 
 Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.config.json` with `npm run build-config`.
 
-> **Defaults apply only when no JSON config is loaded at all.** When
-> `knowledge-graph.config.json` exists, `getJSONFloatOrDefault`/`getJSONStringOrDefault`
-> return the raw field — a *missing key* deserializes as the zero value (`0`,
-> `""`, `false`), silently overriding the Go default. New config keys must
-> therefore be added to `config/*.json` sources; the Go fallback is only a
-> safety net for running without the file.
-> Exception: `gamma_link_min_score` is guarded in code — a value `<= 0`
-> (including a missing key) falls back to the `0.6` default with a log line,
-> because a zero threshold would link every note to any neighbour (LINKS-1
-> rework).
+> **Missing keys keep their Go defaults.** The file is unmarshalled onto a
+> struct pre-seeded with the built-in defaults (`defaultJSONConfig`, CONFIG-1):
+> a key the file omits resolves to the default, while values the file sets —
+> including explicit `0`, `false`, `""` — apply as written. Map values
+> (`rate_limit.endpoints`, `ranking_weights`) merge onto the seeded defaults:
+> entries the file omits keep their default rates/weights.
+> Guard: `gamma_link_min_score <= 0` (explicit) still falls back to `0.6` with
+> a log line, because a zero threshold would link every note to any neighbour
+> (LINKS-1 rework).
 
 ### File Structure
 

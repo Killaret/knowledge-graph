@@ -23,6 +23,7 @@
 
 | **AUTHOR-2:** хук авторства активен в каждом клоне без ручного шага | [`tasks/AUTHOR-2-hook-activation.md`](tasks/AUTHOR-2-hook-activation.md) | **на ревью** — доработано: 39 хешей признаны в `authorship-corrections.txt` + журнал; второе правило сторожа по строкам журнала и маркеру `Прочитано:` (7 фикстур, мутация «убрать правило» красная); `CLAUDE.md` без конкретной подписи, подпись Devin в обоих мастер-промптах. [`tasks/AUTHOR-2-review-findings.md`](tasks/AUTHOR-2-review-findings.md) | 2026-09-22 |
 | **BACKUP-3 (условие):** `check-worker-backup-mount.py` в `core-checks.tsv` и CI | [`tasks/BACKUP-3-review-findings.md`](tasks/BACKUP-3-review-findings.md) | **на ревью** — сторож переписан на `config --format json` + stdlib (PyYAML не нужен в CI); без `.env` создаётся пустой временный (директива `env_file` требует файл, `--env-file` её не закрывает — ответ на замечание иначе, чем предполагалось). Фаза в TSV + шаг в `_core-checks.yml`, синк 27/27; мутация «убрать том» → exit 1 | 2026-09-22 |
+| **CONFIG-1:** `getJSON*OrDefault` отдаёт ноль за отсутствующий ключ при загруженном JSON — Go-умолчания мертвы (JSON вшит в образ) | `backend/internal/config/config.go` | **на ревью** — файл теперь десериализуется поверх `defaultJSONConfig()` (сид всех дефолтов): пропущенный ключ → дефолт, явные `0`/`false` применяются, map-поля мерджатся; `resolveConfig` вынесен для дрифт-сторожа `TestDefaultJSONConfig_MatchesCallSiteDefaults` (nil vs seed — DeepEqual), мутация «без сида» красная | 2026-09-22 |
 ## На Claude Code
 
 Сейчас в работе ничего нет. Очередь Claude Code — строки раздела «Бэклог» с пометкой «ждёт Claude Code», сверху вниз.
@@ -46,7 +47,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **CONFIG-1:** `getJSON*OrDefault` отдаёт ноль за отсутствующий ключ при загруженном JSON — Go-умолчания мертвы (JSON вшит в образ) | `backend/internal/config/config.go:570` | **бэклог** — Devin, после доработки LINKS-1 | 2026-09-22 |
 | **DOC-REORG-1:** слияние дублей и иерархия `docs/` по DOC-AUDIT-1 (9 кластеров); рвёт ссылки в 130 постановках | [`tasks/DOC-AUDIT-1-documentation-inspection.md`](tasks/DOC-AUDIT-1-documentation-inspection.md) | **бэклог** — ждёт владельца: делать ли; постановка после решения | 2026-09-22 |
 
 | **CHECK-ALL-2:** ложный пропуск интеграционных фаз «Docker daemon is unavailable» при живом стеке | `scripts/testing/check-all.ps1`, `lib/phase-tracking.ps1` | **бэклог** — Devin: воспроизвести под нагрузкой; пропуск обязан называть команду и её вывод | 2026-09-21 |
