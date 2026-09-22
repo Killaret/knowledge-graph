@@ -593,7 +593,7 @@ users          — Users
 1. **Local backup:**
    - pg_dump PostgreSQL database
    - gzip compression
-   - Storage in `./backups/`
+   - Storage in the synced host folder (`~/Desktop/my items`; inside containers it is `/backups`, see `KG_BACKUP_DIR`)
    - Automatic cleanup of old backups (default 7 days)
 
 2. **Cloud backup (Yandex.Disk):**

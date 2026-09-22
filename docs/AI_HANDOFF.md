@@ -26,6 +26,7 @@
 | **CONFIG-1:** `getJSON*OrDefault` отдаёт ноль за отсутствующий ключ при загруженном JSON — Go-умолчания мертвы (JSON вшит в образ) | `backend/internal/config/config.go` | **на ревью** — файл теперь десериализуется поверх `defaultJSONConfig()` (сид всех дефолтов): пропущенный ключ → дефолт, явные `0`/`false` применяются, map-поля мерджатся; `resolveConfig` вынесен для дрифт-сторожа `TestDefaultJSONConfig_MatchesCallSiteDefaults` (nil vs seed — DeepEqual), мутация «без сида» красная | 2026-09-22 |
 | **CHECK-ALL-2:** ложный пропуск интеграционных фаз «Docker daemon is unavailable» при живом стеке | `scripts/testing/check-all.ps1`, `check-all.sh` | **на ревью** — пропуск теперь называет команду и вывод: `docker info failed (exit N): <хвост>` + один ретрай через 3 с против транзиентов; фикстура `check-all-docker-skip.test.mjs` (стаб `docker` в PATH, манифест из одной фазы через `-Manifest`/`--manifest`): падение → SKIP с маркером, здоровый стаб → PASS; мутация «вернуть молчаливый пропуск» красная. Фаза `docker-skip-test` в TSV+CI, синк 28/28 | 2026-09-22 |
 | **DOC-REORG-1:** слияние дублей и иерархия `docs/` по DOC-AUDIT-1 (9 кластеров); рвёт ссылки в 130 постановках | [`tasks/DOC-AUDIT-1-documentation-inspection.md`](tasks/DOC-AUDIT-1-documentation-inspection.md), [`tasks/DOC-REORG-1-implementation-notes.md`](tasks/DOC-REORG-1-implementation-notes.md) | **в работе** — реализация готова и запушена (`15809ec`), статус `на ревью` не ставлю: очередь 5/5; перенесу при разгрузке. Отклонения от буквы разбора — в notes | 2026-09-22 |
+| **BACKUP-DIR-1:** выровнять дефолты под канонический `~/Desktop/my items` (решение 52) — compose-дефолт, `BACKUP_LOCAL_PATH` → `./backups`, доки; «мёртвый хвост» BACKUP-2 | `docker-compose.personal.yml`, `docs/operations/BACKUP.md`, `DEPLOY.md`, `DEPLOY.ru.md` | **в работе** — дефолт маунта теперь `${USERPROFILE:-${HOME}}/Desktop/my items` без зашитого имени; `./backups` в `local_path` оставлен как fallback голого `go run` (это путь процесса, не хоста) — различие задокументировано; ревью после разгрузки очереди | 2026-09-22 |
 
 ## На Claude Code
 
@@ -50,7 +51,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **BACKUP-DIR-1:** выровнять дефолты под канонический `~/Desktop/my items` (решение 52) — compose-дефолт, `BACKUP_LOCAL_PATH` → `./backups`, доки; «мёртвый хвост» BACKUP-2 | `docker-compose.personal.yml`, `backend/internal/config/config.go`, `docs/operations/BACKUP.md` | **бэклог** — после пуша DOC-REORG-1 | 2026-09-22 |
+
 
 | **RECO-1:** формула рекомендаций — одна реализация, три компонента (решение 40) | [`tasks/RECO-1-recommendation-formula.md`](tasks/RECO-1-recommendation-formula.md) | **бэклог** — ждёт Claude Code: ревью расширения объёма 19.09 (кандидаты = closure ∪ векторный топ-N) | 2026-09-21 |
 | **W-1:** валидация формулы весов на ground truth `folder_path` | [`tasks/W-1-eval-findings.md`](tasks/W-1-eval-findings.md) | **бэклог** — ждёт Claude Code: ревью eval — семантика доминирует, граф покрывает 27 %, keywords ортогональны | 2026-09-21 |

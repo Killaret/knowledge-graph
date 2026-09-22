@@ -156,7 +156,7 @@ services:
       BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
       BACKUP_LOCAL_PATH: /backups
     volumes:
-      - "${KG_BACKUP_DIR:-C:/Users/89209/Desktop/my items}:/backups"
+      - "${KG_BACKUP_DIR:-${USERPROFILE:-${HOME}}/Desktop/my items}:/backups"
     depends_on:
       postgres_personal:
         condition: service_healthy
@@ -259,7 +259,7 @@ services:
     image: postgres:16-alpine
     container_name: kg-backup-scheduler
     volumes:
-      - "${KG_BACKUP_DIR:-C:/Users/89209/Desktop/my items}:/backups"
+      - "${KG_BACKUP_DIR:-${USERPROFILE:-${HOME}}/Desktop/my items}:/backups"
       - ./scripts/devops:/scripts:ro
       - ./knowledge-graph.config.json:/config/config.json:ro
     environment:

@@ -123,7 +123,7 @@ Retention is per-producer: the worker deletes only `backup-personal-auto-*` olde
 **Configuration Parameters:**
 
 - `enabled` — master switch for event-driven database backups (default `false`)
-- `local_path` — local directory for backup storage
+- `local_path` — directory **as the worker process sees it**, not the host folder: in the personal stack compose sets `BACKUP_LOCAL_PATH=/backups` (the `${KG_BACKUP_DIR}` bind), so `./backups` is only the fallback for a bare `go run` outside Docker. The canonical host folder is `~/Desktop/my items` (`backup-policy.env`, `KG_BACKUP_DIR`)
 - `cloud.enabled` — enable cloud backup
 - `cloud.provider` — cloud storage provider (only `yandex`)
 - `cloud.yandex.oauth_token` — Yandex.Disk OAuth token
@@ -227,8 +227,9 @@ BACKUP_YANDEX_OAUTH_TOKEN=your_oauth_token_here
 # Folder on Yandex.Disk
 BACKUP_YANDEX_FOLDER=/KnowledgeGraphBackups
 
-# Local backup directory
-BACKUP_DIR=./backups
+# Local backup directory on the host (default: ~/Desktop/my items;
+# see scripts/devops/backup-policy.env)
+#KG_BACKUP_DIR=C:/Users/<username>/Desktop/my items
 
 # Local retention for daily/weekly backups (cloud backups are kept forever)
 BACKUP_DAILY_RETENTION_DAYS=7
@@ -409,8 +410,8 @@ curl -X GET "$DOWNLOAD_URL" --output "$BACKUP_NAME"
 **From local storage:**
 
 ```bash
-# Backups are in ./backups/ folder
-ls ./backups/
+# Backups are in the synced host folder (default ~/Desktop/my items)
+ls ~/Desktop/my\ items/
 ```
 
 ### Step 2: Extract Backup
@@ -451,7 +452,7 @@ SELECT COUNT(*) FROM links;
 **Local backups:**
 
 ```bash
-ls -lh ./backups/
+ls -lh ~/Desktop/my\ items/
 ```
 
 **Yandex.Disk backups (web interface):**
@@ -477,8 +478,8 @@ Backup scripts automatically delete local backups older than 7 days (configurabl
 **Manual deletion of local backups:**
 
 ```bash
-# Delete backups older than 30 days
-find ./backups -name "backup-personal-*.sql.gz" -mtime +30 -delete
+# Delete backups older than 30 days (canonical dir: ~/Desktop/my items)
+find ~/Desktop/my\ items -name "backup-personal-*.sql.gz" -mtime +30 -delete
 ```
 
 **Delete backups from Yandex.Disk:**
@@ -552,9 +553,9 @@ brew install postgresql
 **Solution:**
 
 ```bash
-# Create backup directory with proper permissions
-mkdir -p ./backups
-chmod 755 ./backups
+# Create the backup directory with proper permissions (canonical: ~/Desktop/my items)
+mkdir -p ~/Desktop/my\ items
+chmod 755 ~/Desktop/my\ items
 ```
 
 ### Error 401 Unauthorized when uploading to Yandex.Disk

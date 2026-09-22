@@ -495,7 +495,7 @@ curl http://127.0.0.1:18084
 
 ```env
 BACKUP_ENABLED=true
-BACKUP_LOCAL_PATH=./backups
+BACKUP_LOCAL_PATH=/backups
 BACKUP_SCHEDULE=0 23 * * 0
 BACKUP_RETENTION_DAYS=14
 ```
@@ -1085,7 +1085,7 @@ NLP_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
 # =============================================================================
 #BACKUP_CLOUD_ENABLED=false
 #BACKUP_CLOUD_PROVIDER=yandex  # Options: yandex
-#BACKUP_LOCAL_PATH=./backups
+#BACKUP_LOCAL_PATH=/backups
 #BACKUP_SCHEDULE=0 23 * * 0
 #BACKUP_RETENTION_DAYS=14
 #BACKUP_DRAFT_TTL_HOURS=168
@@ -1168,7 +1168,7 @@ NLP_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
 ### 5. Бэкап (опционально)
 
 - [ ] `BACKUP_ENABLED=true`.
-- [ ] Папка `./backups` существует.
+- [ ] Синхронизируемая папка бэкапов существует (`~/Desktop/my items` по умолчанию, см. `KG_BACKUP_DIR`).
 - [ ] Тестовый ручной бэкап: `.\scripts\devops\backup-personal.ps1`.
 
 ---
@@ -1265,7 +1265,7 @@ docker exec -i kg-redis-personal redis-cli llen asynq:{default}
 BACKUP_CLOUD_ENABLED=false
 ```
 
-- Проверь, что папка `backups` доступна контейнеру:
+- Проверь, что папка бэкапов доступна контейнеру (на хосте — `~/Desktop/my items`):
 
 ```powershell
 docker exec -i kg-backup-scheduler ls -la /backups
@@ -1428,7 +1428,7 @@ docker compose -f docker-compose.personal.yml up -d --build
 .\scripts\devops\backup-personal.ps1 -Mode daily
 ```
 
-Появится `backups/backup-personal-daily-<timestamp>.sql.gz`. Скопируй на новую машину и восстанови:
+Появится `backup-personal-daily-<timestamp>.sql.gz` в синхронизируемой папке (по умолчанию `~/Desktop/my items`). Скопируй на новую машину и восстанови:
 
 ```powershell
 docker cp backup-personal-daily-....sql.gz kg-postgres-personal:/tmp/
@@ -1534,7 +1534,7 @@ docker compose up -d --build
 3. Для **Personal** восстановись из бэкапа:
 
 ```powershell
-docker cp backups\backup-personal-pre-upgrade-....sql.gz kg-postgres-personal:/tmp/
+docker cp "$env:USERPROFILE/Desktop/my items/backup-personal-pre-upgrade-....sql.gz" kg-postgres-personal:/tmp/
 docker exec -i kg-postgres-personal gunzip -c /tmp/backup-personal-pre-upgrade-....sql.gz | psql -U personal -d knowledge_personal
 ```
 
@@ -1664,7 +1664,7 @@ docker ps --format "table {{.Names}}\t{{.Ports}}"
 .\scripts\devops\backup-personal.ps1 -Mode daily
 ```
 
-Файл появится в `./backups/backup-personal-daily-<timestamp>.sql.gz`.
+Файл появится в `~/Desktop/my items/backup-personal-daily-<timestamp>.sql.gz`.
 
 Внутри бэкапа:
 
@@ -1676,7 +1676,7 @@ docker ps --format "table {{.Names}}\t{{.Ports}}"
 Проверь размер:
 
 ```powershell
-Get-ChildItem .\backups | Sort-Object Length -Descending | Select-Object -First 5
+Get-ChildItem "$env:USERPROFILE/Desktop/my items" | Sort-Object Length -Descending | Select-Object -First 5
 ```
 
 ### Восстановление PostgreSQL из SQL-бэкапа
@@ -1704,7 +1704,7 @@ docker compose -f docker-compose.personal.yml up -d postgres_personal
 4. Скопируй и распакуй бэкап:
 
 ```powershell
-docker cp .\backups\backup-personal-daily-....sql.gz kg-postgres-personal:/tmp/backup.sql.gz
+docker cp "$env:USERPROFILE/Desktop/my items/backup-personal-daily-....sql.gz" kg-postgres-personal:/tmp/backup.sql.gz
 docker exec -i kg-postgres-personal gunzip -c /tmp/backup.sql.gz | psql -U personal -d knowledge_personal
 ```
 
@@ -1757,7 +1757,7 @@ curl http://127.0.0.1:18082/api/v1/notes
 ### Хранение бэкапов
 
 - Держи как минимум 3 последних SQL-бэкапа.
-- Копируй `backups/` на внешний диск / Yandex Disk.
+- Копируй папку бэкапов (`~/Desktop/my items`) на внешний диск / Yandex Disk.
 - Для Yandex:
 
 ```env
@@ -1818,13 +1818,13 @@ wsl --terminate docker-desktop-data
 
 ### Антивирус и файервол
 
-- Windows Defender Controlled Folder Access может блокировать Docker bind-mount (`./backups`, `./huggingface_cache`).
+- Windows Defender Controlled Folder Access может блокировать Docker bind-mount (`${KG_BACKUP_DIR}`/`~/Desktop/my items`, `./huggingface_cache`).
 - McAfee / Symantec / Kaspersky могут сканировать VHD и падать.
 - Добавь папку `D:\knowledge-graph` в исключения.
 
 ### Пути Windows ↔ WSL
 
-Bind-mount в `docker-compose.personal.yml` указывает на `./huggingface_cache` и `./backups`. Docker Desktop на WSL2 нормализует пути, но на Hyper-V это может сломаться.
+Bind-mount в `docker-compose.personal.yml` указывает на `./huggingface_cache` и `${KG_BACKUP_DIR}` (по умолчанию `~/Desktop/my items`). Docker Desktop на WSL2 нормализует пути, но на Hyper-V это может сломаться.
 
 ### `wsl --shutdown` безопасный
 
