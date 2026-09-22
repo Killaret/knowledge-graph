@@ -521,11 +521,14 @@ describe("GraphCanvas events", () => {
     expect(deleteBtn).toBeTruthy();
     fireEvent.mouseDown(deleteBtn as HTMLElement);
 
-    expect(onLinkDelete).toHaveBeenCalledWith({
-      source: "1",
-      target: "2",
-      link_type: "reference",
-    });
+    expect(onLinkDelete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: "1",
+        target: "2",
+        link_type: "reference",
+        source_type: "user",
+      })
+    );
   });
 
   it("exposes a controller for external control panels", () => {
