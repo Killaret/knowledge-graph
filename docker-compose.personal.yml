@@ -17,7 +17,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    restart: "no"
 
   redis_personal:
     image: redis:7-alpine
@@ -31,7 +31,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    restart: "no"
 
   mongo_personal:
     image: mongo:7
@@ -45,7 +45,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    restart: "no"
 
   nlp-personal:
     build: ./nlp-service
@@ -65,7 +65,7 @@ services:
       timeout: 5s
       retries: 24
       start_period: 180s
-    restart: unless-stopped
+    restart: "no"
 
   graph-service-personal:
     build:
@@ -95,7 +95,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    restart: unless-stopped
+    restart: "no"
 
   backend_personal:
     build:
@@ -134,7 +134,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: unless-stopped
+    restart: "no"
 
   worker_personal:
     build:
@@ -166,7 +166,7 @@ services:
         condition: service_started
       graph-service-personal:
         condition: service_healthy
-    restart: unless-stopped
+    restart: "no"
 
   cli_personal:
     build:
@@ -214,7 +214,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
-    restart: unless-stopped
+    restart: "no"
 
   frontend_personal:
     build:
@@ -253,7 +253,7 @@ services:
         condition: service_healthy
       graph-service-personal:
         condition: service_healthy
-    restart: unless-stopped
+    restart: "no"
 
   backup_scheduler:
     image: postgres:16-alpine
@@ -300,7 +300,7 @@ services:
     depends_on:
       postgres_personal:
         condition: service_healthy
-    restart: unless-stopped
+    restart: "no"
 
 volumes:
   pgdata_personal:
