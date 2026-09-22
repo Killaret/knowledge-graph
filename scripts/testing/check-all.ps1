@@ -1,12 +1,15 @@
 param(
     [switch]$Quick,
-    [switch]$Strict
+    [switch]$Strict,
+    # Test hook: run a subset manifest (e.g. one docker phase). The workflow
+    # sync check is skipped - it validates the real manifest, not a fixture.
+    [string]$Manifest
 )
 
 $ErrorActionPreference = 'Continue'
 $scriptDir = $PSScriptRoot
 $repoDir = Split-Path -Parent (Split-Path -Parent $scriptDir)
-$manifestPath = Join-Path $scriptDir 'core-checks.tsv'
+$manifestPath = if ($Manifest) { $Manifest } else { Join-Path $scriptDir 'core-checks.tsv' }
 $workflowPath = Join-Path $repoDir '.github\workflows\_core-checks.yml'
 $syncScript = Join-Path $scriptDir 'check-core-workflow-sync.mjs'
 
@@ -34,9 +37,21 @@ function Test-ToolAvailable {
         }
     }
     if ($Tool -like 'docker*') {
-        docker info *> $null
-        if ($LASTEXITCODE -ne 0) {
-            return 'Docker daemon is unavailable'
+        # CHECK-ALL-2: `docker info` can fail transiently on a live daemon
+        # under load - retry once before believing it, and the skip reason
+        # must name the command and show its output.
+        $dockerOutput = ''
+        $dockerExit = 0
+        foreach ($attempt in 1, 2) {
+            $dockerOutput = docker info 2>&1 | Out-String
+            $dockerExit = $LASTEXITCODE
+            if ($dockerExit -eq 0) { break }
+            if ($attempt -eq 1) { Start-Sleep -Seconds 3 }
+        }
+        if ($dockerExit -ne 0) {
+            $tail = (($dockerOutput -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -Last 3) -join ' | ')
+            if ($tail.Length -gt 300) { $tail = $tail.Substring(0, 300) }
+            return "docker info failed (exit ${dockerExit}): $tail"
         }
     }
     return $null
@@ -89,7 +104,9 @@ Write-Host '========================================' -ForegroundColor Cyan
 Write-Host '  Knowledge Graph Local Core Checks' -ForegroundColor Cyan
 Write-Host '========================================' -ForegroundColor Cyan
 
-if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+if ($Manifest) {
+    # Fixture manifest - the sync check applies to the real one only.
+} elseif (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     Register-Skip -Name 'Core workflow sync' -Reason 'node is not installed or not in PATH'
 } else {
     node $syncScript $manifestPath $workflowPath

@@ -20,6 +20,7 @@ decisions	Decision index guard	frontend-checks	Check decision index	.	node scrip
 handoff-size	Board size guard	frontend-checks	Check board size	.	node scripts/testing/check-board-size.mjs .	node scripts/testing/check-board-size.mjs .	0	node
 board-limits	Board limits guard	frontend-checks	Check board limits	.	node scripts/testing/check-board-limits.mjs .	node scripts/testing/check-board-limits.mjs .	0	node
 board-limits-tests	Board limits guard tests	frontend-checks	Run board limits guard tests	.	node scripts/testing/check-board-limits.test.mjs	node scripts/testing/check-board-limits.test.mjs	0	node
+docker-skip-test	Docker skip reason tests	frontend-checks	Run docker skip reason tests	.	node scripts/testing/check-all-docker-skip.test.mjs	node scripts/testing/check-all-docker-skip.test.mjs	0	node
 commit-authorship	Commit authorship guard	frontend-checks	Check commit authorship	.	node scripts/testing/check-commit-authorship.mjs .	node scripts/testing/check-commit-authorship.mjs .	0	node
 hooks-active	Git hooks activation	frontend-checks	Check git hooks activation	.	node scripts/testing/check-hooks-active.mjs .	node scripts/testing/check-hooks-active.mjs .	0	node
 frontend-unit	Frontend unit tests	frontend-checks	Run unit tests	frontend	npm run test:unit	npm run test:unit	0	npm

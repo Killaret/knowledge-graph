@@ -252,6 +252,10 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-board-limits.test.mjs
 
+      - name: Run docker skip reason tests
+        working-directory: .
+        run: node scripts/testing/check-all-docker-skip.test.mjs
+
       - name: Check commit authorship
         working-directory: .
         run: node scripts/testing/check-commit-authorship.mjs .

@@ -2,17 +2,22 @@
 
 QUICK=0
 STRICT=0
-for arg in "$@"; do
-    case "$arg" in
+MANIFEST_ARG=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --quick) QUICK=1 ;;
         --strict) STRICT=1 ;;
-        *) echo "Usage: $0 [--quick] [--strict]"; exit 2 ;;
+        # Test hook: run a subset manifest (e.g. one docker phase). The
+        # workflow sync check is skipped — it validates the real manifest.
+        --manifest) MANIFEST_ARG="${2:?--manifest requires a path}"; shift ;;
+        *) echo "Usage: $0 [--quick] [--strict] [--manifest PATH]"; exit 2 ;;
     esac
+    shift
 done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-MANIFEST_PATH="$SCRIPT_DIR/core-checks.tsv"
+MANIFEST_PATH="${MANIFEST_ARG:-$SCRIPT_DIR/core-checks.tsv}"
 WORKFLOW_PATH="$PROJECT_ROOT/.github/workflows/_core-checks.yml"
 SYNC_SCRIPT="$SCRIPT_DIR/check-core-workflow-sync.mjs"
 
@@ -36,9 +41,23 @@ tool_unavailable_reason() {
             return 0
         fi
     done
-    if [[ "$tool" == docker* ]] && ! docker info >/dev/null 2>&1; then
-        echo "Docker daemon is unavailable"
-        return 0
+    if [[ "$tool" == docker* ]]; then
+        # CHECK-ALL-2: `docker info` can fail transiently on a live daemon
+        # under load — retry once before believing it, and the skip reason
+        # must name the command and show its output.
+        local docker_output docker_exit=0 attempt
+        for attempt in 1 2; do
+            docker_output="$(docker info 2>&1)"
+            docker_exit=$?
+            [[ $docker_exit -eq 0 ]] && break
+            [[ $attempt -eq 1 ]] && sleep 3
+        done
+        if [[ $docker_exit -ne 0 ]]; then
+            local tail
+            tail="$(printf '%s\n' "$docker_output" | grep -v '^[[:space:]]*$' | tail -3 | tr '\n' '|' | cut -c1-300)"
+            echo "docker info failed (exit $docker_exit): $tail"
+            return 0
+        fi
     fi
     return 1
 }
@@ -87,7 +106,9 @@ run_check() {
 
 printf '%s\n' '========================================' '  Knowledge Graph Local Core Checks' '========================================'
 
-if command -v node >/dev/null 2>&1; then
+if [[ -n "$MANIFEST_ARG" ]]; then
+    : # fixture manifest — the sync check applies to the real one only
+elif command -v node >/dev/null 2>&1; then
     node "$SYNC_SCRIPT" "$MANIFEST_PATH" "$WORKFLOW_PATH"
     register_phase "Core workflow sync" "$?"
 else
