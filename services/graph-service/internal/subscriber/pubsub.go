@@ -52,6 +52,12 @@ type RedisSubscriber struct {
 	eventTrackingTTL time.Duration
 	checkInterval    time.Duration
 	retryThreshold   time.Duration
+	// refreshRequests carries closure-view refresh requests; capacity 1 so a
+	// burst of link/note events coalesces into a single pending refresh.
+	refreshRequests chan struct{}
+	// closureDebounce is the quiet window waited before refreshing, so a
+	// batch of events triggers one REFRESH instead of one per event.
+	closureDebounce time.Duration
 }
 
 func NewRedisSubscriber(redisClient *redis.Client, postgres db.PostgresClient, cache *cache.RedisCache, channel string, limit int) *RedisSubscriber {
@@ -64,6 +70,8 @@ func NewRedisSubscriber(redisClient *redis.Client, postgres db.PostgresClient, c
 		eventTrackingTTL: 24 * time.Hour,
 		checkInterval:    5 * time.Minute,
 		retryThreshold:   5 * time.Minute,
+		refreshRequests:  make(chan struct{}, 1),
+		closureDebounce:  2 * time.Second,
 	}
 }
 
@@ -78,6 +86,8 @@ func NewRedisSubscriberWithConfig(redisClient *redis.Client, postgres db.Postgre
 		eventTrackingTTL: cfg.EventTrackingTTL,
 		checkInterval:    cfg.UnprocessedEventCheckInterval,
 		retryThreshold:   cfg.UnprocessedEventRetryThreshold,
+		refreshRequests:  make(chan struct{}, 1),
+		closureDebounce:  2 * time.Second,
 	}
 }
 
@@ -91,6 +101,10 @@ func (s *RedisSubscriber) Start(ctx context.Context) error {
 
 	// Start worker for processing unprocessed events periodically
 	go s.processUnprocessedEvents(ctx)
+
+	// Start the debounced closure-view refresher: link/note events request a
+	// refresh instead of running REFRESH synchronously per event.
+	go s.closureRefreshLoop(ctx)
 
 	go func() {
 		for {
@@ -204,9 +218,7 @@ func (s *RedisSubscriber) handleNoteEvent(ctx context.Context, event Event) erro
 
 	// Note deletion may cascade to links, so refresh the closure view.
 	if event.Event == "NoteDeleted" {
-		if err := s.postgres.RefreshClosureView(ctx); err != nil {
-			log.Printf("[GraphService] Failed to refresh closure view after note event: %v", err)
-		}
+		s.requestClosureRefresh()
 	}
 
 	log.Printf("[GraphService] Cache invalidated for note event %s", event.Event)
@@ -244,13 +256,56 @@ func (s *RedisSubscriber) handleLinkEvent(ctx context.Context, event Event) erro
 		s.invalidatePattern(ctx, noteCachePattern2)
 	}
 
-	// Links change the transitive closure, so refresh the materialized view.
-	if err := s.postgres.RefreshClosureView(ctx); err != nil {
-		log.Printf("[GraphService] Failed to refresh closure view after link event: %v", err)
-	}
+	// Links change the transitive closure, so refresh the materialized view —
+	// asynchronously: REFRESH on a dense graph takes seconds to minutes and
+	// must not block the subscriber on every LinkCreated.
+	s.requestClosureRefresh()
 
 	log.Printf("[GraphService] Cache invalidated for link event %s", event.Event)
 	return nil
+}
+
+// requestClosureRefresh schedules a closure-view refresh without blocking the
+// caller. If a request is already pending the extra signal is dropped — one
+// pending refresh covers all changes seen so far.
+func (s *RedisSubscriber) requestClosureRefresh() {
+	select {
+	case s.refreshRequests <- struct{}{}:
+	default:
+	}
+}
+
+// closureRefreshLoop waits for refresh requests, debounces bursts into a
+// single REFRESH, and runs it off the event-handling path.
+func (s *RedisSubscriber) closureRefreshLoop(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-s.refreshRequests:
+			timer := time.NewTimer(s.closureDebounce)
+			for quiet := false; !quiet; {
+				select {
+				case <-ctx.Done():
+					timer.Stop()
+					return
+				case <-s.refreshRequests:
+					if !timer.Stop() {
+						select {
+						case <-timer.C:
+						default:
+						}
+					}
+					timer.Reset(s.closureDebounce)
+				case <-timer.C:
+					quiet = true
+				}
+			}
+			if err := s.postgres.RefreshClosureView(ctx); err != nil {
+				log.Printf("[GraphService] Failed to refresh closure view: %v", err)
+			}
+		}
+	}
 }
 
 func (s *RedisSubscriber) invalidatePattern(ctx context.Context, pattern string) {

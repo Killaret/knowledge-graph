@@ -215,8 +215,8 @@ stateDiagram-v2
 
 - After a `compute:embedding` task stores a note's embedding, the worker runs `GammaLinkGenerator` (`internal/application/recommendation`): up to `maxOutDegree = 2` nearest neighbours above `GAMMA_LINK_MIN_SCORE` (default `0.6`, env → `knowledge-graph.config.json` → `config.go`) become `links` rows with `source_type = 'gamma'`, `link_type = 'related'`, weight = cosine score.
 - Self-links and targets already linked (manually or by gamma) are skipped, so the pass is idempotent; manual links are never modified.
-- Each created link produces a `LinkCreated` event on the graph channel — graph-service invalidates caches and refreshes `note_links_closure` — and a refresh-recommendations task is enqueued for the source and each target.
-- The out-degree cap exists because `note_links_closure` enumerates transitive paths; a higher degree grows it quadratically+.
+- Each created link produces a `LinkCreated` event on the graph channel — graph-service invalidates caches and schedules a debounced async refresh of `note_links_closure` (one REFRESH per burst of events) — and a refresh-recommendations task is enqueued for the source and each target.
+- The out-degree cap exists because every edge adds reachable pairs to `note_links_closure`. Migration 033 bounds the view: BFS levels deduped per `(ancestor, descendant, distance)` up to depth 5 (the consumers' max), weight = max product over shortest paths; the stored `path` column was dropped — the path between two notes is computed on demand (`GetShortestPath`).
 - Threshold `0.6` and degree `2` are the cautious start of the W-1-recommended range (0.55–0.6 cosine, degree 2–3) — derived from the autolink precision curve on the `folder_path` ground truth, see `docs/tasks/W-1-eval-findings.md`. Recalibration on a real corpus is part of MODEL-1 follow-up.
 - Regeneration after a model change: `go run ./cmd/gamma-links-regenerate --dry-run` reports how many gamma links would be deleted and created; without the flag it deletes only `source_type='gamma'` rows and regenerates for notes that have an embedding for the current model.
 

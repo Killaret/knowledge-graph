@@ -12,6 +12,11 @@ func Neighbors(ctx context.Context, client db.PostgresClient, filter db.NotesFil
 	if depth <= 0 {
 		depth = 2
 	}
+	// The closure view (migration 033) holds distances only up to maxRecDepth;
+	// asking deeper would silently return a truncated neighbourhood.
+	if depth > maxRecDepth {
+		depth = maxRecDepth
+	}
 
 	rows, err := client.GetNoteNeighbors(ctx, filter, noteID, depth)
 	if err != nil {

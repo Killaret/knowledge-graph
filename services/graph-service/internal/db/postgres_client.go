@@ -352,13 +352,32 @@ func (c *postgresClient) GetShortestPath(ctx context.Context, filter NotesFilter
 		return nil, 0, 0, fmt.Errorf("from_id and to_id are required")
 	}
 
+	// The closure view no longer stores paths (migration 033): enumerating
+	// every simple walk is what made REFRESH take minutes on dense graphs.
+	// The path between two notes is computed here on demand — a
+	// single-source BFS over live links, bounded by the consumers' max
+	// depth (5). weight is the product along the returned path.
 	vis, visArgs := noteVisibilitySQLForEndpoints(filter, 2)
-	query := fmt.Sprintf(`SELECT array_to_string(c.path, ','), c.distance, c.weight
-	FROM note_links_closure c
-	JOIN notes nf ON nf.id = c.ancestor_id
-	JOIN notes nt ON nt.id = c.descendant_id
-	WHERE c.ancestor_id = $1 AND c.descendant_id = $2
+	query := fmt.Sprintf(`WITH RECURSIVE walk AS (
+	  SELECT l.target_note_id AS node, 1 AS distance, l.weight AS weight,
+	         ARRAY[l.source_note_id, l.target_note_id]::uuid[] AS path
+	  FROM links l
+	  WHERE l.deleted_at IS NULL AND l.source_note_id = $1
+	  UNION ALL
+	  SELECT l.target_note_id, w.distance + 1, w.weight * l.weight, w.path || l.target_note_id
+	  FROM walk w
+	  JOIN links l ON l.source_note_id = w.node
+	  WHERE l.deleted_at IS NULL
+	    AND w.distance < 5
+	    AND NOT l.target_note_id = ANY(w.path)
+	)
+	SELECT array_to_string(w.path, ','), w.distance, w.weight
+	FROM walk w
+	JOIN notes nf ON nf.id = $1
+	JOIN notes nt ON nt.id = w.node
+	WHERE w.node = $2
 	  AND nf.deleted_at IS NULL AND nt.deleted_at IS NULL AND %s
+	ORDER BY w.distance ASC, w.weight DESC
 	LIMIT 1`, vis)
 
 	args := []interface{}{fromID, toID}
@@ -374,12 +393,26 @@ func (c *postgresClient) GetShortestPath(ctx context.Context, filter NotesFilter
 
 	// Try reverse direction and reverse the returned path.
 	vis2, visArgs2 := noteVisibilitySQLForEndpoints(filter, 2)
-	query2 := fmt.Sprintf(`SELECT array_to_string(c.path, ','), c.distance, c.weight
-	FROM note_links_closure c
-	JOIN notes nf ON nf.id = c.ancestor_id
-	JOIN notes nt ON nt.id = c.descendant_id
-	WHERE c.ancestor_id = $2 AND c.descendant_id = $1
+	query2 := fmt.Sprintf(`WITH RECURSIVE walk AS (
+	  SELECT l.target_note_id AS node, 1 AS distance, l.weight AS weight,
+	         ARRAY[l.source_note_id, l.target_note_id]::uuid[] AS path
+	  FROM links l
+	  WHERE l.deleted_at IS NULL AND l.source_note_id = $2
+	  UNION ALL
+	  SELECT l.target_note_id, w.distance + 1, w.weight * l.weight, w.path || l.target_note_id
+	  FROM walk w
+	  JOIN links l ON l.source_note_id = w.node
+	  WHERE l.deleted_at IS NULL
+	    AND w.distance < 5
+	    AND NOT l.target_note_id = ANY(w.path)
+	)
+	SELECT array_to_string(w.path, ','), w.distance, w.weight
+	FROM walk w
+	JOIN notes nf ON nf.id = $2
+	JOIN notes nt ON nt.id = w.node
+	WHERE w.node = $1
 	  AND nf.deleted_at IS NULL AND nt.deleted_at IS NULL AND %s
+	ORDER BY w.distance ASC, w.weight DESC
 	LIMIT 1`, vis2)
 
 	args2 := []interface{}{fromID, toID}

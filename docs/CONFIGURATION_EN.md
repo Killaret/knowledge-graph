@@ -32,11 +32,13 @@ Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.c
 > **Defaults apply only when no JSON config is loaded at all.** When
 > `knowledge-graph.config.json` exists, `getJSONFloatOrDefault`/`getJSONStringOrDefault`
 > return the raw field — a *missing key* deserializes as the zero value (`0`,
-> `""`, `false`), silently overriding the Go default. Example: dropping
-> `gamma_link_min_score` from the JSON yields `GAMMA_LINK_MIN_SCORE = 0.0` —
-> the threshold is disabled, not defaulted. New config keys must therefore be
-> added to `config/*.json` sources; the Go fallback is only a safety net for
-> running without the file.
+> `""`, `false`), silently overriding the Go default. New config keys must
+> therefore be added to `config/*.json` sources; the Go fallback is only a
+> safety net for running without the file.
+> Exception: `gamma_link_min_score` is guarded in code — a value `<= 0`
+> (including a missing key) falls back to the `0.6` default with a log line,
+> because a zero threshold would link every note to any neighbour (LINKS-1
+> rework).
 
 ### File Structure
 
@@ -440,7 +442,7 @@ All other parameters can be configured via `knowledge-graph.config.json` or over
 | `EMBEDDING_SIMILARITY_LIMIT` | pgvector candidates limit | `30` | 10 - 100 |
 | `RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED` | Enable semantic fallback | `true` | - |
 | `RECOMMENDATION_KEYWORD_ENABLED` | Enable keyword component (gamma) | `true` | - |
-| `GAMMA_LINK_MIN_SCORE` | Minimum cosine score for an automatic (gamma) link (LINKS-1) | `0.6` | 0.0 - 1.0 |
+| `GAMMA_LINK_MIN_SCORE` | Minimum cosine score for an automatic (gamma) link (LINKS-1); values <= 0 fall back to 0.6 | `0.6` | 0.0 - 1.0 |
 
 ### Detailed Description
 

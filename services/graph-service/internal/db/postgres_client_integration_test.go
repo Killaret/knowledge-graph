@@ -148,4 +148,29 @@ func TestPostgresClient_Integration(t *testing.T) {
 		assert.NotContains(t, embeddings, "550e8400-e29b-41d4-a716-446655440001",
 			"GetEmbeddings must not return vectors of a different model")
 	})
+
+	// LINKS-1 rework: the closure view no longer stores paths; GetShortestPath
+	// computes the walk on demand over live links (public notes pass the
+	// visibility filter without a user id).
+	t.Run("GetShortestPath_OnDemand", func(t *testing.T) {
+		path, distance, weight, err := client.GetShortestPath(ctx, NotesFilter{IsPublic: true},
+			"550e8400-e29b-41d4-a716-446655440000", "550e8400-e29b-41d4-a716-446655440002")
+		require.NoError(t, err)
+		assert.Equal(t, []string{
+			"550e8400-e29b-41d4-a716-446655440000",
+			"550e8400-e29b-41d4-a716-446655440001",
+			"550e8400-e29b-41d4-a716-446655440002",
+		}, path)
+		assert.Equal(t, 2, distance)
+		assert.InDelta(t, 0.35, weight, 0.001, "product of edge weights along the path")
+
+		// Reverse direction: the stored links are directed 0 -> 1 -> 2, so the
+		// reverse lookup walks 2 -> 0 and returns the path reversed.
+		rev, revDist, _, err := client.GetShortestPath(ctx, NotesFilter{IsPublic: true},
+			"550e8400-e29b-41d4-a716-446655440002", "550e8400-e29b-41d4-a716-446655440000")
+		require.NoError(t, err)
+		assert.Equal(t, 2, revDist)
+		assert.Equal(t, "550e8400-e29b-41d4-a716-446655440002", rev[0])
+		assert.Equal(t, "550e8400-e29b-41d4-a716-446655440000", rev[len(rev)-1])
+	})
 }

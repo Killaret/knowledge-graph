@@ -16,9 +16,9 @@ type BatchLinkRepository interface {
 }
 
 // GammaLinkGenerator creates gamma (automatic, embedding-based) links for notes.
-// It limits the outgoing degree per note to avoid blowing up the transitive
-// closure materialized view (note_links_closure), which is exponential in the
-// worst case for dense graphs.
+// It limits the outgoing degree per note: the transitive closure materialized
+// view (note_links_closure) is bounded by pairs x depth since migration 033,
+// but every extra edge still multiplies the number of reachable pairs.
 type GammaLinkGenerator struct {
 	embeddingRepo EmbeddingRepository
 	linkRepo      BatchLinkRepository
@@ -27,10 +27,11 @@ type GammaLinkGenerator struct {
 }
 
 // NewGammaLinkGenerator creates a generator with the given out-degree cap and
-// minimum similarity score. maxOutDegree must be > 0; values above 2 should not
-// be used with the current materialized view because path enumeration becomes
-// prohibitively expensive. minScore must be in [0, 1]; without it every note
-// would get links to its nearest neighbours no matter how distant they are.
+// minimum similarity score. maxOutDegree must be > 0; keep it small (2) —
+// every gamma edge makes the graph denser and the closure refresh (migration
+// 033, shortest-paths bounded at depth 5) grows with it. minScore must be in
+// [0, 1]; without it every note would get links to its nearest neighbours no
+// matter how distant they are.
 func NewGammaLinkGenerator(embeddingRepo EmbeddingRepository, linkRepo BatchLinkRepository, maxOutDegree int, minScore float64) *GammaLinkGenerator {
 	if maxOutDegree <= 0 {
 		maxOutDegree = 2

@@ -464,7 +464,7 @@ func Load() (*Config, error) {
 		RecommendationFallbackTTL:             time.Duration(getIntEnv("RECOMMENDATION_FALLBACK_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Recommendation.FallbackTTLSeconds }, 3600))) * time.Second,
 		RecommendationFallbackSemanticEnabled: getBoolEnv("RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.FallbackSemanticEnabled }, true)),
 		RecommendationKeywordEnabled:          getBoolEnv("RECOMMENDATION_KEYWORD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.KeywordEnabled }, true)),
-		GammaLinkMinScore:                     getFloatEnv("GAMMA_LINK_MIN_SCORE", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.GammaLinkMinScore }, 0.6)),
+		GammaLinkMinScore:                     resolveGammaLinkMinScore(jsonCfg),
 		RecommendationKeywordSimilarityMethod: getEnv("RECOMMENDATION_KEYWORD_SIMILARITY_METHOD", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Recommendation.KeywordSimilarityMethod }, "jaccard")),
 		RecommendationKeywordTverskyAlpha:     getFloatEnv("RECOMMENDATION_KEYWORD_TVERSKY_ALPHA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.KeywordTverskyAlpha }, 0.5)),
 		RecommendationKeywordTverskyBeta:      getFloatEnv("RECOMMENDATION_KEYWORD_TVERSKY_BETA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.KeywordTverskyBeta }, 0.5)),
@@ -557,6 +557,22 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// resolveGammaLinkMinScore wires env -> JSON -> default 0.6, plus a guard:
+// a JSON file that omits gamma_link_min_score unmarshals as 0.0, which would
+// silently link every note to any neighbour — the exact failure the threshold
+// exists to prevent. A non-positive value always falls back to the default.
+func resolveGammaLinkMinScore(jsonCfg *JSONConfig) float64 {
+	const fallback = 0.6
+	v := getFloatEnv("GAMMA_LINK_MIN_SCORE", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 {
+		return j.Backend.Recommendation.GammaLinkMinScore
+	}, fallback))
+	if v <= 0 {
+		log.Printf("[Config] gamma_link_min_score resolved to %v (missing or non-positive); using default %v", v, fallback)
+		return fallback
+	}
+	return v
 }
 
 // Helper functions for JSON config with fallbacks

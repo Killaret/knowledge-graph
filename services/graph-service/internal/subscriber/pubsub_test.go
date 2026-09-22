@@ -3,6 +3,7 @@ package subscriber
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
@@ -44,6 +45,79 @@ func (m *mockPostgresClient) GetRecommendationCandidates(ctx context.Context, fi
 
 func (m *mockPostgresClient) RefreshClosureView(ctx context.Context) error {
 	return nil
+}
+
+// countingPostgresClient records closure refreshes for debounce tests.
+type countingPostgresClient struct {
+	mockPostgresClient
+	mu        sync.Mutex
+	refreshes int
+}
+
+func (m *countingPostgresClient) RefreshClosureView(ctx context.Context) error {
+	m.mu.Lock()
+	m.refreshes++
+	m.mu.Unlock()
+	return nil
+}
+
+func (m *countingPostgresClient) count() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.refreshes
+}
+
+// LINKS-1 rework: REFRESH on a dense graph takes seconds to minutes, so link
+// events must coalesce into one debounced refresh instead of blocking the
+// subscriber once per event. A synchronous implementation fails this test:
+// ten events would land ten refreshes, not one.
+func TestLinkEvents_DebounceClosureRefresh(t *testing.T) {
+	mr := miniredis.RunT(t)
+	redisClient := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer redisClient.Close()
+	defer mr.Close()
+
+	postgres := &countingPostgresClient{}
+	cacheClient := cache.NewRedisCache(redisClient)
+
+	subscriber := NewRedisSubscriber(redisClient, postgres, cacheClient, "test-channel", 100)
+	subscriber.closureDebounce = 20 * time.Millisecond
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go subscriber.closureRefreshLoop(ctx)
+
+	payloadBytes, err := json.Marshal(LinkEventPayload{
+		SourceNoteID: "note-1",
+		TargetNoteID: "note-2",
+		UserID:       "user-1",
+	})
+	require.NoError(t, err)
+
+	for i := 0; i < 10; i++ {
+		event := Event{
+			EventID: "evt-burst",
+			Event:   "LinkCreated",
+			Payload: payloadBytes,
+		}
+		require.NoError(t, subscriber.processEvent(ctx, event))
+	}
+
+	// The whole burst must collapse into a single refresh after quiet.
+	assert.Eventually(t, func() bool {
+		return postgres.count() == 1
+	}, 2*time.Second, 10*time.Millisecond)
+	assert.Equal(t, 1, postgres.count(), "ten LinkCreated events must debounce to one refresh")
+
+	// A later event after the quiet window schedules a second refresh.
+	require.NoError(t, subscriber.processEvent(ctx, Event{
+		EventID: "evt-later",
+		Event:   "LinkCreated",
+		Payload: payloadBytes,
+	}))
+	assert.Eventually(t, func() bool {
+		return postgres.count() == 2
+	}, 2*time.Second, 10*time.Millisecond)
 }
 
 func TestEventParsing(t *testing.T) {

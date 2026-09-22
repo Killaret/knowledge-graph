@@ -732,3 +732,30 @@ func TestGammaLinkMinScore(t *testing.T) {
 		t.Errorf("expected env override GammaLinkMinScore 0.55, got %f", cfg.GammaLinkMinScore)
 	}
 }
+
+// A loaded JSON config without the gamma_link_min_score key unmarshals as 0.0
+// — getJSONFloatOrDefault returns that zero instead of the Go default, which
+// would link every note to any neighbour. The resolver must fall back to 0.6.
+func TestGammaLinkMinScore_MissingJSONKey(t *testing.T) {
+	original := os.Getenv("GAMMA_LINK_MIN_SCORE")
+	defer func() {
+		if original == "" {
+			os.Unsetenv("GAMMA_LINK_MIN_SCORE")
+		} else {
+			os.Setenv("GAMMA_LINK_MIN_SCORE", original)
+		}
+	}()
+	os.Unsetenv("GAMMA_LINK_MIN_SCORE")
+
+	// JSON config present but the key is absent -> zero value inside.
+	jsonCfg := &JSONConfig{}
+	if v := resolveGammaLinkMinScore(jsonCfg); v != 0.6 {
+		t.Errorf("expected fallback 0.6 for missing JSON key, got %f", v)
+	}
+
+	// An explicit positive value still wins.
+	jsonCfg.Backend.Recommendation.GammaLinkMinScore = 0.7
+	if v := resolveGammaLinkMinScore(jsonCfg); v != 0.7 {
+		t.Errorf("expected JSON value 0.7, got %f", v)
+	}
+}
