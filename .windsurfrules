@@ -335,6 +335,14 @@ Corollary: **an operation that reports success has not been verified.** Check th
 changed what you believe it changed — a script that matched zero lines still exits 0,
 and a commit message can claim work the diff does not contain.
 
+Corollary for mutations: **a green mutation is a finding about the mutation first, not
+about the test.** Before declaring a test blind, verify the mutation sits on the path
+the code actually executes — mutating a helper nobody calls, a branch the fixture never
+reaches, or a check the caller bypasses proves nothing about coverage. Mutate the real
+execution path, or pick a different mutation. (Lesson of 2026-09-23: mutating
+`Suppression.Blocks` stayed green not because the test was blind but because the
+generator filters through a `pairKey` map; the honest mutation was there.)
+
 Before reporting a finding, or accepting someone else's:
 
 - **read the surrounding context**, not the matching line — a count of

@@ -71,6 +71,7 @@ A change is only finished when it is **covered by tests and written down**. See 
 - Every observable behaviour change must update or create the relevant documentation in the same change.
 - When `.windsurfrules` changes, mirror the change into this skill and both master prompts.
 - A zero count is a measurement, not proof of absence: verify the source of truth directly before concluding the product is broken.
+- A green mutation is a finding about the mutation first: before declaring a test blind, verify the mutation sits on the path the code actually executes — mutate the real path or pick a different mutation.
 
 ### Adversarial phase
 

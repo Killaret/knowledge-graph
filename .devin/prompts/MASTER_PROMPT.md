@@ -202,6 +202,8 @@ finding — or accepting someone else's — follow "Verifying a Finding" in
 
 Corollary: **an operation that reports success has not been verified.** Check that it changed what you believe it changed — a script that matched zero lines still exits 0, and a commit message can claim work the diff does not contain.
 
+Corollary for mutations: **a green mutation is a finding about the mutation first, not about the test.** Before declaring a test blind, verify the mutation sits on the path the code actually executes — mutating a helper nobody calls, a branch the fixture never reaches, or a check the caller bypasses proves nothing about coverage. Mutate the real execution path, or pick a different mutation.
+
 - Read the surrounding context, not the matching line. A hit inside a
   "do not do this" list, a code example, or a dated journal entry is not a
   defect, and a count of occurrences is not evidence.
