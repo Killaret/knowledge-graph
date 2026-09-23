@@ -117,3 +117,100 @@ link_suppressions для этой пары: 1
   `TestCreateLink_PromotesGammaReverseDirection` (хендлер); мок обновлён.
 - Тесты: `TestToGraphLink_GammaOrigin` (три состояния); мутация «флаг только
   по IsGamma» красная. Frontend: 41/41 в graph.test.ts, typecheck чистый.
+
+## Ревью условия, Claude Code, 2026-09-23
+
+**Вердикт: отклонено.** Серверная часть сделана и охраняется — признак считается верно, встречное
+повышение работает, обе мутации красные. Но признак добавлен **не туда, откуда холст берёт
+связи**, и до интерфейса в обычной работе не доходит: пояснение при удалении подтверждённой связи
+по-прежнему не появляется.
+
+### Блокер: `gamma_origin` отдаёт монолит, а связи холста приходят из graph-service
+
+Страница графа грузит связи так (`frontend/src/shared/api/graph.ts:245–273`):
+
+```
+loadGraph → getFullGraphData(…, mode)
+  → getGraphApi().get("v1/graph/full" | "v1/graph/public")   ← graph-service, /graph-service/api
+  → при ошибке и mode === "personal": getFreshGraph()        ← монолит, /api/v1/me/graph/fresh
+```
+
+`gamma_origin` добавлен в `backend/internal/interfaces/api/graphhandler/graph_handler.go` — то есть
+в `/me/graph/cached|fresh` монолита, который фронтенд зовёт **только как запасной путь**, когда
+graph-service не ответил. В graph-service признака нет: структура связи
+`services/graph-service/internal/engine/layout.go:34` несёт `source_type`, а поиск по всему сервису
+на `gamma_origin|GammaOrigin` — **ноль совпадений**; запрос связей
+(`db/postgres_client.go`) метаданные не выбирает.
+
+В обычной работе у связи на холсте `gamma_origin` нет, `normalizeLink` подставляет `false`, и
+`handleLinkDelete` для подтверждённой связи снова удаляет без пояснения — ровно то, что было
+условием. Фронтенд-тест `graph.test.ts` зелёный, потому что кормит маппинг ответом, в котором
+поле есть; настоящий сервер его не шлёт.
+
+Что нужно: признак в graph-service — выбрать `metadata ? 'gamma'` (или готовое булево) в запросе
+связей, поле `gamma_origin` в `engine/layout.go` и во всех ответах, отдающих связи (`full`,
+`public`, `delta`, `note`); тест graph-service на ответ с повышенной связью; мутация «не выбирать
+признак» — красная. И проверка по-настоящему: через ответ `/graph-service/api/v1/graph/full` на
+стенде, а не через маппинг.
+
+### Живое подтверждение — тест-стенд, 2026-09-23
+
+Автосвязь повышена через `POST /api/v1/links` (ответ 200), затем та же связь в двух ответах:
+
+```
+graph-service  /api/v1/graph/full   (его читает холст)
+  {"source": "7ab89bc5…", "target": "091d27eb…", "weight": 0.9, "link_type": "related", "source_type": "user"}
+
+монолит        /api/v1/me/graph/fresh   (только запасной путь)
+  {"id": "00b80c4b…", "source": "7ab89bc5…", "target": "091d27eb…", "weight": 0.9,
+   "link_type": "related", "source_type": "user", "gamma_origin": true}
+```
+
+### Вторая находка, серьёзнее условия: у связей холста нет `id` — удаление с холста не работает вообще
+
+В том же ответе graph-service у связи нет **`id`**: структура `LayoutLink`
+(`services/graph-service/internal/engine/layout.go:29`) — это `source`, `target`, `weight`,
+`link_type`, `source_type`. Объект связи под курсором собирается в
+`frontend/src/features/graph-interaction/event-bridge.ts:350–362` и берёт `id` из связи холста —
+значит, `undefined`. А `handleLinkDelete` (`routes/graph/+page.svelte:303`) при отсутствии `id`
+молча выходит («Cannot delete link without id», лог только в режиме разработки).
+
+Следствие: кнопки «Удалить» и «Не связаны» в подсказке связи на холсте ничего не делают — ни для
+какой связи. Проверка обработчика на `id` появилась 2026-08-02 (`6685318`, удаление связей из
+интерфейса), связи холста приходят из graph-service — так что дефект старше LINKS-2, но
+отказ «не связаны» из LINKS-2 с экрана поэтому недостижим. Моё ревью LINKS-2 22.09 проверяло
+отказ через API и оставило проверку с экрана (п. 11) владельцу — туда этот дефект и упал.
+
+И третье: `event-bridge.ts` не копирует `gamma_origin` в объект под курсором вообще — даже когда
+graph-service начнёт присылать признак, до `handleLinkDelete` он не дойдёт.
+
+Проверено по коду и живому ответу API; с экрана не проверял — навести курсор на связь в холсте
+автоматически ненадёжно.
+
+### Что нужно (одной доработкой)
+
+1. graph-service: `id` и `gamma_origin` у связи в `LayoutLink` и во всех ответах со связями
+   (`full`, `public`, `delta`, `note`); запрос связей выбирает `id` и признак происхождения.
+2. `event-bridge.ts`: `gamma_origin` — в объект связи под курсором.
+3. Проверка **через настоящий путь**: e2e на стенде — навести на повышенную связь, «Удалить» →
+   модалка с пояснением → связь ушла, в `link_suppressions` запись; и на чистой ручной — удаление
+   без пояснения. Если e2e с наведением ненадёжен — свидетельство с экрана в
+   `docs/agents/MANUAL_TEST_FEEDBACK.md`.
+4. Мутации: не выбирать `id` в graph-service → e2e красный; не копировать `gamma_origin` в
+   `event-bridge.ts` → проверка пояснения красная.
+
+### Проверено исполнением
+
+| Что | Результат |
+|---|---|
+| Юнит-тесты `graphhandler`, `linkhandler`, `cache` | зелёные |
+| Интеграция `TestLinkRepositoryIntegrationSuite` | зелёная, включая `PromotesGammaReverseDirection` и `ManualConflictReverse` |
+| **Мутация**: признак только по `IsGamma()`, без происхождения | `TestToGraphLink_GammaOrigin` — **FAIL** |
+| **Мутация**: повышение ищет только в том же направлении | `PromotesGammaReverseDirection` и `ManualConflictReverse` — **FAIL** |
+| Событие при повышении | `PublishLinkCreated` вызывается до ветки `!created` (`link_handler.go`, Create) — graph-service узнаёт и о встречном повышении, кэш инвалидируется |
+
+### Принято без замечаний
+
+- Встречное повышение принимает направление запроса и сохраняет `id` и `created_at` строки — одно
+  ребро на пару, как требует решение 53; ручная поверх ручной во встречную сторону — 409.
+- `openAPI.yaml` описывает `source_type` и `gamma_origin` у связи в ответе монолита.
