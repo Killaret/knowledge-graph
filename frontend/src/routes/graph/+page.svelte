@@ -306,6 +306,7 @@
     target: string;
     link_type: string;
     source_type?: string;
+    gamma_origin?: boolean;
   }) {
     if (!link.id) {
       if (import.meta.env.DEV) {
@@ -313,9 +314,10 @@
       }
       return;
     }
-    // Rejecting a gamma proposal is a decision, not cleanup: the pair is
-    // recorded as "not related" and will not be suggested again — explain it.
-    if (link.source_type === "gamma") {
+    // Rejecting a gamma proposal — or deleting a link the model once proposed
+    // (gamma_origin survives promotion) — is a decision, not cleanup: the pair
+    // is recorded as "not related" and will not be suggested again — explain it.
+    if (link.source_type === "gamma" || link.gamma_origin) {
       linkToDelete = { id: link.id, source_type: link.source_type };
       showLinkDeleteConfirm = true;
       return;

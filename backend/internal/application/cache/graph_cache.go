@@ -55,6 +55,7 @@ type GraphLink struct {
 	Weight           float64 `json:"weight"`
 	LinkType         string  `json:"link_type"`
 	SourceType       string  `json:"source_type"`
+	GammaOrigin      bool    `json:"gamma_origin"`
 	LastWeightUpdate *string `json:"last_weight_update,omitempty"`
 }
 

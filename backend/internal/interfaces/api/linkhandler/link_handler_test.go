@@ -1158,6 +1158,47 @@ func TestCreateLink_PromotesGammaLink(t *testing.T) {
 	assert.Equal(t, gammaCreatedAt, pair[0].CreatedAt())
 }
 
+// A manual link in the reverse direction over a gamma row promotes it —
+// one edge per pair, the row adopts the requested direction.
+func TestCreateLink_PromotesGammaReverseDirection(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+	addLinkTestNote(noteRepo, sourceID, "Source")
+	addLinkTestNote(noteRepo, targetID, "Target")
+
+	lt, _ := link.NewLinkType("related")
+	wt, _ := link.NewWeight(0.6)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	gamma := link.NewGammaLink(sourceID, targetID, lt, wt, md)
+	require.NoError(t, linkRepo.Save(context.Background(), gamma))
+	gammaID := gamma.ID()
+
+	// The user links the pair backwards: target -> source.
+	rec := postLinkBody(t, r, map[string]interface{}{
+		"source_note_id": targetID.String(),
+		"target_note_id": sourceID.String(),
+		"link_type":      "related",
+		"weight":         0.9,
+	})
+	assert.Equal(t, http.StatusOK, rec.Code, "reverse promotion must answer 200: %s", rec.Body.String())
+
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	data := resp["data"].(map[string]interface{})
+	assert.Equal(t, gammaID.String(), data["id"], "promotion keeps the same row id")
+	assert.Equal(t, targetID.String(), data["source_note_id"], "promoted row adopts the requested direction")
+	assert.Equal(t, sourceID.String(), data["target_note_id"])
+
+	fwd, err := linkRepo.FindByPair(context.Background(), sourceID, targetID)
+	require.NoError(t, err)
+	assert.Empty(t, fwd, "no X→Y row must remain")
+	back, err := linkRepo.FindByPair(context.Background(), targetID, sourceID)
+	require.NoError(t, err)
+	require.Len(t, back, 1)
+}
+
 // Manual link over a manual link still conflicts — promotion must not turn
 // into silent overwrite of someone else's link.
 func TestCreateLink_ManualOverManualStill409(t *testing.T) {

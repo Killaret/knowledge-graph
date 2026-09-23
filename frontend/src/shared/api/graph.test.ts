@@ -280,6 +280,7 @@ describe("normalizeNode and normalizeLink", () => {
       weight: 0.5,
       link_type: "related",
       source_type: "user",
+      gamma_origin: false,
       last_weight_update: undefined,
     });
   });

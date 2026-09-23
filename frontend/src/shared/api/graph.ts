@@ -30,6 +30,7 @@ export interface GraphLink {
   weight?: number; // вес связи (толщина линии)
   link_type?: string; // тип связи: reference, dependency, related, custom
   source_type?: string; // источник связи: user или gamma
+  gamma_origin?: boolean; // модель когда-то предлагала эту пару (gamma или повышенная)
   last_weight_update?: string; // дата последнего обновления веса
 }
 
@@ -63,6 +64,7 @@ export function normalizeLink(link: Partial<GraphLink>): GraphLink {
     weight: link.weight ?? 0.5,
     link_type: link.link_type ?? "related",
     source_type: link.source_type ?? "user",
+    gamma_origin: link.gamma_origin ?? false,
     last_weight_update: link.last_weight_update,
   };
 }

@@ -2667,6 +2667,16 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+        source_type:
+          type: string
+          enum: [user, gamma]
+          description: Who created the link — a human or the gamma generator.
+        gamma_origin:
+          type: boolean
+          description: >-
+            True when the model once proposed this pair — either the link is
+            still gamma, or it was promoted by a human and keeps its gamma
+            provenance. Deleting such a link records a "not related" rejection.
 
     RegisterRequest:
       type: object

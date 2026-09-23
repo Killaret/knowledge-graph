@@ -33,6 +33,7 @@ type GraphLink struct {
 	Weight           float64 `json:"weight"`
 	LinkType         string  `json:"link_type"`
 	SourceType       string  `json:"source_type"`
+	GammaOrigin      bool    `json:"gamma_origin"`
 	LastWeightUpdate *string `json:"last_weight_update,omitempty"`
 }
 
@@ -54,6 +55,7 @@ func toGraphLink(l *link.Link) GraphLink {
 		Weight:           l.Weight().Value(),
 		LinkType:         l.LinkType().String(),
 		SourceType:       l.SourceType().String(),
+		GammaOrigin:      l.SourceType().IsGamma() || l.HasGammaProvenance(),
 		LastWeightUpdate: lastUpdate,
 	}
 }
@@ -541,6 +543,7 @@ func convertToCacheGraphData(data GraphData) cache.GraphData {
 			Weight:           link.Weight,
 			LinkType:         link.LinkType,
 			SourceType:       link.SourceType,
+			GammaOrigin:      link.GammaOrigin,
 			LastWeightUpdate: link.LastWeightUpdate,
 		}
 	}
@@ -573,6 +576,7 @@ func convertFromCacheGraphData(data cache.GraphData) GraphData {
 			Weight:           link.Weight,
 			LinkType:         link.LinkType,
 			SourceType:       link.SourceType,
+			GammaOrigin:      link.GammaOrigin,
 			LastWeightUpdate: link.LastWeightUpdate,
 		}
 	}

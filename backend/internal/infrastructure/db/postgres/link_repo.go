@@ -157,11 +157,13 @@ func (r *LinkRepository) FindByPair(ctx context.Context, sourceID, targetID uuid
 }
 
 // SaveUserLink applies the manual-create rules atomically (LINKS-2):
-//   - a gamma row of the same type on the same directed pair is promoted in
-//     place (created=false) — the row keeps its id and created_at;
+//   - a gamma row of the same type on the same pair — in either direction —
+//     is promoted in place (created=false) — the row keeps its id and
+//     created_at;
 //   - gamma rows of other types on the pair are removed and their provenance
 //     moves into the new row's metadata.gamma;
-//   - a manual row of the same type yields ErrDuplicateLink;
+//   - a manual row of the same type on the pair (either direction) yields
+//     ErrDuplicateLink — decision 53: one edge per pair;
 //   - rejections (link_suppressions) for the normalized pair with NULL or
 //     matching link_type are lifted in the same transaction.
 func (r *LinkRepository) SaveUserLink(ctx context.Context, l *link.Link) (*link.Link, bool, error) {
@@ -171,7 +173,8 @@ func (r *LinkRepository) SaveUserLink(ctx context.Context, l *link.Link) (*link.
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var models []LinkModel
 		if err := tx.
-			Where("source_note_id = ? AND target_note_id = ? AND deleted_at IS NULL", l.SourceNoteID(), l.TargetNoteID()).
+			Where("(source_note_id = ? AND target_note_id = ? OR source_note_id = ? AND target_note_id = ?) AND deleted_at IS NULL",
+				l.SourceNoteID(), l.TargetNoteID(), l.TargetNoteID(), l.SourceNoteID()).
 			Find(&models).Error; err != nil {
 			return err
 		}
@@ -198,17 +201,26 @@ func (r *LinkRepository) SaveUserLink(ctx context.Context, l *link.Link) (*link.
 				return err
 			}
 			gamma.PromoteToUser(l.CreatorID(), l.LinkType(), l.Weight(), l.Metadata())
+			if gamma.SourceNoteID() != l.SourceNoteID() || gamma.TargetNoteID() != l.TargetNoteID() {
+				gamma = link.ReconstructLinkWithCreator(gamma.ID(), l.SourceNoteID(), l.TargetNoteID(),
+					gamma.LinkType(), gamma.Weight(), gamma.Metadata(), gamma.SourceType(),
+					gamma.CreatorID(), gamma.CreatedAt(), gamma.UpdatedAt(), gamma.LastWeightUpdate())
+			}
 			promoted, err := toGormLink(gamma)
 			if err != nil {
 				return err
 			}
+			// When the gamma row lives in the opposite direction, promotion
+			// adopts the user's direction — one edge per pair (decision 53).
 			if err := tx.Model(&LinkModel{}).Where("id = ?", sameType.ID).Updates(map[string]interface{}{
-				"link_type":   promoted.LinkType,
-				"weight":      promoted.Weight,
-				"metadata":    promoted.Metadata,
-				"source_type": promoted.SourceType,
-				"creator_id":  promoted.CreatorID,
-				"updated_at":  promoted.UpdatedAt,
+				"source_note_id": l.SourceNoteID(),
+				"target_note_id": l.TargetNoteID(),
+				"link_type":      promoted.LinkType,
+				"weight":         promoted.Weight,
+				"metadata":       promoted.Metadata,
+				"source_type":    promoted.SourceType,
+				"creator_id":     promoted.CreatorID,
+				"updated_at":     promoted.UpdatedAt,
 			}).Error; err != nil {
 				return err
 			}

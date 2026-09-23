@@ -440,6 +440,51 @@ func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_PromotesGamma() {
 	s.Equal("user", pair[0].SourceType().String())
 }
 
+// TestSaveUserLink_PromotesGammaReverseDirection — ручная связь Y→X поверх
+// gamma X→Y повышает существующую строку, принимая направление запроса:
+// одно ребро на пару (решение 53), id и created_at сохранены.
+func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_PromotesGammaReverseDirection() {
+	linkType, _ := link.NewLinkType("related")
+	gammaWeight, _ := link.NewWeight(0.6)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	gamma := link.NewGammaLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, gammaWeight, md)
+	s.Require().NoError(s.repo.Save(s.ctx, gamma))
+
+	userWeight, _ := link.NewWeight(0.9)
+	reqMD, _ := link.NewMetadata(nil)
+	// Ручная связь в обратную сторону.
+	manual := link.NewLink(s.targetNote.ID(), s.sourceNote.ID(), linkType, userWeight, reqMD)
+
+	saved, created, err := s.repo.SaveUserLink(s.ctx, manual)
+	s.Require().NoError(err)
+	s.False(created, "reverse-direction manual link must promote the gamma row")
+	s.Equal(gamma.ID(), saved.ID())
+	s.Equal("user", saved.SourceType().String())
+	s.Equal(s.targetNote.ID(), saved.SourceNoteID(), "promoted row must adopt the requested direction")
+	s.Equal(s.sourceNote.ID(), saved.TargetNoteID())
+	s.True(saved.HasGammaProvenance(), "promotion keeps gamma origin")
+
+	pairForward, err := s.repo.FindByPair(s.ctx, s.sourceNote.ID(), s.targetNote.ID())
+	s.Require().NoError(err)
+	s.Empty(pairForward, "no X→Y row must remain")
+	pairBack, err := s.repo.FindByPair(s.ctx, s.targetNote.ID(), s.sourceNote.ID())
+	s.Require().NoError(err)
+	s.Require().Len(pairBack, 1)
+}
+
+// TestSaveUserLink_ManualConflictReverse — ручная поверх ручной во встречном
+// направлении тоже конфликт: одно ребро на пару.
+func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_ManualConflictReverse() {
+	linkType, _ := link.NewLinkType("related")
+	weight, _ := link.NewWeight(0.8)
+	md, _ := link.NewMetadata(nil)
+	s.Require().NoError(s.repo.Save(s.ctx, link.NewLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, weight, md)))
+
+	back := link.NewLink(s.targetNote.ID(), s.sourceNote.ID(), linkType, weight, md)
+	_, _, err := s.repo.SaveUserLink(s.ctx, back)
+	s.ErrorIs(err, link.ErrDuplicateLink)
+}
+
 // TestSaveUserLink_ManualConflict — ручная поверх ручной остаётся конфликтом.
 func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_ManualConflict() {
 	linkType, _ := link.NewLinkType("related")

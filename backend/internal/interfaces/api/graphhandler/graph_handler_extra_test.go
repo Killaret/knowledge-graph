@@ -172,3 +172,22 @@ func TestGetCachedGraph_NoCache(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
+
+// TestToGraphLink_GammaOrigin — the graph API must expose link provenance so
+// the UI can warn that deleting a promoted link records a "not related"
+// rejection (LINKS-2 review condition).
+func TestToGraphLink_GammaOrigin(t *testing.T) {
+	lt, _ := link.NewLinkType("related")
+	wt, _ := link.NewWeight(0.7)
+	gmd, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	umd, _ := link.NewMetadata(nil)
+
+	gamma := link.NewGammaLink(uuid.New(), uuid.New(), lt, wt, gmd)
+	promoted := link.NewGammaLink(uuid.New(), uuid.New(), lt, wt, gmd)
+	promoted.PromoteToUser(nil, lt, wt, umd)
+	manual := link.NewLink(uuid.New(), uuid.New(), lt, wt, umd)
+
+	assert.True(t, toGraphLink(gamma).GammaOrigin, "gamma link must flag gamma_origin")
+	assert.True(t, toGraphLink(promoted).GammaOrigin, "promoted link keeps gamma_origin via metadata.gamma")
+	assert.False(t, toGraphLink(manual).GammaOrigin, "pure manual link must not flag gamma_origin")
+}

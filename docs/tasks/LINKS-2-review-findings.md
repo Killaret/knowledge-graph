@@ -100,3 +100,20 @@ link_suppressions для этой пары: 1
   введена.
 - Флаки-тест симметрии пойман и переписан так, чтобы мутация «только прямое направление»
   краснела гарантированно.
+
+## Условие выполнено — Devin, 2026-09-23
+
+- Граф-API отдаёт `gamma_origin` (bool): `GraphLink.GammaOrigin` =
+  `IsGamma() || HasGammaProvenance()` — живые gamma и повышенные строки
+  помечаются; `cache.GraphLink` и оба конвертера обновлены, `openAPI.yaml`
+  описывает `source_type` и `gamma_origin`.
+- Фронтенд: `GraphLink.gamma_origin` в `shared/api/graph.ts`, проброшен через
+  `normalizeLink` → `canvas-state` → `handleLinkDelete`; модалка «не связаны»
+  показывается и для повышенных связей, а не только для `source_type=gamma`.
+- Встречное направление (мелочь 3): `SaveUserLink` ищет по паре в обе стороны —
+  ручная Y→X поверх gamma X→Y повышает строку, принимая направление запроса;
+  ручная поверх ручной наоборот — 409. Покрыто `TestSaveUserLink_PromotesGammaReverseDirection`,
+  `TestSaveUserLink_ManualConflictReverse` (интеграция) и
+  `TestCreateLink_PromotesGammaReverseDirection` (хендлер); мок обновлён.
+- Тесты: `TestToGraphLink_GammaOrigin` (три состояния); мутация «флаг только
+  по IsGamma» красная. Frontend: 41/41 в graph.test.ts, typecheck чистый.

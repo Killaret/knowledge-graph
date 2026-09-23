@@ -22,6 +22,7 @@ export interface HoveredLinkInfo {
   link_type: string;
   weight: number;
   source_type: string;
+  gamma_origin?: boolean;
   last_weight_update?: string;
 }
 
@@ -146,6 +147,7 @@ export function createGraphCanvasState() {
       target: string;
       link_type: string;
       source_type?: string;
+      gamma_origin?: boolean;
     }) => void
   ) {
     if (hoveredLink && onLinkDelete) {
@@ -155,6 +157,7 @@ export function createGraphCanvasState() {
         target: hoveredLink.target,
         link_type: hoveredLink.link_type,
         source_type: hoveredLink.source_type,
+        gamma_origin: hoveredLink.gamma_origin,
       });
     }
     hoveredLink = null;

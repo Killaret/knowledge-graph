@@ -84,7 +84,9 @@ func (m *mockLinkRepo) SaveUserLink(ctx context.Context, l *link.Link) (*link.Li
 	var sameType *link.Link
 	var gammas []*link.Link
 	for _, existing := range m.links {
-		if existing.SourceNoteID() != l.SourceNoteID() || existing.TargetNoteID() != l.TargetNoteID() {
+		samePair := existing.SourceNoteID() == l.SourceNoteID() && existing.TargetNoteID() == l.TargetNoteID()
+		reversePair := existing.SourceNoteID() == l.TargetNoteID() && existing.TargetNoteID() == l.SourceNoteID()
+		if !samePair && !reversePair {
 			continue
 		}
 		if existing.LinkType().String() == l.LinkType().String() {
@@ -100,11 +102,17 @@ func (m *mockLinkRepo) SaveUserLink(ctx context.Context, l *link.Link) (*link.Li
 
 	if sameType != nil {
 		sameType.PromoteToUser(l.CreatorID(), l.LinkType(), l.Weight(), l.Metadata())
+		if sameType.SourceNoteID() != l.SourceNoteID() || sameType.TargetNoteID() != l.TargetNoteID() {
+			sameType = link.ReconstructLinkWithCreator(sameType.ID(), l.SourceNoteID(), l.TargetNoteID(),
+				sameType.LinkType(), sameType.Weight(), sameType.Metadata(), sameType.SourceType(),
+				sameType.CreatorID(), sameType.CreatedAt(), sameType.UpdatedAt(), sameType.LastWeightUpdate())
+		}
 		for _, g := range gammas {
 			if g.ID() != sameType.ID() {
 				delete(m.links, g.ID())
 			}
 		}
+		m.links[sameType.ID()] = sameType
 		m.liftSuppressions(l.SourceNoteID(), l.TargetNoteID(), l.LinkType().String())
 		return sameType, false, nil
 	}
