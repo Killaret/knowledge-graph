@@ -47,6 +47,7 @@
 | **LINKS-3:** пакетный подбор соседей берёт наименьшие UUID вместо ближайших — пересчёт свёл 200 автосвязей к 3 целям; тест REG-2 закрепил ошибку | [`tasks/LINKS-3-batch-similarity-order.md`](tasks/LINKS-3-batch-similarity-order.md) | **на ревью** — окно row_number по близости; REG-2 перевёрнут, оракул, три мутации красные | 2026-09-23 |
 | **LINKS-2 (условие):** признак происхождения в граф-API и пояснение при удалении подтверждённой связи; заодно встречное направление | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **на ревью** — `gamma_origin` в граф-API и UI, встречное направление повышает | 2026-09-23 |
 | **RELEASE-1:** рамки версии 1.0 — что входит в выпуск, что откладываем, критерии готовности; бэклог разросся, без рамки 1.0 не выпустить | — | **бэклог** — ждёт Claude Code: постановка и обсуждение с владельцем (его просьба 2026-09-23) | 2026-09-23 |
+| **MODEL-2:** миграция на `multilingual-e5-base`: 384→768, префиксы, чанкование, пересчёт | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **бэклог** — ждёт решения по MODEL-1; черновик Devin, обсуждение с Claude Code (владелец хочет обсудить модели — поднято 2026-09-23) | 2026-09-23 |
 
 
 
@@ -54,7 +55,6 @@
 | **W-1:** валидация формулы весов на ground truth `folder_path` | [`tasks/W-1-eval-findings.md`](tasks/W-1-eval-findings.md) | **бэклог** — ждёт Claude Code: ревью eval — семантика доминирует, граф покрывает 27 %, keywords ортогональны | 2026-09-21 |
 | **NOTE-QUALITY-1:** мера качества — контракт с Java (решение 42): объём, оконченность, логичность, присутствие мысли | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **бэклог** — обсуждение с владельцем вместе с URL-HEADING-1, дату назначит он; постановка для Java, критерии от нас | 2026-09-21 |
 | **NLP-3:** устройство nlp-service: 4 эндпоинта, карта вызовов, пути оптимизации | [`tasks/NLP-3-nlp-service-structure-review.md`](tasks/NLP-3-nlp-service-structure-review.md) | **бэклог** — ждёт Claude Code: верификация обхода Devin и карта вызывающих | 2026-09-21 |
-| **MODEL-2:** миграция на `multilingual-e5-base`: 384→768, префиксы, чанкование, пересчёт | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **бэклог** — ждёт решения по MODEL-1; черновик Devin, обсуждение с Claude Code | 2026-09-21 |
 | **CHUNK-1:** структурный чанкер текста заметки, target 256 токенов | [`tasks/CHUNK-1-structure-aware-chunker.md`](tasks/CHUNK-1-structure-aware-chunker.md) | **бэклог** — ждёт Claude Code: ревью постановки и замера прототипа | 2026-09-21 |
 | **NLP-4:** логическая форма заметки перед эмбеддингом | [`tasks/NLP-4-note-logical-form-normalization.md`](tasks/NLP-4-note-logical-form-normalization.md) | **бэклог** — ждёт Claude Code: ревью постановки Devin (решения 19.09) и замера итераций — неподвижная точка после первого прохода | 2026-09-21 |
 | **LOG-1:** backend на `rs/zerolog`, запрет секретов в логах (решение 35) | [`tasks/LOG-1-zerolog-integration.md`](tasks/LOG-1-zerolog-integration.md) | **бэклог** — черновик у Claude Code: сверка потребителей логгера и план миграции | 2026-09-21 |

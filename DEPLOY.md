@@ -407,7 +407,9 @@ Manual local backup:
 
 ## NLP model and `huggingface_cache`
 
-The NLP service runs **offline** (`HF_HUB_OFFLINE=1`) and reads the model from the bind-mount `./huggingface_cache:/root/.cache/huggingface`. On first start the folder is empty.
+The NLP service runs **offline** (`HF_HUB_OFFLINE=1`) and reads the model from the bind-mount `${HF_CACHE_DIR:-./huggingface_cache}:/root/.cache/huggingface`. On first start the folder is empty.
+
+Set `HF_CACHE_DIR` in `.env` to share one cache across clones and stacks (e.g. `HF_CACHE_DIR=D:/kg-hf-cache`) — the mount then survives clone cleanup; Docker prunes never touch it. Default keeps the per-clone `./huggingface_cache`.
 
 ### Option A — with internet
 
