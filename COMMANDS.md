@@ -134,6 +134,7 @@ go run ./cmd/seed                  # Запуск seed скрипта
 go run ./cmd/embed-recompute       # Пересчёт эмбеддингов (-dry-run, -batch-delay, -post)
 go run ./cmd/keyword-recompute     # Пересчёт ключевых слов (те же флаги; NLP-2)
 go run ./cmd/gamma-links-regenerate # Пересоздание автосвязей (-dry-run; LINKS-1)
+#   ⚠ до LINKS-3 не запускать: пакетный подбор соседей выбирает наименьшие UUID, а не ближайших
 ```
 
 ### Тестирование
