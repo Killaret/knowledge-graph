@@ -268,7 +268,7 @@ func TestEmbeddingRepository_FindSimilarNotesBatch(t *testing.T) {
 	}
 
 	// Three candidates per source, but limit is 2, so the per-source limit must cut
-	// off targetCloseLargeID (largest note_id). The selected far target proves clamping.
+	// off targetFarID (lowest similarity) — not the largest note_id.
 	batch, err := currentRepo.FindSimilarNotesBatch(ctx, []uuid.UUID{source1ID, source2ID, noEmbeddingID}, 2)
 	if err != nil {
 		t.Fatalf("FindSimilarNotesBatch failed: %v", err)
@@ -299,9 +299,10 @@ func TestEmbeddingRepository_FindSimilarNotesBatch(t *testing.T) {
 		}
 	}
 
-	// 2. Limit is per source, not global. With three candidates and limit=2, each
-	// source should get exactly two results; a global LIMIT 2 would only return
-	// results for the first source.
+	// 2. Limit is per source, not global — and selection is by similarity, not
+	// by note_id. With three candidates and limit=2, each source gets the two
+	// closest targets; the far one is discarded even though its UUID is smaller
+	// than targetCloseLargeID's.
 	for _, id := range []uuid.UUID{source1ID, source2ID} {
 		similar, ok := batch[id]
 		if !ok || len(similar) != 2 {
@@ -311,26 +312,30 @@ func TestEmbeddingRepository_FindSimilarNotesBatch(t *testing.T) {
 
 		expected := map[uuid.UUID]bool{
 			targetCloseSmallID: true,
-			targetFarID:        true,
+			targetCloseLargeID: true,
 		}
 		for _, s := range similar {
 			if !expected[s.NoteID] {
 				t.Errorf("source %v: unexpected note %v", id, s.NoteID)
 			}
+			if s.NoteID == targetFarID {
+				t.Errorf("source %v: far note %v selected over a closer neighbour", id, s.NoteID)
+			}
 		}
 
-		// The first note by ORDER BY note_id is the close one, the second is the far one.
+		// Both close targets share the source vector; the e2.note_id tiebreaker
+		// makes the smaller UUID come first.
 		if similar[0].NoteID != targetCloseSmallID {
 			t.Errorf("source %v: expected first result to be %v, got %v", id, targetCloseSmallID, similar[0].NoteID)
 		}
 		if similar[0].Score != 1.0 {
 			t.Errorf("source %v: expected close score 1.0, got %v", id, similar[0].Score)
 		}
-		if similar[1].NoteID != targetFarID {
-			t.Errorf("source %v: expected second result to be %v, got %v", id, targetFarID, similar[1].NoteID)
+		if similar[1].NoteID != targetCloseLargeID {
+			t.Errorf("source %v: expected second result to be %v, got %v", id, targetCloseLargeID, similar[1].NoteID)
 		}
-		if similar[1].Score != 0.0 {
-			t.Errorf("source %v: expected far score 0.0 after clamping, got %v", id, similar[1].Score)
+		if similar[1].Score != 1.0 {
+			t.Errorf("source %v: expected close score 1.0, got %v", id, similar[1].Score)
 		}
 	}
 
@@ -363,5 +368,116 @@ func TestEmbeddingRepository_FindSimilarNotesBatch(t *testing.T) {
 				t.Errorf("source %v: self-match leaked into results", id)
 			}
 		}
+	}
+
+	// 6. Score clamping: the far target's raw score is -1 (cosine distance 2),
+	// so the wide query must return it clamped to 0.0 — and it must still be
+	// present, ranked last by distance.
+	for _, id := range []uuid.UUID{source1ID, source2ID} {
+		similar := wide[id]
+		if len(similar) == 0 {
+			continue
+		}
+		last := similar[len(similar)-1]
+		if last.NoteID != targetFarID {
+			t.Errorf("source %v: expected far note %v ranked last, got %v", id, targetFarID, last.NoteID)
+		}
+		if last.Score != 0.0 {
+			t.Errorf("source %v: expected far score 0.0 after clamping, got %v", id, last.Score)
+		}
+	}
+}
+
+// TestFindSimilarNotesBatch_MatchesSinglePath is an equivalence oracle: the
+// batch query must pick the same neighbours as the correct single-note query
+// (ORDER BY score DESC). UUID order is deliberately opposite to similarity
+// order — the nearest target has the largest UUID — so a batch path that
+// sorts by note_id instead of distance fails immediately.
+func TestFindSimilarNotesBatch_MatchesSinglePath(t *testing.T) {
+	db, cleanup := testutil.SetupTestVectorDB(t)
+	defer cleanup()
+
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate models: %v", err)
+	}
+
+	repo := NewEmbeddingRepository(db, "paraphrase-multilingual-MiniLM-L12-v2")
+	noteRepo := NewNoteRepository(db, nil)
+	ctx := context.Background()
+
+	sourceID := uuid.MustParse("a0000000-0000-0000-0000-000000000001")
+	// UUID order: far < mid < near — the inverse of similarity order.
+	farID := uuid.MustParse("10000000-0000-0000-0000-000000000001")
+	midID := uuid.MustParse("20000000-0000-0000-0000-000000000001")
+	nearID := uuid.MustParse("f0000000-0000-0000-0000-000000000001")
+
+	// Unit-ish vectors along different axes give a strict distance order:
+	// near ≈ source, mid orthogonal-ish, far opposite.
+	vecAt := func(idx int, val float32) pgvector.Vector {
+		v := make([]float32, 384)
+		v[idx] = val
+		return pgvector.NewVector(v)
+	}
+	sourceVec := vecAt(0, 1.0)
+	nearVecRaw := make([]float32, 384)
+	nearVecRaw[0] = 0.9
+	nearVecRaw[1] = 0.1
+	nearVec := pgvector.NewVector(nearVecRaw)
+	midVecRaw := make([]float32, 384)
+	midVecRaw[0] = 0.5
+	midVecRaw[1] = 0.5
+	midVec := pgvector.NewVector(midVecRaw)
+	farVec := vecAt(0, -1.0)
+
+	createNote := func(title string, id uuid.UUID) {
+		titleV, _ := note.NewTitle(title)
+		content, _ := note.NewContent("content")
+		metadata, _ := note.NewMetadata(nil)
+		n := note.NewNote(titleV, content, note.MustType("star"), metadata, note.WithID(id))
+		if err := noteRepo.Save(ctx, n); err != nil {
+			t.Fatalf("Save note failed: %v", err)
+		}
+	}
+	createNote("Source", sourceID)
+	createNote("Far (smallest UUID)", farID)
+	createNote("Mid", midID)
+	createNote("Near (largest UUID)", nearID)
+
+	for id, v := range map[uuid.UUID]pgvector.Vector{
+		sourceID: sourceVec,
+		farID:    farVec,
+		midID:    midVec,
+		nearID:   nearVec,
+	} {
+		if err := repo.Upsert(ctx, id, v); err != nil {
+			t.Fatalf("Upsert %v failed: %v", id, err)
+		}
+	}
+
+	const limit = 2
+	single, err := repo.FindSimilarNotes(ctx, sourceID, limit)
+	if err != nil {
+		t.Fatalf("FindSimilarNotes failed: %v", err)
+	}
+	batch, err := repo.FindSimilarNotesBatch(ctx, []uuid.UUID{sourceID}, limit)
+	if err != nil {
+		t.Fatalf("FindSimilarNotesBatch failed: %v", err)
+	}
+
+	got := batch[sourceID]
+	if len(got) != len(single) {
+		t.Fatalf("batch returned %d neighbours, single path %d", len(got), len(single))
+	}
+	for i := range single {
+		if got[i].NoteID != single[i].NoteID {
+			t.Errorf("neighbour %d: batch=%v single=%v", i, got[i].NoteID, single[i].NoteID)
+		}
+	}
+
+	// And the concrete expectation: nearest (largest UUID) first, mid second,
+	// far (smallest UUID) cut off by the limit.
+	if len(got) != 2 || got[0].NoteID != nearID || got[1].NoteID != midID {
+		t.Errorf("expected [near %v, mid %v], got %v", nearID, midID, got)
 	}
 }

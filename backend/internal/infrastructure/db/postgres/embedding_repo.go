@@ -91,31 +91,36 @@ func (r *EmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs
 		idStrings[i] = id.String()
 	}
 
+	// row_number() picks the `limit` nearest neighbours per source in SQL;
+	// e2.note_id is only a tiebreaker for determinism. The previous form
+	// ordered by (e1.note_id, e2.note_id) — i.e. smallest UUIDs, not
+	// nearest neighbours — and let Go discard the rest of the N² rows.
 	err := r.db.WithContext(ctx).Raw(`
-        SELECT DISTINCT ON (e1.note_id, e2.note_id)
-            e1.note_id as source_id,
-            e2.note_id,
-            GREATEST(0.0, LEAST(1.0, 1 - (e1.embedding <=> e2.embedding))) as score
-        FROM note_embeddings e1
-        JOIN note_embeddings e2 ON e1.note_id != e2.note_id AND e1.model_name = e2.model_name
-        WHERE e1.note_id = ANY(?) AND e1.model_name = ? AND e2.model_name = ?
-        ORDER BY e1.note_id, e2.note_id, score DESC
-    `, pq.Array(idStrings), r.modelName, r.modelName).Scan(&results).Error
+        SELECT source_id, note_id, score FROM (
+            SELECT e1.note_id AS source_id,
+                   e2.note_id,
+                   GREATEST(0.0, LEAST(1.0, 1 - (e1.embedding <=> e2.embedding))) AS score,
+                   row_number() OVER (PARTITION BY e1.note_id
+                                      ORDER BY e1.embedding <=> e2.embedding, e2.note_id) AS rn
+            FROM note_embeddings e1
+            JOIN note_embeddings e2 ON e1.note_id != e2.note_id AND e1.model_name = e2.model_name
+            WHERE e1.note_id = ANY(?) AND e1.model_name = ? AND e2.model_name = ?
+        ) t
+        WHERE rn <= ?
+        ORDER BY source_id, rn
+    `, pq.Array(idStrings), r.modelName, r.modelName, limit).Scan(&results).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	// Group results by source_id
+	// Group results by source_id; SQL already returns at most `limit` rows per source
 	grouped := make(map[uuid.UUID][]apprec.SimilarNote)
 	for _, res := range results {
-		// Limit number of results for each source
-		if len(grouped[res.SourceID]) < limit {
-			grouped[res.SourceID] = append(grouped[res.SourceID], apprec.SimilarNote{
-				NoteID: res.NoteID,
-				Score:  res.Score,
-			})
-		}
+		grouped[res.SourceID] = append(grouped[res.SourceID], apprec.SimilarNote{
+			NoteID: res.NoteID,
+			Score:  res.Score,
+		})
 	}
 
 	return grouped, nil
