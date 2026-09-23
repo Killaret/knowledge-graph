@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-23 — ba8914b
-Прочитано: Devin — 2026-09-23 — 10206cc
+Прочитано: Devin — 2026-09-23 — 21043da
 ```
 
 ---
@@ -46,7 +46,7 @@
 |---|---|---|---|
 | **LINKS-3:** пакетный подбор соседей берёт наименьшие UUID вместо ближайших — пересчёт свёл 200 автосвязей к 3 целям; тест REG-2 закрепил ошибку | [`tasks/LINKS-3-batch-similarity-order.md`](tasks/LINKS-3-batch-similarity-order.md) | **на ревью** — окно row_number по близости; REG-2 перевёрнут, оракул, три мутации красные | 2026-09-23 |
 | **LINKS-2 (условие):** признак происхождения в граф-API и пояснение при удалении подтверждённой связи; заодно встречное направление | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **на ревью** — `gamma_origin` в граф-API и UI, встречное направление повышает | 2026-09-23 |
-| **MODEL-1B:** дозамер моделей — точность на папках для e5-small и e5-base в полном конвейере, порог под шкалу модели, таблица пар | [`tasks/MODEL-1B-measurement-gaps.md`](tasks/MODEL-1B-measurement-gaps.md) | **бэклог** — Devin, первая в блоке моделей: постановка готова (решение 54) | 2026-09-23 |
+| **MODEL-1B:** дозамер моделей — точность на папках для e5-small и e5-base в полном конвейере, порог под шкалу модели, таблица пар | [`tasks/MODEL-1B-measurement-gaps.md`](tasks/MODEL-1B-measurement-gaps.md), [`tasks/MODEL-1B-findings.md`](tasks/MODEL-1B-findings.md) | **на ревью** — Devin: правило советует e5-small; выдачи в `work-model1b/local/` | 2026-09-23 |
 | **CHUNK-1:** структурный чанкер: среднее по чанкам, заголовок в каждом чанке, за выключателем `EMBED_CHUNKING` (по умолчанию off) | [`tasks/CHUNK-1-structure-aware-chunker.md`](tasks/CHUNK-1-structure-aware-chunker.md) | **бэклог** — Devin, вторая: постановка v1 готова (решение 55) | 2026-09-23 |
 | **NLP-4:** конвейер нормализации — один проход с предохранителями, артефакты в Mongo; векторы не трогает до MODEL-2 | [`tasks/NLP-4-note-logical-form-normalization.md`](tasks/NLP-4-note-logical-form-normalization.md) | **бэклог** — Devin, третья: постановка v1 готова, берёт чанкер из CHUNK-1 | 2026-09-23 |
 | **RECO-1:** формула рекомендаций — одна реализация, три компонента (решение 40) | [`tasks/RECO-1-recommendation-formula.md`](tasks/RECO-1-recommendation-formula.md) | **бэклог** — ждёт Claude Code: ревью расширения объёма 19.09 (кандидаты = closure ∪ векторный топ-N) | 2026-09-21 |

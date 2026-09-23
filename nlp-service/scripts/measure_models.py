@@ -124,11 +124,89 @@ def ngram_candidates(text, top=20):
     return [w for w, cnt in c.most_common(top) if cnt >= 2 or top <= 10][:top]
 
 
+def write_report(path, results, names, notes):
+    """Regenerate the whole findings report for every variant in `results`.
+
+    `names` fixes section/column order (VARIANTS order for measured names).
+    The file is rewritten, not appended: MODEL-1 lost table 2 for all
+    variants except the first because each `--only` run appended its own
+    one-variant report block and the assembly kept the first table-2
+    section only. Accumulating results in a state file and rewriting the
+    report makes every run produce complete tables for all variants
+    measured so far."""
+    out = open(path, "w", encoding="utf-8")
+
+    out.write("\n## Таблица 0. Параметры моделей (сверено по файлам)\n\n")
+    out.write("| Вариант | hidden | max_position | окно в файле | окно замера | лицензия |\n|---|---|---|---|---|---|\n")
+    lic = {v["name"]: v["license"] for v in VARIANTS}
+    for n in names:
+        p = results[n]["params"]
+        out.write(f"| {n} | {p['hidden']} | {p['max_pos']} | {p['file_window']} | {p['window_used']} | {lic.get(n, '?')} |\n")
+
+    out.write("\n## Таблица 1. Поиск — top-10 по каждому запросу\n")
+    for qi, q in enumerate(QUERIES):
+        out.write(f"\n### Запрос {qi + 1}: «{q}»\n\n| # | " + " | ".join(names) + " |\n|---|" + "---|" * len(names) + "\n")
+        for r in range(10):
+            cells = " | ".join(results[n]["search"][qi][r][:60] for n in names)
+            out.write(f"| {r + 1} | {cells} |\n")
+
+    out.write("\n## Таблица 2. Близость пар — top-15 по 20 типичным заметкам\n\n")
+    for n in names:
+        out.write(f"\n### {n}\n\n| # | Пара | cos |\n|---|---|---|\n")
+        for i, (s, a, b) in enumerate(results[n]["pairs"]):
+            out.write(f"| {i + 1} | {a[:45]} ↔ {b[:45]} | {s:.3f} |\n")
+
+    out.write("\n## Таблица 3. Ключевые слова — top-10 (гибрид: частотный шорт-лист → модель; колонка yake — базовая линия)\n")
+    yake_kw = None
+    try:
+        import yake
+        nltk_stop = set()
+        try:
+            import nltk
+            nltk_stop = set(nltk.corpus.stopwords.words("russian") + nltk.corpus.stopwords.words("english"))
+        except Exception:
+            pass
+        yake_kw = yake.KeywordExtractor(lan="ru", top=10, stopwords=nltk_stop or None)
+    except ImportError:
+        pass
+    kw_notes = list(results[names[0]]["kw"].keys())
+    note_by_title = {n["title"]: n for n in notes}
+    for t in kw_notes:
+        if yake_kw is not None:
+            yake_top = [w for w, _ in yake_kw.extract_keywords(note_by_title[t]["content"])[:10]]
+        else:
+            yake_top = []
+        out.write(f"\n### {t[:70]}\n\n| # | " + " | ".join(names) + " | yake |\n|---|" + "---|" * (len(names) + 1) + "\n")
+        for r in range(10):
+            cells = " | ".join(
+                (results[n]["kw"][t][r] if r < len(results[n]["kw"][t]) else "—") for n in names)
+            cells += " | " + (yake_top[r] if r < len(yake_top) else "—")
+            out.write(f"| {r + 1} | {cells} |\n")
+
+    out.write("\n## Таблица 4. Скорость (CPU, внутри контейнера)\n\n")
+    out.write("| Вариант | embed p50, мс | embed p95, мс | весь корпус, с | keybert p50, мс | keybert p95, мс |\n|---|---|---|---|---|---|\n")
+    for n in names:
+        r = results[n]
+        out.write(f"| {n} | {r['p50_ms']:.0f} | {r['p95_ms']:.0f} | {r['encode_all_s']:.1f} | {r['kw_p50_ms']:.0f} | {r['kw_p95_ms']:.0f} |\n")
+
+    out.write("\n## Таблица 5. Память контейнера с загруженной моделью\n\n")
+    out.write("| Вариант | RSS процесса, МБ | прирост над baseline, МБ |\n|---|---|---|\n")
+    for n in names:
+        r = results[n]
+        out.write(f"| {n} | {r['proc_mb']:.0f} | {r['model_mb']:.0f} |\n")
+
+    out.close()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--only", default="")
+    ap.add_argument("--state", default="",
+                    help="JSON-файл накопленных результатов; по умолчанию "
+                         "<out>.state.json. Прогоны --only дополняют его, "
+                         "отчёт перегенерируется по всем накопленным вариантам.")
     args = ap.parse_args()
 
     from huggingface_hub import snapshot_download
@@ -145,7 +223,6 @@ def main():
     typical = by_len[mid - 10:mid + 10]
     sample_kw = (by_len[-5:] + by_len[mid - 3:mid + 2])[:8]  # 8 notes for keywords table
 
-    out = open(args.out, "a", encoding="utf-8")
     results = {}
 
     for v in VARIANTS:
@@ -232,61 +309,18 @@ def main():
         del model, doc_emb
         print(f"    rss +{model_rss - base_rss:.0f}MB  p50 {results[v['name']]['p50_ms']:.0f}ms", flush=True)
 
-    # ---- write markdown ----
-    names = [v["name"] for v in VARIANTS if v["name"] in results]
-    out.write("\n## Таблица 0. Параметры моделей (сверено по файлам)\n\n")
-    out.write("| Вариант | hidden | max_position | окно в файле | окно замера | лицензия |\n|---|---|---|---|---|---|\n")
-    lic = {v["name"]: v["license"] for v in VARIANTS}
-    for n in names:
-        p = results[n]["params"]
-        out.write(f"| {n} | {p['hidden']} | {p['max_pos']} | {p['file_window']} | {p['window_used']} | {lic[n]} |\n")
+    # ---- merge into state, regenerate the whole report ----
+    state_path = args.state or (args.out + ".state.json")
+    state = {}
+    if os.path.exists(state_path):
+        with open(state_path, encoding="utf-8") as f:
+            state = json.load(f)
+    state.update(results)
+    with open(state_path, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False)
 
-    out.write("\n## Таблица 1. Поиск — top-10 по каждому запросу\n")
-    for qi, q in enumerate(QUERIES):
-        out.write(f"\n### Запрос {qi + 1}: «{q}»\n\n| # | " + " | ".join(names) + " |\n|---|" + "---|" * len(names) + "\n")
-        for r in range(10):
-            cells = " | ".join(results[n]["search"][qi][r][:60] for n in names)
-            out.write(f"| {r + 1} | {cells} |\n")
-
-    out.write("\n## Таблица 2. Близость пар — top-15 по 20 типичным заметкам\n\n")
-    for n in names:
-        out.write(f"\n### {n}\n\n| # | Пара | cos |\n|---|---|---|\n")
-        for i, (s, a, b) in enumerate(results[n]["pairs"]):
-            out.write(f"| {i + 1} | {a[:45]} ↔ {b[:45]} | {s:.3f} |\n")
-
-    out.write("\n## Таблица 3. Ключевые слова — top-10 (гибрид: частотный шорт-лист → модель; колонка yake — базовая линия)\n")
-    import yake
-    nltk_stop = set()
-    try:
-        import nltk
-        nltk_stop = set(nltk.corpus.stopwords.words("russian") + nltk.corpus.stopwords.words("english"))
-    except Exception:
-        pass
-    yake_kw = yake.KeywordExtractor(lan="ru", top=10, stopwords=nltk_stop or None)
-    kw_notes = list(results[names[0]]["kw"].keys())
-    note_by_title = {n["title"]: n for n in notes}
-    for t in kw_notes:
-        yake_top = [w for w, _ in yake_kw.extract_keywords(note_by_title[t]["content"])[:10]]
-        out.write(f"\n### {t[:70]}\n\n| # | " + " | ".join(names) + " | yake |\n|---|" + "---|" * (len(names) + 1) + "\n")
-        for r in range(10):
-            cells = " | ".join(
-                (results[n]["kw"][t][r] if r < len(results[n]["kw"][t]) else "—") for n in names)
-            cells += " | " + (yake_top[r] if r < len(yake_top) else "—")
-            out.write(f"| {r + 1} | {cells} |\n")
-
-    out.write("\n## Таблица 4. Скорость (CPU, внутри контейнера)\n\n")
-    out.write("| Вариант | embed p50, мс | embed p95, мс | весь корпус, с | keybert p50, мс | keybert p95, мс |\n|---|---|---|---|---|---|\n")
-    for n in names:
-        r = results[n]
-        out.write(f"| {n} | {r['p50_ms']:.0f} | {r['p95_ms']:.0f} | {r['encode_all_s']:.1f} | {r['kw_p50_ms']:.0f} | {r['kw_p95_ms']:.0f} |\n")
-
-    out.write("\n## Таблица 5. Память контейнера с загруженной моделью\n\n")
-    out.write("| Вариант | RSS процесса, МБ | прирост над baseline, МБ |\n|---|---|---|\n")
-    for n in names:
-        r = results[n]
-        out.write(f"| {n} | {r['proc_mb']:.0f} | {r['model_mb']:.0f} |\n")
-
-    out.close()
+    names = [v["name"] for v in VARIANTS if v["name"] in state]
+    write_report(args.out, state, names, notes)
     print("\nwritten:", args.out)
 
 

@@ -194,3 +194,5 @@ coverage
 # Корпус замеров NLP-4/CHUNK-1: дампы с телами заметок не коммитятся (решение 2026-09-21)
 work-nlp4/notes_dataset.json
 work-*/notes_dataset*.json
+# MODEL-1B: артефакты с названиями заметок (пары, выдача, лист разметки) — только локально
+work-model1b/local/
