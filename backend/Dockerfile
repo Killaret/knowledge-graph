@@ -17,5 +17,6 @@ COPY --from=builder /app/seed .
 COPY --from=builder /app/backend/migrations ./migrations
 # Copy config file for runtime access
 COPY --from=builder /app/knowledge-graph.config.json ./knowledge-graph.config.json
+COPY --from=builder /app/backend/openAPI.yaml ./openAPI.yaml
 EXPOSE 8080
 CMD ["./server"]

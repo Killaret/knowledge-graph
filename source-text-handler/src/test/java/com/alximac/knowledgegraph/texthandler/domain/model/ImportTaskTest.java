@@ -17,7 +17,7 @@ class ImportTaskTest {
     @DisplayName("Must create with valid values")
     void mustCreateWithValidValues() {
         ImportTask task = new ImportTask(
-                VALID_EVENT_ID, VALID_CORRELATION_ID, VALID_TYPE,
+                VALID_EVENT_ID, VALID_CORRELATION_ID,"user-1", "jwt-token", VALID_TYPE,
                 VALID_CONTENT, null, VALID_OPTIONS, null
         );
         assertThat(task.eventId()).isEqualTo(VALID_EVENT_ID);
@@ -32,7 +32,7 @@ class ImportTaskTest {
     @DisplayName("Must reject null eventId")
     void mustRejectNullEventId() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new ImportTask(null, VALID_CORRELATION_ID, VALID_TYPE, VALID_CONTENT, null, VALID_OPTIONS, null))
+                .isThrownBy(() -> new ImportTask(null, VALID_CORRELATION_ID,"user-2", "jwt-token", VALID_TYPE, VALID_CONTENT, null, VALID_OPTIONS, null))
                 .withMessageContaining("EventId must not be null or empty");
     }
 
@@ -40,7 +40,7 @@ class ImportTaskTest {
     @DisplayName("Must reject blank eventId")
     void mustRejectBlankEventId() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new ImportTask("  ", VALID_CORRELATION_ID, VALID_TYPE, VALID_CONTENT, null, VALID_OPTIONS, null))
+                .isThrownBy(() -> new ImportTask("  ", VALID_CORRELATION_ID,"user-3", "jwt-token", VALID_TYPE, VALID_CONTENT, null, VALID_OPTIONS, null))
                 .withMessageContaining("EventId must not be null or empty");
     }
 
@@ -48,7 +48,7 @@ class ImportTaskTest {
     @DisplayName("Must reject null correlationId")
     void mustRejectNullCorrelationId() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, null, VALID_TYPE, VALID_CONTENT, null, VALID_OPTIONS, null))
+                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, null,"user-4", "jwt-token", VALID_TYPE, VALID_CONTENT, null, VALID_OPTIONS, null))
                 .withMessageContaining("CorrelationId is null or empty");
     }
 
@@ -56,7 +56,7 @@ class ImportTaskTest {
     @DisplayName("Must reject blank correlationId")
     void mustRejectBlankCorrelationId() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, " ", VALID_TYPE, VALID_CONTENT, null, VALID_OPTIONS, null))
+                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, " ","user-5", "jwt-token", VALID_TYPE, VALID_CONTENT, null, VALID_OPTIONS, null))
                 .withMessageContaining("CorrelationId is null or empty");
     }
 
@@ -64,7 +64,7 @@ class ImportTaskTest {
     @DisplayName("Must reject null type")
     void mustRejectNullType() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID, null, VALID_CONTENT, null, VALID_OPTIONS, null))
+                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID,"user-6", "jwt-token", null, VALID_CONTENT, null, VALID_OPTIONS, null))
                 .withMessageContaining("TaskType is null");
     }
 
@@ -72,7 +72,7 @@ class ImportTaskTest {
     @DisplayName("Must reject null content")
     void mustRejectNullContent() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID, VALID_TYPE, null, null, VALID_OPTIONS, null))
+                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID,"user-7", "jwt-token", VALID_TYPE, null, null, VALID_OPTIONS, null))
                 .withMessageContaining("Content is null or empty");
     }
 
@@ -80,7 +80,7 @@ class ImportTaskTest {
     @DisplayName("Must reject blank content")
     void mustRejectBlankContent() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID, VALID_TYPE, " ", null, VALID_OPTIONS, null))
+                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID,"user-8", "jwt-token", VALID_TYPE, " ", null, VALID_OPTIONS, null))
                 .withMessageContaining("Content is null or empty");
     }
 
@@ -88,7 +88,7 @@ class ImportTaskTest {
     @DisplayName("Must reject null importOptions")
     void mustRejectNullImportOptions() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID, VALID_TYPE, VALID_CONTENT, null, null, null))
+                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID,"user-9", "jwt-token", VALID_TYPE, VALID_CONTENT, null, null, null))
                 .withMessageContaining("ImportOptions is null");
     }
 
@@ -96,7 +96,7 @@ class ImportTaskTest {
     @DisplayName("Must require contentType when type is FILE")
     void mustRequireContentTypeForFile() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID, TaskType.FILE, VALID_CONTENT, null, VALID_OPTIONS, null))
+                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID,"user-10", "jwt-token", TaskType.FILE, VALID_CONTENT, null, VALID_OPTIONS, null))
                 .withMessageContaining("For FILE type contentType can't be null");
     }
 
@@ -105,7 +105,7 @@ class ImportTaskTest {
     void mustRejectTooLongContent() {
         String longContent = "x".repeat(30_000_001); // больше MAX_CONTENT_LENGTH (30_000_000)
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID, VALID_TYPE, longContent, null, VALID_OPTIONS, null))
+                .isThrownBy(() -> new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID,"user-11", "jwt-token", VALID_TYPE, longContent, null, VALID_OPTIONS, null))
                 .withMessageContaining("Content too large");
     }
 
@@ -114,7 +114,7 @@ class ImportTaskTest {
     void mustAllowMaxContentLength() {
         String maxContent = "x".repeat(30_000_000);
         assertThatCode(() -> new ImportTask(
-                VALID_EVENT_ID, VALID_CORRELATION_ID, VALID_TYPE,
+                VALID_EVENT_ID, VALID_CORRELATION_ID,"user-12", "jwt-token", VALID_TYPE,
                 maxContent, null, VALID_OPTIONS, null))
                 .doesNotThrowAnyException();
     }
@@ -123,7 +123,7 @@ class ImportTaskTest {
     @DisplayName("Must copy metadata to unmodifiable map")
     void mustCopyMetadataToUnmodifiable() {
         Map<String, Object> meta = new java.util.HashMap<>(Map.of("key1", "value1"));
-        ImportTask task = new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID, VALID_TYPE, VALID_CONTENT, null, VALID_OPTIONS, meta);
+        ImportTask task = new ImportTask(VALID_EVENT_ID, VALID_CORRELATION_ID,"user-13", "jwt-token", VALID_TYPE, VALID_CONTENT, null, VALID_OPTIONS, meta);
         // Проверяем, что вернулась не та же ссылка и карта защищена
         assertThat(task.metadata()).containsEntry("key1", "value1");
         assertThatThrownBy(() -> task.metadata().put("key2", "value2"))

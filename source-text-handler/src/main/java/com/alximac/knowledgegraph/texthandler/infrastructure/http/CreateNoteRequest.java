@@ -8,9 +8,5 @@ public record CreateNoteRequest(
         String type,
         Map<String,Object> metadata
 ) {
-    public CreateNoteRequest{
-        if (type == null || type.isBlank()){
-            type = "unknown";
-        }
-    }
+
 }

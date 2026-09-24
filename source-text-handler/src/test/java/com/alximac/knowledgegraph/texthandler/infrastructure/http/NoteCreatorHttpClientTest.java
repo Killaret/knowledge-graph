@@ -54,8 +54,8 @@ class NoteCreatorHttpClientTest {
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"id\":\"note-123\"}")));
 
-        DocumentChunk chunk = new DocumentChunk("test text", 0, Map.of(), null);
-        String noteId = client.createNote(chunk);
+        DocumentChunk chunk = new DocumentChunk("test text", 0, Map.of(), null, null);
+        String noteId = client.createNote(chunk, "jwt-token");
 
         assertThat(noteId).isEqualTo("note-123");
     }
@@ -66,8 +66,8 @@ class NoteCreatorHttpClientTest {
         wireMockServer.stubFor(post(urlEqualTo("/notes"))
                 .willReturn(aResponse().withStatus(500)));
 
-        DocumentChunk chunk = new DocumentChunk("test", 0, Map.of(), null);
-        assertThatThrownBy(() -> client.createNote(chunk))
+        DocumentChunk chunk = new DocumentChunk("test", 0, Map.of(), null, null);
+        assertThatThrownBy(() -> client.createNote(chunk, "jwt-token"))
                 .isInstanceOf(RemoteServiceException.class)
                 .hasMessageContaining("HTTP 500");
     }
@@ -81,8 +81,8 @@ class NoteCreatorHttpClientTest {
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"id\":\"note-456\"}")));
 
-        DocumentChunk chunk = new DocumentChunk("hello world", 2, Map.of("key", "value"), null);
-        client.createNote(chunk);
+        DocumentChunk chunk = new DocumentChunk("hello world", 2, Map.of("key", "value"), null, null);
+        client.createNote(chunk, "jwt-token");
 
         wireMockServer.verify(postRequestedFor(urlEqualTo("/notes"))
                 .withRequestBody(containing("\"title\""))
@@ -99,8 +99,8 @@ class NoteCreatorHttpClientTest {
                         .withHeader("Content-Type", "application/json")
                         .withBody("not a json")));
 
-        DocumentChunk chunk = new DocumentChunk("test", 0, Map.of(), null);
-        assertThatThrownBy(() -> client.createNote(chunk))
+        DocumentChunk chunk = new DocumentChunk("test", 0, Map.of(), null, null);
+        assertThatThrownBy(() -> client.createNote(chunk, "jwt-token"))
                 .isInstanceOf(RemoteServiceException.class)
                 .hasMessageContaining("Failed to deserialize response");
     }
@@ -114,7 +114,7 @@ class NoteCreatorHttpClientTest {
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"id\":\"my-id\"}")));
 
-        String id = client.createNote(new DocumentChunk("txt", 0, Map.of(), null));
+        String id = client.createNote(new DocumentChunk("txt", 0, Map.of(), null, null), "jwt-token");
         assertThat(id).isEqualTo("my-id");
     }
 
@@ -125,8 +125,8 @@ class NoteCreatorHttpClientTest {
                 .willReturn(aResponse()
                         .withStatus(200)));
 
-        Link link = new Link("src-1", "tgt-1", 0.8);
-        assertThatCode(() -> client.createLink(link))
+        Link link = new Link("src-1", "tgt-1", 0.8, null);
+        assertThatCode(() -> client.createLink(link, "jwt-token"))
                 .doesNotThrowAnyException();
     }
 
@@ -136,8 +136,8 @@ class NoteCreatorHttpClientTest {
         wireMockServer.stubFor(post(urlEqualTo("/links"))
                 .willReturn(aResponse().withStatus(500)));
 
-        Link link = new Link("src-1", "tgt-1", 0.8);
-        assertThatThrownBy(() -> client.createLink(link))
+        Link link = new Link("src-1", "tgt-1", 0.8, null);
+        assertThatThrownBy(() -> client.createLink(link, "jwt-token"))
                 .isInstanceOf(RemoteServiceException.class)
                 .hasMessageContaining("HTTP 500");
     }
@@ -148,8 +148,8 @@ class NoteCreatorHttpClientTest {
         wireMockServer.stubFor(post(urlEqualTo("/links"))
                 .willReturn(aResponse().withStatus(200)));
 
-        Link link = new Link("src", "tgt", 0.75);
-        client.createLink(link);
+        Link link = new Link("src", "tgt", 0.75, null);
+        client.createLink(link, "jwt-token");
 
         wireMockServer.verify(postRequestedFor(urlEqualTo("/links"))
                 .withRequestBody(containing("\"sourceNoteId\":\"src\""))

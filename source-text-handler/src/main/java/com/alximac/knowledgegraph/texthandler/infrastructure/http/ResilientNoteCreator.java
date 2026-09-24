@@ -23,8 +23,8 @@ public class ResilientNoteCreator implements NoteCreatorPort {
     }
 
     @Override
-    public String createNote(DocumentChunk chunk) throws RemoteServiceException {
-        Callable<String> callable = () -> noteCreatorPort.createNote(chunk);
+    public String createNote(DocumentChunk chunk, String jwt) throws RemoteServiceException {
+        Callable<String> callable = () -> noteCreatorPort.createNote(chunk,jwt);
         Callable<String> decorated = Retry.decorateCallable(retry, callable);
         decorated = CircuitBreaker.decorateCallable(circuitBreaker, decorated);
 
@@ -38,9 +38,9 @@ public class ResilientNoteCreator implements NoteCreatorPort {
     }
 
     @Override
-    public void createLink(Link link) throws RemoteServiceException {
+    public void createLink(Link link,String jwt) throws RemoteServiceException {
         Callable<Void> callable = () -> {
-            noteCreatorPort.createLink(link);
+            noteCreatorPort.createLink(link,jwt);
             return null;
         };
 

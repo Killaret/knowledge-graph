@@ -7,11 +7,6 @@ public record CreateLinkRequest(
         String linkType,
         double weight
 ) {
-    public CreateLinkRequest{
-        if (linkType == null || linkType.isBlank()){
-            linkType = "reference";
-        }
-    }
 
 
 }

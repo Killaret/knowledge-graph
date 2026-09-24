@@ -20,11 +20,11 @@ public class HybridChunker implements ChunkingStrategy {
             if (countWords(paragraph) <= options.chunkSize()) {
                 // короткий параграф — сразу чанк, если не короче minChunkLength
                 if (paragraph.length() >= options.minChunkLength()) {
-                    result.add(new DocumentChunk(paragraph, chunkIndex.getAndIncrement(), Map.of(), null));
+                    result.add(new DocumentChunk(paragraph, chunkIndex.getAndIncrement(), Map.of(), null, null));
                 } else if (!result.isEmpty()) {
                     // слишком короткий — присоединяем к предыдущему чанку
                     DocumentChunk prev = result.remove(result.size() - 1);
-                    result.add(new DocumentChunk(prev.text() + " " + paragraph, prev.index(), Map.of(), null));
+                    result.add(new DocumentChunk(prev.text() + " " + paragraph, prev.index(), Map.of(), null, null));
                 }
             } else {
                 // длинный параграф — sliding window по предложениям
@@ -109,10 +109,10 @@ public class HybridChunker implements ChunkingStrategy {
 
     private void addChunkOrMerge(String chunkText, int minLength, List<DocumentChunk> chunks, AtomicInteger indexCounter) {
         if (chunkText.length() >= minLength) {
-            chunks.add(new DocumentChunk(chunkText, indexCounter.getAndIncrement(), Map.of(), null));
+            chunks.add(new DocumentChunk(chunkText, indexCounter.getAndIncrement(), Map.of(), null, null));
         } else if (!chunks.isEmpty()) {
             DocumentChunk prev = chunks.remove(chunks.size() - 1);
-            chunks.add(new DocumentChunk(prev.text() + " " + chunkText, prev.index(), Map.of(), null));
+            chunks.add(new DocumentChunk(prev.text() + " " + chunkText, prev.index(), Map.of(), null, null));
         }
         // Если список пуст и текст короткий, чанк теряется .
     }

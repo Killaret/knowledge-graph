@@ -78,7 +78,7 @@ class RedisImportStateRepositoryTest {
         String eventId = "evt-store";
         repository.tryClaim(eventId);
         ImportResult result = new ImportResult(
-                "corr-1", Status.COMPLETED, List.of("n1"), List.of(), List.of(), Instant.now()
+                "corr-1","evt-1", Status.COMPLETED, List.of("n1"), List.of(), List.of(), Instant.now()
         );
         repository.markProcessed(eventId, result);
         try (StatefulRedisConnection<String, String> conn = redisClient.connect()) {
@@ -109,7 +109,7 @@ class RedisImportStateRepositoryTest {
         Thread.sleep(2100);
 
         ImportResult result = new ImportResult(
-                "corr-1",
+                "corr-1","evt-2",
                 ImportResult.Status.COMPLETED,
                 List.of("n1"),
                 List.of(),

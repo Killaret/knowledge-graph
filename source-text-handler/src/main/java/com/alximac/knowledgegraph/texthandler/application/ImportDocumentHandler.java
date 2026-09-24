@@ -73,7 +73,7 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
 
             for (DocumentChunk chunk : chunks) {
                 try {
-                    String noteId = noteCreatorPort.createNote(chunk);
+                    String noteId = noteCreatorPort.createNote(chunk, task.jwt());
                     DocumentChunk updatedChunk = chunk.withNoteId(noteId);
                     noteIds.add(noteId);
                     processedChunks.add(updatedChunk);
@@ -88,7 +88,7 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
                 List<Link> detected = linkDetector.detectLinks(processedChunks);
                 for (Link link : detected) {
                     try {
-                        noteCreatorPort.createLink(link);
+                        noteCreatorPort.createLink(link, task.jwt());
                         links.add(link);
                     } catch (RemoteServiceException e) {
                         errors.add("Failed to create link: " + e.getMessage());
@@ -107,6 +107,7 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
 
             result = new ImportResult(
                     task.correlationId(),
+                    task.eventId(),
                     status,
                     noteIds,
                     links,
@@ -117,6 +118,7 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
         } catch (DocumentParserException e) {
             result = new ImportResult(
                     task.correlationId(),
+                    task.eventId(),
                     ImportResult.Status.FAILED,
                     List.of(),
                     List.of(),
@@ -126,6 +128,7 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
         } catch (Exception e) {
             result = new ImportResult(
                     task.correlationId(),
+                    task.eventId(),
                     ImportResult.Status.FAILED,
                     List.of(),
                     List.of(),

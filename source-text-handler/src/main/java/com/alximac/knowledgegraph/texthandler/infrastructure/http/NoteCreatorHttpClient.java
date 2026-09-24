@@ -25,46 +25,54 @@ public class NoteCreatorHttpClient implements NoteCreatorPort {
                                  String baseUrl) {
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
-        this.notesUrl = baseUrl + "/notes";
-        this.linksUrl = baseUrl + "/links";
+        this.notesUrl = baseUrl + "/api/v1/notes";
+        this.linksUrl = baseUrl + "/api/v1/links";
     }
 
     private static final long WAIT_DURATION = 5;
 
     @Override
-    public String createNote(DocumentChunk chunk) throws RemoteServiceException {
+    public String createNote(DocumentChunk chunk,String jwt) throws RemoteServiceException {
         CreateNoteRequest request = new CreateNoteRequest(
                 generateTitle(chunk),
                 chunk.text(),
-                "unknown",
+                chunk.type(),
                 chunk.metadata());
 
         String json = toJson(request);   // сериализация с обработкой ошибки
-        HttpResponse<String> response = executePost(notesUrl, json);
+        HttpResponse<String> response = executePost(notesUrl, json,jwt);
         CreateNoteResponse noteResponse = fromJson(response.body(), CreateNoteResponse.class);
         return noteResponse.data().id();
 
     }
 
     @Override
-    public void createLink(Link link) throws RemoteServiceException {
+    public void createLink(Link link,String jwt) throws RemoteServiceException {
         CreateLinkRequest request = new CreateLinkRequest(
                 link.sourceNoteId(),
                 link.targetNoteId(),
+                link.linkType(),
                 link.weight());
 
         String json = toJson(request);
-        executePost(linksUrl, json);   // ответ не важен
+        executePost(linksUrl, json,jwt);   // ответ не важен
     }
 
-    private HttpResponse<String> executePost(String url, String json) throws RemoteServiceException {
+    private HttpResponse<String> executePost(String url, String json,String jwt) throws RemoteServiceException {
         try {
-            HttpRequest httpRequest = HttpRequest.newBuilder()
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(WAIT_DURATION))
+                    .timeout(Duration.ofSeconds(WAIT_DURATION));
+
+            if (jwt != null && !jwt.isBlank()) {
+                builder.header("Authorization", "Bearer " + jwt);
+            }
+
+            HttpRequest httpRequest = builder
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
+
 
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 

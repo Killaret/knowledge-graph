@@ -3,7 +3,9 @@ package com.alximac.knowledgegraph.texthandler.domain.model;
 public record Link(
         String sourceNoteId,
         String targetNoteId,
-        double weight //сила связи
+        double weight, //сила связи
+        String linkType
+
 ) {
     public Link{
         if (sourceNoteId == null || sourceNoteId.isBlank())
@@ -14,5 +16,9 @@ public record Link(
 
         if (weight < 0.0 || weight > 1.0)
             throw new IllegalArgumentException("Weight must be between 0 and 1, got: " + weight);
+
+        if (linkType == null || linkType.isBlank())
+            linkType = "reference";
+
     }
 }

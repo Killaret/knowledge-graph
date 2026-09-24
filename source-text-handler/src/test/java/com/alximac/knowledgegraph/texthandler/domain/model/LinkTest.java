@@ -9,7 +9,7 @@ class LinkTest {
     @Test
     @DisplayName("Must create link with valid values")
     void mustCreateWithValidValues() {
-        Link link = new Link("src-1", "tgt-1", 0.75);
+        Link link = new Link("src-1", "tgt-1", 0.75, null);
         assertThat(link.sourceNoteId()).isEqualTo("src-1");
         assertThat(link.targetNoteId()).isEqualTo("tgt-1");
         assertThat(link.weight()).isEqualTo(0.75);
@@ -19,31 +19,31 @@ class LinkTest {
     @DisplayName("Must reject blank sourceNoteId")
     void mustRejectBlankSourceNoteId() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new Link(null, "tgt", 1.0));
+                .isThrownBy(() -> new Link(null, "tgt", 1.0, null));
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new Link("  ", "tgt", 1.0));
+                .isThrownBy(() -> new Link("  ", "tgt", 1.0, null));
     }
 
     @Test
     @DisplayName("Must reject blank targetNoteId")
     void mustRejectBlankTargetNoteId() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new Link("src", null, 1.0));
+                .isThrownBy(() -> new Link("src", null, 1.0, null));
     }
 
     @Test
     @DisplayName("Must reject weight out of range")
     void mustRejectWeightOutOfRange() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new Link("src", "tgt", -0.1));
+                .isThrownBy(() -> new Link("src", "tgt", -0.1, null));
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new Link("src", "tgt", 1.1));
+                .isThrownBy(() -> new Link("src", "tgt", 1.1, null));
     }
 
     @Test
     @DisplayName("Must accept boundary weights")
     void mustAcceptBoundaryWeights() {
-        assertThatCode(() -> new Link("src", "tgt", 0.0)).doesNotThrowAnyException();
-        assertThatCode(() -> new Link("src", "tgt", 1.0)).doesNotThrowAnyException();
+        assertThatCode(() -> new Link("src", "tgt", 0.0, null)).doesNotThrowAnyException();
+        assertThatCode(() -> new Link("src", "tgt", 1.0, null)).doesNotThrowAnyException();
     }
 }

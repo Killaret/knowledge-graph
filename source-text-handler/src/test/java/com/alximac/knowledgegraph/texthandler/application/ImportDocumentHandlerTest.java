@@ -36,12 +36,12 @@ class ImportDocumentHandlerTest {
     private ImportDocumentHandler handler;
 
     private final ImportTask validTask = new ImportTask(
-            "evt-1", "corr-1", TaskType.TEXT, "valid content",
+            "evt-1", "corr-1", "user-1", "jwt-token", TaskType.TEXT, "valid content",
             null, new ImportOptions(500, 50, 100, 3,
             false), null
     );
 
-    private final DocumentChunk sampleChunk = new DocumentChunk("sample text", 0, Map.of(), null);
+    private final DocumentChunk sampleChunk = new DocumentChunk("sample text", 0, Map.of(), null, null);
 
     @BeforeEach
     void setUp() {
@@ -60,7 +60,7 @@ class ImportDocumentHandlerTest {
                 new ParsedDocument("text", Map.of())
         );
         given(chunkingStrategy.chunk(any(), any())).willReturn(List.of(sampleChunk));
-        given(noteCreatorPort.createNote(sampleChunk)).willReturn("note-1");
+        given(noteCreatorPort.createNote(sampleChunk, "jwt-token")).willReturn("note-1");
 
 
         handler.handle(validTask);
@@ -78,8 +78,8 @@ class ImportDocumentHandlerTest {
     @Test
     @DisplayName("Must set PARTIAL status when some notes fail")
     void mustSetPartialStatusWhenSomeNotesFail() throws Exception {
-        DocumentChunk chunk1 = new DocumentChunk("text1", 0, Map.of(), null);
-        DocumentChunk chunk2 = new DocumentChunk("text2", 1, Map.of(), null);
+        DocumentChunk chunk1 = new DocumentChunk("text1", 0, Map.of(), null, null);
+        DocumentChunk chunk2 = new DocumentChunk("text2", 1, Map.of(), null,null);
 
         given(stateRepository.tryClaim("evt-1")).willReturn(true);
         given(parserFactory.getSelectedParser(TaskType.TEXT)).willReturn(documentParser);
@@ -87,8 +87,8 @@ class ImportDocumentHandlerTest {
                 new ParsedDocument("text", Map.of())
         );
         given(chunkingStrategy.chunk(any(), any())).willReturn(List.of(chunk1, chunk2));
-        given(noteCreatorPort.createNote(chunk1)).willReturn("note-1");
-        given(noteCreatorPort.createNote(chunk2)).willThrow(new RemoteServiceException("Fail"));
+        given(noteCreatorPort.createNote(chunk1, "jwt-token")).willReturn("note-1");
+        given(noteCreatorPort.createNote(chunk2, "jwt-token")).willThrow(new RemoteServiceException("Fail"));
         // linkDetector не используется
 
         handler.handle(validTask);
@@ -106,7 +106,7 @@ class ImportDocumentHandlerTest {
     @Test
     @DisplayName("Must set FAILED status when all notes fail")
     void mustSetFailedStatusWhenAllNotesFail() throws Exception {
-        DocumentChunk chunk1 = new DocumentChunk("text1", 0, Map.of(), null);
+        DocumentChunk chunk1 = new DocumentChunk("text1", 0, Map.of(), null,null);
 
         given(stateRepository.tryClaim("evt-1")).willReturn(true);
         given(parserFactory.getSelectedParser(TaskType.TEXT)).willReturn(documentParser);
@@ -114,7 +114,7 @@ class ImportDocumentHandlerTest {
                 new ParsedDocument("text", Map.of())
         );
         given(chunkingStrategy.chunk(any(), any())).willReturn(List.of(chunk1));
-        given(noteCreatorPort.createNote(chunk1)).willThrow(new RemoteServiceException("Fail"));
+        given(noteCreatorPort.createNote(chunk1, "jwt-token")).willThrow(new RemoteServiceException("Fail"));
 
         handler.handle(validTask);
 
@@ -164,20 +164,20 @@ class ImportDocumentHandlerTest {
     @DisplayName("Must create links when enabled and more than one chunk")
     void mustCreateLinksWhenEnabled() throws Exception {
         ImportTask taskWithLinks = new ImportTask(
-                "evt-2", "corr-2", TaskType.TEXT, "content",
+                "evt-2", "corr-2", "user-2", "jwt-token", TaskType.TEXT, "content",
                 null, new ImportOptions(500, 50, 100, 3, true), null
         );
 
-        DocumentChunk chunk1 = new DocumentChunk("text1", 0, Map.of(), null);
-        DocumentChunk chunk2 = new DocumentChunk("text2", 1, Map.of(), null);
-        Link link = new Link("note-1", "note-2", 0.95); // предположим, конструктор Link
+        DocumentChunk chunk1 = new DocumentChunk("text1", 0, Map.of(), null,null);
+        DocumentChunk chunk2 = new DocumentChunk("text2", 1, Map.of(), null,null);
+        Link link = new Link("note-1", "note-2", 0.95,null); // предположим, конструктор Link
 
         given(stateRepository.tryClaim("evt-2")).willReturn(true);
         given(parserFactory.getSelectedParser(TaskType.TEXT)).willReturn(documentParser);
         given(documentParser.parse(any(), any())).willReturn(new ParsedDocument("text", Map.of()));
         given(chunkingStrategy.chunk(any(), any())).willReturn(List.of(chunk1, chunk2));
-        given(noteCreatorPort.createNote(chunk1)).willReturn("note-1");
-        given(noteCreatorPort.createNote(chunk2)).willReturn("note-2");
+        given(noteCreatorPort.createNote(chunk1, "jwt-token")).willReturn("note-1");
+        given(noteCreatorPort.createNote(chunk2, "jwt-token")).willReturn("note-2");
         given(linkDetector.detectLinks(any())).willReturn(List.of(link));
 
         handler.handle(taskWithLinks);
@@ -196,21 +196,21 @@ class ImportDocumentHandlerTest {
     @DisplayName("Must set PARTIAL if link creation fails")
     void mustSetPartialWhenLinkCreationFails() throws Exception {
         ImportTask task = new ImportTask(
-                "evt-3", "corr-3", TaskType.TEXT, "content",
+                "evt-3", "corr-3", "user-3", "jwt-token", TaskType.TEXT, "content",
                 null, new ImportOptions(500, 50, 100, 3, true), null
         );
-        DocumentChunk chunk1 = new DocumentChunk("t1", 0, Map.of(), null);
-        DocumentChunk chunk2 = new DocumentChunk("t2", 1, Map.of(), null);
-        Link link = new Link("note-1", "note-2", 0.65);
+        DocumentChunk chunk1 = new DocumentChunk("t1", 0, Map.of(), null,null);
+        DocumentChunk chunk2 = new DocumentChunk("t2", 1, Map.of(), null,null);
+        Link link = new Link("note-1", "note-2", 0.65,null);
 
         given(stateRepository.tryClaim("evt-3")).willReturn(true);
         given(parserFactory.getSelectedParser(TaskType.TEXT)).willReturn(documentParser);
         given(documentParser.parse(any(), any())).willReturn(new ParsedDocument("text", Map.of()));
         given(chunkingStrategy.chunk(any(), any())).willReturn(List.of(chunk1, chunk2));
-        given(noteCreatorPort.createNote(chunk1)).willReturn("note-1");
-        given(noteCreatorPort.createNote(chunk2)).willReturn("note-2");
+        given(noteCreatorPort.createNote(chunk1, "jwt-token")).willReturn("note-1");
+        given(noteCreatorPort.createNote(chunk2, "jwt-token")).willReturn("note-2");
         given(linkDetector.detectLinks(any())).willReturn(List.of(link));
-        willThrow(new RemoteServiceException("Link error")).given(noteCreatorPort).createLink(link);
+        willThrow(new RemoteServiceException("Link error")).given(noteCreatorPort).createLink(link, "jwt-token");
 
         handler.handle(task);
 
@@ -247,11 +247,11 @@ class ImportDocumentHandlerTest {
     @DisplayName("Must not call linkDetector when createLinks=true but only one chunk")
     void mustNotCallLinkDetectorWhenOnlyOneChunk() throws Exception {
         ImportTask taskWithLinks = new ImportTask(
-                "evt-4", "corr-4", TaskType.TEXT, "content",
+                "evt-4", "corr-4", "user-4", "jwt-token", TaskType.TEXT, "content",
                 null, new ImportOptions(500, 50, 100, 3, true), null
         );
 
-        DocumentChunk singleChunk = new DocumentChunk("text1", 0, Map.of(), null);
+        DocumentChunk singleChunk = new DocumentChunk("text1", 0, Map.of(), null,null);
 
         given(stateRepository.tryClaim("evt-4")).willReturn(true);
         given(parserFactory.getSelectedParser(TaskType.TEXT)).willReturn(documentParser);
@@ -259,7 +259,7 @@ class ImportDocumentHandlerTest {
                 new ParsedDocument("text", Map.of())
         );
         given(chunkingStrategy.chunk(any(), any())).willReturn(List.of(singleChunk));
-        given(noteCreatorPort.createNote(singleChunk)).willReturn("note-1");
+        given(noteCreatorPort.createNote(singleChunk, "jwt-token")).willReturn("note-1");
         // linkDetector не должен вызваться поэтому не настраиваем
 
         handler.handle(taskWithLinks);

@@ -12,7 +12,7 @@ const isDev = import.meta.env.DEV;
 const isTest = typeof process !== 'undefined' && process.env?.VITEST === 'true';
 
 // Получаем backend URL из env (для Docker) или используем default
-let backendUrl = 'http://localhost:8080';
+let backendUrl = 'http://localhost:8081';
 try {
   const envUrl = (import.meta as any).env?.VITE_API_URL;
   if (envUrl) backendUrl = envUrl;

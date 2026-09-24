@@ -25,6 +25,7 @@ import (
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
+	userhandler "knowledge-graph/internal/interfaces/api/handlers/user"
 	"knowledge-graph/internal/interfaces/api/linkhandler"
 	"knowledge-graph/internal/interfaces/api/middleware"
 	"knowledge-graph/internal/interfaces/api/notehandler"
@@ -157,6 +158,19 @@ func main() {
 	tokenStore := authpkg.NewRedisTokenStore(redisClient)
 	authHandler := authhandler.NewHandler(db.DB, jwtManager, tokenStore, cfg)
 
+userHandler := userhandler.NewHandler(db.DB, &authpkg.PasswordConfig{
+    Time:    cfg.Argon2Time,
+    Memory:  cfg.Argon2Memory,
+    Threads: cfg.Argon2Threads,
+    KeyLen:  32,
+}, &authpkg.PasswordPolicy{
+    MinLength:      cfg.PasswordPolicyMinLength,
+    RequireUpper:   cfg.PasswordPolicyRequireUpper,
+    RequireLower:   cfg.PasswordPolicyRequireLower,
+    RequireDigit:   cfg.PasswordPolicyRequireDigit,
+    RequireSpecial: cfg.PasswordPolicyRequireSpecial,
+})
+
 	// Роуты
 	r := gin.Default()
 
@@ -284,6 +298,13 @@ func main() {
 		v1.GET("/notes/:id/suggestions", noteHandler.GetSuggestions)
 		v1.GET("/notes", noteHandler.List)
 		v1.GET("/notes/search", noteHandler.Search)
+
+		v1.GET("/users/me", userHandler.GetMe)
+         v1.PUT("/users/me", userHandler.UpdateMe)
+v1.DELETE("/users/me", userHandler.DeleteMe)
+v1.GET("/users/me/api-keys", userHandler.ListAPIKeys)
+v1.POST("/users/me/api-keys", userHandler.CreateAPIKey)
+v1.DELETE("/users/me/api-keys/:id", userHandler.RevokeAPIKey)
 
 		v1.POST("/links", writeLimiter, linkHandler.Create)
 		v1.GET("/links/:id", linkHandler.Get)

@@ -101,6 +101,7 @@ services:
       dockerfile: ./frontend/Dockerfile
       args:
         VITE_API_TARGET: http://backend_personal:8080
+        VITE_API_URL: http://localhost:8081
     container_name: kg-frontend-personal
     ports:
       - "3001:3000"

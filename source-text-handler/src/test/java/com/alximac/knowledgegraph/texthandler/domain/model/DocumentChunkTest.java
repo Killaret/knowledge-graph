@@ -12,7 +12,7 @@ class DocumentChunkTest {
     @Test
     @DisplayName("Must create with valid values")
     void mustCreateWithValidValues() {
-        DocumentChunk chunk = new DocumentChunk("some text", 0, Map.of("lang", "ru"), null);
+        DocumentChunk chunk = new DocumentChunk("some text", 0, Map.of("lang", "ru"), null, null);
         assertThat(chunk.text()).isEqualTo("some text");
         assertThat(chunk.index()).isEqualTo(0);
         assertThat(chunk.metadata()).containsEntry("lang", "ru");
@@ -23,10 +23,10 @@ class DocumentChunkTest {
     @DisplayName("Must reject null or blank text")
     void mustRejectNullOrBlankText() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new DocumentChunk(null, 0, Map.of(), null))
+                .isThrownBy(() -> new DocumentChunk(null, 0, Map.of(), null,null))
                 .withMessageContaining("Text must not be null or empty");
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new DocumentChunk("  ", 0, Map.of(), null))
+                .isThrownBy(() -> new DocumentChunk("  ", 0, Map.of(), null,null))
                 .withMessageContaining("Text must not be null or empty");
     }
 
@@ -34,7 +34,7 @@ class DocumentChunkTest {
     @DisplayName("Must reject negative index")
     void mustRejectNegativeIndex() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new DocumentChunk("text", -1, Map.of(), null))
+                .isThrownBy(() -> new DocumentChunk("text", -1, Map.of(), null,null))
                 .withMessageContaining("Index of the chunk must be positive");
     }
 
@@ -42,7 +42,7 @@ class DocumentChunkTest {
     @DisplayName("Must copy metadata to unmodifiable map")
     void mustCopyMetadataToUnmodifiable() {
         Map<String, Object> meta = new java.util.HashMap<>(Map.of("k", "v"));
-        DocumentChunk chunk = new DocumentChunk("text", 0, meta, null);
+        DocumentChunk chunk = new DocumentChunk("text", 0, meta, null,null);
         assertThatThrownBy(() -> chunk.metadata().put("new", "value"))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
@@ -50,7 +50,7 @@ class DocumentChunkTest {
     @Test
     @DisplayName("Must set noteId via withNoteId and keep other fields")
     void mustSetNoteIdViaWithNoteId() {
-        DocumentChunk original = new DocumentChunk("text", 0, Map.of(), null);
+        DocumentChunk original = new DocumentChunk("text", 0, Map.of(), null,null);
         DocumentChunk updated = original.withNoteId("note-123");
         assertThat(updated.noteId()).isEqualTo("note-123");
         assertThat(updated.text()).isEqualTo("text");
