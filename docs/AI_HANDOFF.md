@@ -54,6 +54,7 @@
 | **TASKS-INDEX-2:** генератор индекса задач берёт статус первой строки доски со ссылкой на файл, а не строки его идентификатора (`generate-tasks-index.mjs:227` обещает обратное) | `scripts/testing/generate-tasks-index.mjs` | **бэклог** — Devin; маленькая | 2026-09-24 |
 | **BOARD-3:** сторож архива (`check-decisions.mjs`, правило 4) отстал от решений: считает `отклонено` терминальным и ждёт три дня; нужно — терминальны только `принято` и `отменено`, такая строка вне «Архива» сразу красная | `scripts/testing/check-decisions.mjs` | **бэклог** — Devin; маленькая (решение 61) | 2026-09-24 |
 | **DOC-RULE-2:** противовес к норме «зелёная мутация — находка о мутации» (`4eac984`): если изменённый код ни на что не влияет — спросить, должен ли он влиять (урок REG-2/LINKS-3) | `.windsurfrules` («Verifying a Finding»), журнал 2026-09-23 | **бэклог** — ждёт Claude Code: текст нормы и зеркала | 2026-09-23 |
+| **WORKTREE-1:** каноническая карта трёх worktree, startup freshness и merge policy | [`tasks/WORKTREE-1-agent-worktrees.md`](tasks/WORKTREE-1-agent-worktrees.md) | **бэклог** — ждёт Claude Code: новый `WORKTREES.md`, форму review-клона предлагает он | 2026-09-24 |
 | **RECO-1:** формула рекомендаций — одна реализация, три компонента (решение 40) | [`tasks/RECO-1-recommendation-formula.md`](tasks/RECO-1-recommendation-formula.md) | **бэклог** — ждёт Claude Code: ревью расширения объёма 19.09 (кандидаты = closure ∪ векторный топ-N) | 2026-09-21 |
 | **MODEL-2:** смена модели и одно включение всего — модель, чанкинг, нормализованные векторы, перекалибровка порога, пересчёт | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **бэклог** — ждёт CHUNK-1 и NLP-4; в финале D, e5-small, e5-base (решения 58, 60) | 2026-09-24 |
 | **RELEASE-1:** рамки версии 1.0 — что входит в выпуск, что откладываем, критерии готовности; бэклог разросся, без рамки 1.0 не выпустить | — | **бэклог** — ждёт Claude Code: постановка и обсуждение с владельцем (его просьба 2026-09-23) | 2026-09-23 |
@@ -88,6 +89,8 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Devin → Claude, 2026-09-24, WORKTREE-1 в очереди.** Нужен канонический `docs/agents/WORKTREES.md`: карта трёх деревьев, startup freshness, merge policy и поведение при behind/diverged remote. Рабочую форму `D:\knowledge-graph-review` — detached или именованная ветка — предлагаешь ты. [`tasks/WORKTREE-1-agent-worktrees.md`](tasks/WORKTREE-1-agent-worktrees.md)
 
 **Devin → Claude, 2026-09-24, TEST-LOCK-1.** `start-test` обоих платформ проверяет compose working_dir до `down -v`; чужой контейнер блокирует запуск и остаётся running. `-Force` есть только в PowerShell и требует осознанного захвата; guard-тест включён в core-checks/CI. Первая мутация выявила ложный тест «строка есть, но вызова нет» — исправлено. [`tasks/TEST-PORTS-1-review-findings.md`](tasks/TEST-PORTS-1-review-findings.md)
 
