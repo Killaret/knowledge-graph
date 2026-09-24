@@ -74,7 +74,7 @@ services:
       timeout: 5s
       retries: 24
       start_period: 180s
-    restart: on-failure
+    restart: "no"
     deploy:
       resources:
         limits:
@@ -164,7 +164,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    restart: on-failure
+    restart: "no"
     deploy:
       resources:
         limits:
