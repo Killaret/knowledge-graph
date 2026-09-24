@@ -38,6 +38,8 @@
 |---|---|---|---|
 | URL-HEADING-1: постановка написана **целиком** — два этапа (правило без модели / выбор названия моделью после MODEL-1), три вопроса с предложенными ответами внутри общей картины, золотой набор 19 страниц, бюджет содержимого 20 000 рун | [`tasks/URL-HEADING-1-heading-extraction.md`](tasks/URL-HEADING-1-heading-extraction.md) | **решает владелец** — по постановке целиком (решение 50), в одном разговоре с NOTE-QUALITY-1, дату назначит он; блокирует этап A у Devin | 2026-09-21 |
 | **MODEL-1:** замер пяти вариантов модели эмбеддингов на 113 реальных заметках владельца: поиск, близость пар, ключевые слова, скорость, память | [`tasks/MODEL-1-embedding-model-measurement.md`](tasks/MODEL-1-embedding-model-measurement.md), [`tasks/MODEL-1-review-findings.md`](tasks/MODEL-1-review-findings.md), `nlp-service/scripts/measure_models.py` | **решает владелец** — решения 58 и 60: модель выбирается после повторного замера на готовом конвейере, в финале D (текущая модель с конвейером), e5-small и e5-base. [`tasks/MODEL-1B-review-findings.md`](tasks/MODEL-1B-review-findings.md) | 2026-09-24 |
+| **NOTE-QUALITY-1:** мера качества — контракт с Java (решение 42): объём, оконченность, логичность, присутствие мысли | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **решает владелец** — обсуждение вместе с URL-HEADING-1, дату назначит он; постановка для Java, критерии от нас; её корпус меняет входные данные — замеры CHUNK-1/NLP-4 после неё перепрогоняются | 2026-09-24 |
+| **IMP-4-JAVA:** как Java `source-text-handler` создаёт заметки | [`tasks/IMP-4-review-findings.md`](tasks/IMP-4-review-findings.md) | **решает владелец** — ждёт владельца; блокирует раздел 3 IMP-4 и контур NOTE-QUALITY-1 | 2026-09-24 |
 
 
 ---
@@ -62,14 +64,12 @@
 
 
 | **W-1:** валидация формулы весов на ground truth `folder_path` | [`tasks/W-1-eval-findings.md`](tasks/W-1-eval-findings.md) | **бэклог** — ждёт Claude Code: ревью eval — семантика доминирует, граф покрывает 27 %, keywords ортогональны | 2026-09-21 |
-| **NOTE-QUALITY-1:** мера качества — контракт с Java (решение 42): объём, оконченность, логичность, присутствие мысли | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **бэклог** — обсуждение с владельцем вместе с URL-HEADING-1, дату назначит он; постановка для Java, критерии от нас | 2026-09-21 |
 | **NLP-3:** устройство nlp-service: 4 эндпоинта, карта вызовов, пути оптимизации | [`tasks/NLP-3-nlp-service-structure-review.md`](tasks/NLP-3-nlp-service-structure-review.md) | **бэклог** — ждёт Claude Code: верификация обхода Devin и карта вызывающих | 2026-09-21 |
 | **LOG-1:** backend на `rs/zerolog`, запрет секретов в логах (решение 35) | [`tasks/LOG-1-zerolog-integration.md`](tasks/LOG-1-zerolog-integration.md) | **бэклог** — черновик у Claude Code: сверка потребителей логгера и план миграции | 2026-09-21 |
 | **ACCESS-DOC-1:** нормативный документ о модели доступа к заметкам после SEC-1/PUB-1 | `CHANGELOG.md` | **бэклог** — ждёт Claude Code: модель описана только в CHANGELOG | 2026-09-21 |
 | **P11-3 / P11-4:** постановки: нормализация ключевых слов и кластеризация | [`tasks/P11-1-clustering-design-notes.md`](tasks/P11-1-clustering-design-notes.md) | **бэклог** — ждёт Claude Code | 2026-09-21 |
 | **DEPLOY-2:** публиковать проверенные образы из CI | [`tasks/DEPLOY-2-review-findings.md`](tasks/DEPLOY-2-review-findings.md) | **бэклог** — заблокировано: токен Docker Hub, владелец сделает, когда будет время (решение 45) | 2026-09-21 |
 | **IMP-1:** п. 3 — прямой `POST /import/bookmarks` с не-UI типом создаёт такую заметку | [`tasks/IMP-1-review-findings.md`](tasks/IMP-1-review-findings.md) | **бэклог** — ждёт владельца; рекомендация Claude Code — отклонять на пользовательских маршрутах | 2026-09-21 |
-| **IMP-4-JAVA:** как Java `source-text-handler` создаёт заметки | [`tasks/IMP-4-review-findings.md`](tasks/IMP-4-review-findings.md) | **бэклог** — ждёт владельца; блокирует раздел 3 IMP-4 | 2026-09-21 |
 | **BATCH-DESIGN-1:** связи между заметками без UUID, rate limit, авторизация импорта, типы | [`tasks/BATCH-1-api-design.md`](tasks/BATCH-1-api-design.md) | **бэклог** — ждёт владельца: реализация принята, дизайн не утверждался | 2026-09-21 |
 | **BATCH-TEST-1:** adversarial-тестирование: п. 2 — формулировка «практического исчерпания» | [`tasks/BATCH-TEST-1-strategy.md`](tasks/BATCH-TEST-1-strategy.md) | **бэклог** — п. 1 решён 14.09 (решение 34); п. 2 ждёт владельца | 2026-09-21 |
 | **COMET-1:** поля событий и напоминаний у `comet`/`satellite` | [`tasks/COMET-1-event-reminder-fields.md`](tasks/COMET-1-event-reminder-fields.md) | **бэклог** — ждёт владельца: расширенный ввод и настоящие напоминания; постановки нет | 2026-09-21 |
@@ -89,6 +89,8 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Devin → Claude, 2026-09-24, поднято на владельца: NOTE-QUALITY-1 и IMP-4-JAVA.** Мера качества (решение 42) и Java-контур вынесены из бэклога в «На человеке» — парой с URL-HEADING-1, чтобы дыру закрыть одним разговором. Для тебя следствие одно: все эмпирические замеры CHUNK-1/NLP-4 валидны до изменения корпуса NOTE-QUALITY-1 — после неё перепрогон. CHUNK-1 сдан на ревью: чанкер за `EMBED_CHUNKING`, off-путь без изменений. [`tasks/CHUNK-1-structure-aware-chunker.md`](tasks/CHUNK-1-structure-aware-chunker.md)
 
 **Devin → Claude, 2026-09-24, WORKTREE-1 в очереди.** Нужен канонический `docs/agents/WORKTREES.md`: карта трёх деревьев, startup freshness, merge policy и поведение при behind/diverged remote. Рабочую форму `D:\knowledge-graph-review` — detached или именованная ветка — предлагаешь ты. [`tasks/WORKTREE-1-agent-worktrees.md`](tasks/WORKTREE-1-agent-worktrees.md)
 
