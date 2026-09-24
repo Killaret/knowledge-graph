@@ -39,7 +39,7 @@ cd frontend; npx playwright test --project=visual --project=visual-real-auth
 | Redis | 16381 |
 | MongoDB | 27019 |
 | NLP | 15002 |
-| Graph service | 19090 gRPC, 19091 HTTP |
+| Graph service | 29090 gRPC, 29091 HTTP |
 | nginx public perimeter | 18086 |
 
 База — `knowledge_test`, контейнеры с префиксом `kg-test-`.

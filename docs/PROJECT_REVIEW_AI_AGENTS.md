@@ -197,7 +197,7 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 - **Dev**: backend 9000, nginx API 18080, nginx frontend 18081, graph-service 9091.
 - **Personal**: backend direct 18085, nginx API 18082, nginx frontend 18084, graph-service 9092.
-- **Test**: frontend 3002, backend 18083, nginx public perimeter 18086, graph-service gRPC 19090 / HTTP 19091, postgres 15434, redis 16381, mongo 27019, nlp 15002.
+- **Test**: frontend 3002, backend 18083, nginx public perimeter 18086, graph-service gRPC 29090 / HTTP 29091, postgres 15434, redis 16381, mongo 27019, nlp 15002.
 
 ### Volumes
 

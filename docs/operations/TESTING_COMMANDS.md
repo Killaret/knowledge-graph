@@ -193,7 +193,7 @@ curl http://localhost:8092/health           # Personal graph service
 curl http://localhost:18083/health           # Test backend
 curl http://localhost:3002                  # Test frontend
 curl http://localhost:15002/health          # Test NLP service
-curl http://localhost:19091/health          # Test graph service (HTTP)
+curl http://localhost:29091/health          # Test graph service (HTTP)
 ```
 
 ### Testing Best Practices

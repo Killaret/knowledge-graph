@@ -9,7 +9,7 @@ command list lives in [`COMMANDS.md`](../../COMMANDS.md).
 Knowledge Graph uses three Docker stacks:
 - **Dev stack** (docker-compose.yml) - Development environment (frontend dev server 5173, backend 9000, nginx API 18080/frontend 18081)
 - **Personal stack** (docker-compose.personal.yml) - Personal environment (frontend 3001, backend direct 18085, nginx API 18082/frontend 18084)
-- **Test stack** (docker-compose.test.yml) - Isolated testing environment (frontend 3002, backend 18083, postgres 15434, redis 16381, mongo 27019, nlp 15002, graph-service 19091)
+- **Test stack** (docker-compose.test.yml) - Isolated testing environment (frontend 3002, backend 18083, postgres 15434, redis 16381, mongo 27019, nlp 15002, graph-service 29091)
 
 ## Test Stack
 
@@ -30,7 +30,7 @@ The test stack is fully isolated from dev and personal stacks:
 | mongo-test | kg-test-mongo | 27019 | Test drafts |
 | nlp-test | kg-test-nlp | 15002 | Test NLP service |
 | backend-test | kg-test-backend | 18083 | Test backend API |
-| graph-service-test | kg-test-graph-service | 19090/19091 | Test graph analytics service |
+| graph-service-test | kg-test-graph-service | 29090/29091 | Test graph analytics service |
 | nginx-test | kg-test-nginx | 18086 | Test public API/graph-service perimeter |
 | frontend-test | kg-test-frontend | 3002 (override with `FRONTEND_PORT`) | Test frontend |
 
@@ -45,13 +45,13 @@ The test stack is fully isolated from dev and personal stacks:
 
 - **Frontend:** `http://127.0.0.1:<FRONTEND_PORT>` (default 3002; browser API calls are proxied through `/api` and `/graph-service/api`)
 - **Backend API:** http://127.0.0.1:18083 (direct access for health/setup)
-- **Graph Service (HTTP):** http://127.0.0.1:19091
+- **Graph Service (HTTP):** http://127.0.0.1:29091
 - **nginx public perimeter:** http://127.0.0.1:18086
 
 ### Health Checks
 
 - **Backend:** `curl http://127.0.0.1:18083/health`
-- **Graph Service:** `curl http://127.0.0.1:19091/health`
+- **Graph Service:** `curl http://127.0.0.1:29091/health`
 - **nginx public perimeter:** `curl http://127.0.0.1:18086/health`
 
 ## Isolated Testing Model
@@ -705,7 +705,7 @@ The test stack can be integrated into CI/CD pipelines:
 ### Test Stack Automation (July 2026)
 - **New Scripts:** start-test, stop-test, seed-test-data, check-stacks-health, run-full-test-cycle
 - **Isolation:** Complete separation from dev/personal stacks
-- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 19091
+- **Ports:** Frontend 3002, Backend 18083, PostgreSQL 15434, Redis 16381, MongoDB 27019, NLP 15002, Graph service 29091
 - **Status:** ✅ Fully automated and verified
 
 ### Smoke Tests (July 2026)

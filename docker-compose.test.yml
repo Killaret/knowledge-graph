@@ -138,8 +138,8 @@ services:
         aliases:
           - kg-graph-service
     ports:
-      - "127.0.0.1:19090:9090"
-      - "127.0.0.1:19091:9091"
+      - "127.0.0.1:29090:9090"
+      - "127.0.0.1:29091:9091"
     environment:
       POSTGRES_URL: postgresql://${TEST_POSTGRES_USER:-kb_user}:${TEST_POSTGRES_PASSWORD:-kb_password}@postgres-test:5432/${TEST_POSTGRES_DB:-knowledge_test}?sslmode=disable
       REDIS_URL: redis-test:6379

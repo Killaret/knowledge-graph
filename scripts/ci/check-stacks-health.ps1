@@ -128,7 +128,7 @@ function Check-TestStack {
     # Check test API and graph-service
     $errors = 0
     $errors += Check-Api -Port 18083 -Name "Test"
-    $errors += Check-GraphService -Port 19091 -Name "Test"
+    $errors += Check-GraphService -Port 29091 -Name "Test"
     return $errors
 }
 

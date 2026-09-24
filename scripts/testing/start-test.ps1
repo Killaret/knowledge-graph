@@ -25,6 +25,28 @@ if (-not $env:JWT_SECRET) {
 
 Write-Host "Starting test stack setup..." -ForegroundColor Cyan
 
+# Windows (WinNAT/Hyper-V/WSL) dynamically reserves TCP port ranges; a published
+# port inside a reserved range makes compose up fail with a cryptic bind error.
+# Check every host port published by docker-compose.test.yml before touching anything.
+$testPorts = Get-Content "$repoDir\docker-compose.test.yml" | ForEach-Object {
+    # matches both "127.0.0.1:29090:9090" and "127.0.0.1:${FRONTEND_PORT:-3002}:3000"
+    if ($_ -match '127\.0\.0\.1:(?:\$\{[^}:]+:-)?(\d+)\}?:') { [int]$matches[1] }
+}
+$reserved = netsh interface ipv4 show excludedportrange protocol=tcp | ForEach-Object {
+    if ($_ -match '^\s*(\d+)\s+(\d+)\s') {
+        [pscustomobject]@{ Start = [int]$matches[1]; End = [int]$matches[2] }
+    }
+}
+$blocked = $testPorts | Where-Object {
+    $p = $_; $reserved | Where-Object { $p -ge $_.Start -and $p -le $_.End }
+}
+if ($blocked) {
+    Write-Host "ERROR: test stack port(s) fall inside Windows-reserved TCP ranges: $($blocked -join ', ')" -ForegroundColor Red
+    Write-Host "Inspect: netsh interface ipv4 show excludedportrange protocol=tcp" -ForegroundColor Yellow
+    Write-Host "Fix: restart the winnat service as administrator, or move the port in docker-compose.test.yml" -ForegroundColor Yellow
+    exit 1
+}
+
 # Stop and remove previous test stack
 Write-Host "Stopping previous test stack..." -ForegroundColor Yellow
 docker compose -f docker-compose.test.yml down -v

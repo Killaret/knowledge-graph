@@ -34,7 +34,7 @@ export SKIP_AUTH=false
 
 - Frontend: `http://127.0.0.1:3002`
 - Backend: `http://127.0.0.1:18083`
-- Graph service (HTTP): `http://127.0.0.1:19091`
+- Graph service (HTTP): `http://127.0.0.1:29091`
 - Test user: `testuser` / `TestPassword123!`
 
 ## Backend
@@ -47,10 +47,10 @@ export SKIP_AUTH=false
 
 ## Graph Service
 
-- [ ] `GET http://127.0.0.1:19091/health` returns `{"status":"ok","service":"graph-service"}`
-- [ ] `GET http://127.0.0.1:19091/api/v1/graph/public` returns public-only nodes (no auth required)
-- [ ] `GET http://127.0.0.1:19091/api/v1/graph/full` without token returns `401` (real-auth) or user-scoped data (skip-auth)
-- [ ] `GET http://127.0.0.1:19091/api/v1/graph/full` with valid `Authorization: Bearer <token>` returns user-scoped nodes
+- [ ] `GET http://127.0.0.1:29091/health` returns `{"status":"ok","service":"graph-service"}`
+- [ ] `GET http://127.0.0.1:29091/api/v1/graph/public` returns public-only nodes (no auth required)
+- [ ] `GET http://127.0.0.1:29091/api/v1/graph/full` without token returns `401` (real-auth) or user-scoped data (skip-auth)
+- [ ] `GET http://127.0.0.1:29091/api/v1/graph/full` with valid `Authorization: Bearer <token>` returns user-scoped nodes
 
 ## Frontend
 
@@ -88,8 +88,8 @@ Run after `SKIP_AUTH=false` start:
 7. [ ] Open `/graph` — 2D graph renders user-scoped nodes.
 8. [ ] Create a new note from the graph (`N` or side panel) — it appears in list and graph.
 9. [ ] Logout works and returns to public view.
-10. [ ] `GET http://127.0.0.1:19091/api/v1/graph/full` without token returns `401`.
-11. [ ] `GET http://127.0.0.1:19091/api/v1/graph/full` with token returns user data.
+10. [ ] `GET http://127.0.0.1:29091/api/v1/graph/full` without token returns `401`.
+11. [ ] `GET http://127.0.0.1:29091/api/v1/graph/full` with token returns user data.
 
 ## E2E
 

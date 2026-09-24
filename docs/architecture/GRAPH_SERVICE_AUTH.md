@@ -55,7 +55,7 @@ The nginx browser-facing `/graph-service/` proxy always removes `X-Internal-Auth
 
 ## HTTP Endpoints
 
-- Direct: `http://127.0.0.1:19091/api/v1/graph/...`
+- Direct: `http://127.0.0.1:29091/api/v1/graph/...`
 - Via SvelteKit proxy (preferred in the browser): `http://127.0.0.1:3002/graph-service/api/v1/graph/...`
   - Proxy target is controlled by `VITE_API_TARGET` (backend) and `GRAPH_SERVICE_URL` (graph service) in `frontend/src/hooks.server.ts`.
 

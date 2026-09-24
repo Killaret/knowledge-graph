@@ -320,7 +320,7 @@ echo "Created ${#LINK_IDS[@]} links."
 # ---------------------------------------------------------------------------
 GRAPH_START=$(date +%s)
 echo "Verifying graph service..."
-GRAPH_RESPONSE=$(curl -s -X GET "http://localhost:19091/api/v1/graph/full" -H "Content-Type: application/json" || true)
+GRAPH_RESPONSE=$(curl -s -X GET "http://localhost:29091/api/v1/graph/full" -H "Content-Type: application/json" || true)
 if [ -n "$GRAPH_RESPONSE" ]; then
     TOTAL_NODES=$(echo "$GRAPH_RESPONSE" | jq -r '.meta.total_nodes // 0')
     TOTAL_LINKS=$(echo "$GRAPH_RESPONSE" | jq -r '.meta.total_links // 0')

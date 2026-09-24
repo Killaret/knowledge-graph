@@ -140,7 +140,7 @@ read endpoints described in section 5 only return notes whose `is_public` is
 ## 9. Graph view: personal and community
 
 The graph is served by **graph-service**, not the main backend, and is reached through
-the `/graph-service/api` proxy — `http://127.0.0.1:19091/api/v1/graph/...` when talking
+the `/graph-service/api` proxy — `http://127.0.0.1:29091/api/v1/graph/...` when talking
 to the test stack directly.
 
 ```bash

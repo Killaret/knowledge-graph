@@ -134,7 +134,7 @@ check_test_stack() {
     fi
 
     check_api 18083 || return 1
-    check_graph_service 19091 || return 1
+    check_graph_service 29091 || return 1
 
     return 0
 }
