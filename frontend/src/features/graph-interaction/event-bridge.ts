@@ -41,6 +41,7 @@ export interface HoveredLinkInfo {
   link_type: string;
   weight: number;
   source_type: string;
+  gamma_origin?: boolean;
   last_weight_update?: string;
 }
 
@@ -359,6 +360,7 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
           link_type: hovered.link_type || "related",
           weight: hovered.weight ?? 0.5,
           source_type: (hovered as { source_type?: string }).source_type || "user",
+          gamma_origin: (hovered as { gamma_origin?: boolean }).gamma_origin,
           last_weight_update: (hovered as { last_weight_update?: string }).last_weight_update,
         };
 

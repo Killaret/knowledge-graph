@@ -16,6 +16,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 type mockPostgresClient struct {
@@ -91,6 +92,48 @@ func TestGetPublicGraphHandler(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Len(t, resp.Data.Nodes, 1)
 	assert.Equal(t, "Public Note", resp.Data.Nodes[0].Title)
+}
+
+func TestGetPublicGraphHandler_LinkIdentityAndGammaOrigin(t *testing.T) {
+	mockDB := &mockPostgresClient{}
+	c, mr := newTestCache(t)
+	defer mr.Close()
+
+	server := NewHTTPServer(mockDB, c, 1000, 2)
+
+	mockDB.On("GetNotes", mock.Anything, db.NotesFilter{IsPublic: true}).Return([]*db.Note{
+		{ID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", Title: "A", Type: "star", Public: true},
+		{ID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", Title: "B", Type: "star", Public: true},
+	}, []*db.Link{
+		{
+			ID:          "660e8400-e29b-41d4-a716-446655440002",
+			Source:      "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+			Target:      "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12",
+			LinkType:    "related",
+			Weight:      0.9,
+			SourceType:  "user",
+			GammaOrigin: true,
+		},
+	}, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/graph/public", nil)
+	rr := httptest.NewRecorder()
+
+	server.GetPublicGraphHandler(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var resp GraphApiResponse
+	assert.NoError(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.Len(t, resp.Data.Links, 1)
+	assert.Equal(t, "660e8400-e29b-41d4-a716-446655440002", resp.Data.Links[0].ID)
+	assert.True(t, resp.Data.Links[0].GammaOrigin)
+
+	var raw map[string]interface{}
+	assert.NoError(t, json.Unmarshal(rr.Body.Bytes(), &raw))
+	rawLink := raw["data"].(map[string]interface{})["links"].([]interface{})[0].(map[string]interface{})
+	assert.Contains(t, rawLink, "id")
+	assert.Equal(t, true, rawLink["gamma_origin"])
 }
 
 func TestGetPublicGraphHandlerNoCache(t *testing.T) {

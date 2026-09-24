@@ -72,6 +72,7 @@ func TestPostgresClient_Integration(t *testing.T) {
 			link_type TEXT NOT NULL,
 			weight FLOAT NOT NULL DEFAULT 0.5,
 			source_type TEXT DEFAULT 'user',
+			metadata JSONB DEFAULT '{}',
 			created_at TIMESTAMP DEFAULT NOW(),
 			deleted_at TIMESTAMP,
 			creator_id UUID
@@ -97,9 +98,10 @@ func TestPostgresClient_Integration(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = pool.Exec(ctx, `
-		INSERT INTO links (id, source_note_id, target_note_id, link_type, weight) VALUES
-			('660e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001', 'related', 0.5),
-			('660e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'related', 0.7);
+		INSERT INTO links (id, source_note_id, target_note_id, link_type, weight, source_type, metadata) VALUES
+			('660e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001', 'related', 0.5, 'user', '{}'),
+			('660e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'related', 0.7, 'gamma', '{}'),
+			('660e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440000', 'related', 0.9, 'user', '{"gamma": {"score": 0.95, "generated_at": "2026-09-23T00:00:00Z"}}');
 	`)
 	require.NoError(t, err)
 
@@ -110,14 +112,30 @@ func TestPostgresClient_Integration(t *testing.T) {
 		notes, links, err := client.GetNotes(ctx, NotesFilter{})
 		require.NoError(t, err)
 		assert.Equal(t, 3, len(notes))
-		assert.Equal(t, 2, len(links))
+		assert.Equal(t, 3, len(links))
 	})
 
 	t.Run("GetNotes_Public", func(t *testing.T) {
 		notes, links, err := client.GetNotes(ctx, NotesFilter{IsPublic: true})
 		require.NoError(t, err)
 		assert.Equal(t, 3, len(notes))
-		assert.Equal(t, 2, len(links))
+		assert.Equal(t, 3, len(links))
+	})
+
+	t.Run("GetNotes_LinkIdentityAndGammaOrigin", func(t *testing.T) {
+		_, links, err := client.GetNotes(ctx, NotesFilter{})
+		require.NoError(t, err)
+		require.Equal(t, 3, len(links))
+
+		byID := make(map[string]*Link, len(links))
+		for _, l := range links {
+			require.NotEmpty(t, l.ID)
+			byID[l.ID] = l
+		}
+
+		assert.False(t, byID["660e8400-e29b-41d4-a716-446655440000"].GammaOrigin, "pure user link")
+		assert.True(t, byID["660e8400-e29b-41d4-a716-446655440001"].GammaOrigin, "live gamma link")
+		assert.True(t, byID["660e8400-e29b-41d4-a716-446655440002"].GammaOrigin, "promoted link keeps provenance")
 	})
 
 	t.Run("GetNotes_WithRootAndDepth", func(t *testing.T) {

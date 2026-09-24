@@ -199,10 +199,14 @@ function applyFullRestart(delta: GraphDelta, options: DeltaUpdateOptions): boole
   });
 
   state.simLinks = filteredLinks.map((l) => ({
+    id: l.id,
     source: l.source,
     target: l.target,
     weight: l.weight ?? 1,
     link_type: l.link_type,
+    source_type: l.source_type,
+    gamma_origin: l.gamma_origin,
+    last_weight_update: l.last_weight_update,
   }));
 
   // Initialize opacity maps for fade effect using current nodes and links

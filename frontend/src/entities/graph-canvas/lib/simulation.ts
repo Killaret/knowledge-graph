@@ -236,6 +236,7 @@ export function startSimulation(
     weight: l.weight ?? 1,
     link_type: l.link_type,
     source_type: l.source_type,
+    gamma_origin: l.gamma_origin,
     last_weight_update: l.last_weight_update,
   }));
 

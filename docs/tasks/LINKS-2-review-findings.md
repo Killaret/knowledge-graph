@@ -214,3 +214,41 @@ graph-service начнёт присылать признак, до `handleLinkDe
 - Встречное повышение принимает направление запроса и сохраняет `id` и `created_at` строки — одно
   ребро на пару, как требует решение 53; ручная поверх ручной во встречную сторону — 409.
 - `openAPI.yaml` описывает `source_type` и `gamma_origin` у связи в ответе монолита.
+
+
+## Доработка отклонённого условия — Devin, 2026-09-24
+
+**graph-service теперь отдаёт `id` и `gamma_origin`** — то, чего холсту не хватало:
+
+- `db.Link` (`postgres_client.go`): поля `ID`, `GammaOrigin`; оба запроса связей
+  выбирают `id::text` и `(source_type = 'gamma' OR COALESCE(metadata ? 'gamma', false))`
+  — та же семантика, что у `IsGamma() || HasGammaProvenance()` монолита.
+- `engine.LayoutLink` + маппинги `layout_2d.go`/`layout_3d.go` — поля уходят во все
+  HTTP-ответы со связями (`full`, `public`, `delta`, `note`).
+- gRPC `LayoutLink` (proto) не трогал: холст ест HTTP JSON, монолит свой
+  `gamma_origin` считает сам из домена; `protoc` в репозитории не генерируется
+  локально — расширение proto отдельной задачей, если понадобится внутренним
+  потребителям.
+- Фронтенд: `gamma_origin` добавлен в `HoveredLinkInfo` (event-bridge) и копируется
+  в объект связи под курсором; `simulation.ts` передаёт флаг в `simLinks`;
+  `delta.ts` дополнительно чинен — он не копировал ни `id`, ни `source_type`
+  (второй путь сборки sim-связей, дефект той же породы).
+
+**Тесты:** `GetNotes_LinkIdentityAndGammaOrigin` (интеграция, testcontainers PG —
+чистая user-связь false, живая gamma true, повышенная true);
+`TestGetPublicGraphHandler_LinkIdentityAndGammaOrigin` (JSON ответа несёт оба поля);
+event-bridge — «carries id and gamma_origin into the hovered link».
+
+**Мутации — красные, восстановлено:**
+- `SELECT` без `metadata ? 'gamma'` → `promoted link keeps provenance` FAIL.
+- `SELECT` без `id` → `require.NotEmpty(l.ID)` FAIL.
+- event-bridge без копирования `gamma_origin` → новый тест FAIL (23→24, 1 красный).
+
+**Живой прогон — тест-стенд, 2026-09-24.** Две gamma-связи вставлены в БД;
+`/api/v1/graph/full` graph-service ответил `id` + `gamma_origin: true` обеим.
+Одна повышена через `POST /api/v1/links` (200, `source_type`→`user`,
+`metadata.gamma` сохранён) — в ответе graph-service осталась `gamma_origin: true`.
+`DELETE /api/v1/links/<id из ответа graph-service>` → **204**, в
+`link_suppressions` появилась запись пары — удаление с холста теперь имеет
+рабочий id, а последствие (отказ) исполняется. С экрана не проверялось —
+критерий 11 остаётся за владельцем; наведение на связь автоматически ненадёжно.

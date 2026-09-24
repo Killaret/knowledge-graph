@@ -42,10 +42,13 @@ function createMockContext(canvas: HTMLCanvasElement) {
   ];
   const simLinks: SimulationLink[] = [
     {
+      id: "660e8400-e29b-41d4-a716-446655440000",
       source: simNodes[1],
       target: simNodes[0],
       link_type: "related",
       weight: 1,
+      source_type: "user",
+      gamma_origin: true,
     },
   ];
 
@@ -181,6 +184,15 @@ describe("event-bridge", () => {
 
     vi.advanceTimersByTime(150);
     expect(context.getHoveredLink()).not.toBeNull();
+  });
+
+  it("carries id and gamma_origin into the hovered link", () => {
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 25, clientY: 12 }));
+    vi.advanceTimersByTime(150);
+
+    const link = context.getHoveredLink();
+    expect(link.id).toBe("660e8400-e29b-41d4-a716-446655440000");
+    expect(link.gamma_origin).toBe(true);
   });
 
   it("handles node click", () => {

@@ -23,6 +23,7 @@ export interface SimulationLink extends SimulationLinkDatum<SimulationNode> {
   weight?: number;
   link_type?: string;
   source_type?: string; // 'user' or 'gamma'
+  gamma_origin?: boolean;
   last_weight_update?: string;
 }
 

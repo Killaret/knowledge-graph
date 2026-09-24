@@ -2654,6 +2654,10 @@ components:
     GraphLink:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
+          description: Link row id — required to delete the link via DELETE /links/{id}.
         source:
           type: string
           format: uuid

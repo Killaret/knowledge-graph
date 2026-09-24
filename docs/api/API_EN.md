@@ -157,6 +157,11 @@ Verified on the test stack: a user with five notes, two of them published, sees 
 nodes in `full` and two in `public`, and an anonymous caller sees the same two. The
 community graph is what is shared, not a trimmed copy of someone's own.
 
+Every link in these responses carries `id` (the `links` row id — the canvas needs it
+for `DELETE /api/v1/links/{id}`), `source_type` (`user`/`gamma`) and `gamma_origin`
+(true while the link is gamma **or** was promoted from one — deleting such a link
+records a "not related" suppression, so the UI must warn before deleting).
+
 The main backend exposes `GET /api/v1/graph/public`, an anonymous route that returns
 the public subset. It was renamed from the old `all` path (PUB-3) and has no alias.
 
