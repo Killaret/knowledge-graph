@@ -3,8 +3,6 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-# Keep cache under /root to match runtime expectations and compose mounts
-ENV HF_HOME=/root/.cache/huggingface
 ENV NLTK_DATA=/root/nltk_data
 
 # Build-only dependencies
@@ -38,8 +36,9 @@ ENV NLP_MODEL_NAME=${NLP_MODEL_NAME}
 # Download NLTK data during build
 RUN python -c "import nltk; nltk.download('punkt', download_dir='/root/nltk_data'); nltk.download('stopwords', download_dir='/root/nltk_data'); nltk.download('wordnet', download_dir='/root/nltk_data')"
 
-# Pre-download embedding model so the service can start offline (HF_HUB_OFFLINE=1)
-RUN python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='sentence-transformers/${NLP_MODEL_NAME}', cache_dir='${HF_HOME}/hub')"
+# The embedding model is NOT baked into the image (DISK-1): it comes from
+# the HF cache mounted at runtime (${HF_CACHE_DIR} -> /root/.cache/huggingface).
+# entrypoint.sh fails fast with instructions when the cache is empty.
 
 COPY . .
 
@@ -63,7 +62,6 @@ ENV NLP_MODEL_NAME=${NLP_MODEL_NAME}
 ENV PATH="/app/.venv/bin:$PATH" VIRTUAL_ENV=/app/.venv
 
 COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder /root/.cache/huggingface /root/.cache/huggingface
 COPY --from=builder /root/nltk_data /root/nltk_data
 COPY --from=builder /app/app /app/app
 COPY --from=builder /app/entrypoint.sh /app/entrypoint.sh
