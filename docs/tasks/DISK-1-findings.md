@@ -124,3 +124,18 @@ dir "%APPDATA%\devin"
 Проверка: `dir` показывает `cli <JUNCTION> [D:\agents\devin\cli]`; после запуска Devin — сессии
 на месте, `sessions.db` физически на D:. Если `robocopy` выдал ошибки доступа — Devin не до конца
 закрыт (трей, фоновые процессы).
+
+**Выполнено владельцем 2026-09-24:** junction создан, `sessions.db` (4,0 ГБ) физически на D:,
+сессия Devin пишет через ссылку. C:: 33,9 → ~39 ГБ свободных.
+
+## Дополнение 2026-09-24: сжатие vhdx Docker
+
+`docker builder prune` освобождает место **внутри** виртуального диска, но файл
+`docker_data.vhdx` на хосте сам не уменьшается. Рабочая последовательность (проверена):
+`wsl -d docker-desktop -e sh -c "fstrim -av"` (distro должен быть запущен — trim метит
+освобождённые блоки) → остановить Docker Desktop → `wsl --shutdown` → `diskpart` со скриптом
+`select vdisk` / `attach vdisk readonly` / `compact vdisk` / `detach vdisk`. Без fstrim compact
+отчитывается «successfully compacted», но не возвращает ничего. Без остановки Docker Desktop
+файл остаётся залоченным. Итог замера: 34 → 18 ГБ vhdx, D:: 2,7 → 19 ГБ свободных.
+Готовый bat: `D:\agents\compact-docker-vhdx.bat` (требует админа). `wsl --manage
+docker-desktop --set-sparse` отклонён самой WSL (`--allow-unsafe`, риск повреждения томов с БД).
