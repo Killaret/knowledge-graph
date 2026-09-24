@@ -40,6 +40,33 @@ Guardians of a cluster, factory-line visualization, leaderboards and public univ
 layer, graph motion driven by graph metrics. These are hypotheses, not commitments —
 [docs/product/IDEAS.md](docs/product/IDEAS.md).
 
+### Phase 21: Task / Inbox Layer (Задачи и входящие) 🟡 Medium — Planned
+
+**Priority:** 🟡 Medium
+**Status:** ⏳ Planned
+**Description:** Выделить дела/задачи из общих заметок. Сейчас для быстрых дел используются типы Dust и Asteroid, но нет явного отделения «знаний» от «действий».
+
+- [ ] Добавить тип **Task (Сигнал)** — заметка-задача с дедлайном, статусом `done`, напоминанием.
+- [ ] Использовать **Dust** как inbox для быстрых мыслей и «посмотреть завтра».
+- [ ] **Asteroid** оставить для фрагментов, TODO, цитат.
+- [ ] **Pulsar / Comet (periodic)** — для регулярных задач.
+- [ ] UI: отдельный список «Задачи» с группировкой по срокам, чекбоксами, быстрым выполнением.
+- [ ] Интеграция с Cosmic Notification System для напоминаний.
+
+### Phase 22: Cluster Folders View (Кластеры как группы закладок) 🟢 Low — Hypothesis
+
+**Priority:** 🟢 Low
+**Status:** 💡 Idea
+**Description:** Рассмотреть вариант отображения кластеров в виде групп/папок закладок, похожий на Opera Speed Dial / Workspaces. Группы — это кластеры, внутри — заметки/связи.
+
+- [ ] Изучить UX браузерных групп вкладок (Opera, Vivaldi, Edge) и адаптировать к Knowledge Graph.
+- [ ] Режим «Folders»: кластеры отображаются как визуальные плитки/папки, внутри — мини-граф или список заметок.
+- [ ] Поддержка drag-and-drop заметок между кластерами.
+- [ ] Быстрое сворачивание/разворачивание кластеров.
+- [ ] Возможность закреплять кластеры, задавать цвет, порядок.
+- **Гипотеза:** папочная организация снижает когнитивную нагрузку и упрощает навигацию для небольших графов.
+- **Зависимости:** кластеризация, CelestialBody Semantic Model.
+
 ---
 
 Planning currently lives in these files rather than in an issue tracker, which is why status has

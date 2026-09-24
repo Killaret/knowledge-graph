@@ -80,6 +80,8 @@ New surfaces require two phases of coverage; the second is not optional:
 1. **Retrospective coverage** — positive and obvious-negative tests against the current implementation.
 2. **Adversarial phase** — tests written to fail, based on knowledge of the implementation, the OpenAPI contract, and the invariants that should hold. Categories: length boundaries (0, 1, max, max+1), enum validity and fallbacks, empty and maximal arrays, ownership / IDOR, duplicate ids and links, side effects (post-processing, metadata, `source_url`).
 
+The distinction is discovery, not final syntax: a phase-one negative checks a known contract (required field, documented max+1, known unauthorized request); phase two attacks an implementation-specific assumption found by tracing the real path (reverse direction, legacy NULL, a dropped field, a missing side effect). It must first fail on broken code or a mutation of the real path, then stays as a green regression. A green suite cannot prove provenance, so record attempted mutations and findings in the task file, including an explicit “no new defect” result when applicable.
+
 Adversarial tests carry no special name or marker; a test earns its place by failing on broken code. What is recorded is **what the phase found** — list the defects in the task file, as `tasks/BATCH-TEST-1-strategy.md` does.
 
 ## Task Routing

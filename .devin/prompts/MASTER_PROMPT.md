@@ -126,6 +126,8 @@ optional:
 1. **Retrospective coverage.** Positive tests and the obvious negatives against the implementation as it stands.
 2. **Adversarial phase.** Tests designed *to fail*, written from knowledge of the implementation, the OpenAPI contract and the invariants you believe hold. Every failing test either exposes a defect (fix the code) or proves the test wrong (fix the test). Repeat while meaningful failures are still findable.
 
+The distinction is discovery, not final syntax. A phase-one negative checks a known contract (missing required field, documented max+1, known unauthorized request). Phase two attacks an implementation-specific assumption found by tracing the real path (reverse direction, legacy NULL, a field dropped by an intermediate mapper, a missing side effect). It must first fail on broken code or a mutation of the real path; after the fix it remains a green regression. A green suite cannot prove provenance, so record attempted mutations and findings in the task file, including an explicit “no new defect” result when applicable.
+
 Categories to work through: length boundaries (0, 1, max, max+1), enum validity including fallbacks, empty and maximal arrays, ownership and IDOR, duplicate ids and links, side effects (post-processing, metadata, `source_url`).
 
 **Adversarial tests carry no special name or marker.** A test earns its place by reddening on broken code, not by the intent it was written with; a marker in the name decays the moment someone forgets to add it, and then it lies. What is recorded instead is **what the phase found** — list the defects in the task file, as `tasks/BATCH-TEST-1-strategy.md` does for the batch routes.

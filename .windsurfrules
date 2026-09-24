@@ -225,6 +225,17 @@ optional:
    Every failing test either exposes a defect (fix the code) or proves the test
    wrong (fix the test). Repeat while meaningful failures are still findable.
 
+The distinction is about **how a test is discovered**, not its final syntax. A
+phase-one negative checks a known contract before reading for loopholes (missing
+required field, documented max+1, known unauthorized request). A phase-two test
+attacks an implementation-specific assumption discovered by tracing the real path
+(reverse direction, legacy NULL, a field dropped by an intermediate mapper, a
+missing side effect). It must first fail on current broken code or on a mutation of
+the real execution path; after the fix it remains as an ordinary green regression.
+A final green suite alone cannot prove this phase happened, so the task/findings
+file must record the attempted mutations and defects found (or state that no new
+defect was found after the listed attacks).
+
 Categories to work through: length boundaries (0, 1, max, max+1), enum validity
 including fallbacks, empty and maximal arrays, ownership and IDOR, duplicate ids
 and links, side effects (post-processing, metadata, `source_url`).

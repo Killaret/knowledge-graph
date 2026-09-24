@@ -151,5 +151,7 @@ Personal/dev/test:
    запускались и не затрагивались.
 
 Проверки: `pytest tests/ -v` — **65/65**, `docker compose -f
-docker-compose.deploy.yml config --quiet` — зелёный. Документация deploy EN/RU и
-`.env.example` обновлена.
+docker-compose.deploy.yml config --quiet` — зелёный. После push `9e2f8a7` GitHub
+**Production Deployment** run `36037135453` зелёный: сборка пяти образов, deploy
+stack, health всех сервисов и cleanup прошли. CI, Frontend Tests и Security Audit
+того же HEAD также зелёные. Документация deploy EN/RU и `.env.example` обновлена.
