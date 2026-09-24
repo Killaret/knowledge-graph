@@ -168,7 +168,7 @@ func (c *postgresClient) loadAll(ctx context.Context, filter NotesFilter) ([]*No
 	}
 
 	linkVis, linkArgs := linkVisibilitySQL(filter, 0)
-	linksQuery := fmt.Sprintf(`SELECT id::text, source_note_id, target_note_id, link_type, weight, COALESCE(source_type, 'user'), (source_type = 'gamma' OR COALESCE(metadata ? 'gamma', false)) FROM links WHERE deleted_at IS NULL AND %s`, linkVis)
+	linksQuery := fmt.Sprintf(`SELECT id::text, source_note_id, target_note_id, link_type, weight, COALESCE(source_type, 'user'), (COALESCE(source_type, 'user') = 'gamma' OR COALESCE(metadata ? 'gamma', false)) FROM links WHERE deleted_at IS NULL AND %s`, linkVis)
 
 	linkArgSlice := make([]interface{}, 0, len(linkArgs))
 	linkArgSlice = append(linkArgSlice, linkArgs...)
@@ -196,7 +196,7 @@ func (c *postgresClient) loadAll(ctx context.Context, filter NotesFilter) ([]*No
 
 func (c *postgresClient) loadLinksByNoteIDs(ctx context.Context, ids []string, filter NotesFilter) ([]*Link, error) {
 	linkVis, linkArgs := linkVisibilitySQL(filter, 1)
-	query := fmt.Sprintf(`SELECT id::text, source_note_id, target_note_id, link_type, weight, COALESCE(source_type, 'user'), (source_type = 'gamma' OR COALESCE(metadata ? 'gamma', false)) FROM links WHERE deleted_at IS NULL AND (source_note_id = ANY($1) OR target_note_id = ANY($1)) AND %s`, linkVis)
+	query := fmt.Sprintf(`SELECT id::text, source_note_id, target_note_id, link_type, weight, COALESCE(source_type, 'user'), (COALESCE(source_type, 'user') = 'gamma' OR COALESCE(metadata ? 'gamma', false)) FROM links WHERE deleted_at IS NULL AND (source_note_id = ANY($1) OR target_note_id = ANY($1)) AND %s`, linkVis)
 
 	args := []interface{}{ids}
 	args = append(args, linkArgs...)

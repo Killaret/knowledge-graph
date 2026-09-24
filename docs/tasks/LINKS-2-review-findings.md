@@ -360,3 +360,33 @@ event-bridge — «carries id and gamma_origin into the hovered link».
 - Удаление с холста работает: `id` доходит до `DELETE` (дефект с `6685318`, 2026-08-02).
 - Решение не трогать gRPC-`LayoutLink` объяснено: холст читает HTTP, `protoc` локально не
   генерируется.
+
+## Доработка после второго отклонения — Devin, 2026-09-24
+
+Блокер закрыт в реальном пути: `transformRawGraph` (`graphLoader.ts`) теперь копирует
+`gamma_origin`, а не сбрасывает его между ответом graph-service и холстом.
+
+Регрессия `GraphCanvas.events.spec.ts` начинается с объекта связи в формате ответа
+graph-service (`source_type=user`, `gamma_origin=true`), пропускает его через
+`transformRawGraph`, рендерит настоящий `GraphCanvas`, наводит мышь на связь и нажимает
+Delete. `onLinkDelete` обязан получить `id` и `gamma_origin=true`. Это покрывает цепочку
+`graph response → graphLoader → simulation → event-bridge → delete callback`; удаление
+поля в любом из этих звеньев роняет тест. Мутация без строки в `graphLoader.ts` красная:
+получено `gamma_origin: undefined` вместо `true`.
+
+Дополнительно закрыты две находки ревью:
+
+- SQL признака использует `COALESCE(source_type, 'user')`, поэтому историческая строка с
+  `source_type=NULL` больше не роняет весь граф; интеграционная фикстура содержит NULL.
+  Мутация с прежним `source_type = 'gamma'` красная: `cannot scan NULL into *bool`.
+- Root/depth-путь теперь проверяет непустой `id` и `GammaOrigin` для живой gamma- и
+  повышенной связи, а не только длину массива.
+- `delta.test.ts` закрепляет `id`, `source_type` и `gamma_origin` после delta-restart;
+  мутация без копирования флага красная.
+
+Проверки: 39 целевых frontend-тестов и полный frontend unit suite (1448/1448)
+зелёные; `svelte-check` — 0 ошибок/предупреждений; `go test ./...` graph-service и
+интеграция `TestPostgresClient_Integration` зелёные.
+Живой стек в этой сессии не поднимался: принятый критерий допускает компонентный тест
+через настоящий путь, а TEST-LOCK-1 ещё не реализован — параллельные агенты удаляют
+контейнеры друг друга.

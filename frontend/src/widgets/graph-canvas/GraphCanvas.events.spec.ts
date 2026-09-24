@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vite
 import { render, cleanup, fireEvent } from "@testing-library/svelte";
 import { tick } from "svelte";
 import type { GraphDeltaData, GraphNode, GraphLink } from "$shared/api/graph";
+import { transformRawGraph } from "$shared/services/graphLoader";
 
 // Shared state for the d3-force mock
 const mockState = {
@@ -468,13 +469,27 @@ describe("GraphCanvas events", () => {
     expect(container.querySelector('[data-testid="link-form"]')).toBeFalsy();
   });
 
-  it("edits and deletes a hovered link", async () => {
+  it("preserves promoted-link provenance from graph response to delete callback", async () => {
     const onLinkEdit = vi.fn();
     const onLinkDelete = vi.fn();
+    const graph = transformRawGraph({
+      nodes: mockNodes as GraphNode[],
+      links: [
+        {
+          id: "promoted-link",
+          source: "1",
+          target: "2",
+          link_type: "reference",
+          weight: 0.8,
+          source_type: "user",
+          gamma_origin: true,
+        },
+      ],
+    });
     const { rerender, container } = renderResult;
     rerender({
       nodes: mockNodes as GraphNode[],
-      links: mockLinks as GraphLink[],
+      links: graph.links,
       onLinkEdit,
       onLinkDelete,
     });
@@ -527,6 +542,7 @@ describe("GraphCanvas events", () => {
         target: "2",
         link_type: "reference",
         source_type: "user",
+        gamma_origin: true,
       })
     );
   });

@@ -152,6 +152,7 @@ export function transformRawGraph(rawData: GraphData, knowledgeCore?: Note | nul
     weight: link.weight ?? 0.5,
     link_type: link.link_type ?? "related",
     source_type: link.source_type ?? "user",
+    gamma_origin: link.gamma_origin ?? false,
     last_weight_update: link.last_weight_update,
   }));
 
