@@ -30,7 +30,6 @@ import argparse
 import json
 import math
 import os
-import random
 import statistics
 import sys
 import time
@@ -40,8 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from measure_chunking import chunk_text                       # noqa: E402
 from measure_normalization import normalize_pass            # noqa: E402
 from measure_models import QUERIES                          # noqa: E402
-from eval_link_formula import (GRANULARITIES, build_truth,   # noqa: E402
-                              evaluate, cosine)
+from eval_link_formula import GRANULARITIES, cosine          # noqa: E402
 
 MIN_CHARS = 100          # normalization safety bound (spec NLP-4)
 BOOT_SEED = 20260923
@@ -221,16 +219,34 @@ def top_neighbors(vecs, ids, k=2):
 
 
 def precision_maps(vecs, notes, eval_ids):
-    """{granularity: {k: p@k}} over eval notes; candidates = all corpus."""
+    """{granularity: {k: p@k}} over eval notes; candidates = all corpus.
+
+    Vectorized: one (N,N) cosine matrix per variant, per-note top-k via
+    argsort — the per-pair Python loop does not scale to the ~2000-doc
+    public corpus."""
+    import numpy as np
     all_ids = [n["id"] for n in notes]
+    idx = {nid: i for i, nid in enumerate(all_ids)}
+    eval_idx = np.array([idx[i] for i in eval_ids])
+    M = np.stack([vecs[i] for i in all_ids])
+    S = M @ M.T
+    np.fill_diagonal(S, -1.0)
     out = {}
+    per_note_p = {}
     for gname, gfn in GRANULARITIES.items():
-        groups = {n["id"]: gfn(n.get("folder") or "") for n in notes}
-        truth = build_truth(groups, eval_ids)
-        smap = {a: {b: cosine(vecs[a], vecs[b]) for b in all_ids if b != a}
-                for a in eval_ids}
-        out[gname] = {k: evaluate(smap, truth, k) for k in (1, 3, 5)}
-    return out, smap
+        groups = np.array([gfn(n.get("folder") or "") for n in notes])
+        same = groups[eval_idx, None] == groups[None, :]   # (E,N)
+        same[np.arange(len(eval_idx)), eval_idx] = False
+        # notes with empty folder have no ground truth — exclude from same
+        empty = groups == ""
+        same &= ~empty[None, :]
+        order = np.argsort(-S[eval_idx], axis=1)           # (E,N)
+        top_hits = np.take_along_axis(same, order, axis=1).cumsum(axis=1)
+        p3_per_note = top_hits[:, 2] / 3.0
+        per_note_p[gname] = p3_per_note
+        out[gname] = {k: float(top_hits[:, k - 1].mean() / k)
+                      for k in (1, 3, 5)}
+    return out, per_note_p
 
 
 def threshold_curve(top2, folder_of, eval_ids):
@@ -264,25 +280,21 @@ def neighbor_distribution(top2, eval_ids):
             "second_mean": statistics.mean(second)}
 
 
-def bootstrap_diff(vecs_e, vecs_f, notes, eval_ids, groups_fn):
-    """95% bootstrap CI of p@3-exact difference F - E over eval notes."""
+def bootstrap_diff(per_note_e, per_note_f):
+    """95% bootstrap CI of p@3-exact difference F - E over eval notes.
+
+    per_note_* are the per-note p@3 arrays (exact granularity) — resampling
+    averages precomputed per-note values, no re-ranking needed."""
     import numpy as np
-    all_ids = [n["id"] for n in notes]
-    groups = {n["id"]: groups_fn(n.get("folder") or "") for n in notes}
-    truth = build_truth(groups, eval_ids)
-    se = {a: {b: cosine(vecs_e[a], vecs_e[b]) for b in all_ids if b != a}
-          for a in eval_ids}
-    sf = {a: {b: cosine(vecs_f[a], vecs_f[b]) for b in all_ids if b != a}
-          for a in eval_ids}
-    rng = random.Random(BOOT_SEED)
-    diffs = []
-    for _ in range(BOOT_N):
-        sample = [rng.choice(eval_ids) for _ in eval_ids]
-        pe = sum(evaluate({a: se[a]}, {a: truth[a]}, 3) for a in sample)
-        pf = sum(evaluate({a: sf[a]}, {a: truth[a]}, 3) for a in sample)
-        diffs.append(pf / len(sample) - pe / len(sample))
+    rng = np.random.default_rng(BOOT_SEED)
+    e, f = np.asarray(per_note_e), np.asarray(per_note_f)
+    n = len(e)
+    diffs = np.empty(BOOT_N)
+    for i in range(BOOT_N):
+        s = rng.integers(0, n, n)
+        diffs[i] = f[s].mean() - e[s].mean()
     diffs.sort()
-    return diffs[int(0.025 * BOOT_N)], diffs[int(0.975 * BOOT_N)]
+    return float(diffs[int(0.025 * BOOT_N)]), float(diffs[int(0.975 * BOOT_N)])
 
 
 def timed_pipeline(variant, model, notes):
@@ -321,6 +333,8 @@ def main() -> int:
     ap.add_argument("--local-dir", required=True,
                     help="untracked dir for title-bearing artifacts")
     ap.add_argument("--only", default="", help="run a single variant name")
+    ap.add_argument("--corpus-note", default="",
+                    help="one-line corpus description for the findings header")
     args = ap.parse_args()
 
     local_dir = Path(args.local_dir)
@@ -359,14 +373,15 @@ def main() -> int:
         t0 = time.time()
         vecs, stats = build_doc_vectors(v, model, notes)
         stats["encode_all_s"] = time.time() - t0
-        prec, smap = precision_maps(vecs, notes, eval_ids)
+        prec, per_note_p = precision_maps(vecs, notes, eval_ids)
         top2 = top_neighbors(vecs, all_ids, DEGREE)
         curve, t_star = threshold_curve(
             {e: top2[e] for e in eval_ids}, folder_of, eval_ids)
         dist = neighbor_distribution(top2, eval_ids)
         results[v["name"]] = {
             "variant": v, "vecs": vecs, "stats": stats,
-            "precision": prec, "curve": curve, "t_star": t_star,
+            "precision": prec, "per_note_p": per_note_p,
+            "curve": curve, "t_star": t_star,
             "dist": dist, "top2": top2,
         }
         print(f"    p@3 exact={prec['exact'][3]:.3f} t*={t_star} "
@@ -375,8 +390,8 @@ def main() -> int:
     # bootstrap F - E (p@3 exact) — needs both variants measured
     boot = None
     if "E" in results and "F" in results:
-        boot = bootstrap_diff(results["E"]["vecs"], results["F"]["vecs"],
-                              notes, eval_ids, GRANULARITIES["exact"])
+        boot = bootstrap_diff(results["E"]["per_note_p"]["exact"],
+                              results["F"]["per_note_p"]["exact"])
         print(f"bootstrap F-E p@3 exact 95% CI: [{boot[0]:.4f}, {boot[1]:.4f}]",
               flush=True)
 
@@ -460,7 +475,8 @@ def main() -> int:
     order = [v["name"] for v in VARIANTS if v["name"] in results]
     f = ["# MODEL-1B findings — дозамер моделей\n\n",
          f"Корпус: {len(notes)} заметок, из них {len(eval_ids)} с непустой "
-         f"папкой. Кандидаты для метрик — все {len(all_ids)} заметок корпуса.\n\n",
+         f"папкой. Кандидаты для метрик — все {len(all_ids)} заметок корпуса.\n",
+         f"{args.corpus_note}\n" if args.corpus_note else "", "\n",
          f"Потоки: torch={thread_info['torch_threads']}, "
          f"OMP_NUM_THREADS={thread_info['OMP_NUM_THREADS'] or 'не задан'}, "
          f"cpu_count={thread_info['cpu_count']}.\n\n",
@@ -566,10 +582,10 @@ def main() -> int:
 
     f.append("\n## Воспроизведение\n```\nHF_HOME=D:/kg-hf-cache "
              "python nlp-service/scripts/measure_model1b.py \\\n"
-             "  --corpus work-nlp4/notes_dataset.json \\\n"
-             "  --folders work-w1/dataset.json \\\n"
-             "  --findings docs/tasks/MODEL-1B-findings.md \\\n"
-             "  --local-dir work-model1b/local\n```\n")
+             f"  --corpus {args.corpus} \\\n"
+             f"  --folders {args.folders} \\\n"
+             f"  --findings {args.findings} \\\n"
+             f"  --local-dir {args.local_dir}\n```\n")
 
     Path(args.findings).write_text("".join(f), encoding="utf-8")
 
