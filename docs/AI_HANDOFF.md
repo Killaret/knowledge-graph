@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-24 — c43311f
-Прочитано: Devin — 2026-09-24 — f8c3a34
+Прочитано: Devin — 2026-09-24 — ac2cf3c
 ```
 
 ---
@@ -22,6 +22,7 @@
 | **LINKS-2 (условие):** признак происхождения в граф-API и пояснение при удалении подтверждённой связи; заодно встречное направление | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **на ревью** — раунд 3: `gamma_origin` проходит graphLoader→холст; сквозной компонентный тест и NULL-safe SQL. [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | 2026-09-24 |
 | **DISK-1:** всё тяжёлое — на D:: не запекать модель, кэши инструментов, сессии Devin CLI, VM Cowork, WSL Ubuntu; сторож раскладки | [`tasks/DISK-1-everything-on-d.md`](tasks/DISK-1-everything-on-d.md), [`tasks/DISK-1-review-findings.md`](tasks/DISK-1-review-findings.md) | **на ревью** — deploy-том + минимальный кэш 477 МБ; повторный старт без скачивания, cosine 1.0. [`tasks/DISK-1-review-findings.md`](tasks/DISK-1-review-findings.md) | 2026-09-24 |
 | **TEST-LOCK-1:** замок тест-стенда — второй compose-проект не удаляет `kg-test-*` первого | [`tasks/TEST-PORTS-1-review-findings.md`](tasks/TEST-PORTS-1-review-findings.md) | **на ревью** — ownership guard до `down`/`rm`, чужой контейнер пережил живую проверку; `-Force` только Windows | 2026-09-24 |
+| **CHUNK-1:** структурный чанкер: среднее по чанкам, заголовок в каждом чанке, за выключателем `EMBED_CHUNKING` (по умолчанию off) | [`tasks/CHUNK-1-structure-aware-chunker.md`](tasks/CHUNK-1-structure-aware-chunker.md) | **в работе** — реализация по постановке v1 (решение 55) | 2026-09-24 |
 
 
 ## На Claude Code
@@ -47,7 +48,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **CHUNK-1:** структурный чанкер: среднее по чанкам, заголовок в каждом чанке, за выключателем `EMBED_CHUNKING` (по умолчанию off) | [`tasks/CHUNK-1-structure-aware-chunker.md`](tasks/CHUNK-1-structure-aware-chunker.md) | **бэклог** — Devin, вторая: постановка v1 готова (решение 55) | 2026-09-23 |
 | **NLP-4:** конвейер нормализации — один проход с предохранителями, артефакты в Mongo; векторы не трогает до MODEL-2 | [`tasks/NLP-4-note-logical-form-normalization.md`](tasks/NLP-4-note-logical-form-normalization.md) | **бэклог** — Devin, третья: постановка v1 готова, берёт чанкер из CHUNK-1 | 2026-09-23 |
 | **LINK-HIT-1:** наведение на связь берёт первую в пределах 8 единиц, а не ближайшую (`interactions.ts:62`) — в плотном графе подтвердить или удалить нужную связь нельзя | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **бэклог** — Devin; мешает сценариям LINKS-2 | 2026-09-24 |
 | **PANEL-LINKS-1:** панель заметки пишет «Links (undefined)» — клиент ждёт массив, API отдаёт `{incoming, outgoing}` (с 2026-07-16); при починке — пояснение при удалении связи с происхождением | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **бэклог** — Devin; смысл массового удаления решает владелец | 2026-09-24 |

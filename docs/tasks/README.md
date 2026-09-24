@@ -46,7 +46,7 @@ Do not edit it manually; run the generator after changing the task directory.
 | CHECK-ALL-1 | CHECK-ALL-1. Локальный `check-all.ps1` не может сообщить о провале | [CHECK-ALL-1-runner-cannot-report-failure.md](CHECK-ALL-1-runner-cannot-report-failure.md) | — | 2026-09-13 |
 | CHECK-ALL-2 | CHECK-ALL-2 — разбор ревью | [CHECK-ALL-2-review-findings.md](CHECK-ALL-2-review-findings.md) | **принято** — причина пропуска несёт код выхода и вывод `docker info`, повтор через 3 с; тест с подделкой `docker` на PATH, мутация «вернуть общий текст» красная. [`tasks/CHECK-ALL-2-review-findings.md`](CHECK-ALL-2-review-findings.md) | 2026-09-22 |
 | CHUNK-1 | CHUNK-1: замер прототипа чанкера — находки | [CHUNK-1-measurement-findings.md](CHUNK-1-measurement-findings.md) | — | 2026-09-21 |
-| CHUNK-1 | CHUNK-1. Структурный чанкер текста заметки | [CHUNK-1-structure-aware-chunker.md](CHUNK-1-structure-aware-chunker.md) | **бэклог** — Devin, вторая: постановка v1 готова (решение 55) | 2026-09-23 |
+| CHUNK-1 | CHUNK-1. Структурный чанкер текста заметки | [CHUNK-1-structure-aware-chunker.md](CHUNK-1-structure-aware-chunker.md) | **в работе** — реализация по постановке v1 (решение 55) | 2026-09-23 |
 | CI-1 | CI-1. Циклическая зависимость в `shared`, из-за которой CI красный шесть недель | [CI-1-circular-dependency.md](CI-1-circular-dependency.md) | — | 2026-09-11 |
 | CI-3 | CI-3. Одна локальная команда, повторяющая проверки CI | [CI-3-local-check-runner.md](CI-3-local-check-runner.md) | — | 2026-09-11 |
 | CI-3 | CI-3. Ревью локального прогонщика проверок | [CI-3-review-findings.md](CI-3-review-findings.md) | — | 2026-09-22 |
