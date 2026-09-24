@@ -221,6 +221,28 @@ stateDiagram-v2
 - Threshold `0.6` and degree `2` are the cautious start of the W-1-recommended range (0.55–0.6 cosine, degree 2–3) — derived from the autolink precision curve on the `folder_path` ground truth, see `docs/tasks/W-1-eval-findings.md`. Recalibration on a real corpus is part of MODEL-1 follow-up.
 - Regeneration after a model change: `go run ./cmd/gamma-links-regenerate --dry-run` reports how many gamma links would be deleted and created and how many candidates were discarded by recorded rejections; without the flag it deletes only `source_type='gamma'` rows and regenerates for notes that have an embedding for the current model.
 
+## NLP Embedding Pipeline (CHUNK-1)
+
+- `nlp-service/app/core/chunking.py` is a pure module (no FastAPI/model/I/O):
+  `chunk(text, params) -> list[Chunk]` splits structure-first (headings, code
+  fences, tables — atomic while they fit), then sentences, then clauses
+  (`;:,`), with a hard `max_tokens` invariant and `forced_split` marking.
+  Each chunk carries `idx`, `text`, `heading_path`, `char_span` (exact source
+  offsets), `token_count`, `kind`. `aggregate(vectors)` = mean + L2 normalize.
+- Feature flag `EMBED_CHUNKING` (env, default `0`, wired in all compose files):
+  - `off` — `/embed` and the keyword `_doc_vector` behave exactly as before;
+    the worker sends `content`/`title` as separate fields and the service
+    recombines them into the legacy `title + " " + content` string.
+  - `on` — `/embed` chunks the text, runs one batched `encode`, averages +
+    L2-normalizes, and adds `chunks`/`no_content` to the response; the note
+    title is injected into every chunk's model input; heading-link stubs
+    (`## [title](url)`) produce zero chunks and embed the title only.
+    `_doc_vector` uses the same structural chunker under the flag.
+- **Conditional completeness:** the flag stays off until MODEL-2 activates it
+  together with the new model and normalized vectors (one recompute), and
+  corpus measurements must be re-run after NOTE-QUALITY-1 changes the input
+  corpus — see `docs/tasks/CHUNK-1-structure-aware-chunker.md`.
+
 ## Operational Considerations
 
 ### Monitoring
