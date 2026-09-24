@@ -70,3 +70,32 @@ compose-проекта. Если такие есть, скрипт выходи�
 
 Прогон один на все три задачи ревью — в
 [`MODEL-1B-review-findings.md`](MODEL-1B-review-findings.md#сводка-check-all).
+
+## TEST-LOCK-1 — Devin, 2026-09-24
+
+Инцидент закрыт ownership guard-ом до первого разрушительного действия:
+
+- общий `check-test-stack-ownership.mjs` читает все `kg-test-*`, их label
+  `com.docker.compose.project.working_dir`, имя и `StartedAt`;
+- `start-test.ps1` и `start-test.sh` вызывают guard **до** `compose down -v`;
+- чужой или отсутствующий owner-label блокирует запуск и перечисляет контейнеры;
+- Windows допускает только явный `start-test.ps1 -Force`; shell force не имеет;
+- прежнее удаление orphan-контейнеров выполняется только после успешной проверки.
+
+Проверено живьём временным `kg-test-lock-probe` с owner `D:/foreign-tree`:
+`start-test.ps1` и `start-test.sh` вышли с кодом 1 до `down -v`, сообщили owner и
+`StartedAt`; контейнер остался running. `--force` у guard exit 0 и сам по себе
+контейнер не удалил. Временный контейнер удалён после проверки.
+
+Автоматическое покрытие подключено отдельной фазой `test-stack-ownership-tests` в
+`core-checks.tsv` и `_core-checks.yml`: нормализация Windows/Linux путей, свой owner,
+чужой owner, отсутствующий label, порядок guard до `down -v`/`docker rm -f`, наличие
+`-Force` только в PowerShell. Мутация удаления **вызова** guard из `start-test.ps1`
+красная; первая версия теста ошибочно смотрела только наличие имени файла в скрипте
+и осталась зелёной — тест исправлен на проверку исполняемой команды.
+
+`check-all.ps1 -Quick` после регенерации индекса: **29 фаз, 26 PASS, 0 FAIL,
+3 SKIP** — `golangci-lint` не установлен, backend/graph-service integration
+пропущены quick-режимом. Ранний shell `--quick` до регенерации показал тот же
+рабочий набор и ожидаемый единственный FAIL на drift индекса; после
+`generate-tasks-index.mjs` индекс зелёный.

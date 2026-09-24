@@ -153,10 +153,14 @@ or view modes — restarting only the backend leaves graph-service still bypassi
 ```
 
 **Actions:**
-- Stops and removes previous test stack (with volumes)
-- Builds and starts test stack
-- Waits for all containers to be healthy
-- Displays test stack URLs
+- Checks every existing `kg-test-*` container's `com.docker.compose.project.working_dir` label before destructive cleanup.
+- Refuses to touch containers owned by another worktree and prints their owner and start time.
+- Stops and removes the current worktree's previous test stack (with volumes).
+- Builds and starts test stack.
+- Waits for all containers to be healthy.
+- Displays test stack URLs.
+
+On Windows only, `start-test.ps1 -Force` explicitly takes over a foreign/stale stack. Use it only after confirming the owning agent is not running; the shell script deliberately has no force option.
 
 #### Rebuilding after frontend changes
 

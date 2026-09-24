@@ -1,8 +1,15 @@
 # Start Test Stack - Windows PowerShell
 # This script stops any existing test stack, then starts a fresh test stack
 
+param([switch]$Force)
+
 $repoDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $repoDir
+
+$guardArgs = @("scripts/testing/check-test-stack-ownership.mjs", $repoDir)
+if ($Force) { $guardArgs += "--force" }
+& node @guardArgs
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 # Use .env.test if the user has created one, otherwise fall back to a default test secret.
 $envFile = "$repoDir\.env.test"
@@ -52,8 +59,8 @@ Write-Host "Stopping previous test stack..." -ForegroundColor Yellow
 docker compose -f docker-compose.test.yml down -v
 
 # Remove any orphaned kg-test-* containers that might have been left behind
-# by a previous incomplete shutdown or a different compose project.
-$orphans = docker ps -aq --filter "name=kg-test"
+# by a previous incomplete shutdown. Foreign owners were rejected above.
+$orphans = docker ps -aq --filter "name=^/kg-test-"
 if ($orphans) {
     Write-Host "Removing orphaned test containers..." -ForegroundColor Yellow
     docker rm -f $orphans | Out-Null

@@ -44,6 +44,8 @@ cd frontend; npx playwright test --project=visual --project=visual-real-auth
 
 База — `knowledge_test`, контейнеры с префиксом `kg-test-`.
 
+`start-test.ps1` и `start-test.sh` перед `down -v` проверяют label `com.docker.compose.project.working_dir` у каждого существующего `kg-test-*`. Чужой worktree блокирует запуск с именем владельца и временем старта. На Windows осознанный захват возможен только через `start-test.ps1 -Force` после проверки процесса другого агента; shell-скрипт force не поддерживает.
+
 **На Windows в Playwright и BDD использовать `http://127.0.0.1:3002`, не `localhost`.** Node резолвит `localhost` в `::1`, и соединение уходит в никуда. Прямой адрес бэкенда `http://127.0.0.1:18083` нужен только для настройки и health-проверок; приложение ходит через прокси `/api` на том же origin.
 
 ## Ловушки запуска Playwright вручную
