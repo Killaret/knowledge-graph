@@ -2,9 +2,9 @@
 
 Постановка: [`DISK-1-everything-on-d.md`](DISK-1-everything-on-d.md) (решение 57).
 
-Свободное место на C:: **7,1 ГБ (замер Claude 23.09) → 9,7 ГБ (перед B) → 20,5 ГБ (после удаления старых каталогов)**.
-Остаются на C: до действий владельца: `devin\cli` 4,52 ГБ, `Claude\vm_bundles` 9,42 ГБ, WSL vhdx 3,64 ГБ
-→ после разделов C/D/E ожидается ~38 ГБ.
+Свободное место на C:: **7,1 ГБ (замер Claude 23.09) → 9,7 ГБ (перед B) → 20,5 ГБ (после B) →
+33,9 ГБ (после D и E, выполненных Devin 24.09)**. Остаётся на C: только `devin\cli` 4,52 ГБ
+(раздел C — команда для владельца ниже, Devin CLI нельзя закрыть изнутри самого себя) → ~38,4 ГБ.
 
 ## A. Модель не запекается — выполнено
 
@@ -76,17 +76,11 @@ mklink /J "%APPDATA%\devin\cli" "D:\agents\devin\cli"
 
 Настройки места у приложения нет (подтверждено разбором Claude 23.09) — junction.
 
-**Команды (закрыть Claude Desktop полностью, включая трей):**
-
-```cmd
-mkdir D:\Claude
-robocopy "%APPDATA%\Claude\vm_bundles" "D:\Claude\vm_bundles" /E /MOVE
-mklink /J "%APPDATA%\Claude\vm_bundles" "D:\Claude\vm_bundles"
-```
-
-Проверка после запуска: `dir "%APPDATA%\Claude\vm_bundles"` — `JUNCTION`; режим Cowork
-открывается. Если при обновлении приложение пересоздаст каталог на C: — junction не
-переживается, вопрос владельцу: нужен ли Cowork.
+**Выполнено Devin 2026-09-24** (владелец закрыл Claude Desktop; `vmwp` на тот момент — это
+VM Docker-десктопа, не Cowork): robocopy перенёс 9,42 ГБ за ~1 мин, исходный каталог удалён,
+`Junction -> D:\Claude\vm_bundles` создан и проверен — `claudevm.bundle` читается по старому пути.
+Если при обновлении приложение пересоздаст каталог на C: — junction не переживается, вопрос
+владельцу: нужен ли Cowork.
 
 ## E. Дистрибутив WSL Ubuntu — разведка
 
@@ -97,23 +91,36 @@ mklink /J "%APPDATA%\Claude\vm_bundles" "D:\Claude\vm_bundles"
 - Это стоковая Ubuntu с накопленными логами; Docker Desktop работает через отдельный
   `docker-desktop` дистрибутив.
 
-Решение за владельцем:
-
-- **не нужен** (рекомендация): `wsl --export Ubuntu D:\WSL\backup\ubuntu.tar`, затем
-  `wsl --unregister Ubuntu` — 3,6 ГБ на C: освобождаются, бэкап на D: остаётся;
-- **нужен**: `wsl --terminate Ubuntu`, затем `wsl --manage Ubuntu --move D:\WSL\Ubuntu`.
+**Выполнено Devin 2026-09-24** по варианту «не нужен»: `wsl --export` в
+`D:\WSL\backup\ubuntu-2026-09-24.tar` (2,0 ГБ), затем `wsl --unregister Ubuntu` — vhdx с C:
+удалён, `wsl -l -v` показывает только `docker-desktop`. Восстановление при необходимости:
+`wsl --import Ubuntu D:\WSL\Ubuntu D:\WSL\backup\ubuntu-2026-09-24.tar`.
 
 ## F. Сторож — `scripts/devops/check-disk-layout.ps1`
 
 - Печатает каждый настроенный путь (go env ×3, npm, pip, 4 переменные пользователя из
   реестра, `HF_CACHE_DIR` из `.env`) и размеры известных тяжёлых каталогов на C:.
-- Падает (exit 1), если настроенный путь ведёт на C: — с командой исправления.
+- Системный диск определяется через `$env:SystemDrive`, а не буквой `C:` (уточнение владельца).
+- Падает (exit 1), если настроенный путь ведёт на системный диск — с командой исправления.
+- Junction/symlink в списке тяжёлых каталогов показывается как `junction -> target`, без обхода
+  (иначе перенесённое продолжало бы считаться лежащим на C:).
 - Мутация пройдена: `go env -w GOCACHE=<C:\...>` → `FAIL: go GOCACHE -> C:\...`; возвращено.
 - В `check-all` не включён (у раннера своя раскладка). Шаг «Диски» — в `BOOTSTRAP.md`.
 - Файл ASCII-only (сторож `check-ps1-ascii.py` зелёный).
 
 ## Осталось за владельцем
 
-1. C: junction для `%APPDATA%\devin\cli` при закрытом Devin (−4,5 ГБ).
-2. D: junction для `%APPDATA%\Claude\vm_bundles` при закрытом Claude Desktop (−9,4 ГБ).
-3. E: решение по Ubuntu — удалить с экспортом или перенести (−3,6 ГБ в обоих случаях с C:).
+Только пункт C — junction для `%APPDATA%\devin\cli` (−4,5 ГБ): каталог занят, пока Devin работает,
+поэтому выполняется после закрытия Devin CLI/Desktop. Команды (cmd, не PowerShell):
+
+```cmd
+mkdir D:\agents\devin
+robocopy "%APPDATA%\devin\cli" "D:\agents\devin\cli" /E /MOVE
+if exist "%APPDATA%\devin\cli" rmdir "%APPDATA%\devin\cli"
+mklink /J "%APPDATA%\devin\cli" "D:\agents\devin\cli"
+dir "%APPDATA%\devin"
+```
+
+Проверка: `dir` показывает `cli <JUNCTION> [D:\agents\devin\cli]`; после запуска Devin — сессии
+на месте, `sessions.db` физически на D:. Если `robocopy` выдал ошибки доступа — Devin не до конца
+закрыт (трей, фоновые процессы).
