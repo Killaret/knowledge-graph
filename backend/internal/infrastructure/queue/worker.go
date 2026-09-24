@@ -97,7 +97,9 @@ func (w *Worker) HandleExtractKeywords(ctx context.Context, t *asynq.Task) error
 		return nil
 	}
 
-	text := n.Title().String() + " " + n.Content().String()
+	title := n.Title().String()
+	content := n.Content().String()
+	text := title + " " + content
 	if text == "" {
 		// Удаляем ключевые слова
 		return w.keywordRepo.DeleteAll(ctx, noteID)
@@ -115,7 +117,7 @@ func (w *Worker) HandleExtractKeywords(ctx context.Context, t *asynq.Task) error
 			topN = dynamic
 		}
 	}
-	kwResult, err := w.nlpClient.ExtractKeywords(ctx, text, topN)
+	kwResult, err := w.nlpClient.ExtractKeywords(ctx, content, title, topN)
 	if err != nil {
 		log.Printf("HandleExtractKeywords: failed to extract keywords: %v", err)
 		return fmt.Errorf("failed to extract keywords: %w", err)
@@ -168,13 +170,15 @@ func (w *Worker) HandleComputeEmbedding(ctx context.Context, t *asynq.Task) erro
 	}
 	log.Printf("HandleComputeEmbedding: found note %s, processing...", noteID)
 
-	text := n.Title().String() + " " + n.Content().String()
+	title := n.Title().String()
+	content := n.Content().String()
+	text := title + " " + content
 	if text == "" {
 		// Удаляем эмбеддинг
 		return w.embeddingRepo.Delete(ctx, noteID)
 	}
 
-	embedding, err := w.nlpClient.Embed(ctx, text)
+	embedding, err := w.nlpClient.Embed(ctx, content, title)
 	if err != nil {
 		log.Printf("HandleComputeEmbedding: failed to compute embedding: %v", err)
 		return fmt.Errorf("failed to compute embedding: %w", err)

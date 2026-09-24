@@ -119,9 +119,10 @@ func (c *NLPClient) doWithRetry(ctx context.Context, buildReq requestBuilder) (*
 
 // ExtractKeywords вызывает /extract_keywords и возвращает список ключевых слов
 // вместе с именем экстрактора, которым они посчитаны.
-func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) (*KeywordsResult, error) {
+func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, title string, topN int) (*KeywordsResult, error) {
 	reqBody := map[string]interface{}{
 		"text":  text,
+		"title": title,
 		"top_n": topN,
 	}
 	jsonBody, err := json.Marshal(reqBody)
@@ -162,10 +163,10 @@ func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) 
 
 // Embed вызывает /embed и возвращает вектор ([]float32)
 // Результат кэшируется в Redis (если redisClient передан)
-func (c *NLPClient) Embed(ctx context.Context, text string) ([]float32, error) {
+func (c *NLPClient) Embed(ctx context.Context, text string, title string) ([]float32, error) {
 	// Проверяем кэш
 	if c.redis != nil {
-		hash := sha256.Sum256([]byte(text))
+		hash := sha256.Sum256([]byte(title + "\x00" + text))
 		key := "embed:" + hex.EncodeToString(hash[:])
 		cached, err := c.redis.Get(ctx, key).Bytes()
 		if err == nil {
@@ -178,7 +179,7 @@ func (c *NLPClient) Embed(ctx context.Context, text string) ([]float32, error) {
 		}
 	}
 
-	reqBody := map[string]interface{}{"text": text}
+	reqBody := map[string]interface{}{"text": text, "title": title}
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -217,7 +218,7 @@ func (c *NLPClient) Embed(ctx context.Context, text string) ([]float32, error) {
 
 	// Сохраняем в кэш
 	if c.redis != nil && len(result.Embedding) > 0 {
-		hash := sha256.Sum256([]byte(text))
+		hash := sha256.Sum256([]byte(title + "\x00" + text))
 		key := "embed:" + hex.EncodeToString(hash[:])
 		data, _ := json.Marshal(result.Embedding)
 		_ = c.redis.Set(ctx, key, data, c.cacheTTL).Err() // ошибку игнорируем

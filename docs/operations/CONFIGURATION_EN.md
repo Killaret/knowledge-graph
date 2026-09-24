@@ -706,6 +706,12 @@ GRAPH_LINK_MAX_LIMIT=5000
 # Embedding
 EMBEDDING_SIMILARITY_LIMIT=30
 
+# NLP service (CHUNK-1): structural chunker switch, off by default.
+# on — /embed chunks text, one batched encode, mean + L2 normalize,
+# note title injected into every chunk; response adds chunks/no_content.
+# Enable only together with the model change (MODEL-2).
+EMBED_CHUNKING=0
+
 # Asynq
 ASYNQ_CONCURRENCY=10
 ASYNQ_QUEUE_DEFAULT=1

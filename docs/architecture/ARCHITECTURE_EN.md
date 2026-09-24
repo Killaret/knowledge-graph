@@ -495,11 +495,17 @@ POST /embed               → EmbedResponse
 #### 3.2 Models (`app/models.py`)
 
 ```python
-ExtractKeywordsRequest:  {text: str, top_n: int}
-ExtractKeywordsResponse: {keywords: [{keyword, weight}]}
-EmbedRequest:          {text: str}
-EmbedResponse:         {embedding: float[]}
+ExtractKeywordsRequest:  {text: str, top_n: int, title: str}
+ExtractKeywordsResponse: {extractor, keywords: [{keyword, surface, weight}]}
+EmbedRequest:          {text: str, title: str}
+EmbedResponse:         {embedding: float[], chunks?: int, no_content?: bool}
 ```
+
+`chunks`/`no_content` are returned only when `EMBED_CHUNKING=on` (CHUNK-1):
+`app/core/chunking.py` splits the note into structure-aware chunks, the service
+encodes them in one batched call, and the document vector is the L2-normalized
+mean. The note title is injected into every chunk's model input. Off is the
+default and preserves the legacy single-encode behavior.
 
 #### 3.3 NLP Utils (`app/nlp_utils.py`)
 

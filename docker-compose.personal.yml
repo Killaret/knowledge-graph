@@ -54,6 +54,7 @@ services:
       - "5001:5000"
     environment:
       - NLP_MODEL_NAME=${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
+      - EMBED_CHUNKING=${EMBED_CHUNKING:-0}
       - HF_HOME=/root/.cache/huggingface
       - HF_HUB_DISABLE_TELEMETRY=1
       - HF_HUB_OFFLINE=1

@@ -58,6 +58,23 @@ def _hf_offline_enabled() -> bool:
     return os.environ.get("HF_HUB_OFFLINE", "1").lower() in ("1", "true", "yes")
 
 
+def _embed_chunking_enabled() -> bool:
+    return os.environ.get("EMBED_CHUNKING", "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
+def _combined_text(text: str, title: Optional[str] = None) -> str:
+    """Legacy embedding input: content plus title joined by a single space,
+    matching what the worker used to concatenate before CHUNK-1."""
+    if title:
+        return f"{title} {text}"
+    return text
+
+
 def _configure_hf_env() -> None:
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS", "1")
@@ -201,13 +218,65 @@ def _statistical_candidates(text: str, limit: int = _CANDIDATE_LIMIT) -> list[st
     return scored[:limit]
 
 
-def _doc_vector(text: str):
+def _chunk_token_counter(model: SentenceTransformer):
+    """Token counter for the structural chunker: model tokenizer when
+    available, word+punctuation count otherwise (keeps Java-portable)."""
+    tokenizer = getattr(model, "tokenizer", None)
+    if tokenizer is not None:
+
+        def count_tokens(text: str) -> int:
+            return len(tokenizer.encode(text, add_special_tokens=False))
+
+        return count_tokens
+
+    def count_words(text: str) -> int:
+        return len(re.findall(r"\w+|[^\w\s]", text, flags=re.UNICODE))
+
+    return count_words
+
+
+def compute_chunked_embedding(
+    model: SentenceTransformer, text: str, title: Optional[str] = None
+):
+    """CHUNK-1 structural embedding: structure-aware chunks, one batched
+    encode, mean vector + L2 normalization. Title is injected into every
+    chunk's model input (never into the stored chunk text). Empty/stub
+    notes produce zero content chunks and embed the title alone.
+    Returns (vector, chunk_count, no_content)."""
+    import numpy as np
+
+    from .core.chunking import ChunkingParams, aggregate, chunk, embedding_inputs
+
+    params = ChunkingParams(
+        token_counter=_chunk_token_counter(model),
+        target_tokens=256,
+        max_tokens=int(getattr(model, "max_seq_length", 512) or 512),
+        title=title or None,
+        title_injection=True,
+    )
+    chunks = chunk(text, params)
+    inputs = embedding_inputs(chunks, params)
+    if not inputs:
+        inputs = [params.title or ""]
+    vectors = np.asarray(model.encode(inputs), dtype=np.float32)
+    if vectors.ndim == 1:
+        vectors = vectors.reshape(1, -1)
+    return aggregate(vectors), len(chunks), len(chunks) == 0
+
+
+def _doc_vector(text: str, title: Optional[str] = None):
     """Document embedding as the mean of per-chunk embeddings, so the whole
-    text contributes instead of only the model's first-window tokens."""
+    text contributes instead of only the model's first-window tokens.
+    With EMBED_CHUNKING on, the structural chunker replaces word slices."""
     import numpy as np
 
     model = get_embedding_model()
-    words = text.split()
+    if _embed_chunking_enabled():
+        vec, _chunk_count, _no_content = compute_chunked_embedding(
+            model, text, title
+        )
+        return vec
+    words = _combined_text(text, title).split()
     if not words:
         return None
     chunks = [
@@ -220,22 +289,26 @@ def _doc_vector(text: str):
     return vec / norm if norm else vec
 
 
-def extract_keywords(text: str, top_n: int = 10) -> list:
+def extract_keywords(
+    text: str, top_n: int = 10, title: Optional[str] = None
+) -> list:
     """Hybrid keyphrase extraction (NLP-2): a statistical short-list covers
     the whole document; the embedding model only *ranks* it against a
     chunked document vector. Returns [(lemma, surface, weight)] sorted by
     weight desc — weight is the cosine similarity clamped to [0, 1]."""
-    if not text or not str(text).strip():
+    if not text or not str(_combined_text(text, title)).strip():
         return []
 
-    candidates = _statistical_candidates(text)
+    full_text = _combined_text(text, title)
+
+    candidates = _statistical_candidates(full_text)
     if not candidates:
         return []
 
     import numpy as np
 
     model = get_embedding_model()
-    doc_vec = _doc_vector(text)
+    doc_vec = _doc_vector(text, title)
     if doc_vec is None:
         return []
 

@@ -58,7 +58,7 @@ func TestNLPClient_ExtractKeywords_Success(t *testing.T) {
 
 	// Вызываем метод
 	ctx := context.Background()
-	res, err := client.ExtractKeywords(ctx, "machine learning", 5)
+	res, err := client.ExtractKeywords(ctx, "machine learning", "", 5)
 
 	// Проверяем результат
 	if err != nil {
@@ -95,7 +95,7 @@ func TestNLPClient_ExtractKeywords_HTTPError(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	_, err := client.ExtractKeywords(ctx, "test", 5)
+	_, err := client.ExtractKeywords(ctx, "test", "", 5)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -119,7 +119,7 @@ func TestNLPClient_ExtractKeywords_InvalidJSON(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	_, err := client.ExtractKeywords(ctx, "test", 5)
+	_, err := client.ExtractKeywords(ctx, "test", "", 5)
 
 	if err == nil {
 		t.Fatal("expected error for invalid JSON, got nil")
@@ -152,7 +152,7 @@ func TestNLPClient_Embed_Success(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	embedding, err := client.Embed(ctx, "test text")
+	embedding, err := client.Embed(ctx, "test text", "")
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -165,6 +165,57 @@ func TestNLPClient_Embed_Success(t *testing.T) {
 			t.Errorf("expected embedding[%d] = %f, got %f", i, v, embedding[i])
 		}
 	}
+}
+
+// TestNLPClient_Embed_SendsTitle проверяет, что title уходит отдельным полем
+// (CHUNK-1: сервис инжектирует заголовок в каждый чанк при EMBED_CHUNKING=on)
+func TestNLPClient_Embed_SendsTitle(t *testing.T) {
+	var gotBody map[string]interface{}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("failed to decode request: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+			"embedding":  []float32{0.1},
+			"chunks":     2,
+			"no_content": false,
+		}))
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	_, err := client.Embed(context.Background(), "note body", "Note Title")
+	require.NoError(t, err)
+	require.Equal(t, "note body", gotBody["text"])
+	require.Equal(t, "Note Title", gotBody["title"])
+}
+
+// TestNLPClient_ExtractKeywords_SendsTitle проверяет поле title в /extract_keywords
+func TestNLPClient_ExtractKeywords_SendsTitle(t *testing.T) {
+	var gotBody map[string]interface{}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("failed to decode request: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+			"extractor": "keybert-hybrid-0.9",
+			"keywords":  []Keyword{},
+		}))
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	_, err := client.ExtractKeywords(context.Background(), "note body", "Note Title", 5)
+	require.NoError(t, err)
+	require.Equal(t, "note body", gotBody["text"])
+	require.Equal(t, "Note Title", gotBody["title"])
+	require.Equal(t, float64(5), gotBody["top_n"])
 }
 
 // TestNLPClient_Embed_CacheHit тестирует получение эмбеддинга из кэша
@@ -188,13 +239,13 @@ func TestNLPClient_Embed_CacheHit(t *testing.T) {
 	ctx := context.Background()
 
 	// Первый вызов
-	_, err := client.Embed(ctx, "test text")
+	_, err := client.Embed(ctx, "test text", "")
 	if err != nil {
 		t.Fatalf("first call failed: %v", err)
 	}
 
 	// Второй вызов с тем же текстом (без кэша Redis должен сделать новый запрос)
-	_, err = client.Embed(ctx, "test text")
+	_, err = client.Embed(ctx, "test text", "")
 	if err != nil {
 		t.Fatalf("second call failed: %v", err)
 	}
@@ -220,7 +271,7 @@ func TestNLPClient_Embed_EmptyText(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	_, err := client.Embed(ctx, "")
+	_, err := client.Embed(ctx, "", "")
 
 	if err != nil {
 		t.Fatalf("unexpected error for empty text: %v", err)
@@ -242,7 +293,7 @@ func TestNLPClient_ExtractKeywords_EmptyResponse(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	res, err := client.ExtractKeywords(ctx, "test", 5)
+	res, err := client.ExtractKeywords(ctx, "test", "", 5)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -340,12 +391,12 @@ func TestNLPClient_Embed_RedisCache(t *testing.T) {
 	client := NewNLPClient(server.URL, rdb, time.Hour)
 	ctx := context.Background()
 
-	first, err := client.Embed(ctx, "cached text")
+	first, err := client.Embed(ctx, "cached text", "")
 	if err != nil {
 		t.Fatalf("first call failed: %v", err)
 	}
 
-	second, err := client.Embed(ctx, "cached text")
+	second, err := client.Embed(ctx, "cached text", "")
 	if err != nil {
 		t.Fatalf("second call failed: %v", err)
 	}
@@ -480,7 +531,7 @@ func TestNLPClient_ExtractKeywords_Retry(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	res, err := client.ExtractKeywords(ctx, "test", 5)
+	res, err := client.ExtractKeywords(ctx, "test", "", 5)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

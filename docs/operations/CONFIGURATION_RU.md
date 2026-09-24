@@ -627,6 +627,7 @@ score = α × explicit_score + β × semantic_score
 | `HF_HOME` | Путь к локальному кешу HuggingFace | `/root/.cache/huggingface` |
 | `HF_HUB_OFFLINE` | Работа в оффлайн-режиме (без интернета) | `true` |
 | `HF_HUB_DISABLE_TELEMETRY` | Отключить телеметрию HuggingFace | `true` |
+| `EMBED_CHUNKING` | Структурный чанкер в `/embed` и `_doc_vector` (CHUNK-1): `0/off` — как раньше; `1/on` — чанки → один пакетный encode → среднее + L2, заголовок в каждом чанке, в ответе `chunks` и `no_content`. Включать вместе со сменой модели (MODEL-2) | `0` |
 
 ### Lazy-loading модели (обязательный паттерн)
 

@@ -68,6 +68,7 @@
 - Модель по умолчанию — `paraphrase-multilingual-MiniLM-L12-v2` (384-мерный, единое пространство для русского и английского).
 - `NLP_MODEL_NAME` — единая переменная окружения для сервисов: `nlp-service` предзагружает её на стадии сборки, `backend` и `graph-service` фильтруют векторы по ней.
 - `HF_HUB_OFFLINE=1` — offline-first режим (dev/personal); в тестовом стеке `HF_HUB_OFFLINE=0`, чтобы можно было докачать модель при пустом host-cache (`nlp-service/Dockerfile`, `docker-compose.test.yml`).
+- `EMBED_CHUNKING` (CHUNK-1, по умолчанию `0`) — структурный чанкер `app/core/chunking.py` за выключателем: `/embed` и `_doc_vector` делят текст на чанки (заголовок в каждом), один пакетный `encode`, среднее + L2-нормировка; в ответе `chunks`/`no_content`. Включается вместе со сменой модели в MODEL-2.
 
 ### Инфраструктура
 

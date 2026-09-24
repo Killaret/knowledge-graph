@@ -4,6 +4,7 @@ from typing import List
 class ExtractKeywordsRequest(BaseModel):
     text: str = Field(..., max_length=10000, description="Text to extract keywords from")
     top_n: int = Field(default=10, ge=1, le=50, description="Number of keywords to return (1-50)")
+    title: str = Field(default="", max_length=1000, description="Note title (injected into chunk embeddings when EMBED_CHUNKING=on)")
 
 class Keyword(BaseModel):
     keyword: str
@@ -16,9 +17,12 @@ class ExtractKeywordsResponse(BaseModel):
 
 class EmbedRequest(BaseModel):
     text: str = Field(..., max_length=10000, description="Text to generate embedding for")
+    title: str = Field(default="", max_length=1000, description="Note title (injected into chunk embeddings when EMBED_CHUNKING=on)")
 
 class EmbedResponse(BaseModel):
     embedding: List[float]
+    chunks: int | None = None
+    no_content: bool | None = None
 
 
 class SimilarityRequest(BaseModel):

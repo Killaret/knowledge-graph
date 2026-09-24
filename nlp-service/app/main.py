@@ -14,6 +14,9 @@ from .models import (
 )
 from .nlp_utils import (
     EXTRACTOR_NAME,
+    _combined_text,
+    _embed_chunking_enabled,
+    compute_chunked_embedding,
     compute_similarity,
     ensure_model_loaded,
     extract_keywords,
@@ -54,7 +57,7 @@ async def health():
 @app.post("/extract_keywords", response_model=ExtractKeywordsResponse)
 async def extract_keywords_endpoint(req: ExtractKeywordsRequest):
     try:
-        keywords = extract_keywords(req.text, req.top_n)
+        keywords = extract_keywords(req.text, req.top_n, req.title)
         return ExtractKeywordsResponse(
             extractor=EXTRACTOR_NAME,
             keywords=[
@@ -67,10 +70,18 @@ async def extract_keywords_endpoint(req: ExtractKeywordsRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/embed", response_model=EmbedResponse)
+@app.post("/embed", response_model=EmbedResponse, response_model_exclude_none=True)
 async def embed_endpoint(req: EmbedRequest):
     try:
-        embedding = get_embedding_model().encode(req.text).tolist()
+        model = get_embedding_model()
+        if _embed_chunking_enabled():
+            vec, chunk_count, no_content = compute_chunked_embedding(
+                model, req.text, req.title
+            )
+            return EmbedResponse(
+                embedding=vec.tolist(), chunks=chunk_count, no_content=no_content
+            )
+        embedding = model.encode(_combined_text(req.text, req.title)).tolist()
         return EmbedResponse(embedding=embedding)
     except Exception as e:
         logger.exception("Error computing embedding")
