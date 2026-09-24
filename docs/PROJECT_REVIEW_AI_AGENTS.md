@@ -295,13 +295,13 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 
 ### 9.4. NLP Dockerfile и compose
 
-- Переделан в двухстадийный: builder + runtime, копируется venv, HuggingFace cache, NLTK data.
-- `entrypoint.sh` использует `${HF_HOME:-/root/.cache/huggingface}`.
-- `docker-compose.test.yml` — `HF_HUB_OFFLINE=0`, чтобы тестовый стек мог докачать модель при пустом host-cache.
+- Двухстадийный образ копирует venv и NLTK data, но не модель; HuggingFace-кэш монтируется при запуске.
+- `entrypoint.sh` использует `${HF_HOME:-/root/.cache/huggingface}` и скачивает только JSON/tokenizer/safetensors-файлы.
+- `docker-compose.test.yml` использует host-cache и `HF_HUB_OFFLINE=0`; deploy — отдельный именованный том `nlp_hf_cache`, который заполняется на первом старте и переиспользуется.
 
 ### 9.5. Compose/документация
 
-- `.windsurfrules` и `docker-compose.test.yml` — порт graph-service приведён к gRPC 19090 / HTTP 19091.
+- `.windsurfrules` и `docker-compose.test.yml` — test-порт graph-service: gRPC 29090 / HTTP 29091; `start-test.ps1` проверяет резерв Windows до старта.
 - `docker-compose.yml` — добавлен volume `redis_data` для dev Redis.
 - Устаревшие ссылки на `src/shared/three/` актуализированы (Three.js-логика перенесена в `docs/archive/3d/frontend/src/lib/three/`).
 

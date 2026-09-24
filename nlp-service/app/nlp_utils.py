@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 MODEL_NAME = os.environ.get("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2")
 HF_HOME = os.environ.get("HF_HOME", "/root/.cache/huggingface")
 HF_CACHE = os.environ.get("HF_HUB_CACHE") or os.path.join(HF_HOME, "hub")
+MODEL_ALLOW_PATTERNS = ["*.json", "*.txt", "*.model", "*.safetensors"]
 
 # Extractor version reported in /extract_keywords and stored in
 # note_keywords.extractor — bump when the algorithm changes so stale rows are
@@ -68,6 +69,7 @@ def _resolve_model_path(local_only: bool) -> str:
         repo_id=f"sentence-transformers/{MODEL_NAME}",
         cache_dir=HF_CACHE,
         local_files_only=local_only,
+        allow_patterns=MODEL_ALLOW_PATTERNS,
     )
 
 

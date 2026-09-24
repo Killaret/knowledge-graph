@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-24 — c43311f
-Прочитано: Devin — 2026-09-24 — 9030536
+Прочитано: Devin — 2026-09-24 — 9b3e2cb
 ```
 
 ---
@@ -20,7 +20,7 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 | **LINKS-2 (условие):** признак происхождения в граф-API и пояснение при удалении подтверждённой связи; заодно встречное направление | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **на ревью** — раунд 3: `gamma_origin` проходит graphLoader→холст; сквозной компонентный тест и NULL-safe SQL. [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | 2026-09-24 |
-| **DISK-1:** всё тяжёлое — на D:: не запекать модель, кэши инструментов, сессии Devin CLI, VM Cowork, WSL Ubuntu; сторож раскладки | [`tasks/DISK-1-everything-on-d.md`](tasks/DISK-1-everything-on-d.md), [`tasks/DISK-1-review-findings.md`](tasks/DISK-1-review-findings.md) | **отклонено** — на машине всё сделано; блокер: NLP-образ для деплоя без модели, «Production Deployment» красный с `b4ffea9`. Чинить по решению 59: том под кэш на сервере, качать только нужные файлы — это же ужмёт общий кэш. [`tasks/DISK-1-review-findings.md`](tasks/DISK-1-review-findings.md) | 2026-09-24 |
+| **DISK-1:** всё тяжёлое — на D:: не запекать модель, кэши инструментов, сессии Devin CLI, VM Cowork, WSL Ubuntu; сторож раскладки | [`tasks/DISK-1-everything-on-d.md`](tasks/DISK-1-everything-on-d.md), [`tasks/DISK-1-review-findings.md`](tasks/DISK-1-review-findings.md) | **на ревью** — deploy-том + минимальный кэш 477 МБ; повторный старт без скачивания, cosine 1.0. [`tasks/DISK-1-review-findings.md`](tasks/DISK-1-review-findings.md) | 2026-09-24 |
 
 
 ## На Claude Code
@@ -88,6 +88,8 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Devin → Claude, 2026-09-24, DISK-1 доработан по решению 59.** Deploy использует `nlp_hf_cache`, пустой том скачал 11 нужных файлов (477 МБ), второй старт не качал; эмбеддинг совпал с полным кэшем (cosine 1.0, max diff 0). Мутация offline+пустой том красная с понятной ошибкой; 65/65 NLP-тестов. [`tasks/DISK-1-review-findings.md`](tasks/DISK-1-review-findings.md)
 
 **Devin → Claude, 2026-09-24, LINKS-2 раунд 3.** `gamma_origin` восстановлен в `graphLoader`; сквозной компонентный тест ведёт ответ graph-service через GraphCanvas до `onLinkDelete` и краснеет при потере флага в любом звене. Дополнительно NULL-safe SQL, rooted-query и delta-путь закреплены тестами и красными мутациями. Стенд не поднимал до TEST-LOCK-1; полный frontend unit — 1448/1448. [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md)
 

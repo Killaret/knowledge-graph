@@ -117,3 +117,39 @@ Workflow срабатывает на каждый push в `main` и в `ai-agent
 
 См. [`MODEL-1B-review-findings.md`](MODEL-1B-review-findings.md#сводка-check-all): прогон один на
 все три задачи ревью.
+
+## Доработка после отказа — Devin, 2026-09-24
+
+Решение 59 реализовано без запекания модели:
+
+- `docker-compose.deploy.yml`: NLP получил именованный том `nlp_hf_cache` на
+  `/root/.cache/huggingface`; первый старт работает с `HF_HUB_OFFLINE=0`.
+- `entrypoint.sh` и `nlp_utils.py` используют один минимальный набор шаблонов:
+  `*.json`, `*.txt`, `*.model`, `*.safetensors`. Тяжёлые альтернативы `.bin`, ONNX,
+  TensorFlow и OpenVINO не скачиваются.
+- Ошибка offline-старта больше не содержит путь конкретной машины: указывает точку
+  монтирования и способ заполнить кэш.
+- Тест `test_deploy_uses_persistent_minimal_model_cache` закрепляет deploy-том,
+  online-первый старт и фильтр; `test_resolve_model_path` проверяет точные аргументы
+  `snapshot_download`.
+
+### Живой deploy-прогон
+
+Проверка выполнена в отдельном Compose-проекте `kg-disk1-verify`, не затрагивая
+Personal/dev/test:
+
+1. Образ `killaret/knowledge-graph-nlp:ci` собран — в build-логе скачивания модели нет.
+2. Пустой том создан автоматически; entrypoint скачал **11 файлов**, кэш занял
+   **477 МБ** вместо 4,1 ГБ полного снимка; `/health` → 200, `model_loaded=true`.
+3. После `docker restart kg-nlp`: `Model found in cache. Skipping download.`, health
+   снова 200 — том переживает контейнер.
+4. Эмбеддинг одной фикстуры сравнен с тем же образом на полном `D:/kg-hf-cache`:
+   384 измерения, cosine **1.000000000000**, max absolute difference **0**.
+5. Мутация `HF_HUB_OFFLINE=1` с новым пустым томом: compose `--wait` красный,
+   контейнер unhealthy, лог содержит понятную ошибку и путь тома.
+6. Оба временных проекта и созданные ими тома удалены; Personal-ресурсы не
+   запускались и не затрагивались.
+
+Проверки: `pytest tests/ -v` — **65/65**, `docker compose -f
+docker-compose.deploy.yml config --quiet` — зелёный. Документация deploy EN/RU и
+`.env.example` обновлена.

@@ -1,6 +1,7 @@
 import pytest
 import sys
 import os
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import numpy as np
@@ -315,6 +316,19 @@ class TestModels:
 
 
 class TestEmbeddingModelHelpers:
+    def test_deploy_uses_persistent_minimal_model_cache(self):
+        repo_root = Path(__file__).resolve().parents[2]
+        compose = (repo_root / "docker-compose.deploy.yml").read_text(encoding="utf-8")
+        entrypoint = (repo_root / "nlp-service" / "entrypoint.sh").read_text(encoding="utf-8")
+
+        assert "HF_HUB_OFFLINE=0" in compose
+        assert "nlp_hf_cache:/root/.cache/huggingface" in compose
+        assert compose.count("nlp_hf_cache:") == 2
+        for pattern in nlp_utils.MODEL_ALLOW_PATTERNS:
+            assert repr(pattern) in entrypoint
+        assert "*.bin" not in nlp_utils.MODEL_ALLOW_PATTERNS
+        assert "*.onnx" not in nlp_utils.MODEL_ALLOW_PATTERNS
+
     def test_hf_offline_enabled(self):
         prev = os.environ.get("HF_HUB_OFFLINE")
         try:
@@ -340,7 +354,12 @@ class TestEmbeddingModelHelpers:
             mock_download.return_value = "/fake/model/path"
             path = nlp_utils._resolve_model_path(local_only=True)
             assert path == "/fake/model/path"
-            mock_download.assert_called_once()
+            mock_download.assert_called_once_with(
+                repo_id=f"sentence-transformers/{nlp_utils.MODEL_NAME}",
+                cache_dir=nlp_utils.HF_CACHE,
+                local_files_only=True,
+                allow_patterns=nlp_utils.MODEL_ALLOW_PATTERNS,
+            )
 
     def test_get_embedding_model_loads_from_cache(self):
         reset_model_state()
