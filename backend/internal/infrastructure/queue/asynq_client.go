@@ -15,17 +15,19 @@ import (
 
 // AsynqClient implements the common.TaskQueue port using asynq.
 type AsynqClient struct {
-	client        *asynq.Client
-	backupEnabled bool
+	client             *asynq.Client
+	backupEnabled      bool
+	nlpPipelineEnabled bool
 }
 
 // NewAsynqClient creates a new asynq client.
 // redisAddr is the Redis address, e.g. "localhost:6379".
 // backupEnabled controls whether backup tasks are enqueued.
-func NewAsynqClient(redisAddr string, backupEnabled bool) (*AsynqClient, error) {
+// nlpPipelineEnabled gates nlp:normalize tasks (NLP-4 switch, default off).
+func NewAsynqClient(redisAddr string, backupEnabled bool, nlpPipelineEnabled bool) (*AsynqClient, error) {
 	redisAddr = strings.TrimPrefix(redisAddr, "redis://")
 	client := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
-	return &AsynqClient{client: client, backupEnabled: backupEnabled}, nil
+	return &AsynqClient{client: client, backupEnabled: backupEnabled, nlpPipelineEnabled: nlpPipelineEnabled}, nil
 }
 
 func (c *AsynqClient) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
@@ -117,6 +119,36 @@ func (c *AsynqClient) EnqueueComputeEmbeddingDelayed(ctx context.Context, noteID
 	} else {
 		log.Printf("Task enqueued: %+v", info)
 	}
+	return err
+}
+
+// EnqueueNormalizeNote schedules NLP-4 normalization for a note.
+// When the pipeline flag is off the call is a no-op — prod behaves exactly
+// as before, no task enters the queue.
+func (c *AsynqClient) EnqueueNormalizeNote(ctx context.Context, noteID string) error {
+	if !c.nlpPipelineEnabled {
+		return nil
+	}
+	payload, err := json.Marshal(NormalizeNotePayload{NoteID: noteID})
+	if err != nil {
+		return err
+	}
+	task := asynq.NewTask(TypeNormalizeNote, payload)
+	_, err = c.client.EnqueueContext(ctx, task)
+	return err
+}
+
+// EnqueueNlpArtifactsCleanup schedules removal of a note's nlp_artifacts.
+// Not gated by the pipeline flag: cleanup also removes artifacts written
+// while the flag was on, so it enqueues whenever the queue is available.
+// The worker no-ops when the artifacts store is absent.
+func (c *AsynqClient) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
+	payload, err := json.Marshal(NlpArtifactsCleanupPayload{NoteID: noteID})
+	if err != nil {
+		return err
+	}
+	task := asynq.NewTask(TypeNlpArtifactsCleanup, payload)
+	_, err = c.client.EnqueueContext(ctx, task)
 	return err
 }
 

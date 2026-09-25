@@ -581,6 +581,33 @@ Used by `List` and `Search` endpoints for note pagination.
 }
 ```
 
+## NLP Service
+
+### JSON Configuration (`nlp`)
+
+```json
+{
+  "nlp": {
+    "model_name": "paraphrase-multilingual-MiniLM-L12-v2",
+    "max_text_length": 10000,
+    "embed_chunking": false,
+    "pipeline": { "enabled": false },
+    "history": { "enabled": true },
+    "normalization": { "min_cosine": 0.7 }
+  }
+}
+```
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NLP_MODEL_NAME` | HuggingFace model name | `paraphrase-multilingual-MiniLM-L12-v2` |
+| `EMBED_CHUNKING` | Structural chunker in `/embed` and `_doc_vector` (CHUNK-1): `0` — legacy behaviour; `1` — chunks → one batched encode → mean + L2, note title injected into every chunk, response adds `chunks`/`no_content`. Enable only together with the model change (MODEL-2) | `0` |
+| `NLP_PIPELINE_ENABLED` | Normalization pipeline (NLP-4): enqueue `nlp:normalize` on note create/update/import so workers write `nlp_artifacts` to MongoDB. Vectors still use raw `notes.content` — activation waits for MODEL-2 | `false` |
+| `NLP_HISTORY_ENABLED` | Keep superseded `nlp_artifacts` versions; `false` deletes the previous document instead of marking it `superseded` | `true` |
+| `NLP_NORMALIZATION_MIN_COSINE` | Cosine rollback guard for `/normalize`: result rolled back to source when `cos(emb(result), emb(source))` is below this value. Model-scale dependent (measured on e5-base); recalibrated in MODEL-2. Values outside `(0, 1]` fall back to the default | `0.7` |
+
 ## Advanced Parameters (BFS + Asynq)
 
 These parameters are now fully integrated and loaded from `knowledge-graph.config.json`:
@@ -711,6 +738,17 @@ EMBEDDING_SIMILARITY_LIMIT=30
 # note title injected into every chunk; response adds chunks/no_content.
 # Enable only together with the model change (MODEL-2).
 EMBED_CHUNKING=0
+
+# NLP-4 normalization pipeline (worker + backend):
+# NLP_PIPELINE_ENABLED — enqueue nlp:normalize on note create/update/import
+#   so workers store nlp_artifacts in MongoDB. Vectors still use raw
+#   notes.content; activation waits for MODEL-2.
+# NLP_HISTORY_ENABLED — keep superseded nlp_artifacts versions.
+# NLP_NORMALIZATION_MIN_COSINE — cosine rollback guard for /normalize
+#   (e5-base scale, recalibrated in MODEL-2; values outside (0,1] fall back).
+NLP_PIPELINE_ENABLED=false
+NLP_HISTORY_ENABLED=true
+NLP_NORMALIZATION_MIN_COSINE=0.7
 
 # Asynq
 ASYNQ_CONCURRENCY=10

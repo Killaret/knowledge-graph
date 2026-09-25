@@ -68,7 +68,7 @@ func RunPostSteps(ctx context.Context, database *gorm.DB, cfg *config.Config, dr
 		}
 		log.Printf("Would delete %d rows from note_recommendations and enqueue refresh for %d notes", recCount, len(notes))
 	} else {
-		taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled)
+		taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled)
 		if err != nil {
 			log.Fatalf("Failed to create task queue client: %v", err)
 		}

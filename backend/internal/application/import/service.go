@@ -545,6 +545,9 @@ func (s *Service) ProcessImportTask(ctx context.Context, userID uuid.UUID, taskI
 			if err := s.taskQueue.EnqueueComputeEmbedding(ctx, newNote.ID().String()); err != nil {
 				log.Printf("[ImportService] failed to enqueue compute embedding for %s: %v", newNote.ID(), err)
 			}
+			if err := s.taskQueue.EnqueueNormalizeNote(ctx, newNote.ID().String()); err != nil {
+				log.Printf("[ImportService] failed to enqueue normalize note for %s: %v", newNote.ID(), err)
+			}
 			if err := s.taskQueue.EnqueueRecalculateLinkWeights(ctx, newNote.ID(), 0); err != nil {
 				log.Printf("[ImportService] failed to enqueue link weight recalculation for %s: %v", newNote.ID(), err)
 			}

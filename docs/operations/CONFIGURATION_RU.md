@@ -613,7 +613,11 @@ score = α × explicit_score + β × semantic_score
     "max_text_length": 10000,
     "hf_home": "/root/.cache/huggingface",
     "hf_hub_disable_telemetry": true,
-    "hf_hub_offline": true
+    "hf_hub_offline": true,
+    "embed_chunking": false,
+    "pipeline": { "enabled": false },
+    "history": { "enabled": true },
+    "normalization": { "min_cosine": 0.7 }
   }
 }
 ```
@@ -628,6 +632,9 @@ score = α × explicit_score + β × semantic_score
 | `HF_HUB_OFFLINE` | Работа в оффлайн-режиме (без интернета) | `true` |
 | `HF_HUB_DISABLE_TELEMETRY` | Отключить телеметрию HuggingFace | `true` |
 | `EMBED_CHUNKING` | Структурный чанкер в `/embed` и `_doc_vector` (CHUNK-1): `0/off` — как раньше; `1/on` — чанки → один пакетный encode → среднее + L2, заголовок в каждом чанке, в ответе `chunks` и `no_content`. Включать вместе со сменой модели (MODEL-2) | `0` |
+| `NLP_PIPELINE_ENABLED` | Конвейер нормализации (NLP-4): ставит `nlp:normalize` при создании/правке/импорте заметки — воркер пишет `nlp_artifacts` в MongoDB. Векторы по-прежнему строятся по сырому `notes.content`; включение — вместе с MODEL-2 | `false` |
+| `NLP_HISTORY_ENABLED` | Хранить superseded-версии `nlp_artifacts`; `false` — прежний документ удаляется вместо пометки `superseded` | `true` |
+| `NLP_NORMALIZATION_MIN_COSINE` | Предохранитель отката `/normalize` по косинусу: результат откатывается к исходнику, если `cos(emb(result), emb(source))` ниже порога. Зависит от шкалы модели (замерено на e5-base); перекалибровка — в MODEL-2. Значения вне `(0, 1]` заменяются умолчанием | `0.7` |
 
 ### Lazy-loading модели (обязательный паттерн)
 

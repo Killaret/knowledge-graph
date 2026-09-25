@@ -94,7 +94,7 @@ func TestWorker_ComputeEmbeddingCreatesGammaLinks(t *testing.T) {
 
 	nlpClient := nlp.NewNLPClient(nlpServer.URL, nil, time.Hour)
 	gammaGen := recommendation.NewGammaLinkGenerator(embeddingRepo, linkRepo, 2, 0.6)
-	w := NewWorker(noteRepo, nil, embeddingRepo, nlpClient, nil, nil, gammaGen, publisher, nil, 0)
+	w := NewWorker(noteRepo, nil, embeddingRepo, nlpClient, nil, nil, gammaGen, publisher, nil, 0, nil, false, "")
 
 	payload, err := json.Marshal(ComputeEmbeddingTaskPayload{NoteID: source.ID().String()})
 	require.NoError(t, err)

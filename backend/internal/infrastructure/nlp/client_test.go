@@ -11,6 +11,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -538,4 +539,86 @@ func TestNLPClient_ExtractKeywords_Retry(t *testing.T) {
 	if len(res.Keywords) != 1 || res.Keywords[0].Keyword != "retry" {
 		t.Errorf("unexpected keywords: %v", res.Keywords)
 	}
+}
+
+// TestNLPClient_Normalize_Success: /normalize round-trip — request shape,
+// artifact fields, chunk contract (NLP-4 criterion 2, Go side).
+func TestNLPClient_Normalize_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/normalize", r.URL.Path)
+		var reqBody map[string]interface{}
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&reqBody))
+		assert.Equal(t, "raw text", reqBody["text"])
+		assert.Equal(t, "the title", reqBody["title"])
+
+		cosine := 0.93
+		w.Header().Set("Content-Type", "application/json")
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+			"normalized_text": "clean text",
+			"chunks": []map[string]interface{}{{
+				"idx": 0, "text": "clean text", "heading_path": []string{"H"},
+				"char_span": []int{0, 10}, "token_count": 2, "kind": "prose", "forced_split": false,
+			}},
+			"metrics": map[string]interface{}{
+				"raw_tokens": 10, "norm_tokens": 2, "compression": 0.2,
+				"iterations": 1, "stop_reason": "single_pass", "emb_cosine": cosine,
+			},
+			"rolled_back":      false,
+			"rollback_reason":  "",
+			"skipped":          false,
+			"pipeline_version": "norm-v1",
+		}))
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	res, err := client.Normalize(context.Background(), "raw text", "the title")
+	require.NoError(t, err)
+	assert.Equal(t, "clean text", res.NormalizedText)
+	assert.Equal(t, "norm-v1", res.PipelineVersion)
+	assert.False(t, res.RolledBack)
+	require.Len(t, res.Chunks, 1)
+	assert.Equal(t, "clean text", res.Chunks[0].Text)
+	assert.Equal(t, [2]int{0, 10}, res.Chunks[0].CharSpan)
+	require.NotNil(t, res.Metrics.EmbCosine)
+	assert.InDelta(t, 0.93, *res.Metrics.EmbCosine, 1e-6)
+}
+
+// Rolled-back response still decodes: source text returns with the flag set.
+func TestNLPClient_Normalize_RolledBack(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+			"normalized_text":  "source text unchanged",
+			"chunks":           []map[string]interface{}{},
+			"metrics":          map[string]interface{}{"raw_tokens": 5, "norm_tokens": 5, "compression": 1.0, "iterations": 1, "stop_reason": "single_pass", "emb_cosine": 0.4},
+			"rolled_back":      true,
+			"rollback_reason":  "low_cosine",
+			"pipeline_version": "norm-v1",
+		}))
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	res, err := client.Normalize(context.Background(), "x", "")
+	require.NoError(t, err)
+	assert.True(t, res.RolledBack)
+	assert.Equal(t, "low_cosine", res.RollbackReason)
+}
+
+func TestNLPClient_Normalize_HTTPError(t *testing.T) {
+	client := &NLPClient{
+		httpClient: &http.Client{Timeout: 5 * time.Second},
+		maxRetries: 1,
+		retryDelay: 1 * time.Millisecond,
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	client.baseURL = server.URL
+
+	_, err := client.Normalize(context.Background(), "text", "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "500")
 }

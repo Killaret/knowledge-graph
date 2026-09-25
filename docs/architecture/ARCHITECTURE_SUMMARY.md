@@ -243,6 +243,51 @@ stateDiagram-v2
   corpus measurements must be re-run after NOTE-QUALITY-1 changes the input
   corpus — see `docs/tasks/CHUNK-1-structure-aware-chunker.md`.
 
+## NLP Normalization Pipeline (NLP-4)
+
+- `nlp-service/app/core/normalization.py` is a pure module (no FastAPI/model/
+  I/O): `normalize(text, params)` runs **one deterministic pass** over a
+  ruleset ported from `scripts/measure_normalization.py` — boilerplate lines
+  (cookies, subscribe, share, footer, read-more), bare URL lines, navigation
+  runs (>=3 consecutive short unpunctuated lines), near-duplicate lines,
+  whitespace collapse. Inputs shorter than `min_chars` (100) pass through
+  untouched (`skipped=True`).
+- Two safety guards roll the result back to the source text: length
+  (`len(result) < min_chars` -> `too_short`) and cosine similarity
+  (`cos(emb(result), emb(source)) < min_cosine` -> `low_cosine`). The embed
+  function is injected, so the guard is unit-testable without a model.
+- `POST /normalize` (nlp-service) accepts `{text, title}` and returns
+  `normalized_text`, `chunks` (CHUNK-1 chunker), `metrics` (raw/norm tokens,
+  compression, iterations=1, `emb_cosine`, `stop_reason`), `rolled_back`,
+  `rollback_reason`, `skipped`, `pipeline_version="norm-v1"`. The endpoint is
+  stateless — persistence is the backend worker's job.
+- MongoDB collection `nlp_artifacts` stores the derived form:
+  `{note_id, source_hash (sha256 title+content), pipeline_version,
+  model_version, normalized_text, chunks[], metrics, rolled_back,
+  rollback_reason, status: current|superseded, created_at}`. Index
+  `(note_id, pipeline_version, status)` with a partial unique index on
+  `current`; `(note_id)` index serves the deletion cascade.
+- Worker task `nlp:normalize`: fetch note -> compute source hash -> skip
+  when the current artifact already matches -> call `/normalize` ->
+  `SaveCurrent` (supersedes the previous current document when
+  `nlp.history.enabled`, deletes it otherwise). Deleting a note enqueues
+  `nlp:artifacts_cleanup`, which removes all of its artifact documents.
+- `notes.content` is sacred: the pipeline never writes back — the artifact
+  is a derived projection. Embeddings still use raw `notes.content`;
+  switching vectors to the normalized form is deferred to MODEL-2.
+- Switches: `nlp.pipeline.enabled` (JSON `nlp.pipeline.enabled` / env
+  `NLP_PIPELINE_ENABLED`, default off — no task is enqueued and `/normalize`
+  is never called), `nlp.history.enabled` (default on),
+  `nlp.normalization.min_cosine` (default 0.7, e5-base scale, recalibrated
+  in MODEL-2). Backfill: `go run ./cmd/nlp-artifacts-recompute --dry-run`
+  prints create/skip counts; without the flag it enqueues `nlp:normalize`
+  for notes with missing or stale artifacts regardless of the pipeline flag
+  (explicit operator action).
+- **Conditional completeness:** same caveat as CHUNK-1 — the artifacts are
+  written but unused until MODEL-2 routes embedding inputs through them,
+  and measurements must be re-run after NOTE-QUALITY-1 changes the corpus.
+  See `docs/tasks/NLP-4-note-logical-form-normalization.md`.
+
 ## Operational Considerations
 
 ### Monitoring

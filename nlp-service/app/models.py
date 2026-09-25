@@ -25,6 +25,40 @@ class EmbedResponse(BaseModel):
     no_content: bool | None = None
 
 
+class NormalizeRequest(BaseModel):
+    text: str = Field(..., max_length=10000, description="Source note content (never modified upstream)")
+    title: str = Field(default="", max_length=1000, description="Note title")
+
+
+class NormalizedChunk(BaseModel):
+    idx: int
+    text: str
+    heading_path: List[str]
+    char_span: List[int]  # [start, end] within normalized_text
+    token_count: int
+    kind: str
+    forced_split: bool = False
+
+
+class NormalizeMetrics(BaseModel):
+    raw_tokens: int
+    norm_tokens: int
+    compression: float
+    iterations: int
+    stop_reason: str
+    emb_cosine: float | None = None
+
+
+class NormalizeResponse(BaseModel):
+    normalized_text: str
+    chunks: List[NormalizedChunk]
+    metrics: NormalizeMetrics
+    rolled_back: bool
+    rollback_reason: str | None = None
+    skipped: bool = False
+    pipeline_version: str
+
+
 class SimilarityRequest(BaseModel):
     text_a: str = Field(..., max_length=10000, description="First text")
     text_b: str = Field(..., max_length=10000, description="Second text")

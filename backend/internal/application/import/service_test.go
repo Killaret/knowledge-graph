@@ -438,3 +438,11 @@ func TestPreview_ExceedsBatchSize(t *testing.T) {
 	_, err := svc.Preview(context.Background(), uuid.New(), items)
 	require.Error(t, err)
 }
+
+func (q *fakeTaskQueue) EnqueueNormalizeNote(ctx context.Context, noteID string) error {
+	return nil
+}
+
+func (q *fakeTaskQueue) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
+	return nil
+}

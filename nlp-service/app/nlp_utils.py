@@ -67,6 +67,16 @@ def _embed_chunking_enabled() -> bool:
     )
 
 
+def _normalization_min_cosine() -> float:
+    """NLP-4 cosine guard threshold (nlp.normalization.min_cosine).
+    Depends on the model's similarity scale — 0.7 was measured on e5-base;
+    recalibration for the chosen model belongs to MODEL-2."""
+    try:
+        return float(os.environ.get("NLP_NORMALIZATION_MIN_COSINE", "0.7"))
+    except ValueError:
+        return 0.7
+
+
 def _combined_text(text: str, title: Optional[str] = None) -> str:
     """Legacy embedding input: content plus title joined by a single space,
     matching what the worker used to concatenate before CHUNK-1."""

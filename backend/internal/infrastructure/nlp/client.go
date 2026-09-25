@@ -296,6 +296,83 @@ func (c *NLPClient) Similarity(ctx context.Context, textA, textB string) (float6
 	return result.Similarity, nil
 }
 
+// NormalizeChunk — один структурный чанк нормализованного текста (CHUNK-1).
+type NormalizeChunk struct {
+	Idx         int      `json:"idx"`
+	Text        string   `json:"text"`
+	HeadingPath []string `json:"heading_path"`
+	CharSpan    [2]int   `json:"char_span"`
+	TokenCount  int      `json:"token_count"`
+	Kind        string   `json:"kind"`
+	ForcedSplit bool     `json:"forced_split"`
+}
+
+// NormalizeMetrics — метрики одного прохода нормализации.
+type NormalizeMetrics struct {
+	RawTokens   int      `json:"raw_tokens"`
+	NormTokens  int      `json:"norm_tokens"`
+	Compression float64  `json:"compression"`
+	Iterations  int      `json:"iterations"`
+	StopReason  string   `json:"stop_reason"`
+	EmbCosine   *float64 `json:"emb_cosine"`
+}
+
+// NormalizeResult — ответ /normalize: производный артефакт для Mongo,
+// исходный текст заметки им не заменяется.
+type NormalizeResult struct {
+	NormalizedText  string           `json:"normalized_text"`
+	Chunks          []NormalizeChunk `json:"chunks"`
+	Metrics         NormalizeMetrics `json:"metrics"`
+	RolledBack      bool             `json:"rolled_back"`
+	RollbackReason  string           `json:"rollback_reason"`
+	Skipped         bool             `json:"skipped"`
+	PipelineVersion string           `json:"pipeline_version"`
+}
+
+// Normalize вызывает /normalize и возвращает нормализованный текст с чанками.
+// Результат не кэшируется — дедупликация происходит на уровне артефактов
+// (source_hash), а не на уровне текста.
+func (c *NLPClient) Normalize(ctx context.Context, text string, title string) (*NormalizeResult, error) {
+	reqBody := map[string]interface{}{
+		"text":  text,
+		"title": title,
+	}
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	buildReq := func() (*http.Request, error) {
+		req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/normalize", bytes.NewReader(jsonBody))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return req, nil
+	}
+
+	resp, err := c.doWithRetry(ctx, buildReq)
+	if err != nil {
+		return nil, fmt.Errorf("http request failed after retries: %w", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Printf("Warning: failed to close response body: %v\n", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("nlp service returned %d: %s", resp.StatusCode, body)
+	}
+
+	var result NormalizeResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	return &result, nil
+}
+
 // sha256Hash возвращает SHA-256 хеш строки в hex
 func sha256Hash(s string) string {
 	h := sha256.Sum256([]byte(s))

@@ -771,6 +771,53 @@ func TestGammaLinkMinScore_MissingJSONKey(t *testing.T) {
 	}
 }
 
+// NLP-4: pipeline switch defaults to off, history to on, cosine floor to
+// 0.7; env overrides JSON; out-of-range cosine falls back to the default.
+func TestNLP4Config(t *testing.T) {
+	vars := []string{
+		"DATABASE_URL", "NLP_PIPELINE_ENABLED", "NLP_HISTORY_ENABLED",
+		"NLP_NORMALIZATION_MIN_COSINE",
+	}
+	original := make(map[string]string)
+	for _, v := range vars {
+		original[v] = os.Getenv(v)
+	}
+	defer func() {
+		for k, v := range original {
+			if v == "" {
+				os.Unsetenv(k)
+			} else {
+				os.Setenv(k, v)
+			}
+		}
+	}()
+
+	os.Setenv("DATABASE_URL", "postgres://test@localhost/test")
+	for _, v := range vars[1:] {
+		os.Unsetenv(v)
+	}
+
+	cfg, err := Load()
+	require.NoError(t, err)
+	assert.False(t, cfg.NLPPipelineEnabled, "pipeline must default to off")
+	assert.True(t, cfg.NLPHistoryEnabled, "history must default to on")
+	assert.Equal(t, 0.7, cfg.NLPNormalizationMinCosine)
+
+	os.Setenv("NLP_PIPELINE_ENABLED", "true")
+	os.Setenv("NLP_HISTORY_ENABLED", "false")
+	os.Setenv("NLP_NORMALIZATION_MIN_COSINE", "0.55")
+	cfg, err = Load()
+	require.NoError(t, err)
+	assert.True(t, cfg.NLPPipelineEnabled)
+	assert.False(t, cfg.NLPHistoryEnabled)
+	assert.Equal(t, 0.55, cfg.NLPNormalizationMinCosine)
+
+	os.Setenv("NLP_NORMALIZATION_MIN_COSINE", "1.5")
+	cfg, err = Load()
+	require.NoError(t, err)
+	assert.Equal(t, 0.7, cfg.NLPNormalizationMinCosine, "out-of-range cosine must fall back")
+}
+
 // CONFIG-1 drift guard: the seeded struct must mirror every call-site
 // default. resolveConfig(nil) resolves through the helpers' defaultValue
 // arguments; resolveConfig(defaultJSONConfig()) resolves through the seed —

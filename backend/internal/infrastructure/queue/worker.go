@@ -2,6 +2,8 @@ package queue
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -17,6 +19,7 @@ import (
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
 )
 
@@ -37,18 +40,33 @@ type RecommendationsEnqueuer interface {
 	EnqueueRefreshRecommendations(ctx context.Context, noteID uuid.UUID, delay time.Duration) error
 }
 
-type Worker struct {
-	noteRepo       note.Repository
-	keywordRepo    *postgres.KeywordRepository
-	embeddingRepo  *postgres.EmbeddingRepository
-	nlpClient      *nlp.NLPClient
-	cacheClient    dcache.CacheClient
-	importSvc      *importer.Service
-	gammaGen       GammaLinkRunner
-	eventPublisher LinkEventPublisher
-	taskQueue      RecommendationsEnqueuer
-	taskDelay      time.Duration
+// NlpArtifactsStore persists NLP-4 artifacts (mongo.NlpArtifactsRepository in
+// production; fakes in tests). Nil store = pipeline storage unavailable.
+type NlpArtifactsStore interface {
+	FindCurrentSourceHash(ctx context.Context, noteID uuid.UUID, pipelineVersion string) (string, bool, error)
+	SaveCurrent(ctx context.Context, doc *mongo.NlpArtifact, historyEnabled bool) error
+	DeleteByNoteID(ctx context.Context, noteID uuid.UUID) (int64, error)
 }
+
+type Worker struct {
+	noteRepo          note.Repository
+	keywordRepo       *postgres.KeywordRepository
+	embeddingRepo     *postgres.EmbeddingRepository
+	nlpClient         *nlp.NLPClient
+	cacheClient       dcache.CacheClient
+	importSvc         *importer.Service
+	gammaGen          GammaLinkRunner
+	eventPublisher    LinkEventPublisher
+	taskQueue         RecommendationsEnqueuer
+	taskDelay         time.Duration
+	artifactsStore    NlpArtifactsStore
+	nlpHistoryEnabled bool
+	nlpModelVersion   string
+}
+
+// NlpPipelineVersion identifies the normalizer ruleset; bump on rule changes
+// so stale artifacts are distinguishable and recompute can refill.
+const NlpPipelineVersion = "norm-v1"
 
 func NewWorker(
 	noteRepo note.Repository,
@@ -61,18 +79,24 @@ func NewWorker(
 	eventPublisher LinkEventPublisher,
 	taskQueue RecommendationsEnqueuer,
 	taskDelay time.Duration,
+	artifactsStore NlpArtifactsStore,
+	nlpHistoryEnabled bool,
+	nlpModelVersion string,
 ) *Worker {
 	return &Worker{
-		noteRepo:       noteRepo,
-		keywordRepo:    keywordRepo,
-		embeddingRepo:  embeddingRepo,
-		nlpClient:      nlpClient,
-		cacheClient:    cacheClient,
-		importSvc:      importSvc,
-		gammaGen:       gammaGen,
-		eventPublisher: eventPublisher,
-		taskQueue:      taskQueue,
-		taskDelay:      taskDelay,
+		noteRepo:          noteRepo,
+		keywordRepo:       keywordRepo,
+		embeddingRepo:     embeddingRepo,
+		nlpClient:         nlpClient,
+		cacheClient:       cacheClient,
+		importSvc:         importSvc,
+		gammaGen:          gammaGen,
+		eventPublisher:    eventPublisher,
+		taskQueue:         taskQueue,
+		taskDelay:         taskDelay,
+		artifactsStore:    artifactsStore,
+		nlpHistoryEnabled: nlpHistoryEnabled,
+		nlpModelVersion:   nlpModelVersion,
 	}
 }
 
@@ -271,4 +295,124 @@ func (w *Worker) HandleImportBookmarks(ctx context.Context, t *asynq.Task) error
 	}
 
 	return w.importSvc.ProcessImportTask(ctx, userID, p.TaskID, items)
+}
+
+// HandleNormalizeNote runs NLP-4 for one note: /normalize via the NLP
+// service, then the artifact lands in Mongo as the single current document
+// for (note_id, pipeline_version). Unchanged source_hash skips the call —
+// makes the task idempotent under retries and recompute runs.
+func (w *Worker) HandleNormalizeNote(ctx context.Context, t *asynq.Task) error {
+	var p NormalizeNotePayload
+	if err := json.Unmarshal(t.Payload(), &p); err != nil {
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+	noteID, err := uuid.Parse(p.NoteID)
+	if err != nil {
+		return fmt.Errorf("invalid note id: %w", err)
+	}
+
+	if w.artifactsStore == nil {
+		log.Printf("HandleNormalizeNote: artifacts store unavailable for note %s, skipping", noteID)
+		return nil
+	}
+
+	n, err := w.noteRepo.FindByID(ctx, noteID)
+	if err != nil {
+		return fmt.Errorf("failed to fetch note: %w", err)
+	}
+	if n == nil {
+		// Note deleted before the task ran — nothing to keep artifacts for.
+		_, err := w.artifactsStore.DeleteByNoteID(ctx, noteID)
+		return err
+	}
+
+	title := n.Title().String()
+	content := n.Content().String()
+	sourceHash := nlpArtifactsSourceHash(title, content)
+
+	existingHash, found, err := w.artifactsStore.FindCurrentSourceHash(ctx, noteID, NlpPipelineVersion)
+	if err != nil {
+		return fmt.Errorf("failed to read current artifact: %w", err)
+	}
+	if found && existingHash == sourceHash {
+		return nil // unchanged since last run — idempotent skip
+	}
+
+	res, err := w.nlpClient.Normalize(ctx, content, title)
+	if err != nil {
+		return fmt.Errorf("failed to normalize note: %w", err)
+	}
+
+	doc := &mongo.NlpArtifact{
+		NoteID:          noteID,
+		SourceHash:      sourceHash,
+		PipelineVersion: NlpPipelineVersion,
+		ModelVersion:    w.nlpModelVersion,
+		NormalizedText:  res.NormalizedText,
+		Chunks:          mapNormalizeChunks(res.Chunks),
+		Metrics: mongo.NlpArtifactMetrics{
+			RawTokens:      res.Metrics.RawTokens,
+			NormTokens:     res.Metrics.NormTokens,
+			Compression:    res.Metrics.Compression,
+			Iterations:     res.Metrics.Iterations,
+			StopReason:     res.Metrics.StopReason,
+			EmbCosine:      res.Metrics.EmbCosine,
+			RolledBack:     res.RolledBack,
+			RollbackReason: res.RollbackReason,
+			Skipped:        res.Skipped,
+		},
+	}
+	if err := w.artifactsStore.SaveCurrent(ctx, doc, w.nlpHistoryEnabled); err != nil {
+		return fmt.Errorf("failed to save artifact: %w", err)
+	}
+	log.Printf("HandleNormalizeNote: stored artifact for note %s (rolled_back=%v, chunks=%d)",
+		noteID, res.RolledBack, len(res.Chunks))
+	return nil
+}
+
+// HandleNlpArtifactsCleanup removes every nlp_artifacts document of a
+// deleted note. No-op when the store is absent (pipeline never ran).
+func (w *Worker) HandleNlpArtifactsCleanup(ctx context.Context, t *asynq.Task) error {
+	var p NlpArtifactsCleanupPayload
+	if err := json.Unmarshal(t.Payload(), &p); err != nil {
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+	noteID, err := uuid.Parse(p.NoteID)
+	if err != nil {
+		return fmt.Errorf("invalid note id: %w", err)
+	}
+	if w.artifactsStore == nil {
+		return nil
+	}
+	deleted, err := w.artifactsStore.DeleteByNoteID(ctx, noteID)
+	if err != nil {
+		return fmt.Errorf("failed to delete artifacts: %w", err)
+	}
+	if deleted > 0 {
+		log.Printf("HandleNlpArtifactsCleanup: deleted %d artifacts for note %s", deleted, noteID)
+	}
+	return nil
+}
+
+// nlpArtifactsSourceHash hashes the normalization inputs (title + content)
+// so a change to either triggers a rebuild.
+func nlpArtifactsSourceHash(title, content string) string {
+	sum := sha256.Sum256([]byte(title + "\x00" + content))
+	return hex.EncodeToString(sum[:])
+}
+
+func mapNormalizeChunks(chunks []nlp.NormalizeChunk) []mongo.NlpArtifactChunk {
+	out := make([]mongo.NlpArtifactChunk, len(chunks))
+	for i, c := range chunks {
+		out[i] = mongo.NlpArtifactChunk{
+			Idx:         c.Idx,
+			Text:        c.Text,
+			HeadingPath: c.HeadingPath,
+			CharSpan:    c.CharSpan,
+			TokenCount:  c.TokenCount,
+			Kind:        c.Kind,
+			ForcedSplit: c.ForcedSplit,
+		}
+	}
+	return out
 }

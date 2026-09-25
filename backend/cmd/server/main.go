@@ -464,7 +464,7 @@ func newAsynqClient(cfg *config.Config) common.TaskQueue {
 		return nil
 	}
 
-	asynqClient, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled)
+	asynqClient, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled)
 	if err != nil {
 		log.Printf("WARNING: failed to create asynq client: %v", err)
 		return nil

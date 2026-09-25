@@ -118,7 +118,11 @@ func (m *embeddingRepoMock) FindSimilarNotesBatch(ctx context.Context, noteIDs [
 	return nil, nil
 }
 
-type taskQueueMock struct{ mock.Mock }
+type taskQueueMock struct {
+	mock.Mock
+	normalizeCalls []string
+	cleanupCalls   []string
+}
 
 func (m *taskQueueMock) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
 	return nil
@@ -223,6 +227,9 @@ func TestCreateNote_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Test Note")
 	repo.AssertExpectations(t)
 	tq.AssertExpectations(t)
+	// NLP-4: creating a note enqueues normalization (the queue client
+	// itself gates on nlp.pipeline.enabled — the handler always calls).
+	assert.Len(t, tq.normalizeCalls, 1)
 }
 
 func TestCreateNote_WithUser(t *testing.T) {
@@ -499,7 +506,7 @@ func TestUpdateNote_SaveError(t *testing.T) {
 }
 
 func TestDeleteNote_Success(t *testing.T) {
-	h, repo, _, _, _, _ := setupUnitHandler(t)
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
 	userID := uuid.New()
 	n := newTestNote(t, "ToDelete", "Content", "star")
 
@@ -513,6 +520,8 @@ func TestDeleteNote_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusNoContent, c.Writer.Status())
 	repo.AssertExpectations(t)
+	// NLP-4 criterion 4: deleting a note cascades to its nlp_artifacts docs.
+	assert.Equal(t, []string{n.ID().String()}, tq.cleanupCalls)
 }
 
 func TestDeleteNote_InvalidID(t *testing.T) {
@@ -570,7 +579,7 @@ func TestDeleteNote_DeleteError(t *testing.T) {
 }
 
 func TestDeleteBatchNotes_Success(t *testing.T) {
-	h, repo, _, _, _, _ := setupUnitHandler(t)
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
 	owner := uuid.New()
 	n1 := newTestNote(t, "T1", "C1", "star")
 	n2 := newTestNote(t, "T2", "C2", "star")
@@ -588,6 +597,8 @@ func TestDeleteBatchNotes_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusNoContent, c.Writer.Status())
 	repo.AssertExpectations(t)
+	// NLP-4 criterion 4: each deleted note gets its own cleanup task.
+	assert.ElementsMatch(t, []string{n1.ID().String(), n2.ID().String()}, tq.cleanupCalls)
 }
 
 // SEC-1: a batch containing a foreign note must be refused wholesale —
@@ -1116,4 +1127,17 @@ func TestBookmarklet_ValidationError(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
 	repo.AssertNotCalled(t, "Save")
 	_ = w
+}
+
+// NLP-4 criteria 4-5: normalize enqueue on content-changing writes and the
+// deletion cascade are observable — the mock records both so removing the
+// call sites reddens the delete/create tests below.
+func (m *taskQueueMock) EnqueueNormalizeNote(ctx context.Context, noteID string) error {
+	m.normalizeCalls = append(m.normalizeCalls, noteID)
+	return nil
+}
+
+func (m *taskQueueMock) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
+	m.cleanupCalls = append(m.cleanupCalls, noteID)
+	return nil
 }

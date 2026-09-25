@@ -79,7 +79,7 @@ func TestWorker_HandleImportBookmarks_Success(t *testing.T) {
 	repo := newImportNoteRepo()
 	cache := cachetest.NewFakeCacheClient()
 	importSvc := importer.NewService(repo, cache, nil, nil)
-	w := NewWorker(nil, nil, nil, nil, cache, importSvc, nil, nil, nil, 0)
+	w := NewWorker(nil, nil, nil, nil, cache, importSvc, nil, nil, nil, 0, nil, false, "")
 
 	items := []importer.Item{
 		{Title: "One", URL: "https://example.com/one", Type: "asteroid"},
@@ -110,14 +110,14 @@ func TestWorker_HandleImportBookmarks_Success(t *testing.T) {
 }
 
 func TestWorker_HandleImportBookmarks_ImportServiceNil(t *testing.T) {
-	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, nil, 0)
+	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
 	task := asynq.NewTask(TypeImportBookmarks, []byte("{}"))
 	err := w.HandleImportBookmarks(context.Background(), task)
 	assert.Error(t, err)
 }
 
 func TestWorker_HandleImportBookmarks_InvalidPayload(t *testing.T) {
-	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, nil, 0)
+	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
 	task := asynq.NewTask(TypeImportBookmarks, []byte("not json"))
 	err := w.HandleImportBookmarks(context.Background(), task)
 	assert.Error(t, err)

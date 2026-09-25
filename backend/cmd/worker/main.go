@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
@@ -21,6 +22,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/events"
+	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
@@ -103,7 +105,7 @@ func main() {
 	nlpClient := nlp.NewNLPClient(nlpURL, redisClient, 24*time.Hour)
 
 	// Task queue client for the import worker to enqueue note processing tasks.
-	queueClient, err := queue.NewAsynqClient(redisAddr, cfg.BackupEnabled)
+	queueClient, err := queue.NewAsynqClient(redisAddr, cfg.BackupEnabled, cfg.NLPPipelineEnabled)
 	if err != nil {
 		log.Printf("[Worker] WARNING: failed to create asynq client: %v", err)
 		queueClient = nil
@@ -132,9 +134,38 @@ func main() {
 	gammaGen := recommendation.NewGammaLinkGenerator(embeddingRepo, linkRepo, 2, cfg.GammaLinkMinScore)
 	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
 
+	// NLP-4: artifacts live in MongoDB. The worker connects whenever Mongo
+	// is configured — even with the pipeline flag off — so nlp:normalize
+	// tasks enqueued manually (nlp-artifacts-recompute) and artifact
+	// cleanup on note deletion still work.
+	var artifactsStore queue.NlpArtifactsStore
+	var mongoClient *mongo.Client
+	if cfg.MongoDBURL != "" {
+		mc, err := mongo.NewClient(context.Background(), cfg.MongoDBURL, cfg.MongoDBDatabase)
+		if err != nil {
+			log.Printf("[Worker] WARNING: failed to connect to MongoDB at %s: %v — NLP-4 artifacts disabled", maskURL(cfg.MongoDBURL), err)
+		} else {
+			mongoClient = mc
+			defer func() {
+				if err := mongoClient.Close(context.Background()); err != nil {
+					log.Printf("[MongoDB] Error closing client: %v", err)
+				}
+			}()
+			repo := mongo.NewNlpArtifactsRepository(mongoClient)
+			if err := repo.EnsureIndexes(context.Background()); err != nil {
+				log.Printf("[Worker] WARNING: failed to ensure nlp_artifacts indexes: %v", err)
+			}
+			artifactsStore = repo
+			log.Printf("[MongoDB] Connected to %s/%s (nlp_artifacts store ready)", maskURL(cfg.MongoDBURL), cfg.MongoDBDatabase)
+		}
+	} else {
+		log.Println("[MongoDB] MONGO_URL not configured — NLP-4 artifacts disabled")
+	}
+
 	// Воркер (обработчик задач)
 	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc,
-		gammaGen, eventPublisher, queueClient, taskDelay)
+		gammaGen, eventPublisher, queueClient, taskDelay,
+		artifactsStore, cfg.NLPHistoryEnabled, cfg.NLPModelName)
 
 	// Graph traversal service for recommendations
 	neighborLoader := graph.NewNeighborLoader(linkRepo, noteRepo)
@@ -201,6 +232,8 @@ func main() {
 	mux.HandleFunc(queue.TypeRecalculateLinkWeights, queue.RecalculateLinkWeightsHandler(weightRecalc))
 	mux.HandleFunc(queue.TypeRefreshRecommendations, queue.RefreshRecommendationsHandler(refreshSvc))
 	mux.HandleFunc(queue.TypeImportBookmarks, worker.HandleImportBookmarks)
+	mux.HandleFunc(queue.TypeNormalizeNote, worker.HandleNormalizeNote)
+	mux.HandleFunc(queue.TypeNlpArtifactsCleanup, worker.HandleNlpArtifactsCleanup)
 	if cfg.BackupEnabled {
 		mux.HandleFunc(queue.TypeDatabaseBackup, queue.BackupDatabaseHandler(backupRunner))
 		if backupSvc != nil {

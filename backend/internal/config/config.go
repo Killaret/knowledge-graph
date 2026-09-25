@@ -136,6 +136,19 @@ type JSONConfig struct {
 		URL      string `json:"url"`
 		Database string `json:"database"`
 	} `json:"mongodb"`
+	// NLP — top-level section shared with the Python service. Only the
+	// keys the Go side consumes are mapped; the rest are read by nlp-service.
+	NLP struct {
+		Pipeline struct {
+			Enabled bool `json:"enabled"`
+		} `json:"pipeline"`
+		History struct {
+			Enabled bool `json:"enabled"`
+		} `json:"history"`
+		Normalization struct {
+			MinCosine float64 `json:"min_cosine"`
+		} `json:"normalization"`
+	} `json:"nlp"`
 }
 
 type Config struct {
@@ -169,6 +182,12 @@ type Config struct {
 	// NLP
 	NLPServiceURL string
 	NLPModelName  string
+
+	// NLP-4 normalization pipeline (artifacts in MongoDB; vectors untouched
+	// until MODEL-2). Pipeline=false means no nlp:normalize tasks at all.
+	NLPPipelineEnabled        bool
+	NLPHistoryEnabled         bool    // keep superseded artifact versions
+	NLPNormalizationMinCosine float64 // rollback guard, model-scale dependent
 
 	// Search
 	SearchFulltextLanguages []string
@@ -488,6 +507,11 @@ func resolveConfig(jsonCfg *JSONConfig) (*Config, error) {
 		MongoDBURL:      getEnv("MONGO_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.URL }, "mongodb://localhost:27017")),
 		MongoDBDatabase: getEnv("MONGO_DATABASE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.Database }, "knowledge_graph")),
 
+		// NLP-4 pipeline flags
+		NLPPipelineEnabled:        getBoolEnv("NLP_PIPELINE_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.NLP.Pipeline.Enabled }, false)),
+		NLPHistoryEnabled:         getBoolEnv("NLP_HISTORY_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.NLP.History.Enabled }, true)),
+		NLPNormalizationMinCosine: resolveNormalizationMinCosine(jsonCfg),
+
 		// Auth / App configuration
 		FrontendURL:                  getEnv("FRONTEND_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.FrontendURL }, "")),
 		JWTSecret:                    getEnv("JWT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.JWTSecret }, "")),
@@ -569,6 +593,22 @@ func resolveGammaLinkMinScore(jsonCfg *JSONConfig) float64 {
 	}, fallback))
 	if v <= 0 {
 		log.Printf("[Config] gamma_link_min_score resolved to %v (non-positive); using default %v", v, fallback)
+		return fallback
+	}
+	return v
+}
+
+// resolveNormalizationMinCosine wires env -> JSON -> default 0.7, clamped to
+// (0, 1]: a threshold outside the cosine range would either roll back every
+// note (>1) or never fire (<=0) — both silently disable the guard it exists
+// to provide. Same reasoning as resolveGammaLinkMinScore.
+func resolveNormalizationMinCosine(jsonCfg *JSONConfig) float64 {
+	const fallback = 0.7
+	v := getFloatEnv("NLP_NORMALIZATION_MIN_COSINE", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 {
+		return j.NLP.Normalization.MinCosine
+	}, fallback))
+	if v <= 0 || v > 1 {
+		log.Printf("[Config] nlp.normalization.min_cosine resolved to %v (out of (0,1]); using default %v", v, fallback)
 		return fallback
 	}
 	return v
@@ -674,6 +714,9 @@ func defaultJSONConfig() *JSONConfig {
 
 	cfg.MongoDB.URL = "mongodb://localhost:27017"
 	cfg.MongoDB.Database = "knowledge_graph"
+
+	cfg.NLP.History.Enabled = true
+	cfg.NLP.Normalization.MinCosine = 0.7
 
 	cfg.Backup.Cloud.Provider = "r2"
 	cfg.Backup.LocalPath = "./backups"
