@@ -304,7 +304,9 @@
                   <span class="link-title">{related.title}</span>
                   <span
                     class="link-weight"
-                    title={t("note.linkWeight", { weight: related.weight.toFixed(2) })}
+                    title={t("note.linkWeight", { weight: related.weight.toFixed(2) }) +
+                      " — " +
+                      t("note.linkWeightHint")}
                   >
                     <span class="weight-fill" style="width: {related.weight * 100}%"></span>
                   </span>

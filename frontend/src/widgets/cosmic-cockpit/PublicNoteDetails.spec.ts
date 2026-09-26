@@ -36,8 +36,8 @@ describe("PublicNoteDetails", () => {
     expect(getByText("Connected notes (2)")).toBeInTheDocument();
     expect(getByText("Seed planet 002")).toBeInTheDocument();
     expect(getByText("Seed moon 003")).toBeInTheDocument();
-    expect(getByText("Link weight 0.8")).toBeInTheDocument();
-    expect(getByText("Link weight 0.4")).toBeInTheDocument();
+    expect(getByText("Link strength: 0.8")).toBeInTheDocument();
+    expect(getByText("Link strength: 0.4")).toBeInTheDocument();
   });
 
   it("renders sign-in prompt when onSignIn is provided", () => {

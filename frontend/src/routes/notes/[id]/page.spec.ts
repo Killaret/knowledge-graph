@@ -98,6 +98,12 @@ describe("Note detail page", () => {
     });
     expect(screen.getByText(/#tag1/)).toBeInTheDocument();
     expect(screen.getAllByText(/Other note/).length).toBeGreaterThanOrEqual(1);
+
+    // UI-GRAPH-1: the weight strip explains itself via its title.
+    const strip = document.querySelector(".link-weight");
+    expect(strip).toBeTruthy();
+    expect(strip!.getAttribute("title")).toContain("Link strength: 0.80");
+    expect(strip!.getAttribute("title")).toContain("connected");
   });
 
   it("shows a 404 error and redirects", async () => {
