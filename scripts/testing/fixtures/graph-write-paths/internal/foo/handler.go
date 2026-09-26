@@ -1,29 +1,15 @@
 package foo
 
-// UncoveredSave writes a note without publishing a graph event — the guard
-// must flag exactly this call site.
-func (h *Handler) UncoveredSave() {
-	if err := h.repo.Save(ctx, n); err != nil {
-		return
-	}
+import "gorm.io/gorm"
+
+// ManualPublish bypasses the outbox — the guard must flag this call.
+func (h *Handler) ManualPublish() {
+	h.publisher.PublishNoteCreated(ctx, noteID, userID)
 }
 
-// CoveredSave publishes after writing — the guard must stay green on it.
-func (h *Handler) CoveredSave() {
-	if err := h.repo.Save(ctx, n); err != nil {
-		return
-	}
-	h.eventPublisher.PublishNoteCreated(ctx, n.ID().String(), userID)
-}
-
-// CoveredViaHelper delegates the publish to a same-file helper.
-func (h *Handler) CoveredViaHelper() {
-	if err := h.repo.Save(ctx, n); err != nil {
-		return
-	}
-	h.postprocessCreatedNote(n)
-}
-
-func (h *Handler) postprocessCreatedNote(n *Note) {
-	h.eventPublisher.PublishNoteCreated(ctx, n.ID().String(), userID)
+// UnwrappedRepo constructs a raw repository — writes through it would emit
+// no graph event, so the guard must flag the construction site.
+func UnwrappedRepo(db *gorm.DB) {
+	linkRepo := postgres.NewLinkRepository(db)
+	_ = linkRepo
 }

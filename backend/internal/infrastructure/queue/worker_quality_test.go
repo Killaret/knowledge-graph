@@ -78,7 +78,7 @@ func TestWorker_HandleAssessQuality_WritesLog(t *testing.T) {
 	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
 
 	log := &fakeQualityLog{}
-	w := NewWorker(repo, nil, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
+	w := NewWorker(repo, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
 	w.UseQuality(workerAssessor(repo, log), &fakeQualityEnqueuer{})
 
 	err := w.HandleAssessQuality(context.Background(), qualityTask(n.ID(), appquality.TriggerAuto))
@@ -89,7 +89,7 @@ func TestWorker_HandleAssessQuality_WritesLog(t *testing.T) {
 }
 
 func TestWorker_HandleAssessQuality_NilAssessorNoOp(t *testing.T) {
-	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
+	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
 	// No UseQuality — the task must be a no-op even though it exists.
 	err := w.HandleAssessQuality(context.Background(), qualityTask(uuid.New(), appquality.TriggerAuto))
 	require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestWorker_HandleAssessQuality_NeverTouchesNoteWrites(t *testing.T) {
 	n := newNlp4Note(t)
 	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
 
-	w := NewWorker(guard, nil, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
+	w := NewWorker(guard, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
 	w.UseQuality(workerAssessor(repo, &fakeQualityLog{}), &fakeQualityEnqueuer{})
 
 	require.NoError(t, w.HandleAssessQuality(context.Background(), qualityTask(n.ID(), "auto")))
@@ -118,7 +118,7 @@ func TestWorker_ScheduleQuality_AfterNormalize(t *testing.T) {
 	defer server.Close()
 
 	enq := &fakeQualityEnqueuer{}
-	w := NewWorker(repo, nil, nil, nlp.NewNLPClient(server.URL, nil, 0), nil, nil, nil, nil, nil, 0, &fakeNlpArtifactsStore{}, false, "m")
+	w := NewWorker(repo, nil, nil, nlp.NewNLPClient(server.URL, nil, 0), nil, nil, nil, nil, 0, &fakeNlpArtifactsStore{}, false, "m")
 	w.UseQuality(workerAssessor(repo, &fakeQualityLog{}), enq)
 
 	err := w.HandleNormalizeNote(context.Background(), normalizeTask(n.ID()))
@@ -140,7 +140,7 @@ func TestWorker_ScheduleQuality_OffMeansNothing(t *testing.T) {
 	// Feature off at assembly = UseQuality never called → no assessor. The
 	// enqueuer is still wired in directly: if the nil-assessor guard in
 	// scheduleQuality is dropped, the fake queue must observe the call.
-	w := NewWorker(repo, nil, nil, nlp.NewNLPClient(server.URL, nil, 0), nil, nil, nil, nil, nil, 0, &fakeNlpArtifactsStore{}, false, "m")
+	w := NewWorker(repo, nil, nil, nlp.NewNLPClient(server.URL, nil, 0), nil, nil, nil, nil, 0, &fakeNlpArtifactsStore{}, false, "m")
 	w.qualityEnq = enq
 	err := w.HandleNormalizeNote(context.Background(), normalizeTask(n.ID()))
 	require.NoError(t, err)

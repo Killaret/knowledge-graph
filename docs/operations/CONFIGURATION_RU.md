@@ -52,6 +52,7 @@ npm run build-config
     "graph": { ... },
     "embedding": { ... },
     "asynq": { ... },
+    "outbox": { "relay_interval_ms": 500, "batch_size": 100, "sent_retention_days": 30 },
     "redis": { ... },
     "auth": { ... }
   },
@@ -865,6 +866,26 @@ def get_embedding_model():
 | `concurrency` | Количество параллельных воркеров обработки задач |
 | `queue_default` | Приоритет очереди по умолчанию |
 | `queue_max_len` | Максимальный размер очереди |
+
+### Транзакционный outbox (`backend.outbox`, SYNC-1 A2)
+
+```json
+{
+  "backend": {
+    "outbox": {
+      "relay_interval_ms": 500,
+      "batch_size": 100,
+      "sent_retention_days": 30
+    }
+  }
+}
+```
+
+| Параметр | Env | Описание |
+|----------|-----|----------|
+| `relay_interval_ms` | `OUTBOX_RELAY_INTERVAL_MS` | Интервал опроса таблицы `graph_outbox` ретранслятором воркера |
+| `batch_size` | `OUTBOX_BATCH_SIZE` | Сколько неотправленных строк забирается за одну транзакцию (`FOR UPDATE SKIP LOCKED`) |
+| `sent_retention_days` | `OUTBOX_SENT_RETENTION_DAYS` | Сколько дней хранятся отправленные строки до ежедневной чистки |
 
 ---
 

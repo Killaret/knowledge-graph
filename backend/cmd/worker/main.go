@@ -18,6 +18,7 @@ import (
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
+	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/backup"
 	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/infrastructure/cloud"
@@ -26,6 +27,7 @@ import (
 	"knowledge-graph/internal/infrastructure/events"
 	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
+	"knowledge-graph/internal/infrastructure/outbox"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
 	"knowledge-graph/internal/infrastructure/web"
@@ -93,8 +95,12 @@ func main() {
 	// Клиент кэша
 	cacheClient := infracache.NewRedisCacheClient(redisClient)
 
-	// Репозитории
-	noteRepo := postgres.NewNoteRepository(database, cacheClient)
+	// Репозитории. SYNC-1 A2: записи заметок и связей идут через
+	// outbox-декораторы — событие графа пишется в той же транзакции, а
+	// ретранслятор доставляет его в Redis. Базовые репозитории остаются для
+	// мест, которым нужен конкретный тип (качество) или чтение без записи.
+	noteRepo := outbox.NewNoteRepository(postgres.NewNoteRepository(database, cacheClient), database)
+	linkRepo := outbox.NewLinkRepository(postgres.NewLinkRepository(database), database)
 	keywordRepo := postgres.NewKeywordRepository(database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database, cfg.NLPModelName)
 	recRepo := postgres.NewRecommendationRepository(database)
@@ -122,22 +128,19 @@ func main() {
 
 	importSvc := importer.NewService(noteRepo, cacheClient, queueClient, web.NewImportFetcher())
 
-	linkRepo := postgres.NewLinkRepository(database)
-
-	// LINKS-1: gamma-link generation runs after a successful embedding upsert.
-	// LinkCreated events reach graph-service over the same Redis channel the
-	// API uses, so closure refresh and cache invalidation work unchanged.
+	// SYNC-1 A2: graph events no longer leave through handler calls — the
+	// outbox relayer drains graph_outbox to the Redis channel. Started here
+	// in the worker, the only long-running writer process.
 	var eventPublisher *events.Publisher
-	if cfg.EventChannel != "" {
+	if cfg.EventChannel != "" && redisClient != nil {
 		eventPublisher = events.NewPublisher(redisClient, cfg.EventChannel)
 	} else {
-		log.Println("[Worker] EVENT_CHANNEL not set, gamma-link events will not be published")
+		log.Println("[Worker] EVENT_CHANNEL not set or Redis unavailable — graph events will accumulate in graph_outbox")
 	}
-	// SYNC-1: every write path that creates notes must publish events —
-	// the import service runs inside this worker, so wire it here.
-	if eventPublisher != nil {
-		importSvc.SetEventPublisher(eventPublisher)
-	}
+	relayer := outbox.NewRelayer(database, eventPublisher, cfg.OutboxRelayInterval, cfg.OutboxBatchSize)
+	relayCtx, stopRelay := context.WithCancel(context.Background())
+	defer stopRelay()
+	go relayer.Run(relayCtx)
 
 	gammaGen := recommendation.NewGammaLinkGenerator(embeddingRepo, linkRepo, 2, cfg.GammaLinkMinScore)
 	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
@@ -174,7 +177,7 @@ func main() {
 
 	// Воркер (обработчик задач)
 	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc,
-		gammaGen, eventPublisher, queueClient, taskDelay,
+		gammaGen, queueClient, taskDelay,
 		artifactsStore, cfg.NLPHistoryEnabled, cfg.NLPModelName)
 
 	// NOTE-QUALITY-1: the assessor needs Mongo (quality_log + artifact
@@ -191,9 +194,6 @@ func main() {
 
 	// Link weight recalculation service
 	weightRecalc := linkweight.NewRecalculator(linkRepo, noteRepo, nlpClient)
-	if eventPublisher != nil {
-		weightRecalc.SetEventPublisher(eventPublisher)
-	}
 
 	// Create keyword similarity strategy from config
 	keywordSimilarity, err := recommendation.NewKeywordSimilarity(
@@ -258,7 +258,7 @@ func main() {
 	mux.HandleFunc(queue.TypeNlpArtifactsCleanup, worker.HandleNlpArtifactsCleanup)
 	mux.HandleFunc(queue.TypeAssessQuality, worker.HandleAssessQuality)
 	mux.HandleFunc(tasks.TypeCleanupSoftDeleted,
-		queue.CleanupSoftDeletedHandler(softDeletedCleanup{purger: noteRepo}))
+		queue.CleanupSoftDeletedHandler(softDeletedCleanup{purger: noteRepo, db: database, outboxKeepDays: cfg.OutboxSentRetentionDays}))
 	if cfg.BackupEnabled {
 		mux.HandleFunc(queue.TypeDatabaseBackup, queue.BackupDatabaseHandler(backupRunner))
 		if backupSvc != nil {
@@ -381,7 +381,7 @@ func findSubstring(s, substr string) int {
 // the worker stays a no-op for quality tasks and nothing is enqueued.
 // Returns whether the pipeline was installed.
 func installQualityPipeline(w *queue.Worker, cfg *config.Config, mongoClient *mongo.Client,
-	noteRepo *postgres.NoteRepository, artifactsRepo *mongo.NlpArtifactsRepository,
+	noteRepo note.Repository, artifactsRepo *mongo.NlpArtifactsRepository,
 	stats appquality.StatsReader, nlpClient *nlp.NLPClient, enq queue.QualityEnqueuer) bool {
 	if !cfg.NLPQualityEnabled || mongoClient == nil {
 		return false

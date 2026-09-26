@@ -5,6 +5,8 @@ Accepted
 
 **Implementation status:** implemented, with a different channel layout than the sketch below — a single `graph:events` channel carries typed events (`note_created`, `note_updated`, `note_deleted`, `link_*`) with `note_id`/`user_id` payloads (`infrastructure/events/publisher.go` → `graph-service/internal/subscriber/pubsub.go`). Since SYNC-1 the subscriber invalidates `note:*`/`full`/`delta:*` keys but preserves `snapshot:*` keys (immutable client-version snapshots, expire by TTL). `tenant_id` in the sketch is part of the deferred SaaS design.
 
+**SYNC-1 stage A2 (2026-09-27):** publication is no longer a manual call at each write site. Write repositories are wrapped by `infrastructure/outbox` decorators that insert a row into `graph_outbox` (migration 036) inside the same database transaction, so a write and its event commit or roll back together. A relayer in `cmd/worker` drains unsent rows (`FOR UPDATE SKIP LOCKED`, batched) to the Redis channel with at-least-once semantics — a crash between commit and publish is recovered by the next process. Sent rows are purged after 30 days by the worker's daily cleanup. This is Option 3 (outbox pattern, below) adopted over the manual calls the original decision assumed; `scripts/testing/check-graph-write-paths.mjs` now *forbids* manual publishes outside the relay and requires every repository construction to be wrapped.
+
 ## Context
 Knowledge Graph system has multiple layers of caching to improve performance:
 - In-memory caching in backend services

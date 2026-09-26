@@ -923,11 +923,11 @@ All keys live under the `graph-service:` prefix:
 - `GET /api/v1/graph/delta?last_hash={hash}` diffs the current data against the snapshot stored under `{hash}`. If no snapshot exists, the response is `{"resync": true}` and the client reloads the graph wholesale — it must never pretend the whole graph was added.
 - Removals are explicit (`removed_nodes`, `removed_links`); a link that keeps its key but changes fields (weight, source_type, gamma_origin) is re-sent in `added_links` and replaces the old entry on the client.
 - On gRPC the same contract applies; a missing snapshot is answered with `NotFound` instead of a JSON flag.
-- Every write path that creates/updates/deletes notes or links must publish a `graph:events` event; `scripts/testing/check-graph-write-paths.mjs` fails the build on a write site with no event.
+- Event publication is transactional (SYNC-1 stage A2): `infrastructure/outbox` decorators wrap the note/link repositories and insert a `graph_outbox` row in the same transaction as the write, so a write and its event commit or roll back together. A relayer in `cmd/worker` drains unsent rows to `graph:events` with at-least-once delivery (`FOR UPDATE SKIP LOCKED`, batched); sent rows are purged after `OUTBOX_SENT_RETENTION_DAYS` (30 days). Manual publishing outside the relay is forbidden — `scripts/testing/check-graph-write-paths.mjs` fails the build on a manual `Publish*` call or a repository constructed without the outbox decorator.
 
 ### Direct PostgreSQL Reading
 
-Graph Service reads directly from PostgreSQL as the single source of truth, eliminating the need for an Outbox pattern while maintaining consistency through event-driven cache invalidation [see ADR 014](decisions/014-event-driven-cache-invalidation.md).
+Graph Service reads directly from PostgreSQL as the single source of truth, and delivery of change events is guaranteed by the transactional outbox above — direct reads do not replace the outbox because a read answers "what is" but cannot answer "what changed since the client's version" [see ADR 014](decisions/014-event-driven-cache-invalidation.md).
 
 ---
 

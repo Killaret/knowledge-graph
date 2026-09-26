@@ -52,6 +52,7 @@ Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.c
     "graph": { ... },
     "embedding": { ... },
     "asynq": { ... },
+    "outbox": { "relay_interval_ms": 500, "batch_size": 100, "sent_retention_days": 30 },
     "redis": { ... },
     "auth": { ... }
   },
@@ -650,6 +651,9 @@ These parameters are now fully integrated and loaded from `knowledge-graph.confi
 | `backend.asynq.concurrency` | Asynq concurrency level | `10` |
 | `backend.asynq.queue_default` | Default queue priority | `1` |
 | `backend.asynq.queue_max_len` | Max queue length | `10000` |
+| `backend.outbox.relay_interval_ms` | Outbox relay poll interval (env `OUTBOX_RELAY_INTERVAL_MS`) | `500` |
+| `backend.outbox.batch_size` | Rows claimed per relay batch (env `OUTBOX_BATCH_SIZE`) | `100` |
+| `backend.outbox.sent_retention_days` | Sent outbox rows kept before purge (env `OUTBOX_SENT_RETENTION_DAYS`) | `30` |
 | `backend.recommendation.keyword_enabled` | Enable keyword component (gamma) | `true` |
 
 ### Reserved Parameters Description

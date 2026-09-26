@@ -16,6 +16,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/mongo"
+	"knowledge-graph/internal/infrastructure/outbox"
 	"knowledge-graph/internal/infrastructure/queue"
 )
 
@@ -114,7 +115,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("database connection failed: %v", err)
 	}
-	noteRepo := postgres.NewNoteRepository(database, nil)
+	noteRepo := outbox.NewNoteRepository(postgres.NewNoteRepository(database, nil), database)
 
 	mongoClient, err := mongo.NewClient(context.Background(), cfg.MongoDBURL, cfg.MongoDBDatabase)
 	if err != nil {

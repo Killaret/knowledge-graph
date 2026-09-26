@@ -29,11 +29,11 @@ import (
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/email"
-	"knowledge-graph/internal/infrastructure/events"
 	graphinfra "knowledge-graph/internal/infrastructure/graph"
 	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
 	oauthpkg "knowledge-graph/internal/infrastructure/oauth"
+	"knowledge-graph/internal/infrastructure/outbox"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/infrastructure/web"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
@@ -190,8 +190,12 @@ func run(
 
 	cacheClient := infracache.NewRedisCacheClient(redisClient)
 
-	noteRepo := postgres.NewNoteRepository(database, cacheClient)
-	linkRepo := postgres.NewLinkRepository(database)
+	// SYNC-1 A2: note/link writes go through the outbox decorators — every
+	// repository write commits its graph event in the same transaction, and
+	// the worker's relayer delivers it to Redis. No handler publishes
+	// manually anymore.
+	noteRepo := outbox.NewNoteRepository(postgres.NewNoteRepository(database, cacheClient), database)
+	linkRepo := outbox.NewLinkRepository(postgres.NewLinkRepository(database), database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database, cfg.NLPModelName)
 
 	// Draft service and handler (only if MongoDB is available)
@@ -251,12 +255,6 @@ func run(
 		}
 	}
 
-	// Graph event publisher (nil when Redis is unavailable)
-	var eventPublisher *events.Publisher
-	if redisClient != nil {
-		eventPublisher = events.NewPublisher(redisClient, cfg.EventChannel)
-	}
-
 	// Import service and handlers
 	importService := importer.NewService(noteRepo, cacheClient, taskQueue, web.NewImportFetcher())
 
@@ -274,14 +272,6 @@ func run(
 		log.Println("[Quality] NOTE-QUALITY-1 endpoints enabled")
 	}
 	linkHandler := linkhandler.New(linkRepo, noteRepo, achievementService, graphCache)
-	if eventPublisher != nil {
-		noteHandler.SetEventPublisher(eventPublisher)
-		linkHandler.SetEventPublisher(eventPublisher)
-		// Server-side import service only enqueues tasks (processing happens
-		// in the worker), but keep the wiring uniform — any future direct
-		// write path here is covered.
-		importService.SetEventPublisher(eventPublisher)
-	}
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
 	tagRepo := postgres.NewTagRepository(database)
 	tagHandler := taghandler.New(tagRepo, noteRepo)

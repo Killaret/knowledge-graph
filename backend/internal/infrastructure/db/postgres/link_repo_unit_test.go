@@ -320,9 +320,10 @@ func TestLinkRepository_Delete(t *testing.T) {
 	id := uuid.New()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`DELETE FROM "links" WHERE id = \$1`).
+	mock.ExpectQuery(`DELETE FROM "links" WHERE id = \$1 RETURNING`).
 		WithArgs(id).
-		WillReturnResult(sqlmock.NewResult(0, 1))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "creator_id"}).
+			AddRow(id, uuid.New(), uuid.New(), nil))
 	mock.ExpectCommit()
 
 	ctx := context.Background()
@@ -347,9 +348,9 @@ func TestLinkRepository_DeleteBySource_Unit(t *testing.T) {
 	sourceID := uuid.New()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`DELETE FROM "links" WHERE source_note_id = \$1`).
+	mock.ExpectQuery(`DELETE FROM "links" WHERE source_note_id = \$1 RETURNING`).
 		WithArgs(sourceID).
-		WillReturnResult(sqlmock.NewResult(0, 3)) // Удалено 3 связи
+		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "creator_id"})) // Удалено 0 связей
 	mock.ExpectCommit()
 
 	ctx := context.Background()

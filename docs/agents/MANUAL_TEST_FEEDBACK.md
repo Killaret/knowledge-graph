@@ -519,3 +519,17 @@ Create a new bullet under the right section with:
   - `POST /api/v1/notes/{id}/restore` → 204; `GET` → 200 with the original content; all 12 links live again (`deleted_at` NULL, marker cleared). Note list total back to 100.
 - **Screenshot / Logs:** psql counts and HTTP codes quoted above; `docker logs kg-test-worker`.
 - **Result:** criterion 4 verified live — trash, restore with links, and the 90-day purge schedule all run on the stand. UI undo toast calls the same `restore` endpoint (existing `deleteNote`/`restoreNote` flow unchanged).
+
+### SYNC-1 A2 — transactional outbox live on the test stack
+
+- **Scope:** criterion 4 of the A2 stage in `docs/tasks/SYNC-1-graph-loading-and-sync-review.md` — the live event path after manual publishes were removed.
+- **Date:** 2026-09-27
+- **Agent:** Devin
+- **Environment:** isolated test stack, backend/worker images built from this tree with migration 036.
+- **Observed:**
+  - `POST /api/v1/notes` → 201 → `graph_outbox` row `NoteCreated` with payload `{"note_id":"15049e9d-…","user_id":…}` and `sent_at` set by the worker relayer within ~1 s (interval 500 ms).
+  - `redis-cli SUBSCRIBE graph:events` received `{"event":"NoteCreated","payload":{"note_id":"15049e9d-…"}}`; `docker logs kg-test-graph-service`: `Received event: NoteCreated` → `Cache invalidated` → `acknowledged`.
+  - `DELETE /api/v1/notes/{id}` → 204 → second row `NoteDeleted`, sent; graph-service `Received event: NoteDeleted` → `Cache invalidated`.
+  - Test-seed user has UUID `00000000-…`, so `user_id` in payloads is nil — faithful to the stored `creator_id`, not a defect.
+- **Screenshot / Logs:** psql `graph_outbox` rows and graph-service log lines quoted above.
+- **Result:** writes commit together with their outbox row and the relay delivers to Redis end-to-end — manual publish calls are gone and nothing is lost.

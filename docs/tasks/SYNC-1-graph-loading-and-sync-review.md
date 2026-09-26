@@ -241,3 +241,56 @@ transactional outbox; триггеры Postgres — нет (нарушение �
   `snapshot_ttl_seconds` надо было заносить в источник `config/graph_service.json` — генерируемый
   `knowledge-graph.config.json` проверяется сторожем синхронизации.
 - Этапы B и C не начаты: по месту применение и SSE — отдельные коммиты.
+
+### Этап A2 (2026-09-27, реализация готова, ждёт ревью)
+
+**Таблица.** Миграция `036_graph_outbox` — `graph_outbox(id bigserial, event_type, entity_id,
+user_id, payload jsonb, created_at, sent_at)`; индексы по `sent_at IS NULL` и по `sent_at` для
+чистки.
+
+**Транзакция через контекст.** `postgres.ContextWithTx`/`dbFromContext` (`postgres/tx.go`):
+write-методы репозиториев берут `*gorm.DB` из контекста, если там транзакция, иначе свой
+инстанс. Декораторы `outbox.NoteRepository`/`outbox.LinkRepository` открывают транзакцию,
+кладут её в контекст, вызывают нижележащий репозиторий и в той же транзакции пишут строку
+outbox. Откат любой стороны откатывает обе — критерий 1.
+
+**Владелец события.** Методы записи по id (`Update`, `Delete`, `DeleteBatch`, `Restore`,
+`DeleteBySource`, `DeleteByTarget`, `UpdateWeights`, `DeleteViaNote*`) получили `RETURNING`
+варианты, возвращающие пары `(id, creator_id)`; `Save` берёт владельца из сущности. Для
+сгенерированных связей без `creator_id` декоратор дочитывает создателя source-заметки —
+утверждённый fallback постановки.
+
+**Ретранслятор.** `outbox.Relayer` в `cmd/worker` — единственный долгоживущий писатель;
+`FOR UPDATE SKIP LOCKED`, пачки по `OUTBOX_BATCH_SIZE`, пометка `sent_at` в той же транзакции
+что и publish → падение между коммитом и отправкой допубликовывается следующим процессом
+(критерий 2). `Flush` вызывается на старте (долив после падения) и из CLI
+`gamma-links-regenerate` перед выходом. `OUTBOX_RELAY_INTERVAL_MS` — интервал опроса.
+
+**Чистка.** `PurgeSentBefore` — из ежедневного `cleanup:soft_deleted` воркера,
+`OUTBOX_SENT_RETENTION_DAYS` (30).
+
+**Ручная публикация снята.** Удалён порт `application/events.Publisher`; из note/link
+handler'ов, `import.Service`, `linkweight.Service`, `queue.Worker` убраны поля и вызовы
+паблишера. Черновик-синк (`draft.Service → noteRepo.Save`) — исключение из постановки —
+теперь покрыт автоматически: декоратор видит `Save` и кладёт `NoteUpdated`.
+
+**Сторож инвертирован.** `check-graph-write-paths.mjs` краснеет на (а) ручном
+`PublishNote*`/`PublishLink*` вне `outbox/relay.go` и (б) конструкторе
+`postgres.NewNoteRepository`/`NewLinkRepository` без обёртки `outbox.New*`. Фикстуры обеих
+мутаций красные; оба шага добавлены в `_core-checks.yml`, манифест синхронизирован
+(критерии 3 и 5).
+
+**Проводка.** Декораторы во всех точках сборки: `cmd/server`, `cmd/worker`,
+`cmd/gamma-links-regenerate`, `cmd/cli`, `cmd/nlp-artifacts-recompute`,
+`cmd/quality-recompute`, `recompute/poststeps.go`.
+
+**Тесты.** `internal/infrastructure/outbox/outbox_integration_test.go` — реальные
+Postgres+Redis (testcontainers/miniredis): строка появляется на заметке и связи, fallback
+владельца gamma-связи, откат не оставляет строку, релей доставляет, «падение» между коммитом
+и отправкой доливается, повтор после ошибки Redis, purge старше срока. Пакет зелёный
+(57 с). `worker_gamma_integration_test.go` теперь читает событие через настоящий
+outbox+релей, не через прямой publish.
+
+**Документация.** ADR 014 — статус переведён на outbox; `ARCHITECTURE_EN.md` — раздел
+кешей; `CONFIGURATION_EN/RU` — ключи `backend.outbox.*` и env; `config/backend.json` +
+сгенерированный `knowledge-graph.config.json`.

@@ -23,6 +23,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	infevents "knowledge-graph/internal/infrastructure/events"
 	"knowledge-graph/internal/infrastructure/nlp"
+	"knowledge-graph/internal/infrastructure/outbox"
 	"knowledge-graph/internal/testutil"
 )
 
@@ -42,14 +43,14 @@ func TestWorker_ComputeEmbeddingCreatesGammaLinks(t *testing.T) {
 	defer cleanup()
 
 	database.Exec("CREATE EXTENSION IF NOT EXISTS vector")
-	if err := database.AutoMigrate(&postgres.UserModel{}, &postgres.NoteModel{}, &postgres.NoteEmbeddingModel{}, &postgres.LinkModel{}, &postgres.LinkSuppressionModel{}); err != nil {
+	if err := database.AutoMigrate(&postgres.UserModel{}, &postgres.NoteModel{}, &postgres.NoteEmbeddingModel{}, &postgres.LinkModel{}, &postgres.LinkSuppressionModel{}, &outbox.Model{}); err != nil {
 		t.Fatalf("failed to migrate models: %v", err)
 	}
 
 	ctx := context.Background()
-	noteRepo := postgres.NewNoteRepository(database, nil)
+	noteRepo := outbox.NewNoteRepository(postgres.NewNoteRepository(database, nil), database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database, "test-model")
-	linkRepo := postgres.NewLinkRepository(database)
+	linkRepo := outbox.NewLinkRepository(postgres.NewLinkRepository(database), database)
 
 	saveNote := func(title string) *note.Note {
 		tv, _ := note.NewTitle(title)
@@ -94,13 +95,21 @@ func TestWorker_ComputeEmbeddingCreatesGammaLinks(t *testing.T) {
 
 	nlpClient := nlp.NewNLPClient(nlpServer.URL, nil, time.Hour)
 	gammaGen := recommendation.NewGammaLinkGenerator(embeddingRepo, linkRepo, 2, 0.6)
-	w := NewWorker(noteRepo, nil, embeddingRepo, nlpClient, nil, nil, gammaGen, publisher, nil, 0, nil, false, "")
+	w := NewWorker(noteRepo, nil, embeddingRepo, nlpClient, nil, nil, gammaGen, nil, 0, nil, false, "")
 
 	payload, err := json.Marshal(ComputeEmbeddingTaskPayload{NoteID: source.ID().String()})
 	require.NoError(t, err)
 	task := asynq.NewTask(TypeComputeEmbedding, payload)
 
 	require.NoError(t, w.HandleComputeEmbedding(ctx, task))
+
+	// SYNC-1 A2: LinkCreated rows sit in graph_outbox; the relayer delivers
+	// them to the channel. Flush now — the worker process does this on a
+	// ticker.
+	relayer := outbox.NewRelayer(database, publisher, 0, 50)
+	if _, err := relayer.Flush(ctx); err != nil {
+		t.Fatalf("outbox flush failed: %v", err)
+	}
 
 	// At most two gamma links, all from the source, all source_type='gamma'.
 	links, err := linkRepo.FindBySourceType(ctx, "gamma")
@@ -112,21 +121,27 @@ func TestWorker_ComputeEmbeddingCreatesGammaLinks(t *testing.T) {
 		assert.Equal(t, "gamma", l.SourceType().String())
 	}
 
-	// One LinkCreated event per created link.
-	for i := 0; i < len(links); i++ {
+	// One LinkCreated event per created link; NoteCreated events from the
+	// fixture's own saves ride the same channel — skip them.
+	gotLinks := 0
+	for i := 0; i < 20 && gotLinks < len(links); i++ {
 		msg, err := sub.ReceiveTimeout(ctx, 2*time.Second)
-		require.NoError(t, err, "expected LinkCreated event %d", i)
+		require.NoError(t, err, "expected LinkCreated event %d", gotLinks)
 		pubMsg, ok := msg.(*redis.Message)
 		require.True(t, ok)
 
 		var ev infevents.Event
 		require.NoError(t, json.Unmarshal([]byte(pubMsg.Payload), &ev))
-		assert.Equal(t, "LinkCreated", ev.Event)
+		if ev.Event != "LinkCreated" {
+			continue
+		}
+		gotLinks++
 
 		var lp infevents.LinkEventPayload
 		require.NoError(t, json.Unmarshal(ev.Payload, &lp))
 		assert.Equal(t, source.ID().String(), lp.SourceNoteID)
 	}
+	require.Equal(t, len(links), gotLinks)
 }
 
 // Deleting a target note cascades its gamma links — FK ON DELETE CASCADE on

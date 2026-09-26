@@ -112,7 +112,7 @@ func TestWorker_HandleNormalizeNote_SavesArtifact(t *testing.T) {
 
 	store := &fakeNlpArtifactsStore{}
 	nlpClient := nlp.NewNLPClient(server.URL, nil, 0)
-	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, nil, 0, store, true, "test-model")
+	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, 0, store, true, "test-model")
 
 	payload, _ := json.Marshal(NormalizeNotePayload{NoteID: n.ID().String()})
 	require.NoError(t, w.HandleNormalizeNote(context.Background(), asynq.NewTask(TypeNormalizeNote, payload)))
@@ -147,7 +147,7 @@ func TestWorker_HandleNormalizeNote_NeverWritesNoteContent(t *testing.T) {
 
 	store := &fakeNlpArtifactsStore{}
 	nlpClient := nlp.NewNLPClient(server.URL, nil, 0)
-	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, nil, 0, store, true, "test-model")
+	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, 0, store, true, "test-model")
 
 	payload, _ := json.Marshal(NormalizeNotePayload{NoteID: n.ID().String()})
 	require.NoError(t, w.HandleNormalizeNote(context.Background(), asynq.NewTask(TypeNormalizeNote, payload)))
@@ -170,7 +170,7 @@ func TestWorker_HandleNormalizeNote_PropagatesHistoryFlag(t *testing.T) {
 
 	store := &fakeNlpArtifactsStore{}
 	nlpClient := nlp.NewNLPClient(server.URL, nil, 0)
-	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, nil, 0, store, false, "test-model")
+	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, 0, store, false, "test-model")
 
 	payload, _ := json.Marshal(NormalizeNotePayload{NoteID: n.ID().String()})
 	require.NoError(t, w.HandleNormalizeNote(context.Background(), asynq.NewTask(TypeNormalizeNote, payload)))
@@ -193,7 +193,7 @@ func TestWorker_HandleNormalizeNote_SkipsUnchangedSource(t *testing.T) {
 		found:       true,
 	}
 	nlpClient := nlp.NewNLPClient(server.URL, nil, 0)
-	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, nil, 0, store, true, "test-model")
+	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, 0, store, true, "test-model")
 
 	payload, _ := json.Marshal(NormalizeNotePayload{NoteID: n.ID().String()})
 	require.NoError(t, w.HandleNormalizeNote(context.Background(), asynq.NewTask(TypeNormalizeNote, payload)))
@@ -213,7 +213,7 @@ func TestWorker_HandleNormalizeNote_DeletedNoteCleansArtifacts(t *testing.T) {
 
 	store := &fakeNlpArtifactsStore{}
 	nlpClient := nlp.NewNLPClient(server.URL, nil, 0)
-	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, nil, 0, store, true, "test-model")
+	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, 0, store, true, "test-model")
 
 	payload, _ := json.Marshal(NormalizeNotePayload{NoteID: noteID.String()})
 	require.NoError(t, w.HandleNormalizeNote(context.Background(), asynq.NewTask(TypeNormalizeNote, payload)))
@@ -228,7 +228,7 @@ func TestWorker_HandleNormalizeNote_NoStoreIsNoOp(t *testing.T) {
 	defer server.Close()
 
 	nlpClient := nlp.NewNLPClient(server.URL, nil, 0)
-	w := NewWorker(nil, nil, nil, nlpClient, nil, nil, nil, nil, nil, 0, nil, true, "test-model")
+	w := NewWorker(nil, nil, nil, nlpClient, nil, nil, nil, nil, 0, nil, true, "test-model")
 
 	payload, _ := json.Marshal(NormalizeNotePayload{NoteID: uuid.New().String()})
 	require.NoError(t, w.HandleNormalizeNote(context.Background(), asynq.NewTask(TypeNormalizeNote, payload)))
@@ -236,14 +236,14 @@ func TestWorker_HandleNormalizeNote_NoStoreIsNoOp(t *testing.T) {
 }
 
 func TestWorker_HandleNormalizeNote_InvalidPayload(t *testing.T) {
-	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
+	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
 	assert.Error(t, w.HandleNormalizeNote(context.Background(), asynq.NewTask(TypeNormalizeNote, []byte("not json"))))
 	assert.Error(t, w.HandleNormalizeNote(context.Background(), asynq.NewTask(TypeNormalizeNote, []byte(`{"note_id":"bad"}`))))
 }
 
 func TestWorker_HandleNlpArtifactsCleanup(t *testing.T) {
 	store := &fakeNlpArtifactsStore{}
-	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, store, false, "")
+	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, 0, store, false, "")
 
 	noteID := uuid.New()
 	payload, _ := json.Marshal(NlpArtifactsCleanupPayload{NoteID: noteID.String()})
@@ -252,7 +252,7 @@ func TestWorker_HandleNlpArtifactsCleanup(t *testing.T) {
 }
 
 func TestWorker_HandleNlpArtifactsCleanup_NoStore(t *testing.T) {
-	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
+	w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, 0, nil, false, "")
 	payload, _ := json.Marshal(NlpArtifactsCleanupPayload{NoteID: uuid.New().String()})
 	require.NoError(t, w.HandleNlpArtifactsCleanup(context.Background(), asynq.NewTask(TypeNlpArtifactsCleanup, payload)))
 }

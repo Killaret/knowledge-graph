@@ -85,6 +85,11 @@ type JSONConfig struct {
 			QueueDefault int `json:"queue_default"`
 			QueueMaxLen  int `json:"queue_max_len"`
 		} `json:"asynq"`
+		Outbox struct {
+			RelayIntervalMs   int `json:"relay_interval_ms"`
+			BatchSize         int `json:"batch_size"`
+			SentRetentionDays int `json:"sent_retention_days"`
+		} `json:"outbox"`
 		Redis struct {
 			FlushOnStartup bool `json:"flush_on_startup"`
 		} `json:"redis"`
@@ -188,6 +193,11 @@ type Config struct {
 	RedisURL            string
 	RedisFlushOnStartup bool
 	EventChannel        string
+
+	// Graph event outbox (SYNC-1 A2)
+	OutboxRelayInterval     time.Duration
+	OutboxBatchSize         int
+	OutboxSentRetentionDays int
 
 	// NLP
 	NLPServiceURL string
@@ -467,11 +477,14 @@ func resolveConfig(jsonCfg *JSONConfig) (*Config, error) {
 		DatabasePoolStatsIntervalSeconds:   getIntEnv("POSTGRES_POOL_STATS_INTERVAL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.StatsIntervalSeconds }, 300)),
 
 		// Redis & NLP
-		RedisURL:            getEnv("REDIS_URL", "localhost:6379"),
-		RedisFlushOnStartup: getBoolEnv("REDIS_FLUSH_ON_STARTUP", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Redis.FlushOnStartup }, false)),
-		EventChannel:        getEnv("EVENT_CHANNEL", "graph:events"),
-		NLPServiceURL:       getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
-		NLPModelName:        getEnv("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2"),
+		RedisURL:                getEnv("REDIS_URL", "localhost:6379"),
+		RedisFlushOnStartup:     getBoolEnv("REDIS_FLUSH_ON_STARTUP", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Redis.FlushOnStartup }, false)),
+		EventChannel:            getEnv("EVENT_CHANNEL", "graph:events"),
+		OutboxRelayInterval:     time.Duration(getIntEnv("OUTBOX_RELAY_INTERVAL_MS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Outbox.RelayIntervalMs }, 500))) * time.Millisecond,
+		OutboxBatchSize:         getIntEnv("OUTBOX_BATCH_SIZE", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Outbox.BatchSize }, 100)),
+		OutboxSentRetentionDays: getIntEnv("OUTBOX_SENT_RETENTION_DAYS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Outbox.SentRetentionDays }, 30)),
+		NLPServiceURL:           getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
+		NLPModelName:            getEnv("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2"),
 
 		// Search
 		SearchFulltextLanguages: getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Search.FulltextLanguages }, slices.Clone(defaultFulltextLanguages)),
@@ -723,6 +736,10 @@ func defaultJSONConfig() *JSONConfig {
 	cfg.Backend.Asynq.Concurrency = 10
 	cfg.Backend.Asynq.QueueDefault = 1
 	cfg.Backend.Asynq.QueueMaxLen = 10000
+
+	cfg.Backend.Outbox.RelayIntervalMs = 500
+	cfg.Backend.Outbox.BatchSize = 100
+	cfg.Backend.Outbox.SentRetentionDays = 30
 
 	cfg.Backend.Auth.JWTAccessTTLSeconds = 900
 	cfg.Backend.Auth.JWTRefreshTTLSeconds = 604800

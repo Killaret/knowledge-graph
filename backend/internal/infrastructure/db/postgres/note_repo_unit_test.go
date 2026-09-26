@@ -165,8 +165,8 @@ func TestNoteRepository_Delete_Unit(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec(`UPDATE "links" SET "deleted_at"=now\(\),"deleted_via_note_id"=CASE`).
 		WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectExec(`UPDATE "notes" SET "deleted_at"=\$1 WHERE id IN \(\$2\)`).
-		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectQuery(`UPDATE "notes" SET "deleted_at"=\$1 WHERE id IN \(\$2\) AND "notes"."deleted_at" IS NULL RETURNING`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "creator_id"}).AddRow(id, nil))
 	mock.ExpectCommit()
 
 	ctx := context.Background()

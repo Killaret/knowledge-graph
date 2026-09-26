@@ -31,11 +31,6 @@ type GammaLinkRunner interface {
 	GenerateForNote(ctx context.Context, noteID uuid.UUID) ([]*link.Link, error)
 }
 
-// LinkEventPublisher publishes LinkCreated events (events.Publisher or a stub).
-type LinkEventPublisher interface {
-	PublishLinkCreated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error
-}
-
 // RecommendationsEnqueuer schedules a recommendations refresh for a note.
 type RecommendationsEnqueuer interface {
 	EnqueueRefreshRecommendations(ctx context.Context, noteID uuid.UUID, delay time.Duration) error
@@ -57,7 +52,6 @@ type Worker struct {
 	cacheClient       dcache.CacheClient
 	importSvc         *importer.Service
 	gammaGen          GammaLinkRunner
-	eventPublisher    LinkEventPublisher
 	taskQueue         RecommendationsEnqueuer
 	taskDelay         time.Duration
 	artifactsStore    NlpArtifactsStore
@@ -81,7 +75,6 @@ func NewWorker(
 	cacheClient dcache.CacheClient,
 	importSvc *importer.Service,
 	gammaGen GammaLinkRunner,
-	eventPublisher LinkEventPublisher,
 	taskQueue RecommendationsEnqueuer,
 	taskDelay time.Duration,
 	artifactsStore NlpArtifactsStore,
@@ -96,7 +89,6 @@ func NewWorker(
 		cacheClient:       cacheClient,
 		importSvc:         importSvc,
 		gammaGen:          gammaGen,
-		eventPublisher:    eventPublisher,
 		taskQueue:         taskQueue,
 		taskDelay:         taskDelay,
 		artifactsStore:    artifactsStore,
@@ -238,9 +230,10 @@ func (w *Worker) HandleComputeEmbedding(ctx context.Context, t *asynq.Task) erro
 	return nil
 }
 
-// generateGammaLinks creates gamma links for the note, publishes LinkCreated
-// for each and enqueues a recommendations refresh for source and targets —
-// a target gained an incoming neighbour.
+// generateGammaLinks creates gamma links for the note and enqueues a
+// recommendations refresh for source and targets — a target gained an
+// incoming neighbour. LinkCreated events flow through the repository outbox
+// decorator (SYNC-1 A2), no manual publishing here.
 func (w *Worker) generateGammaLinks(ctx context.Context, n *note.Note, noteID uuid.UUID) error {
 	created, err := w.gammaGen.GenerateForNote(ctx, noteID)
 	if err != nil {
@@ -250,18 +243,7 @@ func (w *Worker) generateGammaLinks(ctx context.Context, n *note.Note, noteID uu
 		return nil
 	}
 
-	userID := ""
-	if n != nil && n.CreatorID() != nil {
-		userID = n.CreatorID().String()
-	}
-
 	for _, l := range created {
-		if w.eventPublisher != nil {
-			if err := w.eventPublisher.PublishLinkCreated(ctx, l.SourceNoteID().String(), l.TargetNoteID().String(), userID); err != nil {
-				log.Printf("HandleComputeEmbedding: failed to publish LinkCreated %s -> %s: %v",
-					l.SourceNoteID(), l.TargetNoteID(), err)
-			}
-		}
 		if w.taskQueue != nil {
 			if err := w.taskQueue.EnqueueRefreshRecommendations(ctx, l.TargetNoteID(), w.taskDelay); err != nil {
 				log.Printf("HandleComputeEmbedding: failed to enqueue refresh for target %s: %v", l.TargetNoteID(), err)

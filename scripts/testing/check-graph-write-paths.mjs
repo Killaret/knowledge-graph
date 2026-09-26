@@ -1,17 +1,21 @@
-// Graph write-path event guard (SYNC-1, owner decision 69).
+// Graph write-path event guard — SYNC-1 stage A2 (owner decision 71).
 //
-// Every code path that creates, updates, deletes or restores a note or a link
-// must publish a graph event — otherwise the graph-service cache is not
-// invalidated and the change stays invisible to open graphs until TTL
-// (hole #4 in tasks/SYNC-1-graph-loading-and-sync-review.md: import created
-// notes with zero events).
+// Stage A required a manual Publish* call next to every repository write;
+// stage A2 makes manual publishing impossible by design: the outbox
+// decorators (internal/infrastructure/outbox) write a graph_outbox row inside
+// the repository transaction, and only the relayer talks to Redis. This guard
+// enforces the two invariants that keep the outbox airtight:
 //
-// The guard scans backend Go sources for repository write calls on the
-// note/link repositories and fails when a call site has no Publish* event in
-// the same function (or in a same-file helper it calls, e.g.
-// postprocessCreatedNote) and is not explicitly allowlisted below. A new write
-// path without an event is red immediately; a legitimately non-graph write
-// must be allowlisted here with a reason, which forces a review of the choice.
+//   1. No direct PublishNote*/PublishLink* calls outside the relay
+//      (infrastructure/outbox) and the publisher type (infrastructure/events).
+//      A manual call bypasses the table — the event is gone if the process
+//      dies between write and publish, and nothing re-delivers it.
+//   2. Every postgres.NewNoteRepository / NewLinkRepository construction is
+//      the direct argument of the matching outbox.New*Repository decorator.
+//      An undecorated repository writes without an event — silently.
+//
+// A genuinely event-free construction (e.g. a fixture) must be allowlisted
+// below with a reason, which forces a review of the choice.
 
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
@@ -29,62 +33,9 @@ for (const arg of args) {
 repoRoot = resolve(repoRoot);
 backendDir = backendDir ?? join(repoRoot, "backend");
 
-// Receivers carrying note/link repositories: h.repo/s.repo (handlers and
-// services whose main repo is notes), linkRepo/noteRepo (explicit names).
-const WRITE_RE =
-    /\b(?:[a-zA-Z_]\w*\.)?(?:noteRepo|linkRepo|repo)\.(Save|SaveUserLink|Update|Delete|DeleteBySource|DeleteAndSuppress|DeleteBatch|Restore)\s*\(/g;
-const PUBLISH_RE = /\bPublish(?:Note|Link)\w*\s*\(/;
+const PUBLISH_RE = /\bPublish(?:Note|Link)\w*\s*\(/g;
+const CONSTRUCT_RE = /postgres\.New(Note|Link)Repository\s*\(/g;
 const FUNC_RE = /^func\s+(?:\([^)]*\)\s*)?(\w+)\s*\(/gm;
-
-// file (relative to backendDir) -> "*" for the whole file, or a list of
-// function names. Every entry must state why the write needs no event.
-const ALLOWLIST = new Map([
-    // Drafts are a pre-publish workspace, not graph notes; the graph event
-    // fires when the draft is published through the note handler.
-    ["internal/application/draft/service.go", "*"],
-    // User settings — not graph data.
-    ["internal/application/user/settings_service.go", "*"],
-    // User profile repository — not graph data.
-    ["internal/interfaces/api/handlers/user/handler.go", "*"],
-    [
-        // The generator only writes; LinkCreated is published by the caller,
-        // queue.Worker.generateGammaLinks (worker.go), which owns the userID.
-        "internal/application/recommendation/gamma_link_generator.go",
-        new Set(["saveMissingGammaLinks"]),
-    ],
-]);
-
-function fail(errors, message) {
-    errors.push(message);
-}
-
-// splitFunctions maps each top-level func (methods included) to its body —
-// the text between this func's header and the next func header. Nested
-// closures stay inside the enclosing chunk, which is what we want.
-function splitFunctions(text) {
-    const funcs = new Map();
-    const matches = [...text.matchAll(FUNC_RE)];
-    for (let i = 0; i < matches.length; i++) {
-        const start = matches[i].index;
-        const end = i + 1 < matches.length ? matches[i + 1].index : text.length;
-        funcs.set(matches[i][1], text.slice(start, end));
-    }
-    return funcs;
-}
-
-// emitsPublish reports whether funcName's body publishes an event itself or
-// calls a same-file function that does (one hop is enough: helpers like
-// postprocessCreatedNote are the pattern this project uses).
-function emitsPublish(funcs, funcName, depth = 0) {
-    const body = funcs.get(funcName);
-    if (!body) return false;
-    if (PUBLISH_RE.test(body)) return true;
-    if (depth >= 2) return false;
-    for (const m of body.matchAll(/\b([a-zA-Z_]\w*)\s*\(/g)) {
-        if (funcs.has(m[1]) && emitsPublish(funcs, m[1], depth + 1)) return true;
-    }
-    return false;
-}
 
 // enclosingFunc finds which parsed function contains the byte offset.
 function enclosingFunc(text, offset) {
@@ -94,6 +45,21 @@ function enclosingFunc(text, offset) {
         current = m[1];
     }
     return current;
+}
+
+// Directories where Publish* calls are legal: the relay (the only legitimate
+// publisher) and the publisher type itself.
+const PUBLISH_ALLOWED = new Set([
+    "internal/infrastructure/outbox",
+    "internal/infrastructure/events",
+]);
+
+// file (relative to backendDir) -> reason. Entries here bypass rule 2 —
+// construction without the decorator. Rule 1 has no exceptions.
+const CONSTRUCT_ALLOWLIST = new Map([]);
+
+function fail(errors, message) {
+    errors.push(message);
 }
 
 function walk(dir, out) {
@@ -116,25 +82,49 @@ if (!existsSync(backendDir)) {
 
 const files = [];
 walk(backendDir, files);
-let sites = 0;
+let publishSites = 0;
+let constructSites = 0;
 
 for (const file of files) {
     const text = readFileSync(file, "utf8");
     const rel = relative(backendDir, file).split("\\").join("/");
-    const funcs = splitFunctions(text);
-    const allow = ALLOWLIST.get(rel);
+    const dir = rel.split("/").slice(0, -1).join("/");
+    const publishAllowed = [...PUBLISH_ALLOWED].some(
+        (d) => dir === d || dir.startsWith(d + "/"),
+    );
 
-    for (const m of text.matchAll(WRITE_RE)) {
-        sites += 1;
-        const fn = enclosingFunc(text, m.index);
-        if (allow === "*" || (allow instanceof Set && allow.has(fn))) continue;
-        if (fn && emitsPublish(funcs, fn)) continue;
-        const line = text.slice(0, m.index).split("\n").length;
-        fail(
-            errors,
-            `write path without a graph event: ${rel}:${line} ` +
-                `(${fn || "file scope"} calls .${m[1]} but never reaches a Publish* call)`,
-        );
+    if (!publishAllowed) {
+        for (const m of text.matchAll(PUBLISH_RE)) {
+            publishSites += 1;
+            const line = text.slice(0, m.index).split("\n").length;
+            const fn = enclosingFunc(text, m.index);
+            fail(
+                errors,
+                `manual graph event publish: ${rel}:${line} ` +
+                    `(${fn || "file scope"} calls ${m[0].trim()}) ` +
+                    `— events must leave through graph_outbox and the relayer, ` +
+                    `never through a direct Publish* call`,
+            );
+        }
+    }
+
+    if (!CONSTRUCT_ALLOWLIST.has(rel)) {
+        for (const m of text.matchAll(CONSTRUCT_RE)) {
+            constructSites += 1;
+            const before = text.slice(0, m.index);
+            const wrapped = new RegExp(
+                `outbox\\.New${m[1]}Repository\\(\\s*(?:/\\*[^*]*\\*/\\s*)?$`,
+            ).test(before);
+            if (wrapped) continue;
+            const line = before.split("\n").length;
+            const fn = enclosingFunc(text, m.index);
+            fail(
+                errors,
+                `undecorated repository: ${rel}:${line} ` +
+                    `(${fn || "file scope"} constructs postgres.New${m[1]}Repository ` +
+                    `without the outbox decorator — writes would commit without a graph event)`,
+            );
+        }
     }
 }
 
@@ -143,4 +133,7 @@ if (errors.length) {
     for (const e of errors) console.error(`  - ${e}`);
     process.exit(1);
 }
-console.log(`Write-path guard OK: ${sites} repository write sites publish graph events or are allowlisted.`);
+console.log(
+    `Write-path guard OK: ${publishSites + constructSites} inspected sites pass ` +
+        `(no manual publishes outside the relay, all repositories wrapped).`,
+);

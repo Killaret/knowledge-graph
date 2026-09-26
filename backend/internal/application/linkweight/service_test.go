@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	appevents "knowledge-graph/internal/application/events"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 
@@ -109,36 +108,10 @@ func (f fakeSimilarity) Similarity(ctx context.Context, textA, textB string) (fl
 	return 0.75, nil
 }
 
-// fakePublisher records published link events.
-type fakePublisher struct {
-	linkUpdated [][3]string
-}
-
-func (p *fakePublisher) PublishNoteCreated(ctx context.Context, noteID, userID string) error {
-	return nil
-}
-func (p *fakePublisher) PublishNoteUpdated(ctx context.Context, noteID, userID string) error {
-	return nil
-}
-func (p *fakePublisher) PublishNoteDeleted(ctx context.Context, noteID, userID string) error {
-	return nil
-}
-func (p *fakePublisher) PublishLinkCreated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
-	return nil
-}
-func (p *fakePublisher) PublishLinkUpdated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
-	p.linkUpdated = append(p.linkUpdated, [3]string{sourceNoteID, targetNoteID, userID})
-	return nil
-}
-func (p *fakePublisher) PublishLinkDeleted(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
-	return nil
-}
-
 var (
-	_ link.Repository     = (*fakeLinkRepo)(nil)
-	_ note.Repository     = (*fakeNoteRepo)(nil)
-	_ SimilarityClient    = fakeSimilarity{}
-	_ appevents.Publisher = (*fakePublisher)(nil)
+	_ link.Repository  = (*fakeLinkRepo)(nil)
+	_ note.Repository  = (*fakeNoteRepo)(nil)
+	_ SimilarityClient = fakeSimilarity{}
 )
 
 func mustNote(t *testing.T, creator uuid.UUID) *note.Note {
@@ -152,10 +125,10 @@ func mustNote(t *testing.T, creator uuid.UUID) *note.Note {
 	return note.NewNoteWithCreator(title, content, note.MustType("asteroid"), meta, creator)
 }
 
-// SYNC-1: a weight recalculation changes graph data — every updated link must
-// publish LinkUpdated with the owner's id, or open graphs keep stale weights
-// until TTL.
-func TestRecalculateForNote_PublishesLinkUpdated(t *testing.T) {
+// SYNC-1 A2: a weight recalculation goes through linkRepo.Update, whose
+// outbox decorator records the LinkUpdated event (asserted in the outbox
+// integration tests). This test pins the repository write itself.
+func TestRecalculateForNote_UpdatesLink(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New()
 	src := mustNote(t, userID)
@@ -172,11 +145,7 @@ func TestRecalculateForNote_PublishesLinkUpdated(t *testing.T) {
 	linkRepo := &fakeLinkRepo{links: []*link.Link{l}}
 	noteRepo := &fakeNoteRepo{notes: map[uuid.UUID]*note.Note{src.ID(): src, dst.ID(): dst}}
 	rec := NewRecalculator(linkRepo, noteRepo, fakeSimilarity{})
-	pub := &fakePublisher{}
-	rec.SetEventPublisher(pub)
 
 	require.NoError(t, rec.RecalculateForNote(ctx, src.ID()))
 	require.Len(t, linkRepo.updated, 1)
-	require.Len(t, pub.linkUpdated, 1)
-	require.Equal(t, [3]string{src.ID().String(), dst.ID().String(), userID.String()}, pub.linkUpdated[0])
 }

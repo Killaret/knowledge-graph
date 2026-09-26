@@ -107,11 +107,16 @@ func (p *Publisher) publishEvent(ctx context.Context, eventType string, payload 
 		log.Printf("[EventPublisher] Failed to marshal payload for %s: %v", eventType, err)
 		return err
 	}
+	return p.PublishEvent(ctx, eventType, payloadBytes)
+}
 
+// PublishEvent publishes a pre-built payload under the given event type —
+// the outbox relayer uses it for rows recorded by the repository decorators.
+func (p *Publisher) PublishEvent(ctx context.Context, eventType string, payload []byte) error {
 	event := Event{
 		EventID: uuid.New().String(),
 		Event:   eventType,
-		Payload: payloadBytes,
+		Payload: payload,
 	}
 
 	eventBytes, err := json.Marshal(event)

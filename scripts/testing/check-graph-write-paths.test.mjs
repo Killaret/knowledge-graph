@@ -1,8 +1,8 @@
-// Tests for check-graph-write-paths.mjs (SYNC-1).
+// Tests for check-graph-write-paths.mjs (SYNC-1 A2).
 //
-// The real backend is green; a fixture backend containing a write path
-// without a Publish call must turn the guard red, and a fully covered or
-// allowlisted backend stays green.
+// The real backend is green; a fixture backend containing a manual publish
+// (bypassing the outbox) or an undecorated repository construction must turn
+// the guard red.
 
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -15,10 +15,16 @@ const fixtureBackend = join(here, "fixtures", "graph-write-paths");
 
 const cases = [
     {
-        name: "uncovered write path is red",
+        name: "manual publish outside the relay is red",
         backend: fixtureBackend,
         expectExit: 1,
-        stderrIncludes: ["UncoveredSave", "write path without a graph event"],
+        stderrIncludes: ["ManualPublish", "manual graph event publish"],
+    },
+    {
+        name: "undecorated repository construction is red",
+        backend: fixtureBackend,
+        expectExit: 1,
+        stderrIncludes: ["UnwrappedRepo", "undecorated repository"],
     },
     {
         name: "real backend stays green",
