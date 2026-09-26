@@ -116,6 +116,22 @@ class TestChunking:
 
         assert prose[-1].heading_path == ["Root", "Child", "Leaf"]
 
+    def test_sibling_and_level_up_heading_paths(self):
+        text = (
+            "# Guide\n\n## Install\n\nInstall text.\n\n"
+            "## Usage\n\nUsage text.\n\n"
+            "### Advanced\n\nAdvanced text.\n\n"
+            "# Appendix\n\nAppendix text."
+        )
+        chunks = chunk(text, params(target=50, max_tokens=60))
+        prose = [item for item in chunks if item.kind == "prose"]
+
+        by_text = {item.text.split("\n")[-1]: item.heading_path for item in prose}
+        assert by_text["Install text."] == ["Guide", "Install"]
+        assert by_text["Usage text."] == ["Guide", "Usage"]
+        assert by_text["Advanced text."] == ["Guide", "Usage", "Advanced"]
+        assert by_text["Appendix text."] == ["Appendix"]
+
     def test_heading_link_stub_is_no_content(self):
         text = "## [Imported page](https://example.com/page)"
         assert chunk(text, params()) == []

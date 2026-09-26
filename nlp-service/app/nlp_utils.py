@@ -245,6 +245,18 @@ def _chunk_token_counter(model: SentenceTransformer):
     return count_words
 
 
+def _chunk_max_tokens(model: SentenceTransformer) -> int:
+    """Chunk budget in tokens: the model window minus the special tokens the
+    tokenizer adds to every encoded input (e.g. [CLS]/[SEP]), so a chunk that
+    fills the budget never exceeds ``max_seq_length`` once encoded."""
+    window = int(getattr(model, "max_seq_length", 512) or 512)
+    tokenizer = getattr(model, "tokenizer", None)
+    num_special = getattr(tokenizer, "num_special_tokens_to_add", None)
+    if callable(num_special):
+        window -= int(num_special(False))
+    return max(1, window)
+
+
 def compute_chunked_embedding(
     model: SentenceTransformer, text: str, title: Optional[str] = None
 ):
@@ -260,7 +272,7 @@ def compute_chunked_embedding(
     params = ChunkingParams(
         token_counter=_chunk_token_counter(model),
         target_tokens=256,
-        max_tokens=int(getattr(model, "max_seq_length", 512) or 512),
+        max_tokens=_chunk_max_tokens(model),
         title=title or None,
         title_injection=True,
     )

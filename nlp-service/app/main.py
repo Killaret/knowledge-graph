@@ -20,6 +20,7 @@ from .models import (
 )
 from .nlp_utils import (
     EXTRACTOR_NAME,
+    _chunk_max_tokens,
     _chunk_token_counter,
     _combined_text,
     _embed_chunking_enabled,
@@ -121,7 +122,7 @@ async def normalize_endpoint(req: NormalizeRequest):
             ChunkingParams(
                 token_counter=token_counter,
                 target_tokens=256,
-                max_tokens=int(getattr(model, "max_seq_length", 512) or 512),
+                max_tokens=_chunk_max_tokens(model),
                 title=req.title or None,
             ),
         )
