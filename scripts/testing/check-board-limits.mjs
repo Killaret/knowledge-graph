@@ -20,8 +20,12 @@
 //      sections - they belong in "Бэклог" / "На человеке".
 //   5. A backlog row is at most 500 bytes.
 //   6. "На человеке" holding more than 7 rows is a warning, not an error.
+//   7. Reply retention (BOARD-3, owner decision 68): a reply in
+//      "Обмен репликами" is at most 600 characters and at most three days
+//      old by the date in its heading. Tests pin "today" via --today=YYYY-MM-DD.
 //
 // Terminal-row retention is not duplicated here; check-decisions.mjs owns it.
+// The archive itself is a directory - docs/archive/board/ - not a section.
 
 import { readFileSync } from "node:fs";
 import { resolve, join } from "node:path";
@@ -29,9 +33,12 @@ import { resolve, join } from "node:path";
 const args = process.argv.slice(2);
 let repoRoot = ".";
 let boardPath = null;
+let today = null;
 for (const arg of args) {
     if (arg.startsWith("--board=")) {
         boardPath = resolve(arg.slice("--board=".length));
+    } else if (arg.startsWith("--today=")) {
+        today = arg.slice("--today=".length);
     } else {
         repoRoot = arg;
     }
@@ -42,7 +49,8 @@ if (!boardPath) boardPath = join(repoRoot, "docs", "AI_HANDOFF.md");
 const AGENT_SECTIONS = ["На Devin", "На Claude Code"];
 const OWNER_SECTION = "На человеке";
 const BACKLOG_SECTION = "Бэклог";
-const UNTRACKED_SECTIONS = ["Обмен репликами", "Архив", "Решения владельца"];
+const REPLIES_SECTION = "Обмен репликами";
+const UNTRACKED_SECTIONS = ["Обмен репликами", "Решения владельца"];
 
 const STATUS_WORDS = [
     "в работе",
@@ -59,6 +67,9 @@ const MAX_ACTIVE_PER_AGENT = 3;
 const MAX_ON_REVIEW_TOTAL = 5;
 const MAX_BACKLOG_ROW_BYTES = 500;
 const OWNER_SECTION_SOFT_LIMIT = 7;
+const MAX_REPLY_CHARS = 600;
+const MAX_REPLY_AGE_DAYS = 3;
+const REPLY_DATE_RE = /\d{4}-\d{2}-\d{2}/;
 
 const errors = [];
 const warnings = [];
@@ -208,6 +219,60 @@ if (ownerRows.length > OWNER_SECTION_SOFT_LIMIT) {
         `${OWNER_SECTION}: ${ownerRows.length} rows, soft limit is ` +
             `${OWNER_SECTION_SOFT_LIMIT} - the owner should see the overload`,
     );
+}
+
+// ---------------------------------------------------------------------------
+// Rule 7: reply watcher - replies are short pointers, at most three days old
+// ---------------------------------------------------------------------------
+
+const repliesThreshold = today ? new Date(today) : new Date();
+repliesThreshold.setHours(0, 0, 0, 0);
+repliesThreshold.setDate(repliesThreshold.getDate() - MAX_REPLY_AGE_DAYS);
+
+function extractReplies() {
+    const start = lines.findIndex((l) => /^##\s+Обмен репликами/.test(l));
+    if (start === -1) return [];
+    const replies = [];
+    let paragraph = [];
+    let startLine = 0;
+    const flush = () => {
+        const text = paragraph.join("\n").trim();
+        paragraph = [];
+        if (!text.startsWith("**")) return;
+        const heading = text.split("**", 2)[1] ?? "";
+        const m = heading.match(REPLY_DATE_RE) ?? text.match(REPLY_DATE_RE);
+        if (!m) return; // section prose, not a reply
+        replies.push({ lineNo: startLine, text, date: m[0] });
+    };
+    for (let i = start + 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (/^##\s+/.test(line)) break;
+        if (line.trim() === "") {
+            flush();
+        } else {
+            if (paragraph.length === 0) startLine = i + 1;
+            paragraph.push(line);
+        }
+    }
+    flush();
+    return replies;
+}
+
+for (const reply of extractReplies()) {
+    const label = `line ${reply.lineNo} (${reply.date})`;
+    if ([...reply.text].length > MAX_REPLY_CHARS) {
+        errors.push(
+            `${REPLIES_SECTION}: ${label}: reply is ${[...reply.text].length} ` +
+                `characters, limit is ${MAX_REPLY_CHARS} - a reply is a pointer, ` +
+                `not a retelling`,
+        );
+    }
+    if (new Date(reply.date) < repliesThreshold) {
+        errors.push(
+            `${REPLIES_SECTION}: ${label}: reply is older than ` +
+                `${MAX_REPLY_AGE_DAYS} days - its trace stays in AI_LOG.md and git`,
+        );
+    }
 }
 
 // ---------------------------------------------------------------------------
