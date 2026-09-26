@@ -15,6 +15,7 @@ import (
 	"github.com/pgvector/pgvector-go"
 
 	importer "knowledge-graph/internal/application/import"
+	appquality "knowledge-graph/internal/application/quality"
 	dcache "knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
@@ -62,6 +63,10 @@ type Worker struct {
 	artifactsStore    NlpArtifactsStore
 	nlpHistoryEnabled bool
 	nlpModelVersion   string
+
+	// NOTE-QUALITY-1: installed by UseQuality; nil = quality pass disabled.
+	qualityAssessor *appquality.Assessor
+	qualityEnq      QualityEnqueuer
 }
 
 // NlpPipelineVersion identifies the normalizer ruleset; bump on rule changes
@@ -166,6 +171,7 @@ func (w *Worker) HandleExtractKeywords(ctx context.Context, t *asynq.Task) error
 		return err
 	}
 	log.Printf("HandleExtractKeywords: successfully processed note %s with %d keywords", noteID, len(keywords))
+	w.scheduleQuality(ctx, noteID)
 	return nil
 }
 
@@ -226,6 +232,9 @@ func (w *Worker) HandleComputeEmbedding(ctx context.Context, t *asynq.Task) erro
 			return err
 		}
 	}
+	// NOTE-QUALITY-1: embedding (+ any gamma links) changed the enrichment
+	// counters — a fresh assessment is due when quality is enabled.
+	w.scheduleQuality(ctx, noteID)
 	return nil
 }
 
@@ -367,6 +376,8 @@ func (w *Worker) HandleNormalizeNote(ctx context.Context, t *asynq.Task) error {
 	}
 	log.Printf("HandleNormalizeNote: stored artifact for note %s (rolled_back=%v, chunks=%d)",
 		noteID, res.RolledBack, len(res.Chunks))
+	// NOTE-QUALITY-1: the artifact changed — a fresh assessment is due.
+	w.scheduleQuality(ctx, noteID)
 	return nil
 }
 

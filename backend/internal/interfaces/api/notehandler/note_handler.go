@@ -45,6 +45,14 @@ type Handler struct {
 	achievementService *achievement.Service
 	importSvc          *importer.Service
 	eventPublisher     appevents.Publisher
+
+	// NOTE-QUALITY-1 — installed by SetQuality; disabled = zero deps.
+	qualityEnabled bool
+	qualityReader  QualityReader
+	qualityEnq     QualityEnqueuer
+
+	// Re-fetch (NOTE-QUALITY-1 part 3) — installed by SetRefetch.
+	refetchExtractor RefetchExtractor
 }
 
 // SuggestionsResponse represents the response for recommendations

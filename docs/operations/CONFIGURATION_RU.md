@@ -636,6 +636,13 @@ score = α × explicit_score + β × semantic_score
 | `NLP_PIPELINE_ENABLED` | Конвейер нормализации (NLP-4): ставит `nlp:normalize` при создании/правке/импорте заметки — воркер пишет `nlp_artifacts` в MongoDB. Векторы по-прежнему строятся по сырому `notes.content`; включение — вместе с MODEL-2 | `false` |
 | `NLP_HISTORY_ENABLED` | Хранить superseded-версии `nlp_artifacts`; `false` — прежний документ удаляется вместо пометки `superseded` | `true` |
 | `NLP_NORMALIZATION_MIN_COSINE` | Предохранитель отката `/normalize` по косинусу: результат откатывается к исходнику, если `cos(emb(result), emb(source))` ниже порога. Зависит от шкалы модели (замерено на e5-base); перекалибровка — в MODEL-2. Значения вне `(0, 1]` заменяются умолчанием | `0.7` |
+| `NLP_QUALITY_ENABLED` | Конвейер качества заметки (NOTE-QUALITY-1, этап 1): ставит `quality:assess` после `nlp:normalize` и после задач обогащения; включает `GET /api/v1/notes/{id}/quality` и `POST .../quality/assess`. `false` — задачи не ставятся, API отвечает `{"enabled": false}` | `false` |
+| `NLP_QUALITY_COLLECTION_PROSE_SHARE` | Граница признака: доля прозы, ниже которой заметка считается `collection` | `0.3` |
+| `NLP_QUALITY_COLLECTION_MIN_LINKS` | Граница признака: минимум строк-ссылок/пунктов для `collection` | `3` |
+| `NLP_QUALITY_SENTENCE_MIN_WORDS` | Граница признака: минимум слов в засчитываемом предложении | `4` |
+| `NLP_QUALITY_FRAGMENT_MAX_WORDS` | Граница признака: строки до этого числа слов — обрывки | `3` |
+| `NLP_QUALITY_MOJIBAKE_SHARE` | Граница признака: доля символов замены/кракозябр для флага `mojibake` | `0.01` |
+| `NLP_QUALITY_LEGACY_TRUNCATED_RUNES` | Граница признака: объём всего содержимого в рунах, по которому старый (до URL-HEADING-1) импорт считается обрезанным | `4990` |
 
 ### Lazy-loading модели (обязательный паттерн)
 

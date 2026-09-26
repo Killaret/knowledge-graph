@@ -210,6 +210,37 @@ Batch creation runs the same post-processing as single creation — keywords, em
 link weights and recommendations. Mass **import** does not yet enqueue recommendations;
 that gap is tracked as IMP-4.
 
+## 11. Note quality and refetch (NOTE-QUALITY-1 stage 1)
+
+The stage-1 quality pipeline is read-only and indicator-only — it never edits or blocks
+a note. Two endpoints expose it:
+
+```bash
+GET  /api/v1/notes/{id}/quality          # latest assessment + quality_log entries
+POST /api/v1/notes/{id}/quality/assess   # enqueue a manual re-assessment
+```
+
+Both share the note's authorization. When `nlp.quality.enabled` is off they answer
+`{"enabled": false}` — the frontend hides the quality row entirely. `GET` returns the
+latest record (`signals`, `gates`, `verdict` ∈ `create|enrich|manual`, `reasons[]`,
+`attempt`, `needs_manual_review`, `pipeline_version`) plus the log; with no assessment
+yet, the record is absent. `POST` is not capped by the three-attempt stop rule — a
+manual trigger always writes.
+
+Refetch is a **user action**, never part of the pipeline:
+
+```bash
+POST /api/v1/notes/{id}/refetch/preview   # extraction preview, note untouched
+POST /api/v1/notes/{id}/refetch           # apply; body → metadata.previous_content
+POST /api/v1/notes/{id}/refetch/restore   # put previous_content back byte-exactly
+```
+
+Preview shows the stage-A extraction result (chosen title, outline, length) without
+mutating anything. Apply requires confirmation, accepts an optional `title` override,
+and stores the previous body in `metadata.previous_content`; restore uses that field.
+A fetch failure leaves the note unchanged. Refetch is offered for `stub`/`truncated`
+verdicts when `source_url` is present.
+
 ## Notes for maintainers
 
 - The Swagger UI bundle is embedded via `swaggo/gin-swagger` and reads

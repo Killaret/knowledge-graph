@@ -260,7 +260,7 @@ func TestWorker_HandleNlpArtifactsCleanup_NoStore(t *testing.T) {
 // Criterion 5: pipeline disabled → EnqueueNormalizeNote returns without
 // touching Redis (client built against an unreachable address).
 func TestAsynqClient_NormalizeGatedByFlag(t *testing.T) {
-	client, err := NewAsynqClient("127.0.0.1:1", false, false)
+	client, err := NewAsynqClient("127.0.0.1:1", false, false, false)
 	require.NoError(t, err)
 	defer client.Close()
 
@@ -273,7 +273,7 @@ func TestAsynqClient_NormalizeGatedByFlag(t *testing.T) {
 // (miniredis + asynq Inspector read it back).
 func TestAsynqClient_NormalizeEnqueuedWhenEnabled(t *testing.T) {
 	mr := miniredis.RunT(t)
-	client, err := NewAsynqClient(mr.Addr(), false, true)
+	client, err := NewAsynqClient(mr.Addr(), false, true, false)
 	require.NoError(t, err)
 	defer client.Close()
 

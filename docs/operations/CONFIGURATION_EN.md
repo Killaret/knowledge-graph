@@ -608,6 +608,13 @@ Used by `List` and `Search` endpoints for note pagination.
 | `NLP_PIPELINE_ENABLED` | Normalization pipeline (NLP-4): enqueue `nlp:normalize` on note create/update/import so workers write `nlp_artifacts` to MongoDB. Vectors still use raw `notes.content` — activation waits for MODEL-2 | `false` |
 | `NLP_HISTORY_ENABLED` | Keep superseded `nlp_artifacts` versions; `false` deletes the previous document instead of marking it `superseded` | `true` |
 | `NLP_NORMALIZATION_MIN_COSINE` | Cosine rollback guard for `/normalize`: result rolled back to source when `cos(emb(result), emb(source))` is below this value. Model-scale dependent (measured on e5-base); recalibrated in MODEL-2. Values outside `(0, 1]` fall back to the default | `0.7` |
+| `NLP_QUALITY_ENABLED` | Note quality pipeline (NOTE-QUALITY-1 stage 1): enqueues `quality:assess` after `nlp:normalize` and after note enrichment tasks; enables `GET /api/v1/notes/{id}/quality` and `POST .../quality/assess`. `false` — nothing is enqueued, the API answers `{"enabled": false}` | `false` |
+| `NLP_QUALITY_COLLECTION_PROSE_SHARE` | Signal boundary: prose share below which a note counts as a `collection` | `0.3` |
+| `NLP_QUALITY_COLLECTION_MIN_LINKS` | Signal boundary: minimum link/bullet lines for `collection` | `3` |
+| `NLP_QUALITY_SENTENCE_MIN_WORDS` | Signal boundary: minimum words per counted sentence | `4` |
+| `NLP_QUALITY_FRAGMENT_MAX_WORDS` | Signal boundary: lines up to this many words count as fragments | `3` |
+| `NLP_QUALITY_MOJIBAKE_SHARE` | Signal boundary: share of replacement/mojibake characters that flags `mojibake` | `0.01` |
+| `NLP_QUALITY_LEGACY_TRUNCATED_RUNES` | Signal boundary: whole-content rune count that marks a legacy (pre-URL-HEADING-1) import as truncated | `4990` |
 
 ## Advanced Parameters (BFS + Asynq)
 

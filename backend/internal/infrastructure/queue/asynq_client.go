@@ -18,16 +18,18 @@ type AsynqClient struct {
 	client             *asynq.Client
 	backupEnabled      bool
 	nlpPipelineEnabled bool
+	qualityEnabled     bool
 }
 
 // NewAsynqClient creates a new asynq client.
 // redisAddr is the Redis address, e.g. "localhost:6379".
 // backupEnabled controls whether backup tasks are enqueued.
 // nlpPipelineEnabled gates nlp:normalize tasks (NLP-4 switch, default off).
-func NewAsynqClient(redisAddr string, backupEnabled bool, nlpPipelineEnabled bool) (*AsynqClient, error) {
+// qualityEnabled gates quality:assess tasks (NOTE-QUALITY-1, default off).
+func NewAsynqClient(redisAddr string, backupEnabled bool, nlpPipelineEnabled bool, qualityEnabled bool) (*AsynqClient, error) {
 	redisAddr = strings.TrimPrefix(redisAddr, "redis://")
 	client := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
-	return &AsynqClient{client: client, backupEnabled: backupEnabled, nlpPipelineEnabled: nlpPipelineEnabled}, nil
+	return &AsynqClient{client: client, backupEnabled: backupEnabled, nlpPipelineEnabled: nlpPipelineEnabled, qualityEnabled: qualityEnabled}, nil
 }
 
 func (c *AsynqClient) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
@@ -148,6 +150,23 @@ func (c *AsynqClient) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID str
 		return err
 	}
 	task := asynq.NewTask(TypeNlpArtifactsCleanup, payload)
+	_, err = c.client.EnqueueContext(ctx, task)
+	return err
+}
+
+// EnqueueAssessQuality schedules a NOTE-QUALITY-1 assessment. Gated by
+// nlp.quality.enabled — off means no task enters the queue, and the worker
+// handler is a no-op as well (defence in depth: a task enqueued while the
+// flag was on may land after it was switched off).
+func (c *AsynqClient) EnqueueAssessQuality(ctx context.Context, noteID string, trigger string) error {
+	if !c.qualityEnabled {
+		return nil
+	}
+	payload, err := json.Marshal(AssessQualityPayload{NoteID: noteID, Trigger: trigger})
+	if err != nil {
+		return err
+	}
+	task := asynq.NewTask(TypeAssessQuality, payload)
 	_, err = c.client.EnqueueContext(ctx, task)
 	return err
 }

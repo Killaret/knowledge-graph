@@ -10,6 +10,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/google/uuid"
+
+	appquality "knowledge-graph/internal/application/quality"
 )
 
 // NlpArtifactsCollection is the Mongo collection holding NLP-4 derived
@@ -48,6 +50,8 @@ type NlpArtifactMetrics struct {
 }
 
 // NlpArtifact is the Mongo document for a note's normalization artifact.
+// Quality holds the latest NOTE-QUALITY-1 assessment of the same text
+// version (nil until the quality task runs).
 type NlpArtifact struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty"`
 	NoteID          uuid.UUID          `bson:"note_id"`
@@ -57,6 +61,7 @@ type NlpArtifact struct {
 	NormalizedText  string             `bson:"normalized_text"`
 	Chunks          []NlpArtifactChunk `bson:"chunks"`
 	Metrics         NlpArtifactMetrics `bson:"metrics"`
+	Quality         *appquality.Record `bson:"quality,omitempty"`
 	Status          string             `bson:"status"` // current|superseded
 	CreatedAt       time.Time          `bson:"created_at"`
 	UpdatedAt       time.Time          `bson:"updated_at"`
@@ -169,6 +174,25 @@ func (r *NlpArtifactsRepository) SaveCurrent(ctx context.Context, doc *NlpArtifa
 	}
 	_, err := r.collection.InsertOne(ctx, doc)
 	return err
+}
+
+// SetQuality stamps a NOTE-QUALITY-1 assessment onto the current artifact of
+// the given source_hash — the quality field lives on the document of the same
+// text version it measured. Returns false when no matching current artifact
+// exists (pipeline off or hash drifted since).
+func (r *NlpArtifactsRepository) SetQuality(ctx context.Context, noteID uuid.UUID, sourceHash string, rec *appquality.Record) (bool, error) {
+	res, err := r.collection.UpdateOne(ctx, bson.D{
+		primitive.E{Key: "note_id", Value: noteID},
+		primitive.E{Key: "source_hash", Value: sourceHash},
+		primitive.E{Key: "status", Value: NlpArtifactCurrent},
+	}, bson.D{primitive.E{Key: "$set", Value: bson.D{
+		primitive.E{Key: "quality", Value: rec},
+		primitive.E{Key: "updated_at", Value: time.Now().UTC()},
+	}}})
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount > 0 || res.MatchedCount > 0, nil
 }
 
 // DeleteByNoteID removes every artifact of the note (current and history) —

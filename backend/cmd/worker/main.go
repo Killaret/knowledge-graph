@@ -13,6 +13,7 @@ import (
 	"knowledge-graph/internal/application/graph"
 	importer "knowledge-graph/internal/application/import"
 	"knowledge-graph/internal/application/linkweight"
+	appquality "knowledge-graph/internal/application/quality"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
@@ -105,7 +106,7 @@ func main() {
 	nlpClient := nlp.NewNLPClient(nlpURL, redisClient, 24*time.Hour)
 
 	// Task queue client for the import worker to enqueue note processing tasks.
-	queueClient, err := queue.NewAsynqClient(redisAddr, cfg.BackupEnabled, cfg.NLPPipelineEnabled)
+	queueClient, err := queue.NewAsynqClient(redisAddr, cfg.BackupEnabled, cfg.NLPPipelineEnabled, cfg.NLPQualityEnabled)
 	if err != nil {
 		log.Printf("[Worker] WARNING: failed to create asynq client: %v", err)
 		queueClient = nil
@@ -139,6 +140,7 @@ func main() {
 	// tasks enqueued manually (nlp-artifacts-recompute) and artifact
 	// cleanup on note deletion still work.
 	var artifactsStore queue.NlpArtifactsStore
+	var artifactsRepo *mongo.NlpArtifactsRepository
 	var mongoClient *mongo.Client
 	if cfg.MongoDBURL != "" {
 		mc, err := mongo.NewClient(context.Background(), cfg.MongoDBURL, cfg.MongoDBDatabase)
@@ -155,6 +157,7 @@ func main() {
 			if err := repo.EnsureIndexes(context.Background()); err != nil {
 				log.Printf("[Worker] WARNING: failed to ensure nlp_artifacts indexes: %v", err)
 			}
+			artifactsRepo = repo
 			artifactsStore = repo
 			log.Printf("[MongoDB] Connected to %s/%s (nlp_artifacts store ready)", maskURL(cfg.MongoDBURL), cfg.MongoDBDatabase)
 		}
@@ -166,6 +169,29 @@ func main() {
 	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc,
 		gammaGen, eventPublisher, queueClient, taskDelay,
 		artifactsStore, cfg.NLPHistoryEnabled, cfg.NLPModelName)
+
+	// NOTE-QUALITY-1: the assessor needs Mongo (quality_log + artifact
+	// stamps). Gated by nlp.quality.enabled — off means the handler no-ops
+	// and nothing is enqueued.
+	if cfg.NLPQualityEnabled && mongoClient != nil {
+		qualityLog := mongo.NewQualityLogRepository(mongoClient)
+		if err := qualityLog.EnsureIndexes(context.Background()); err != nil {
+			log.Printf("[Worker] WARNING: failed to ensure quality_log indexes: %v", err)
+		}
+		assessor := queue.NewQualityAssessor(noteRepo, artifactsRepo, qualityLog,
+			postgres.NewQualityStatsRepository(database), nlpClient, appquality.Thresholds{
+				CollectionProseShare: cfg.NLPQualityCollectionProseShare,
+				CollectionMinLinks:   cfg.NLPQualityCollectionMinLinks,
+				SentenceMinWords:     cfg.NLPQualitySentenceMinWords,
+				FragmentMaxWords:     cfg.NLPQualityFragmentMaxWords,
+				MojibakeShare:        cfg.NLPQualityMojibakeShare,
+				LegacyTruncatedRunes: cfg.NLPQualityLegacyTruncatedRunes,
+			})
+		worker.UseQuality(assessor, queueClient)
+		log.Println("[Worker] NOTE-QUALITY-1 quality assessment enabled")
+	} else if cfg.NLPQualityEnabled {
+		log.Println("[Worker] NLP_QUALITY_ENABLED set but MongoDB is unavailable — quality assessment disabled")
+	}
 
 	// Graph traversal service for recommendations
 	neighborLoader := graph.NewNeighborLoader(linkRepo, noteRepo)
@@ -234,6 +260,7 @@ func main() {
 	mux.HandleFunc(queue.TypeImportBookmarks, worker.HandleImportBookmarks)
 	mux.HandleFunc(queue.TypeNormalizeNote, worker.HandleNormalizeNote)
 	mux.HandleFunc(queue.TypeNlpArtifactsCleanup, worker.HandleNlpArtifactsCleanup)
+	mux.HandleFunc(queue.TypeAssessQuality, worker.HandleAssessQuality)
 	if cfg.BackupEnabled {
 		mux.HandleFunc(queue.TypeDatabaseBackup, queue.BackupDatabaseHandler(backupRunner))
 		if backupSvc != nil {

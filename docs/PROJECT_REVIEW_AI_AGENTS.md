@@ -1417,3 +1417,36 @@ interfaces/api/  → Gin handlers, middleware, DTOs
 2026-09-17 — исполнено Devin, на ревью у Claude Code. Корень: `readonly` (режим `community` для анонима) в `event-bridge.ts` ранним `return` отсекал не только редактирование, но и все view-взаимодействия — публичный граф нельзя было зумить и панорамировать. Семантика исправлена: readonly = «не редактируется, но интерактивен» — pan инициализируется сразу в `handleMouseDown` до детекта узлов, zoom/dblclick/touch больше не отсекаются; защита сохранена для выбора узла, контекстного меню, клавиатуры, drag узлов и ghost-ноды. `GraphTopBar` получил вариант `floating`: анониму доступны view-контролы (reset/search-open/focus/fog) и `top-bar-sign-in`/`top-bar-register`; поиск, фильтры типов/связей и переключатель personal/community — только авторизованным. В `GraphCanvas` guard `dataKey === lastDataKey && simState.isRunning` упрощён до `dataKey === lastDataKey` — эффект пересоздавал остановленную симуляцию и сбрасывал состояние.
 
 Верификация: 1436 unit-тестов PASS (139 файлов), svelte-check PASS, lint 0 ошибок; Playwright `chromium-real-auth` `tests/cockpit-canvas-controls.spec.ts` — 7/7 PASS на изолированном стеке `SKIP_AUTH=false`. Ограничение среды: `nlp-test` не собирался — диск D: почти полон, модель ~4.4 ГБ рушила containerd (SIGBUS); для canvas-тестов NLP не нужен, DNS-имя закрыто stub-контейнером.
+
+---
+
+## 39. NOTE-QUALITY-1, этап 1 — конвейер качества заметки без весов (2026-09-27)
+
+Реализовано Devin, на ревью у Claude Code. Постановка и находки:
+`docs/tasks/NOTE-QUALITY-1-quality-loop.md`.
+
+- **Сигналы и отсечки** — `internal/application/quality`: детерминированные сигналы
+  по четырём измерениям над нормализованным текстом NLP-4 (сырой текст при
+  отсутствии артефакта), четыре отсечки (`stub`, `truncated`, `empty`, `mojibake`)
+  и вердикт `create|enrich|manual` без баллов и весов. Модельные сигналы
+  (`coherence_*`, `title_text_similarity`) — через порт эмбедера, `null` при
+  недоступной модели.
+- **Цикл:** `quality:assess` ставится после `nlp:normalize` и после задач
+  обогащения; правило остановки — дедуп по сигналам и кап 3 авто-оценок на
+  `source_hash` с `needs_manual_review`. Хранение: поле `quality` в
+  `nlp_artifacts` + коллекция `quality_log` (10 записей на заметку).
+- **API:** `GET /notes/{id}/quality` (запись + лог), `POST .../quality/assess`
+  (ручной триггер, вне капа). Выключатель `nlp.quality.enabled` (по умолчанию
+  off) — ни задач, ни записей, API отвечает `{"enabled": false}`.
+- **Перезабор** — только действием пользователя: `refetch/preview` (без мутаций),
+  `refetch` (прежний текст в `metadata.previous_content`), `refetch/restore`
+  (байт в байт). Этап 1 не меняет `notes.content` и ничего не блокирует.
+- **Backfill:** `cmd/quality-recompute` — `--dry-run` (due/assessed), `--export`
+  JSONL «id + hash + сигналы» без текстов (`work-quality/local/` в .gitignore).
+- **Корпус (108 заметок):** `truncated=39, stub=8, collection=0` — совпало с
+  постановкой; зафиксировано расхождение её формулировки («тело ≥ 4 990» даёт 37,
+  реализовано «всё содержимое ≥ 4 990» — даёт заявленные 39). Шесть мутаций
+  (отсечки, дедуп, кап) — красные; «нет сети» — тест со считающим сервером.
+- **Фронтенд:** строка «Качество» в панели заметки (вердикт, причины, сигналы по
+  наведению, «Доработать», «Перезабрать» для stub/truncated с source_url),
+  i18n EN/RU, компонентные тесты.

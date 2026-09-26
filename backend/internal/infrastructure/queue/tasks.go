@@ -15,6 +15,8 @@ const (
 	TypeNormalizeNote = "nlp:normalize"
 	// TypeNlpArtifactsCleanup — cascade: remove a deleted note's nlp_artifacts
 	TypeNlpArtifactsCleanup = "nlp:artifacts-cleanup"
+	// TypeAssessQuality — NOTE-QUALITY-1: compute signals/gates for a note
+	TypeAssessQuality = "quality:assess"
 )
 
 // ExtractKeywordsTaskPayload contains data for the keyword extraction task
@@ -42,6 +44,14 @@ type NormalizeNotePayload struct {
 // NlpArtifactsCleanupPayload identifies the note whose artifacts are removed.
 type NlpArtifactsCleanupPayload struct {
 	NoteID string `json:"note_id"`
+}
+
+// AssessQualityPayload identifies the note and what triggered the assessment
+// (quality.TriggerAuto | quality.TriggerManual — kept as string to avoid an
+// application import in the payload file).
+type AssessQualityPayload struct {
+	NoteID  string `json:"note_id"`
+	Trigger string `json:"trigger"`
 }
 
 // ImportBookmarksPayload contains data for a batch bookmark import task

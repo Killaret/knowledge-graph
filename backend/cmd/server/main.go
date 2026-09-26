@@ -263,6 +263,25 @@ func run(
 	// Handlers with new parameters
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService, importService)
 	noteHandler.SetLinkRepository(linkRepo)
+	// NOTE-QUALITY-1 part 3: re-fetch uses the same stage-A extractor as the
+	// import preview — a user action, never the quality pipeline.
+	noteHandler.SetRefetch(web.NewImportFetcher())
+
+	// NOTE-QUALITY-1: endpoints stay mounted but answer {"enabled": false}
+	// until the flag and Mongo are both present. The enqueuer is the task
+	// queue only when it implements the (narrow) quality enqueue method.
+	if cfg.NLPQualityEnabled && mongoClient != nil {
+		qualityLog := mongo.NewQualityLogRepository(mongoClient)
+		if err := qualityLog.EnsureIndexes(ctx); err != nil {
+			log.Printf("[Quality] WARNING: failed to ensure quality_log indexes: %v", err)
+		}
+		var qualityEnq notehandler.QualityEnqueuer
+		if e, ok := taskQueue.(notehandler.QualityEnqueuer); ok {
+			qualityEnq = e
+		}
+		noteHandler.SetQuality(true, qualityLog, qualityEnq)
+		log.Println("[Quality] NOTE-QUALITY-1 endpoints enabled")
+	}
 	linkHandler := linkhandler.New(linkRepo, noteRepo, achievementService, graphCache)
 	if eventPublisher != nil {
 		noteHandler.SetEventPublisher(eventPublisher)
@@ -464,7 +483,7 @@ func newAsynqClient(cfg *config.Config) common.TaskQueue {
 		return nil
 	}
 
-	asynqClient, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled)
+	asynqClient, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled, cfg.NLPQualityEnabled)
 	if err != nil {
 		log.Printf("WARNING: failed to create asynq client: %v", err)
 		return nil

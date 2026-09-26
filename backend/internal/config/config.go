@@ -148,6 +148,16 @@ type JSONConfig struct {
 		Normalization struct {
 			MinCosine float64 `json:"min_cosine"`
 		} `json:"normalization"`
+		// NOTE-QUALITY-1 stage 1: signals + gates, no score.
+		Quality struct {
+			Enabled              bool    `json:"enabled"`
+			CollectionProseShare float64 `json:"collection_prose_share"`
+			CollectionMinLinks   int     `json:"collection_min_links"`
+			SentenceMinWords     int     `json:"sentence_min_words"`
+			FragmentMaxWords     int     `json:"fragment_max_words"`
+			MojibakeShare        float64 `json:"mojibake_share"`
+			LegacyTruncatedRunes int     `json:"legacy_truncated_runes"`
+		} `json:"quality"`
 	} `json:"nlp"`
 }
 
@@ -188,6 +198,16 @@ type Config struct {
 	NLPPipelineEnabled        bool
 	NLPHistoryEnabled         bool    // keep superseded artifact versions
 	NLPNormalizationMinCosine float64 // rollback guard, model-scale dependent
+
+	// NOTE-QUALITY-1 stage 1 (assessment task + quality API). Disabled means
+	// no quality:assess tasks and {"enabled": false} from the endpoint.
+	NLPQualityEnabled              bool
+	NLPQualityCollectionProseShare float64
+	NLPQualityCollectionMinLinks   int
+	NLPQualitySentenceMinWords     int
+	NLPQualityFragmentMaxWords     int
+	NLPQualityMojibakeShare        float64
+	NLPQualityLegacyTruncatedRunes int
 
 	// Search
 	SearchFulltextLanguages []string
@@ -512,6 +532,15 @@ func resolveConfig(jsonCfg *JSONConfig) (*Config, error) {
 		NLPHistoryEnabled:         getBoolEnv("NLP_HISTORY_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.NLP.History.Enabled }, true)),
 		NLPNormalizationMinCosine: resolveNormalizationMinCosine(jsonCfg),
 
+		// NOTE-QUALITY-1
+		NLPQualityEnabled:              getBoolEnv("NLP_QUALITY_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.NLP.Quality.Enabled }, false)),
+		NLPQualityCollectionProseShare: getFloatEnv("NLP_QUALITY_COLLECTION_PROSE_SHARE", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.NLP.Quality.CollectionProseShare }, 0.3)),
+		NLPQualityCollectionMinLinks:   getIntEnv("NLP_QUALITY_COLLECTION_MIN_LINKS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.NLP.Quality.CollectionMinLinks }, 3)),
+		NLPQualitySentenceMinWords:     getIntEnv("NLP_QUALITY_SENTENCE_MIN_WORDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.NLP.Quality.SentenceMinWords }, 4)),
+		NLPQualityFragmentMaxWords:     getIntEnv("NLP_QUALITY_FRAGMENT_MAX_WORDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.NLP.Quality.FragmentMaxWords }, 3)),
+		NLPQualityMojibakeShare:        getFloatEnv("NLP_QUALITY_MOJIBAKE_SHARE", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.NLP.Quality.MojibakeShare }, 0.01)),
+		NLPQualityLegacyTruncatedRunes: getIntEnv("NLP_QUALITY_LEGACY_TRUNCATED_RUNES", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.NLP.Quality.LegacyTruncatedRunes }, 4990)),
+
 		// Auth / App configuration
 		FrontendURL:                  getEnv("FRONTEND_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.FrontendURL }, "")),
 		JWTSecret:                    getEnv("JWT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.JWTSecret }, "")),
@@ -717,6 +746,13 @@ func defaultJSONConfig() *JSONConfig {
 
 	cfg.NLP.History.Enabled = true
 	cfg.NLP.Normalization.MinCosine = 0.7
+
+	cfg.NLP.Quality.CollectionProseShare = 0.3
+	cfg.NLP.Quality.CollectionMinLinks = 3
+	cfg.NLP.Quality.SentenceMinWords = 4
+	cfg.NLP.Quality.FragmentMaxWords = 3
+	cfg.NLP.Quality.MojibakeShare = 0.01
+	cfg.NLP.Quality.LegacyTruncatedRunes = 4990
 
 	cfg.Backup.Cloud.Provider = "r2"
 	cfg.Backup.LocalPath = "./backups"

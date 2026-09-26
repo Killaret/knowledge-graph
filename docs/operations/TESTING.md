@@ -389,7 +389,7 @@ The manual test checklist covers:
 | Frontend | Functions | **82.38%** | 70% (min 70%) | ✅ Above minimum |
 | Frontend | Lines | **84.01%** | 70% (min 70%) | ✅ Above minimum |
 
-**Backend unit-coverage denominator:** measured over packages that contain unit-testable code. CLI main entrypoints (`cmd/cli`, `cmd/embed-recompute`, `cmd/gamma-links-regenerate`, `cmd/keyword-recompute`, `cmd/rotate-api-keys`, `cmd/seed`, `cmd/checkmigrations`, `cmd/worker`), test helpers (`internal/testutil`, `internal/domain/cache/cachetest`), and `scripts` are excluded from the threshold because they are covered by integration/E2E tests or are part of the test infrastructure. `internal/infrastructure/graph` is a handwritten gRPC client and is **not** excluded — its absence from unit coverage is real, not generated code.
+**Backend unit-coverage denominator:** measured over packages that contain unit-testable code. CLI main entrypoints (`cmd/cli`, `cmd/embed-recompute`, `cmd/gamma-links-regenerate`, `cmd/keyword-recompute`, `cmd/nlp-artifacts-recompute`, `cmd/quality-recompute`, `cmd/rotate-api-keys`, `cmd/seed`, `cmd/checkmigrations`, `cmd/worker`), test helpers (`internal/testutil`, `internal/domain/cache/cachetest`), and `scripts` are excluded from the threshold because they are covered by integration/E2E tests or are part of the test infrastructure. `internal/infrastructure/graph` is a handwritten gRPC client and is **not** excluded — its absence from unit coverage is real, not generated code.
 
 ### Backend Tests
 

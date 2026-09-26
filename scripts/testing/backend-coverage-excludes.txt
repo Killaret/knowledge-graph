@@ -6,6 +6,7 @@ knowledge-graph/cmd/embed-recompute
 knowledge-graph/cmd/gamma-links-regenerate
 knowledge-graph/cmd/keyword-recompute
 knowledge-graph/cmd/nlp-artifacts-recompute
+knowledge-graph/cmd/quality-recompute
 knowledge-graph/cmd/rotate-api-keys
 knowledge-graph/cmd/seed
 knowledge-graph/cmd/checkmigrations

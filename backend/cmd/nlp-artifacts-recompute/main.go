@@ -107,7 +107,7 @@ func main() {
 
 	// Manual recompute must enqueue regardless of nlp.pipeline.enabled —
 	// that flag governs automatic enqueue on note save, not this command.
-	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, true)
+	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, true, cfg.NLPQualityEnabled)
 	if err != nil {
 		log.Fatalf("Failed to create task queue client: %v", err)
 	}

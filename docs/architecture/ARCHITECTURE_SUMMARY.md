@@ -288,6 +288,48 @@ stateDiagram-v2
   and measurements must be re-run after NOTE-QUALITY-1 changes the corpus.
   See `docs/tasks/NLP-4-note-logical-form-normalization.md`.
 
+## Note Quality Pipeline (NOTE-QUALITY-1, stage 1)
+
+- `quality:assess` is enqueued after `nlp:normalize` and after each note
+  enrichment task (keywords, embedding, link updates). Manual assessments
+  come from `POST /api/v1/notes/{id}/quality/assess` or from
+  `quality-recompute`.
+- The assessor (`internal/application/quality`) computes deterministic
+  signals over the normalized artifact text (raw content when no artifact
+  matches the current `source_hash`): volume (`words`, `prose_words`),
+  completeness (`ends_with_sentence`, `truncated_by_import`,
+  `unclosed_fence`), structure (`headings`, `fragment_share`,
+  `max_block_words`), presence of thought (`sentences`, `prose_share`,
+  `kind` = stub/collection/text), readiness counters (keywords, links,
+  embedding), and `mojibake`. Model-dependent signals (`coherence_min/median`,
+  `title_text_similarity`) come through the embedder port and stay `null`
+  when the model is unavailable.
+- Four weight-free gates produce `verdict ∈ {create, enrich, manual}`:
+  `stub` → enrich, `truncated` → enrich, `empty` (no text, no source) →
+  manual, `mojibake` → manual. Stage 1 never blocks or mutates the note —
+  the record is an indicator only.
+- Stop rule per text version (`source_hash`): identical signals suppress a
+  new entry; automatic passes are capped at 3, a gate that still holds
+  after the third marks `needs_manual_review`. Manual triggers always
+  write.
+- Storage: the current `nlp_artifacts` document gets a `quality` field
+  (`signals, gates, verdict, reasons, attempt, computed_at`,
+  `pipeline_version: "quality-v1"`); every assessment is also appended to
+  MongoDB `quality_log` (last 10 per note).
+- `GET /api/v1/notes/{id}/quality` returns the latest record and the log;
+  note authorization applies. Switch `nlp.quality.enabled` (env
+  `NLP_QUALITY_ENABLED`, default off): no task is enqueued and the API
+  answers `{"enabled": false}`.
+- Refetch (user action only, never from the pipeline): preview → apply →
+  restore. Apply stores the previous body in `metadata.previous_content`;
+  restore puts it back byte-exactly.
+- Backfill: `go run ./cmd/quality-recompute --dry-run` prints due/assessed
+  counts; `--export <file.jsonl>` dumps ids + hashes + signals with no
+  note text (output goes to `work-quality/local/`, gitignored). A real run
+  enqueues manual `quality:assess` tasks — the client gate still honours
+  `nlp.quality.enabled`.
+- See `docs/tasks/NOTE-QUALITY-1-quality-loop.md` for the stage-1 spec.
+
 ## Operational Considerations
 
 ### Monitoring

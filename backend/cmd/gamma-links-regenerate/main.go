@@ -98,7 +98,7 @@ func main() {
 	} else {
 		log.Println("WARNING: EVENT_CHANNEL not set, LinkCreated/LinkDeleted events will not be published")
 	}
-	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled)
+	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled, cfg.NLPQualityEnabled)
 	if err != nil {
 		log.Printf("WARNING: failed to create task queue client: %v", err)
 		taskQueue = nil
