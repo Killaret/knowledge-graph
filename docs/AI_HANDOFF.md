@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-26 — 14f5b7a
-Прочитано: Devin — 2026-09-26 — 402ba0a
+Прочитано: Devin — 2026-09-28 — 3ad9f49
 ```
 
 ---
@@ -21,6 +21,7 @@
 |---|---|---|---|
 | **URL-HEADING-1 (этап A):** извлечение по `h1`–`h6` без модели | [`tasks/URL-HEADING-1-heading-extraction.md`](tasks/URL-HEADING-1-heading-extraction.md) | **отклонено** — тесты проверяют свою копию логики: лимит ссылок и кодировка без объявления, обе мутации зелёные. [`tasks/URL-HEADING-1-review-findings.md`](tasks/URL-HEADING-1-review-findings.md) | 2026-09-26 |
 | **NOTE-QUALITY-1 (этап 1):** мера качества без весов, перезабор | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **отклонено** — живьём оценка падает на каждой заметке: `source_id` в `quality_stats_repo.go:34`; выключатель не держит ни один тест. [`tasks/NOTE-QUALITY-1-review-findings.md`](tasks/NOTE-QUALITY-1-review-findings.md) | 2026-09-26 |
+| **SPEC-AUDIT-1:** все постановки против кода: вердикт с доказательством на каждое требование; «потеряно» и «не сделано» — владельцу с историей | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md), [`tasks/SPEC-AUDIT-1-register.md`](tasks/SPEC-AUDIT-1-register.md) | **на ревью** — реестр полный: этапы 0+A–E, 169 файлов, 0 потерь, 3 новых находки; список владельцу в конце реестра | 2026-09-28 |
 | **UI-GRAPH-1:** читаемость графа: автосвязи тоньше и скрываются кнопкой, подписи выборочно; в 3D — легенда; пояснение полоски «Connected notes» | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **отклонено** — подписи почти у всех узлов: порог «связность ≥ 3» при средней связности 5. [`tasks/UI-DESIGN-1-review-findings.md`](tasks/UI-DESIGN-1-review-findings.md) | 2026-09-26 |
 
 ## На Claude Code
@@ -51,7 +52,7 @@
 | **BOARD-3:** архив доски — папка `docs/archive/board/` по месяцам; сторож реплик; правило 4 | [`tasks/BOARD-3-board-archive.md`](tasks/BOARD-3-board-archive.md) | **бэклог** — ждёт Claude Code: реализация готова | 2026-09-28 |
 | **UI-LOAD-1:** загрузка не закрывает граф: оверлей снят, заметки до графа, узлы порциями без перезапуска раскладки, чип «N из M» | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — 1.0 · Devin: 2D принято 26.09; 3D — после SYNC-1 (решение 69) | 2026-09-26 |
 | **DOC-AUDIT-2:** документация против кода: утверждения сверить с кодом, «нет в коде» — владельцу | [`tasks/DOC-AUDIT-2-docs-vs-code.md`](tasks/DOC-AUDIT-2-docs-vs-code.md) | **бэклог** — 1.0 · Devin: A и B отклонены 26.09 — реестр построчно, откат шага 1b; после доработок. [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) | 2026-09-26 |
-| **SPEC-AUDIT-1:** все постановки против кода, включая принятые: вердикт с доказательством на каждое требование; «потеряно» и «не сделано» — владельцу с историей | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md) | **бэклог** — 1.0 · Devin, пять этапов; нужна чистая история git (решение 70) | 2026-09-26 |
+
 | **UX-1:** связи из правого меню, связь существующих заметок, пропадание канваса | [`tasks/UX-1-link-creation-and-canvas-refresh.md`](tasks/UX-1-link-creation-and-canvas-refresh.md) | **бэклог** — 1.0 · Devin; постановка владельца (решение 67) | 2026-09-26 |
 | **PANEL-LINKS-1:** панель заметки пишет «Links (undefined)» — клиент ждёт массив, API отдаёт `{incoming, outgoing}` (с 2026-07-16); при починке — пояснение при удалении связи с происхождением | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **бэклог** — 1.0 · Devin; смысл массового удаления решает владелец | 2026-09-24 |
 | **LINK-HIT-1:** наведение на связь берёт первую в пределах 8 единиц, а не ближайшую (`interactions.ts:62`) — в плотном графе подтвердить или удалить нужную связь нельзя | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **бэклог** — 1.0 · Devin; мешает сценариям LINKS-2 | 2026-09-24 |
