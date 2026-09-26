@@ -361,6 +361,41 @@
                       oninput={(e) => updateItemTitle(index, e.currentTarget.value)}
                       disabled={!isImportable(item)}
                     />
+                    {#if item.title_candidates && item.title_candidates.length > 1}
+                      <select
+                        class="candidate-select"
+                        data-testid="title-candidates"
+                        onchange={(e) => updateItemTitle(index, e.currentTarget.value)}
+                        disabled={!isImportable(item)}
+                      >
+                        {#if !item.title_candidates.includes(item.title)}
+                          <option value={item.title} selected>{item.title}</option>
+                        {/if}
+                        {#each item.title_candidates as candidate (candidate)}
+                          <option value={candidate} selected={candidate === item.title}>
+                            {candidate}
+                          </option>
+                        {/each}
+                      </select>
+                    {/if}
+                    {#if item.outline && item.outline.length > 0}
+                      <details class="outline-details" data-testid="item-outline">
+                        <summary>
+                          {t("import.outline")} ({item.outline.length}){#if item.noise_dropped}
+                            · {t("import.noiseDropped", { count: item.noise_dropped })}{/if}
+                        </summary>
+                        <ol class="outline-list">
+                          {#each item.outline as heading, i (i)}
+                            <li
+                              class="outline-item"
+                              style="padding-left: {(heading.level - 2) * 0.875}rem"
+                            >
+                              {heading.text}
+                            </li>
+                          {/each}
+                        </ol>
+                      </details>
+                    {/if}
                   </td>
                   <td class="url-cell">{item.url}</td>
                   <td>
@@ -743,6 +778,51 @@
   .table-select:focus {
     outline: none;
     border-color: var(--carbon-glow-cyan, #22d3ee);
+  }
+
+  .candidate-select {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    border-radius: 8px;
+    background: var(--carbon-graphene, #12121a);
+    color: var(--carbon-text-muted, #8b8b9e);
+    font-size: 0.8rem;
+  }
+
+  .candidate-select:focus {
+    outline: none;
+    border-color: var(--carbon-glow-cyan, #22d3ee);
+  }
+
+  .candidate-select:disabled {
+    opacity: 0.5;
+  }
+
+  .outline-details {
+    margin-top: 0.375rem;
+    font-size: 0.8rem;
+    color: var(--carbon-text-muted, #8b8b9e);
+  }
+
+  .outline-details summary {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .outline-list {
+    margin: 0.375rem 0 0;
+    padding: 0 0 0 1rem;
+    list-style: none;
+  }
+
+  .outline-item {
+    padding: 0.125rem 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .url-cell {

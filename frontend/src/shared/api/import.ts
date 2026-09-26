@@ -21,12 +21,25 @@ export interface ImportItem {
   type?: string;
 }
 
+export interface ImportOutlineEntry {
+  level: number;
+  text: string;
+}
+
 export interface ImportPreviewItem extends ImportItem {
   is_new: boolean;
   existing_note_id?: string;
   error?: string;
   /** Client-side opt-in: import this failed item with title only, no text. */
   title_only?: boolean;
+  /** URL-HEADING-1 stage A: title candidates in priority order. */
+  title_candidates?: string[];
+  /** "rule" at stage A. */
+  title_source?: string;
+  /** Extracted page outline with normalized levels (2..6). */
+  outline?: ImportOutlineEntry[];
+  /** Number of noise elements removed from the content container. */
+  noise_dropped?: number;
 }
 
 export interface ImportPreviewResponse {

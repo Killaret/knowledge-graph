@@ -171,6 +171,7 @@ token.json
 # Misc artifacts
 *.html
 !frontend/**/*.html
+!backend/**/testdata/**/*.html
 *.bat
 !start-personal.bat
 *.ps1

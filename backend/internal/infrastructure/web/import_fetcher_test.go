@@ -27,8 +27,8 @@ func TestImportFetcher_Extract(t *testing.T) {
 			name:      "extracts title and visible text",
 			url:       "/page",
 			server:    simpleHTMLServer(`<html><head><title>Test Page</title></head><body><h1>Hello</h1><p>World</p></body></html>`),
-			wantTitle: "Test Page",
-			wantText:  "Hello\nWorld",
+			wantTitle: "Hello", // h1 is candidate #1 and beats <title> (A5)
+			wantText:  "## Hello\n\nWorld",
 		},
 		{
 			name:      "skips script and style content",
@@ -62,7 +62,7 @@ func TestImportFetcher_Extract(t *testing.T) {
 			}
 
 			f := NewImportFetcherWithClient(srv.Client())
-			title, text, err := f.Extract(context.Background(), url)
+			page, err := f.Extract(context.Background(), url)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -70,8 +70,9 @@ func TestImportFetcher_Extract(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, tt.wantTitle, title)
-			assert.Equal(t, tt.wantText, text)
+			require.NotNil(t, page)
+			assert.Equal(t, tt.wantTitle, page.Title)
+			assert.Equal(t, tt.wantText, page.Text)
 		})
 	}
 }
@@ -82,10 +83,12 @@ func TestImportFetcher_Extract_TitleFallback(t *testing.T) {
 	defer srv.Close()
 
 	f := NewImportFetcherWithClient(srv.Client())
-	title, text, err := f.Extract(context.Background(), srv.URL)
+	page, err := f.Extract(context.Background(), srv.URL)
 	require.NoError(t, err)
-	assert.Equal(t, srv.URL, title, "empty title should fall back to URL")
-	assert.Equal(t, "Only body text", text)
+	// Empty <title> and no h1 → last URL path segment, then the URL itself
+	// (srv.URL has an empty path, so the URL fallback wins).
+	assert.Equal(t, srv.URL, page.Title, "empty title should fall back to URL")
+	assert.Equal(t, "Only body text", page.Text)
 }
 
 func TestImportFetcher_Extract_Cancel(t *testing.T) {
@@ -98,7 +101,7 @@ func TestImportFetcher_Extract_Cancel(t *testing.T) {
 	cancel()
 
 	f := NewImportFetcherWithClient(srv.Client())
-	_, _, err := f.Extract(ctx, srv.URL)
+	_, err := f.Extract(ctx, srv.URL)
 	require.Error(t, err)
 }
 
@@ -128,18 +131,19 @@ func TestImportFetcher_Extract_CharsetConversion(t *testing.T) {
 	defer srv.Close()
 
 	f := NewImportFetcherWithClient(srv.Client())
-	title, text, err := f.Extract(context.Background(), srv.URL)
+	page, err := f.Extract(context.Background(), srv.URL)
 	require.NoError(t, err)
 
-	assert.Equal(t, "Полное руководство по IDOR", title)
-	assert.Contains(t, text, "Уязвимости")
-	assert.True(t, utf8.ValidString(title))
-	assert.True(t, utf8.ValidString(text))
+	assert.Equal(t, "Полное руководство по IDOR", page.Title)
+	assert.Contains(t, page.Text, "Уязвимости")
+	assert.True(t, utf8.ValidString(page.Title))
+	assert.True(t, utf8.ValidString(page.Text))
 }
 
 func TestImportFetcher_Extract_RuneSafeTextTruncation(t *testing.T) {
-	// 6000 multi-byte Cyrillic runes. Old code would truncate by bytes and
-	// split a rune, producing invalid UTF-8.
+	// 6000 multi-byte Cyrillic runes — one paragraph fits under the
+	// IMPORT_CONTENT_MAX_RUNES=20000 budget, so nothing is dropped and no
+	// rune is split.
 	longText := strings.Repeat("ы", 6000)
 	body := fmt.Sprintf(`<html><head><title>Title</title></head><body><p>%s</p></body></html>`, longText)
 
@@ -147,16 +151,17 @@ func TestImportFetcher_Extract_RuneSafeTextTruncation(t *testing.T) {
 	defer srv.Close()
 
 	f := NewImportFetcherWithClient(srv.Client())
-	title, text, err := f.Extract(context.Background(), srv.URL)
+	page, err := f.Extract(context.Background(), srv.URL)
 	require.NoError(t, err)
 
-	assert.Equal(t, "Title", title)
-	assert.True(t, utf8.ValidString(text))
-	assert.LessOrEqual(t, utf8.RuneCountInString(text), 5000)
+	assert.Equal(t, "Title", page.Title)
+	assert.True(t, utf8.ValidString(page.Text))
+	assert.Equal(t, 6000, utf8.RuneCountInString(page.Text))
 }
 
 func TestImportFetcher_Extract_TruncatesLongTitle(t *testing.T) {
-	// 110 Cyrillic runes exceed the 200-rune title limit.
+	// 250 Cyrillic runes exceed the 3–200 rune candidate rule, so the rule
+	// falls through to the URL; the extraction-level cap is a second guard.
 	longTitle := strings.Repeat("ы", 250)
 	body := fmt.Sprintf(`<html><head><title>%s</title></head><body><p>text</p></body></html>`, longTitle)
 
@@ -164,9 +169,29 @@ func TestImportFetcher_Extract_TruncatesLongTitle(t *testing.T) {
 	defer srv.Close()
 
 	f := NewImportFetcherWithClient(srv.Client())
-	title, _, err := f.Extract(context.Background(), srv.URL)
+	page, err := f.Extract(context.Background(), srv.URL)
 	require.NoError(t, err)
 
-	assert.True(t, utf8.ValidString(title))
-	assert.LessOrEqual(t, utf8.RuneCountInString(title), 200)
+	assert.True(t, utf8.ValidString(page.Title))
+	assert.LessOrEqual(t, utf8.RuneCountInString(page.Title), 200)
+}
+
+func TestImportFetcher_Extract_UncertainCharsetKeepsUTF8(t *testing.T) {
+	// Atlassian/Skillbox regression: <meta charset=""> with no HTTP charset
+	// makes charset.DetermineEncoding guess windows-1252 with certain=false —
+	// an uncertain guess must not decode, UTF-8 survives as-is.
+	htmlBody := `<html><head><meta charset=""><title>Настройка Keycloak</title></head><body><h1>Настройка Keycloak и интеграция LDAP</h1><p>Шаги</p></body></html>`
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprint(w, htmlBody)
+	}))
+	defer srv.Close()
+
+	f := NewImportFetcherWithClient(srv.Client())
+	page, err := f.Extract(context.Background(), srv.URL)
+	require.NoError(t, err)
+	assert.Equal(t, "Настройка Keycloak и интеграция LDAP", page.Title)
+	assert.Contains(t, page.Text, "Шаги")
+	assert.True(t, utf8.ValidString(page.Text))
 }

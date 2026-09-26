@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	appcache "knowledge-graph/internal/application/cache"
 	importer "knowledge-graph/internal/application/import"
@@ -1086,10 +1087,13 @@ func TestBookmarklet_DefaultTypeAndTruncation(t *testing.T) {
 	h, repo, tq, _, _, _ := setupUnitHandler(t)
 	userID := uuid.New()
 
-	hugeText := strings.Repeat("x", 20000)
+	// URL-HEADING-1: the domain Content limit is 50 000 runes and the request
+	// DTO rejects anything above 50 000 chars — so the old 10 000-byte cut no
+	// longer fires here; truncation itself stays covered by TestBuildContent.
+	hugeText := strings.Repeat("x", 40000)
 
 	repo.On("Save", mock.Anything, mock.MatchedBy(func(n *note.Note) bool {
-		return n.Type() == "asteroid" && len(n.Content().String()) <= 10000
+		return n.Type() == "asteroid" && utf8.RuneCountInString(n.Content().String()) <= 50000
 	})).Return(nil)
 	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
 	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)

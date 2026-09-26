@@ -21,6 +21,17 @@ This file covers July 2026 onward. Earlier history lives in the git log.
   non-empty backup exists.
 - CI drift guard for build configuration, after a silent revert of 3D fog densities went unnoticed.
 - Seeded test user and an explicit `APP_ENV` profile for the isolated test stack.
+- URL-HEADING-1 stage A: the bookmark importer now extracts a structured page —
+  title candidates (`h1` → `og:title` → `<title>` minus site suffix → URL segment),
+  a normalized Markdown outline, a per-section content budget
+  (`IMPORT_CONTENT_MAX_RUNES`, default 20 000 runes — never cut inside a list or a
+  fenced code block), a `noise_dropped` counter and `metadata.related_links`
+  (≤ 20 http(s) anchors). The import preview returns `title_candidates`,
+  `outline`, `noise_dropped` and `title_source="rule"`; the bookmark UI offers a
+  title-variant dropdown and a collapsible outline. Imported notes record
+  `metadata.title_candidates`, `title_source`, `related_links` and
+  `import_truncated.sections_dropped`. Covered by a 19-snapshot local golden
+  suite — no network in tests.
 - Three states for a note pair (LINKS-2): a gamma-suggested link can be confirmed via `POST /links`
   (the row is promoted to `source_type='user'`, HTTP 200, origin kept in `metadata.gamma`) or rejected
   via `DELETE /links/{id}` which records the pair in `link_suppressions` — the generator skips
@@ -36,6 +47,9 @@ This file covers July 2026 onward. Earlier history lives in the git log.
 - Auto-commit removed from the regression cycle entirely.
 - The 3D scene now signals readiness only after the first painted frame, so visual regression
   captures the scene instead of the loading screen.
+- Imported/bookmarklet note bodies are now capped by the domain `Content` limit
+  (50 000 runes) instead of the old 10 000-byte cut; the extraction budget is the
+  separate, earlier `IMPORT_CONTENT_MAX_RUNES` gate.
 
 ### Fixed
 

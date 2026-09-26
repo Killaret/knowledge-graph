@@ -2320,6 +2320,39 @@ components:
           format: uuid
         error:
           type: string
+        title_candidates:
+          type: array
+          description: >-
+            URL-HEADING-1 stage A: page title candidates in priority order
+            (h1 → og:title → <title> minus site suffix → last URL segment).
+            Present only when content extraction ran.
+          items:
+            type: string
+        title_source:
+          type: string
+          description: >-
+            How `title` was chosen. Always "rule" at stage A; NLP ranking
+            ("model") arrives with stage B.
+          enum: [rule]
+        outline:
+          type: array
+          description: >-
+            Extracted page outline; heading levels are normalized so the
+            first heading is level 2 (the `## [title](url)` first line is
+            level 1 semantics), clamped to [2, 6].
+          items:
+            type: object
+            required: [level, text]
+            properties:
+              level:
+                type: integer
+                minimum: 2
+                maximum: 6
+              text:
+                type: string
+        noise_dropped:
+          type: integer
+          description: Number of noise elements removed inside the content container
 
     ImportBookmarksPreviewResponse:
       type: object

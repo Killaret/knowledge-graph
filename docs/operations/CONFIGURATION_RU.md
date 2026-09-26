@@ -338,6 +338,7 @@ MongoDB используется для хранения черновиков з
 | `SERVER_PORT` | backend | Порт HTTP-сервера (Gin) | `8080` |
 | `REDIS_URL` | backend, worker | Адрес Redis для очередей asynq и кеша рекомендаций | `localhost:6379` |
 | `NLP_SERVICE_URL` | backend, worker | URL Python NLP-сервиса | `http://localhost:5000` |
+| `IMPORT_CONTENT_MAX_RUNES` | backend | URL-HEADING-1, этап A: бюджет извлечённого тела страницы в рунах — обрезка идёт по целым разделам (никогда внутри списка или кодового блока); число не вошедших разделов пишется в `metadata.import_truncated.sections_dropped` | `20000` |
 
 ### Детали компонентов
 

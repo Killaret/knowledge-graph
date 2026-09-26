@@ -339,6 +339,7 @@ All other parameters can be configured via `knowledge-graph.config.json` or over
 | `SERVER_PORT` | backend | HTTP server port (Gin) | `8080` |
 | `REDIS_URL` | backend, worker | Redis address for asynq queues and recommendation cache | `localhost:6379` |
 | `NLP_SERVICE_URL` | backend, worker | Python NLP service URL | `http://localhost:5000` |
+| `IMPORT_CONTENT_MAX_RUNES` | backend | URL-HEADING-1 stage A: rune budget for the extracted page body — content is truncated by whole sections (never inside a list or a code fence); dropped sections are reported via `metadata.import_truncated.sections_dropped` | `20000` |
 
 ### Component Details
 

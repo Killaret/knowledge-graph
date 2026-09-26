@@ -446,3 +446,85 @@ func (q *fakeTaskQueue) EnqueueNormalizeNote(ctx context.Context, noteID string)
 func (q *fakeTaskQueue) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
 	return nil
 }
+
+// fakeExtractor returns a fixed extraction result (URL-HEADING-1 stage A).
+type fakeExtractor struct {
+	page *ExtractedPage
+	err  error
+}
+
+func (f *fakeExtractor) Extract(ctx context.Context, rawURL string) (*ExtractedPage, error) {
+	return f.page, f.err
+}
+
+func TestProcessImportTask_ExtractionMetadata(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+	repo := newFakeNoteRepo()
+	cache := cachetest.NewFakeCacheClient()
+	queue := &fakeTaskQueue{}
+	extractor := &fakeExtractor{page: &ExtractedPage{
+		Title:           "Page Title",
+		Text:            "extracted body",
+		TitleCandidates: []string{"Page Title", "Page Title - Site"},
+		TitleSource:     "rule",
+		Outline:         []OutlineEntry{{Level: 2, Text: "Page Title"}},
+		RelatedLinks:    []RelatedLink{{Text: "Docs", URL: "https://docs.example.com"}},
+		NoiseDropped:    4,
+		SectionsDropped: 3,
+	}}
+	svc := NewService(repo, cache, queue, extractor)
+
+	items := []Item{{URL: "https://example.com/page", Type: "asteroid", ExtractContent: true}}
+	err := svc.ProcessImportTask(ctx, userID, uuid.New().String(), items)
+	require.NoError(t, err)
+	require.Len(t, repo.notes, 1)
+
+	var saved *note.Note
+	for _, n := range repo.notes {
+		saved = n
+	}
+	meta := saved.Metadata().Value()
+	require.Equal(t, "rule", meta["title_source"])
+	require.Equal(t, []string{"Page Title", "Page Title - Site"}, meta["title_candidates"])
+
+	links, ok := meta["related_links"].([]map[string]string)
+	require.True(t, ok)
+	require.Len(t, links, 1)
+	require.Equal(t, "https://docs.example.com", links[0]["url"])
+
+	trunc, ok := meta["import_truncated"].(map[string]interface{})
+	require.True(t, ok)
+	require.Equal(t, 3, trunc["sections_dropped"])
+
+	require.Equal(t, "Page Title", saved.Title().String())
+	require.Contains(t, saved.Content().String(), "## [Page Title](https://example.com/page)")
+	require.Contains(t, saved.Content().String(), "extracted body")
+}
+
+func TestPreview_ExtractionFields(t *testing.T) {
+	ctx := context.Background()
+	repo := newFakeNoteRepo()
+	extractor := &fakeExtractor{page: &ExtractedPage{
+		Title:           "P",
+		Text:            "body",
+		TitleCandidates: []string{"P", "Q"},
+		TitleSource:     "rule",
+		Outline:         []OutlineEntry{{Level: 2, Text: "P"}},
+		NoiseDropped:    2,
+	}}
+	svc := NewService(repo, cachetest.NewFakeCacheClient(), nil, extractor)
+
+	preview, err := svc.Preview(ctx, uuid.New(), []Item{
+		{URL: "https://example.com/a", Type: "asteroid", ExtractContent: true},
+	})
+	require.NoError(t, err)
+	require.Len(t, preview, 1)
+	pi := preview[0]
+	require.Equal(t, "P", pi.Title)
+	require.Equal(t, []string{"P", "Q"}, pi.TitleCandidates)
+	require.Equal(t, "rule", pi.TitleSource)
+	require.Equal(t, []OutlineEntry{{Level: 2, Text: "P"}}, pi.Outline)
+	require.Equal(t, 2, pi.NoiseDropped)
+	require.Empty(t, pi.Error)
+}
