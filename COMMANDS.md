@@ -274,11 +274,11 @@ docker compose logs backend | grep ERROR
 
 ### Health checks
 ```bash
-# Backend health endpoint
-curl http://localhost:8080/health
+# Backend health endpoint (host-published port is 9000; 8080 is in-container)
+curl http://localhost:9000/health
 
-# NLP service health
-curl http://localhost:8000/health
+# NLP service health (host-published port is 5000)
+curl http://localhost:5000/health
 ```
 
 ### Database

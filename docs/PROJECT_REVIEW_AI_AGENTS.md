@@ -9,7 +9,7 @@
 
 ## 1. Общее описание проекта
 
-**Knowledge Graph** — мультитенантное SaaS-приложение для управления заметками с графовой структурой, NLP-рекомендациями и 3D-визуализацией (`docs/architecture/ARCHITECTURE_SUMMARY.md`, `README.md`).
+**Knowledge Graph** — приложение для управления заметками с графовой структурой, NLP-рекомендациями и 3D-визуализацией (`docs/architecture/ARCHITECTURE_SUMMARY.md`, `README.md`). Сейчас — локальное однопользовательское; мультитенантность/RBAC — целевая архитектура из ADR, а не текущая реализация.
 
 Основные возможности:
 
@@ -42,7 +42,7 @@
 - **go-redis/v9** — клиент Redis (запрещён v8 API, `.windsurfrules`).
 - **asynq v0.26.0** — очереди задач на Redis (обновлён с v0.23.0, `backend/go.mod`).
 - **mongo-driver v1.17.9** — MongoDB.
-- **pgvector-go v0.2.0** — векторный поиск.
+- **pgvector-go v0.4.1** — векторный поиск.
 - **golang-jwt/jwt/v5** — JWT.
 - **testify** — тесты, **testcontainers-go** — интеграционные тесты.
 - **miniredis/v2** — in-memory Redis для тестов.

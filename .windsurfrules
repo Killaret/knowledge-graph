@@ -112,7 +112,7 @@ func (r *NoteRepo) FindByID(id uuid.UUID) (*Note, error) {
 
 **Frontend folders (FSD + Atomic Design):**
 ```
-frontend/src/app/            # SvelteKit entry points, hooks, layouts
+frontend/src/app.html, app.d.ts, hooks.server.ts  # SvelteKit entry points at src root (no src/app/ dir)
 frontend/src/routes/         # SvelteKit pages (FSD pages layer)
 frontend/src/widgets/        # Complex, self-contained sections (GraphCanvas, NotePanel)
 frontend/src/features/       # User scenarios and flows (graph-interaction, graph-forms)

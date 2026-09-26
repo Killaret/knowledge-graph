@@ -99,3 +99,18 @@
 | product/LINKS_CHEATSHEET.md | ~15 | ~14 | 1 (путь renderer.ts → entities/graph-canvas/lib/) | — | — |
 | product/NOTE_ERROR_CORRECTION_PLAN.md | ~10 | ~9 | 1 (QuickCaptureWidget → widgets/quick-capture/) | — | — |
 | product/ANOMALY_TYPES.md, CELESTIAL_BODY_SEMANTICS.md, IDEAS.md, BOOKMARKLET.md, OBSIDIAN_IMPORT_SPEC.md, UX_GUIDELINES_EN.md, GRAPH_LINKS_VISUALIZATION.md | ~60 | ~58 | — | — | — (пути/эндпоинты выборочно подтверждены; спеки-планы помечены статусами) |
+| README.md (корень) | ~10 | ~10 | — | — | — (таблица портов верна) |
+| DEPLOY.md / DEPLOY.ru.md | ~60 | ~55 | — | — | — (PERSONAL_REDIS_URL — compose-уровень, верен; `migrate/migrate` внешний образ — валидно; внутренние порты контейнеров корректны) |
+| BOOTSTRAP.md | ~10 | ~10 | — | — | — (check-disk-layout.ps1, start-test.ps1 — существуют) |
+| COMMANDS.md | ~40 | ~38 | 2 (health-порты: backend 8080→9000, NLP 8000→5000 — контейнерные порты вместо хостовых) | — | — |
+| docs/AGENTS.md | ~10 | ~10 | — | — | — (роли совпадают с AI_AGENT_PROTOCOL) |
+| docs/LICENSES.md | — | — | — | — | — (самопроверяется `check-licenses.mjs` — зелёный, 87 депенденси) |
+| docs/PROJECT_REVIEW_AI_AGENTS.md | ~30 | ~27 | 3 («мультитенантное SaaS» → локальное однопользовательское, мультитенантность — цель; pgvector-go v0.2.0→v0.4.1; GORM-версия в .windsurfrules отстаёт от go.mod v1.31.2 — зафиксировано как мягкое) | — | — |
+| docs/agents/*.md | ~15 | ~15 | — | — | — (процессные документы) |
+| TZ-Java-source-text-handler-2026-08-30.md | — | — | — | — | — (статус «ожидает реализации» — точен, сервиса нет) |
+| backend/README.md | ~10 | ~9 | 1 («Russian messages» → English — реальные сообщения в response.go на английском) | — | — |
+| backend/internal/domain/**/README.md | ~15 | ~15 | — | — | — (пакеты совпадают с деревом) |
+| frontend/README.md | — | — | 1 (был стоковый шаблон `sv create` — заменён на реальный: стек, команды, порты прокси, FSD-карта) | — | — |
+| frontend/src/shared/services/README.md | ~15 | ~15 | — | — | — (API PreloadService совпадает) |
+| .windsurfrules | ~40 | ~39 | 1 (`frontend/src/app/` — такого каталога нет; entry points живут в корне src/) | — | — (тест-порты, команды, правила — сверены) |
+| .devin/skills/*, .devin/prompts/* | ~25 | ~25 | — | — | — (пути существуют; kg-graph-3d signal/clip-факты соответствуют engine.ts) |
