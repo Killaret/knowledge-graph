@@ -170,6 +170,7 @@
 - **NOTE-QUALITY-1** — та же логика весов/качества нужна Java-сервису;
   параметры чанкера — часть будущего контракта.
 - **URL-HEADING-1** — `heading_path` — задел под неё.
+- **JAVA-HANDOVER-1** — передача чанкера и его правил Java-сервису: [`JAVA-HANDOVER-1-chunking-and-text-know-how.md`](JAVA-HANDOVER-1-chunking-and-text-know-how.md).
 
 ---
 
