@@ -103,7 +103,7 @@ _ABBREVIATIONS = frozenset(
         "dec",
     }
 )
-_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
+_LOWER_LETTERS = frozenset("abcdefghijklmnopqrstuvwxyzабвгдежзийклмнопрстуфхцчшщъыьэюяё")
 _WORD_RE = re.compile(r"\S+")
 _HEADING_LINK_STUB_RE = re.compile(
     r"\A\s*#{1,6}\s*\[[^\]\n]+\]\([^)\n]+\)\s*\Z",
@@ -201,6 +201,21 @@ def _line_spans(text: str, start: int, end: int) -> list[tuple[int, int]]:
     return spans
 
 
+def _match_heading(line: str) -> tuple[int, str] | None:
+    # "## Title ##" -> (2, "Title"): the result of r"^(#{1,6})\s+(.+?)\s*#*\s*$" with the title
+    # stripped, computed without regex — that one backtracks cubically on long runs of spaces.
+    rest = line.lstrip("#")
+    level = len(line) - len(rest)
+    title = rest.lstrip()
+    gap = len(rest) - len(title)
+    if not 1 <= level <= 6 or gap == 0:
+        return None
+    if not title:
+        # the regex took "#" plus two or more spaces for a heading with an empty title
+        return (level, "") if gap > 1 else None
+    return level, title.rstrip().rstrip("#").rstrip() or title[0]
+
+
 def _is_prose_interrupt(line: str) -> bool:
     stripped = line.lstrip()
     if not stripped:
@@ -208,7 +223,7 @@ def _is_prose_interrupt(line: str) -> bool:
     return bool(
         stripped.startswith("```")
         or stripped.startswith("|")
-        or _HEADING_RE.match(line)
+        or _match_heading(line)
         or line.startswith("    ")
         or line.startswith("\t")
     )
@@ -283,10 +298,9 @@ def _parse_blocks(
             add_block("table", start, end, path)
             continue
 
-        heading = _HEADING_RE.match(content)
+        heading = _match_heading(content)
         if heading:
-            level = len(heading.group(1))
-            title = heading.group(2).strip()
+            level, title = heading
             heading_path = heading_path[: level - 1] + [title]
             add_block(
                 "prose",
@@ -356,20 +370,17 @@ def _sentence_spans(text: str, start: int, end: int) -> list[tuple[int, int]]:
 
 def _is_false_boundary(text: str, block_start: int, punctuation_index: int) -> bool:
     prefix = text[block_start:punctuation_index]
-    match = re.search(r"([^\s]+)$", prefix)
-    if not match:
+    token = _last_token(prefix)
+    if not token:
         return False
-    token = match.group(1)
     normalized = token.rstrip('"\')]}»”').lower()
     following = text[punctuation_index + 1 : punctuation_index + 24]
 
-    if re.fullmatch(r"[a-zа-яё]", normalized) and re.match(
-        r"\s*[a-zа-яё]+\.", following, flags=re.IGNORECASE
-    ):
+    if re.fullmatch(r"[a-zа-яё]", normalized) and _starts_with_dotted_word(following):
         return True
-    if re.search(r"(?:[a-zа-яё]{1,3}\.\s*)+[a-zа-яё]$", prefix.lower()):
+    if _ends_with_initials(prefix.lower()):
         return True
-    if re.search(r"(?:https?://|www\.)\S*$", normalized):
+    if any(marker in normalized for marker in ("http://", "https://", "www.")):
         return True
     if re.fullmatch(r"\d+(?:[.,]\d+)*", normalized):
         return True
@@ -380,6 +391,39 @@ def _is_false_boundary(text: str, block_start: int, punctuation_index: int) -> b
 
     short_prefix = prefix[-12:].lower()
     return any(short_prefix.endswith(value) for value in _ABBREVIATIONS)
+
+
+# The helpers below replace regexes that backtrack polynomially on user text (CodeQL
+# py/polynomial-redos); each gives the same answer as the regex it names. In Python "$" also
+# matches before a final "\n", hence the trimming.
+
+
+def _last_token(text: str) -> str:
+    # re.search(r"([^\s]+)$", text), or "" when it does not match; the regex was quadratic in the
+    # length of a long token followed by a space.
+    if text.endswith("\n"):
+        text = text[:-1]
+    if not text or text[-1].isspace():
+        return ""
+    return text.rsplit(None, 1)[-1]
+
+
+def _starts_with_dotted_word(text: str) -> bool:
+    # re.match(r"\s*[a-zа-яё]+\.", text, flags=re.IGNORECASE)
+    rest = text.lstrip()
+    word = re.match(r"[a-zа-яё]+", rest, flags=re.IGNORECASE)
+    return word is not None and rest.startswith(".", word.end())
+
+
+def _ends_with_initials(text: str) -> bool:
+    # re.search(r"(?:[a-zа-яё]{1,3}\.\s*)+[a-zа-яё]$", text) matches exactly when its last
+    # repetition does, so only the tail is checked; the regex was quadratic on "a.a.a…".
+    if text.endswith("\n"):
+        text = text[:-1]
+    if not text or text[-1] not in _LOWER_LETTERS:
+        return False
+    head = text[:-1].rstrip()
+    return len(head) >= 2 and head[-1] == "." and head[-2] in _LOWER_LETTERS
 
 
 def _pack_units(

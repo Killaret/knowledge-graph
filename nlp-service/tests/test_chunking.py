@@ -2,6 +2,7 @@ import random
 import re
 import sys
 import os
+import time
 
 import numpy as np
 import pytest
@@ -10,6 +11,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.chunking import (
     ChunkingParams,
+    _ends_with_initials,
+    _last_token,
+    _match_heading,
+    _starts_with_dotted_word,
     aggregate,
     chunk,
     embedding_inputs,
@@ -183,6 +188,50 @@ class TestChunking:
 
         assert all(word_tokens(value) <= 6 for value in inputs)
         assert_no_non_whitespace_loss(text, chunks)
+
+
+class TestRegexFreeScans:
+    """Text scans that replaced regexes backtracking polynomially on note text (CodeQL py/polynomial-redos)."""
+
+    PIECES = ["#", "##", "#######", "a", "Z", "т", "Ё", "İ", "ſ", ".", "!", "…", "1", '"', "www.",
+              "https://", "т. е", "e.g", " ", "  ", "\t", "\xa0", " ", "\n"]
+
+    def random_texts(self, count: int, newlines: bool = True):
+        rng = random.Random(7)
+        pieces = self.PIECES if newlines else self.PIECES[:-1]
+        for _ in range(count):
+            yield "".join(rng.choice(pieces) for _ in range(rng.randint(0, 12)))
+
+    def test_scans_agree_with_the_regexes_they_replaced(self):
+        heading = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
+        for text in self.random_texts(3000, newlines=False):
+            match = heading.match(text)
+            expected = (len(match.group(1)), match.group(2).strip()) if match else None
+            assert _match_heading(text) == expected, repr(text)
+        for text in self.random_texts(3000):
+            match = re.search(r"([^\s]+)$", text)
+            assert _last_token(text) == (match.group(1) if match else ""), repr(text)
+            expected = bool(re.match(r"\s*[a-zа-яё]+\.", text, flags=re.IGNORECASE))
+            assert _starts_with_dotted_word(text) == expected, repr(text)
+            lowered = text.lower()
+            expected = bool(re.search(r"(?:[a-zа-яё]{1,3}\.\s*)+[a-zа-яё]$", lowered))
+            assert _ends_with_initials(lowered) == expected, repr(text)
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "# a" + " " * 2000 + "b",
+            "see " + "www." * 1000 + " .",
+            "x" * 20000 + " .",
+        ],
+        ids=["heading-with-spaces", "www-chain", "long-token"],
+    )
+    def test_adversarial_text_is_chunked_quickly(self, text):
+        # with the regexes these took 13 s, 28 s and 3 s
+        started = time.perf_counter()
+        chunk(text, params(target=50, max_tokens=60))
+
+        assert time.perf_counter() - started < 1.0
 
 
 class TestAggregate:
