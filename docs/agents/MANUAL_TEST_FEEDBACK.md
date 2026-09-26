@@ -491,3 +491,18 @@ Create a new bullet under the right section with:
   - After (`a14d640`): ~10 readable captions — top hubs only; `frontend.graph.label_hub_count=15`.
 - **Screenshot / Logs:** `docs/agents/screenshots/ui-graph-1/home-before.png`, `docs/agents/screenshots/ui-graph-1/home-after.png`; capture script `scripts/testing/temp/screenshot-home.mjs` (throwaway, not committed).
 - **Result:** criterion evidence — selective labels now bounded on a dense graph.
+
+### NOTE-QUALITY-1 rework — live assessment on the test stack
+
+- **Scope:** blocker 1 of `docs/tasks/NOTE-QUALITY-1-review-findings.md` — on the stand every assessment failed on `column "source_id" does not exist`; criterion 9 live run.
+- **Date:** 2026-09-28 (build `6806a85`)
+- **Agent:** Devin
+- **Environment:** isolated test stack (`start-test.ps1`, `SKIP_AUTH=true`, `NLP_PIPELINE_ENABLED=true`, `NLP_QUALITY_ENABLED=true`), seed: 20 notes, 10 links, 20 embeddings, 20 keyword notes.
+- **Observed:**
+  - Worker log at boot: `[Worker] NOTE-QUALITY-1 quality assessment enabled`; backend: `[Quality] NOTE-QUALITY-1 endpoints enabled`.
+  - `quality_log`: 22 records after auto assessments + 1 `trigger:"manual"` after `POST /api/v1/notes/7a3c8dfc-…/quality/assess` → `{"enabled":true,"enqueued":true}` (23 total).
+  - `nlp_artifacts`: 20/20 documents carry a `quality` stamp (reviewer had 0/101).
+  - `GET /api/v1/notes/f04dc990-…/quality` → `{"enabled":true,"quality":{"verdict":"create","signals":{"links":6,"keywords":5,"has_embedding":true,…}}}` — `links` is non-zero, the fixed `source_note_id`/`target_note_id` query works.
+  - Worker log: zero `42703`/ERROR lines (the review saw 1050).
+- **Screenshot / Logs:** mongosh counts and the API response quoted above; worker startup lines in `docker logs kg-test-worker`.
+- **Result:** criterion 9 verified live — assessment runs, writes Mongo, and serves the API.
