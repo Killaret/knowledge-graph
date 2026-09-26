@@ -33,8 +33,12 @@ test.describe("Smoke tests - real auth flow", { tag: ["@smoke", "@auth-real"] },
     await page.click('button[type="submit"]');
     await page.waitForURL(`${FRONTEND_URL}/`, { timeout: 15000 });
 
-    // Main page: public/authenticated graph canvas visible
-    const graphCanvas = page.locator('[data-testid="graph-canvas"]');
+    // Main page: public/authenticated graph canvas visible. Scoped to the page's graph
+    // container: the login page's background is a GraphCanvas with the same test id, and
+    // since the main graph renders without waiting for data (UI-LOAD-1) the two can overlap.
+    const graphCanvas = page.locator(
+      '[data-testid="graph-2d-container"] [data-testid="graph-canvas"]'
+    );
     await expect(graphCanvas).toBeVisible({ timeout: 15000 });
 
     const graphStats = page.locator('[data-testid="graph-stats"]').first();
