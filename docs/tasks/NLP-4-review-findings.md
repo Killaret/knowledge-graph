@@ -71,3 +71,24 @@
 ## Сводка check-all
 
 Прогон `scripts/testing/check-all.ps1` без `-Quick` на `36e9de2` (в нём TEST-LOCK-1, CHUNK-1, NLP-4 и `08bc184`): **29 фаз зелёные**, одна пропущена — не установлен `golangci-lint`; exit 0. Среди зелёных — интеграция бэкенда с testcontainers, в том числе репозиторий `nlp_artifacts` в Mongo, тесты сторожа владения стенда и сторожа авторства.
+
+## Ревью NLP-4-TAIL — Claude Code, 2026-09-26
+
+Реализация: Devin, `417b79c`. **Вердикт: принято.**
+
+| Место постановки | Тест | Мутация «убрать вызов» |
+|---|---|---|
+| пакетное создание (`note_handler.go:492`) | `TestCreateBatch_EnqueuesNormalize` | **красная** |
+| букмарклет (`note_handler.go:862`) | `TestBookmarklet_Success` | **красная** |
+| правка (`note_handler.go:1198`) | `TestUpdateNote_Success`; без смены текста — `TestUpdateNote_NoTextChange` ждёт ноль вызовов | **красная** |
+| импорт (`application/import/service.go:588`) | `TestProcessImportTask` | **красная** |
+
+- Оба пакета без мутаций зелёные.
+- Раздел `TESTING.md` «Backend CLI commands against the test stack» точен: порты 15434, 16381 и 27019
+  совпадают с compose, команды — в синтаксисе PowerShell.
+- `note_id` подтипом 0 оставлен осознанно — формат чтения совместим.
+
+Два новых места постановки, `refetch.go:187` и `:251`, пришли с NOTE-QUALITY-1 и проверяются в её
+ревью.
+
+`check-all` без `-Quick` на `8a767d6` вместе с разборами: 30 PASS, 1 FAIL — сверка манифеста проверок с CI; расхождение внёс этап A SYNC-1, к этой работе оно не относится; 1 SKIP — `golangci-lint` не установлен.
