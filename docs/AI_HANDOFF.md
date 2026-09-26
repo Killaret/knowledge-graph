@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-26 — d06f4ef
-Прочитано: Devin — 2026-09-27 — 93a72f1
+Прочитано: Devin — 2026-09-26 — 402ba0a
 ```
 
 ---
@@ -24,7 +24,6 @@
 | **NOTE-QUALITY-1 (этап 1):** мера качества без весов, перезабор | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **на ревью** — корпус 39/8/0, 6 мутаций красные; расхождение постановки разобрано в файле; критерий 9 — за ревью на стенде| 2026-09-27 |
 | **TEST-LOCK-1-TAIL:** хвост TEST-LOCK-1 — поведенческие тесты, резерв портов | [`tasks/TEST-PORTS-1-review-findings.md`](tasks/TEST-PORTS-1-review-findings.md) | **на ревью** — все три пункта закрыты, поведенческие тесты зелёные; детали в findings| 2026-09-27 |
 | **NLP-4-TAIL:** хвост NLP-4 — тесты постановки нормализации на остальных путях + recompute против стенда в `TESTING.md` | [`tasks/NLP-4-review-findings.md`](tasks/NLP-4-review-findings.md) | **на ревью** — пять сайтов постановки под тестами, мутации красные; `TESTING.md` дописан| 2026-09-27 |
-| **BOARD-3:** архив доски — папка `docs/archive/board/` по месяцам; сторож реплик; правило 4: `отклонено` не терминально | [`tasks/BOARD-3-board-archive.md`](tasks/BOARD-3-board-archive.md) | **в работе** — Devin | 2026-09-28 |
 
 ## На Claude Code
 
@@ -48,6 +47,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
+| **BOARD-3:** архив доски — папка `docs/archive/board/` по месяцам; сторож реплик; правило 4 | [`tasks/BOARD-3-board-archive.md`](tasks/BOARD-3-board-archive.md) | **бэклог** — ждёт Claude Code: реализация готова | 2026-09-28 |
 | **UI-PANELS-1:** панели кокпита: верхняя видна всегда, боковые — только явно, автоскрытие без дёрганья, заметные ручки, граф не пропадает | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — 1.0 · ждёт Claude Code: реализация готова (`f442cac`), ревью по файлу задачи | 2026-09-27 |
 | **UI-QUICK-1:** быстрые правки: язык дат, «Star lit», импорт, подсказка у точки «новая», «Delete» подальше от «Edit», контраст ≥ 4,5:1 | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — 1.0 · ждёт Claude Code: реализация готова, ревью по файлу задачи | 2026-09-27 |
 | **UI-GRAPH-1:** читаемость графа: автосвязи тоньше и скрываются кнопкой, подписи выборочно; в 3D — легенда; пояснение полоски «Connected notes» | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — 1.0 · ждёт Claude Code: реализация готова (`1488b47`), ревью по файлу задачи | 2026-09-27 |
