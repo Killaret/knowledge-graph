@@ -89,3 +89,13 @@
 | api/RECOMMENDATION_API.md | ~25 | ~18 | 6 (в цепочке пропущен live graph-service/BFS шаг; реальные значения `X-Recommendations-Source`: `table`/`graph-service`/`semantic`/`redis`/`empty`, а не `*-fallback`; header ставится всегда) | — | — |
 | api/API_ERRORS_EN.md | ~30 | ~27 | 3 (+`DUPLICATE_LINK`/`INVALID_UUID`/`INVALID_REQUEST`; 429 без поля `code` — `error`+`retry_after`; `RATE_LIMIT_EXCEEDED` не существует) | — | — |
 | backend/openAPI.yaml | ~3400 | покрыт `router_contract_test.go` — дрейф невозможен | — | — | — |
+| ROADMAP.md | ~15 | ~12 | 3 («English-only модель» — реально multilingual MiniLM, план = e5 (MODEL-2); «word forms as raw strings» — `/normalize` уже в worker-пайплайне; статусы блокеров Now: заголовки снятия на gateway сделано, 019 test user и Cache-Control — ещё открыты; строки 2–3 Now фактически выполнены) | — | — |
+| ROADMAP.ru.md | ~5 | ~5 | — | — | — (указатель на EN + фазы 21/22 — план, не факты) |
+| CHANGELOG.md | ~30 | ~30 | +1 (добавлена запись SYNC-1 A — дельта от снимка, resync, события на путях записи, сторож) | — | — |
+| product/BACKLOG.md | ~50 | ~35 | 9 (убраны ✅-секции: manual testing, cockpit UI, graph-service 1–5, publish/unpublish, bookmarklet/mass-import; строка «events.Publisher не проведён» — устарела после SYNC-1 A; ссылка на `API_TEST_COVERAGE_PLAN.md` → docs/archive/; дата обновления) | — | — |
+| product/FRONTEND_FEATURES.md | ~10 | ~9 | 1 (NoteSidePanel → CockpitNoteDetails.svelte) | — | — |
+| product/UI_DUPLICATION_AND_NOTE_CREATION_ANALYSIS.md | ~15 | ~15 | 1 (баннер актуализации: FloatingControls→GraphTopBar, NoteSidePanel→CockpitNoteDetails) | — | — |
+| product/LINK_TYPES.md + _RU | ~30 | ~30 | — | — | — (все 6 типов, parent/child — есть) |
+| product/LINKS_CHEATSHEET.md | ~15 | ~14 | 1 (путь renderer.ts → entities/graph-canvas/lib/) | — | — |
+| product/NOTE_ERROR_CORRECTION_PLAN.md | ~10 | ~9 | 1 (QuickCaptureWidget → widgets/quick-capture/) | — | — |
+| product/ANOMALY_TYPES.md, CELESTIAL_BODY_SEMANTICS.md, IDEAS.md, BOOKMARKLET.md, OBSIDIAN_IMPORT_SPEC.md, UX_GUIDELINES_EN.md, GRAPH_LINKS_VISUALIZATION.md | ~60 | ~58 | — | — | — (пути/эндпоинты выборочно подтверждены; спеки-планы помечены статусами) |

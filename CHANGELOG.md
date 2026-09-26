@@ -40,6 +40,13 @@ This file covers July 2026 onward. Earlier history lives in the git log.
 
 ### Changed
 
+- SYNC-1 stage A — graph delta contract: deltas are computed against the
+  client's layout snapshot (`graph-service:snapshot:{user}:{hash}`, TTL 900s),
+  not the latest cache; an unknown version answers `resync` (HTTP) /
+  `NotFound` (gRPC) instead of an all-added delta; links with changed
+  weight/source are reported under `added_links`. Import, refetch apply/restore
+  and link-weight writes now publish graph events, and a write-path guard
+  (`check-graph-write-paths.mjs`) keeps new writers honest.
 - **BREAKING:** Renamed the public graph endpoint on the main backend from the old `all` name to `/api/v1/graph/public`, hard, with no compatibility alias. The graph-service `public` and `full` endpoints are unchanged.
 - The canonical regression cycle now reports the real status of every phase. Previously failing
   integration, E2E, BDD and visual tests only printed a warning and the run still ended with a

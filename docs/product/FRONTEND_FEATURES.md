@@ -148,7 +148,7 @@ Added global box-sizing for better responsive behavior:
 
 ### Note Side Panel
 
-**Location:** `frontend/src/components/organisms/NoteSidePanel.svelte`
+**Location:** `frontend/src/widgets/cosmic-cockpit/CockpitNoteDetails.svelte` (renamed from `NoteSidePanel.svelte` — the cockpit redesign moved it)
 
 **Changes:**
 - Changed `height: 100vh` to `max-height: 100vh`

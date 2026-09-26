@@ -260,6 +260,6 @@
 ## Связанные задачи
 
 - Документация: `docs/product/LINK_TYPES.md` — типы связей для автосоздания
-- Код: `frontend/src/components/organisms/QuickCaptureWidget.svelte` — аналог для dust
+- Код: `frontend/src/widgets/quick-capture/QuickCaptureWidget.svelte` — аналог для dust
 - Код: `backend/internal/infrastructure/queue/tasks/` — worker задачи
 - Система рекомендаций: `docs/architecture/RECOMMENDATION_ARCHITECTURE.md` — для автосоздания связей

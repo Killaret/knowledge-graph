@@ -9,7 +9,7 @@
 | `related` | `#999999` (серый) | Сплошная или `[6, 4]` если weight<0.3 | ×1.0 |
 | `custom` | `#ff66ff` (розовый) | `[2, 6]` | ×1.0 |
 
-**Файл:** `frontend/src/components/organisms/GraphCanvas/renderer.ts`
+**Файл:** `frontend/src/entities/graph-canvas/lib/renderer.ts`
 
 ---
 
@@ -87,7 +87,7 @@ opacity = 0.4 + weight × 0.4
 
 | Компонент | Файл |
 |-----------|------|
-| **Рендеринг** | `frontend/src/components/organisms/GraphCanvas/renderer.ts` |
+| **Рендеринг** | `frontend/src/entities/graph-canvas/lib/renderer.ts` |
 | **Расчёт веса** | `backend/internal/application/recommendation/refresh_service.go` |
 | **Jaccard** | `backend/internal/application/recommendation/keyword_similarity.go` |
 | **BFS** | `backend/internal/domain/graph/bfs.go` |

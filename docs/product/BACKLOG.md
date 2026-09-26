@@ -9,58 +9,10 @@ hypotheses live in [IDEAS.md](IDEAS.md).
 
 ## 🎯 NOW: Current Focus
 
-### 🔄 Manual Testing & Stabilization
-
-| Task                                  | Status  | Priority    |
-| ------------------------------------- | ------- | ----------- |
-| Manual testing of all features        | ✅ Done | 🔴 Critical |
-| Bug fixes from manual testing         | ✅ Done | 🔴 Critical |
-| Critical verifications for production | ✅ Done | 🔴 Critical |
-
-**Subtasks:**
-
-- [x] Frontend E2E smoke tests (`cd frontend && npm run test:smoke`)
-- [x] Backend integration tests (`cd backend && go test -tags=integration ./...`)
-- [x] CI/CD workflows verification
-- [x] NLP API testing
-- [x] Backend auth API testing
-- [x] Public graph verification
-
-### 🎨 UI/UX: Cosmic Cockpit
-
-| Task                                                                                          | Status  | Priority |
-| --------------------------------------------------------------------------------------------- | ------- | -------- |
-| Cosmic Cockpit UI — starship cockpit layout with slide-out panels, HUD, and first-person mode | ✅ Done | 🟠 High  |
-| 2D node color variation — optional custom color + deterministic palette fallback              | ✅ Done | 🟠 High  |
-
-**Scope:**
-
-- Four slide-out panels (top, bottom, left, right) emulating a starship cockpit dashboard inspired by "Space Rangers".
-- Hover with 200–300 ms delay; drag-to-open by panel edge/corner; anchor to pin panels.
-- "First-person" (fullscreen) mode button hides all panels, showing only the graph.
-- Left panel: cluster navigation, note tree, graph mode switcher, type filters with multi-select and top-down expand animation.
-- Right panel: selected note details, link mini-graph, contextual actions (edit, add child note, add link, publish).
-- Top panel: search, global filters, 2D/3D toggle, sync status.
-- Bottom panel: HUD — current cluster, note/link count, graph health, FPS, delta sync indicator, first-person button.
-- UI settings: sensitivity, auto-collapse, reduced motion.
-- Graph node context menu for creating child notes.
-- Singularity drop zone for archive/delete; Black Hole type is strictly an "unresolved problem" note type and no longer implies deletion.
-
-**MVP:**
-
-- Static layout with four panels.
-- Bottom HUD bar.
-- Type filters in left panel with multi-select.
-- First-person mode.
-- Basic slide-out animation.
-
-**Dependencies:** FSD widget refactoring, graph store.
-
-**Note:** Cosmic notifications/toasts are not part of the Cosmic Cockpit MVP; they will be handled by a separate optional notification system.
-
-**Related analysis:**
-
-- [UI Duplication and Note Creation Analysis](UI_DUPLICATION_AND_NOTE_CREATION_ANALYSIS.md) — describes the legacy UI duplication this redesign addresses
+> Manual testing/stabilization and the Cosmic Cockpit UI are shipped — see
+> [CHANGELOG.md](../../CHANGELOG.md). The cockpit design itself is captured in
+> [UI Duplication and Note Creation Analysis](UI_DUPLICATION_AND_NOTE_CREATION_ANALYSIS.md)
+> and the running code under `frontend/src/widgets/cockpit*`.
 
 ### ⚡ Performance & Resource Optimization
 
@@ -76,7 +28,7 @@ hypotheses live in [IDEAS.md](IDEAS.md).
 - **Backend search:** `note_repo.go` uses `plainto_tsquery` + `ts_rank` full-text search — indexes and query cost need verification.
 - **Backend cache:** `graph_service` caches full layout with 300s TTL; large graphs may pressure Redis memory.
 - **Docker dev stack:** no memory limits for backend/frontend services (test stack has 512M–2G limits).
-- **Testing:** performance and memory-usage tests are marked as `⏳` in `API_TEST_COVERAGE_PLAN.md`; no CI bundle-size check.
+- **Testing:** performance and memory-usage tests are marked as `⏳` in `docs/archive/API_TEST_COVERAGE_PLAN.md`; no CI bundle-size check.
 
 **Action plan:**
 
@@ -94,52 +46,20 @@ hypotheses live in [IDEAS.md](IDEAS.md).
 
 | Task                                                                     | Status         | Priority    |
 | ------------------------------------------------------------------------ | -------------- | ----------- |
-| Event-driven invalidation & fallback model                               | ✅ Done        | 🔴 Critical |
-| Auth & user-scoped filtering in graph-service                            | ✅ Done        | 🔴 Critical |
-| Graph API unification & double-load removal                              | ✅ Done        | 🟠 High     |
-| Graph analytics API (Neighbors, Path, Recommendations)                   | ✅ Done        | 🟡 Medium   |
-| Materialized view / graph index                                          | ✅ Done        | 🟡 Medium   |
 | gRPC-web / SSE full-graph streaming                                      | ⏳ Planned     | 🟡 Medium   |
 | Improved layout algorithms (Honeycomb, force-directed, Cosmic Navigator) | 🔄 In Progress | 🟠 High     |
 
-### 1. Event-driven invalidation & fallback model
+Items 1–5 (event-driven invalidation, auth/user-scoped filtering, API
+unification, analytics API, `note_links_closure` view) are shipped — see
+[CHANGELOG.md](../../CHANGELOG.md) and ADR-013/014. Current-state notes:
 
-- `note_handler` and `link_handler` publish `NoteCreated`/`Updated`/`Deleted` and `LinkCreated`/`Updated`/`Deleted` events via `internal/infrastructure/events/publisher.go` to the Redis `graph:events` channel.
-- `graph-service` (`internal/subscriber/pubsub.go`) listens and invalidates keys `graph-service:full:*`, `graph-service:note:*`, `graph-service:delta:*`.
-- Main backend endpoints `/graph/public`, `/me/graph/fresh`, `/me/graph/cached` become **fallback**: frontend/proxy checks `graph-service` health and switches to backend only on unavailability.
-- This is critical because `events.Publisher` is currently not wired to handlers, so `graph-service` cache only expires by TTL.
-
-### 2. Auth & user-scoped filtering in graph-service ✅
-
-- Add JWT middleware to `graph-service` HTTP and gRPC.
-- Derive `user_id` from token and remove public `user_id` query parameter.
-- Add `creator_id` filter in `services/graph-service/internal/db/postgres_client.go` for all `notes`/`links` queries.
-- Anonymous/unauthenticated requests default to `is_public = true` to prevent leaking private notes.
-- `frontend/src/hooks.server.ts` proxy must forward `authorization` or a signed `x-internal-auth` header to `graph-service`.
-- Public graph moves to a separate endpoint (`/api/v1/graph/public`) filtering `is_public = true`.
-
-### 3. Graph API unification & double-load removal ✅
-
-- Standardize graph-service response fields: `id`, `title`, `type`, `source`, `target`, `weight`, `link_type`.
-- Remove fallback normalization (`id/Id/ID`, `source/source_note_id`) in `frontend/src/routes/+page.svelte`.
-- `+page.svelte` calls `getGraphWithPreload()` once (which loads `getFullGraphData()` when no cached data) and uses `Promise.all([getNotes(), getGraphWithPreload()])` for authenticated users; the sequential `getFreshGraph()` + repeated `loadGraphData()` flow is removed.
-- Use `/api/v1/graph/delta?last_hash=` for incremental updates via `PreloadService`.
-- `PreloadService` exposes `seedGraph(graphData)` so any full-graph response is cached with `lastHash` and can drive delta updates.
-
-### 4. Graph analytics API
-
-- Implement gRPC/HTTP methods `GetNeighbors`, `GetPath`, `GetRecommendations` in `graph-service`.
-- HTTP endpoints:
-  - `GET /api/v1/graph/note/:id/neighbors?depth=`
-  - `GET /api/v1/graph/path?from=&to=`
-  - `GET /api/v1/graph/recommendations?note_id=&limit=`
-- Replace backend BFS (`backend/internal/domain/graph/bfs.go`) and recommendation traversal with calls to `graph-service`.
-
-### 5. Materialized view / graph index
-
-- Create materialized view `note_links_closure` for transitive link closure.
-- Refresh the view on `LinkCreated`/`LinkDeleted` events (async via trigger or ASYNQ).
-- Use the view for `GetPath`, degree computation, semantic clustering, and Honeycomb layout.
+- `events.Publisher` **is** wired to handlers: notes/links/import/refetch/
+  link-weight all publish `Note*`/`Link*` events (SYNC-1 stage A added the
+  missing write paths and a `check-graph-write-paths.mjs` guard).
+- Deltas are computed against the client's layout snapshot
+  (`graph-service:snapshot:*`, TTL 900 s); an unknown `last_hash` answers
+  `resync`, not an all-added delta.
+- `note_links_closure` exists via migrations 027/032/033.
 
 ### 6. gRPC-web / SSE full-graph streaming
 
@@ -179,18 +99,9 @@ hypotheses live in [IDEAS.md](IDEAS.md).
 
 ### 🌐 Public Note Pool (Publish/Unpublish)
 
-| Task                                      | Status  | Priority |
-| ----------------------------------------- | ------- | -------- |
-| Implement publish/unpublish functionality | ✅ Done | 🟠 High  |
-
-**Scope:**
-
-- Backend API for publish/unpublish
-- Frontend UI controls
-- Public graph filtering
-- Privacy controls
-- Public sharing links
-- Unpublish workflow
+Shipped: `POST /api/v1/notes/{id}/publish` + `unpublish`, public-graph filtering
+and share links are implemented — see [CHANGELOG.md](../../CHANGELOG.md) and
+`docs/api/API_EN.md` §8.
 
 ---
 
@@ -340,16 +251,14 @@ Description: Представление графа в виде сот (гекс�
 | JSON import/export     | ⏳ Planned | 🟢 Low   |
 | Markdown import/export | ⏳ Planned | 🟢 Low   |
 | CSV import/export      | ⏳ Planned | 🟢 Low   |
-| Bookmarklet            | ✅ Done    | 🟠 High  |
-| Mass URL import        | ✅ Done    | 🟠 High  |
 | Browser extension      | ⏳ Planned | 🟠 High  |
 
 #### Browser capture options
 
 | Option                | Pros                                                            | Cons                                                                                  | Status         |
 | --------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------- |
-| **Bookmarklet**       | No installation, instant MVP                                    | URL length limit (~2000 chars), opens a new tab                                       | ✅ Implemented |
-| **Mass URL import**   | Bulk processing, async deduplication, preview editing, progress | Content extraction from URL implemented (`internal/infrastructure/web.ImportFetcher`) | ✅ Implemented |
+| **Bookmarklet**       | No installation, instant MVP                                    | URL length limit (~2000 chars), opens a new tab                                       | Shipped — CHANGELOG |
+| **Mass URL import**   | Bulk processing, async deduplication, preview editing, progress | Content extraction from URL implemented (`internal/infrastructure/web.ImportFetcher`) | Shipped — CHANGELOG |
 | **Browser Extension** | Full text access, background capture, notifications             | Requires installation, needs token setup                                              | ⏳ Planned     |
 
 **Scope:**
@@ -462,7 +371,7 @@ Description: Кластеризация графа и визуализация �
 
 ---
 
-**Last Updated:** August 30, 2026
+**Last Updated:** September 26, 2026 (DOC-AUDIT-2)
 **Next Review:** After the next roadmap milestone
 
 ---

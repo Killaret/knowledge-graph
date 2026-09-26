@@ -14,16 +14,16 @@ Correctness of the foundation, before new surface area.
 
 | Work | Why it comes first |
 |---|---|
-| Close the audit blockers: data isolation under `SKIP_AUTH`, seeded credentials in migrations, internal auth headers at the gateway, private responses marked cacheable | Each one blocks multi-user deployment |
-| Make verification tell the truth: honest regression exit codes, a real 3D readiness signal, visual baselines that capture the scene | A green run that proves nothing is worse than a red one |
-| Enforce coverage thresholds in CI and make the orphaned BDD scenarios executable | Declared thresholds that never run are decoration |
+| Close the audit blockers: data isolation under `SKIP_AUTH`, seeded credentials in migrations, internal auth headers at the gateway, private responses marked cacheable | Each one blocks multi-user deployment. Status (DOC-AUDIT-2, 2026-09-26): header stripping done — both nginx configs null out `X-Internal-Auth`/`X-User-Id`; `SKIP_AUTH` is restricted to the seeded test user. Still open: migration `019_add_test_user` ships a known-password account; no `Cache-Control`/`no-store` on private responses |
+| Make verification tell the truth: honest regression exit codes, a real 3D readiness signal, visual baselines that capture the scene | Done in substance: `test-a3-exit-codes.ps1`, `engine.isReady`/`data-test-stable` readiness marker, seeded-deterministic visual snapshots + Argos baselines |
+| Enforce coverage thresholds in CI and make the orphaned BDD scenarios executable | Backend 70% gate is enforced in `_core-checks.yml` (`backend-coverage-total.py`); BDD runs via `scripts/run-bdd.cjs` |
 
 ## Next
 
 | Work | Notes |
 |---|---|
-| Multilingual embeddings | One vector space for Russian and English notes; the current model is English-only |
-| Keyword normalization | Lemmatization at extraction; today word forms are compared as raw strings |
+| Multilingual embeddings | The current model (`paraphrase-multilingual-MiniLM-L12-v2`, 384-dim) is already multilingual; the open work is the quality upgrade to e5-small/base — `docs/tasks/MODEL-2-e5-base-migration.md` |
+| Keyword normalization | `/normalize` runs in the worker pipeline (`queue/worker.go`) — lemmatization quality and coverage remain open |
 | Graph clustering | Communities over a hybrid metric — semantics as the base, existing links reinforcing it |
 | Link types in the UI | Native picker and documentation for link semantics |
 | Delta-update flicker | A race in the preload path makes the graph blink on refresh |
