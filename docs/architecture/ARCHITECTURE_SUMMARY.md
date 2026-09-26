@@ -1,23 +1,31 @@
 # Architecture Summary: Knowledge Graph SaaS
 
+> **Scope note (DOC-AUDIT-2, 2026-09-26):** this document describes the **target SaaS**
+> architecture. Not implemented in current code: PostgreSQL RLS and `tenant_id`
+> (no tenant concept — release 1.0 is single-user, decision 67), permission claims
+> in JWT (tokens carry `user_id`/`login`/`role` only), circuit breakers
+> (`sony/gobreaker` is not a dependency), TLS termination (dev stack is plain HTTP,
+> `sslmode=disable`), MongoDB TTL audit retention job. Items awaiting owner's
+> decision are listed in `docs/tasks/DOC-AUDIT-2-register.md`.
+
 ## Executive Summary
 
 The Knowledge Graph platform is a **multi-tenant SaaS application** built on **Clean Architecture principles** with a **Go backend** and **Svelte frontend**. The architecture prioritizes:
 
-1. **Data Isolation**: PostgreSQL Row-Level Security (RLS) enforces tenant boundaries at the database level
-2. **Scalability**: CQRS-Lite pattern separates read/write concerns; Redis queues enable async processing
-3. **Resilience**: Circuit breakers and fallback strategies prevent cascade failures
-4. **Compliance**: Comprehensive audit logging with 90-day retention
+1. **Data Isolation**: PostgreSQL Row-Level Security (RLS) is designed to enforce tenant boundaries *(not implemented — see scope note)*
+2. **Scalability**: CQRS-Lite pattern separates read/write concerns; Redis (Asynq) queues enable async processing
+3. **Resilience**: Circuit breakers and fallback strategies *(planned; `sony/gobreaker` is not a dependency — DOC-AUDIT-2)*
+4. **Compliance**: Audit logging is partially in place — the `audit_log` table and `AuditLogModel` exist, but no code path writes to it (DOC-AUDIT-2, 2026-09-26); the "90-day retention" job is not implemented
 
 ### Key Architectural Decisions
 
 | Decision | Rationale |
 |----------|-----------|
-| **Shared Database + RLS** | Accept RLS complexity to avoid DB-per-tenant operational overhead |
+| **Shared Database + RLS** | Accept RLS complexity to avoid DB-per-tenant operational overhead *(RLS not implemented — single-user scope, decision 67)* |
 | **CQRS-Lite (Single DB)** | Optimize read/write paths without event sourcing complexity |
-| **MongoDB for Logs/Drafts** | High-volume, write-heavy workloads isolated from transactional DB |
+| **MongoDB for Drafts/Artifacts** | Write-heavy derived data isolated from transactional DB |
 | **Rich Domain Model** | Business logic in entities, not anemic services |
-| **Defense in Depth** | App-layer auth checks + RLS policies as last line |
+| **Defense in Depth** | App-layer auth checks (RLS policies as last line — not implemented) |
 
 ## C4 Container Diagram
 
@@ -32,11 +40,11 @@ C4Container
         
         Container(backend, "Go API", "Go 1.25, Gin", "Business logic, CQRS handlers, auth")
         
-        ContainerDb(postgres, "PostgreSQL", "PostgreSQL 15", "Notes, links, users, tenants, RBAC<br/>RLS-enforced, transactional")
+        ContainerDb(postgres, "PostgreSQL", "pgvector/pgvector:pg16", "Notes, links, users<br/>transactional")
         
-        ContainerDb(mongo, "MongoDB", "MongoDB 6", "Audit logs, draft autosaves<br/>High-volume, TTL expiry")
+        ContainerDb(mongo, "MongoDB", "MongoDB 7", "Draft autosaves, NLP artifacts, quality logs<br/>TTL expiry")
         
-        Container(redis, "Redis", "Redis 7", "Async job queues<br/>Permission cache, rate limiting")
+        Container(redis, "Redis", "Redis 7", "Asynq job queues, graph cache<br/>rate limiting, event Pub/Sub")
         
         Container(worker, "Background Workers", "Go", "Audit log persistence<br/>Draft sync, cleanup jobs")
     }
@@ -48,15 +56,15 @@ C4Container
     Rel(frontend, backend, "API calls", "HTTPS/JSON, Bearer JWT")
     Rel(frontend, jwt, "Authenticates", "JWT")
     
-    Rel(backend, postgres, "Read/Write", "SQL with RLS")
-    Rel(backend, mongo, "Write logs/drafts", "BSON")
-    Rel(backend, redis, "Enqueue jobs", "LPUSH/BRPOP")
-    Rel(backend, redis, "Cache permissions", "GET/SET")
-    Rel(backend, nlp, "Generate embeddings", "HTTPS (CB protected)")
+    Rel(backend, postgres, "Read/Write", "SQL")
+    Rel(backend, mongo, "Write drafts/artifacts", "BSON")
+    Rel(backend, redis, "Enqueue jobs", "Asynq")
+    Rel(backend, redis, "Cache / rate limiting", "GET/SET")
+    Rel(backend, nlp, "Generate embeddings", "HTTP")
     
     Rel(worker, postgres, "Process jobs", "SQL")
-    Rel(worker, mongo, "Persist audit logs", "BSON bulk insert")
-    Rel(worker, redis, "Dequeue jobs", "BRPOP")
+    Rel(worker, mongo, "Persist artifacts/quality logs", "BSON")
+    Rel(worker, redis, "Dequeue jobs", "Asynq")
     
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
@@ -76,26 +84,25 @@ sequenceDiagram
 
     User->>Browser: Types in note editor
     loop Every 30 seconds
-        Browser->>API: POST /api/drafts/autosave
+        Browser->>API: POST /api/v1/notes/:id/draft
         Note over API: JWT validation
-        API->>Auth: Extract tenant_id from JWT
-        Auth-->>API: tenant_id, user_id
+        API->>Auth: Extract user_id from JWT
+        Auth-->>API: user_id
         API->>Mongo: Upsert draft document
-        Mongo-->>API: Saved (version incremented)
-        API-->>Browser: 200 OK {version: 5}
+        Mongo-->>API: Saved
+        API-->>Browser: 200 OK
     end
 
     User->>Browser: Clicks "Publish"
-    Browser->>API: POST /api/notes/publish
+    Browser->>API: POST /api/v1/notes/:id/publish
     API->>Mongo: Load draft by ID
     Mongo-->>API: Draft document
     
-    API->>Auth: Check RBAC (notes:write)
+    API->>Auth: Check auth (JWT valid, user owns note)
     Auth-->>API: Authorized
     
     API->>Postgres: BEGIN TRANSACTION
     API->>Postgres: INSERT/UPDATE notes
-    Note over Postgres: RLS validates tenant_id
     Postgres-->>API: Note persisted
     
     API->>Redis: Enqueue embedding job
@@ -105,11 +112,12 @@ sequenceDiagram
     
     API-->>Browser: 201 Created {note_id}
     
-    Worker->>Redis: BRPOP embedding:queue
+    Worker->>Redis: Dequeue compute:embedding (Asynq)
     Redis-->>Worker: Job payload
     Worker->>Postgres: Load note content
     Postgres-->>Worker: Note data
-    Worker->>OpenAI: Generate embedding
+    Worker->>NLP: POST /embed (nlp-service, sentence-transformers)
+    NLP-->>Worker: embedding vector
     Worker->>Postgres: Save embedding
 ```
 
@@ -120,12 +128,11 @@ sequenceDiagram
 | **Frontend** | SvelteKit + TypeScript | SPA with graph visualization |
 | **API** | Go 1.25 + Gin | REST API, CQRS handlers |
 | **Domain** | Pure Go structs | Rich entities, value objects |
-| **Primary DB** | PostgreSQL 15 | Notes, links, users, tenants |
-| **NoSQL** | MongoDB 6 | Audit logs, draft autosaves |
-| **Cache/Queue** | Redis 7 | Job queues, permission cache |
+| **Primary DB** | pgvector/pgvector:pg16 | Notes, links, users |
+| **NoSQL** | MongoDB 7 | Draft autosaves, NLP artifacts, quality logs |
+| **Cache/Queue** | Redis 7 | Asynq job queues, graph cache, rate limiting |
 | **Auth** | golang-jwt/v5 | JWT issuance, signing, validation |
-| **Embeddings** | NLP Service (Python FastAPI + sentence-transformers) | Vector generation (CB protected) |
-| **Circuit Breaker** | sony/gobreaker | Resilience patterns |
+| **Embeddings** | NLP Service (Python FastAPI + sentence-transformers) | Vector generation |
 
 ## Security Architecture
 
@@ -134,12 +141,11 @@ sequenceDiagram
 ```
 ┌─────────────────────────────────────┐
 │  Layer 4: PostgreSQL RLS          │
-│  - Database enforces tenant_id      │
-│  - FORCE RLS prevents bypass        │
+│  - target SaaS, NOT IMPLEMENTED     │
+│    (DOC-AUDIT-2, 2026-09-26)        │
 ├─────────────────────────────────────┤
-│  Layer 3: Application RBAC          │
-│  - JWT permission claims            │
-│  - Role-based access control        │
+│  Layer 3: Authorization             │
+│  - JWT role claim (admin/member)    │
 │  - Resource ownership checks        │
 ├─────────────────────────────────────┤
 │  Layer 2: Authentication            │
@@ -147,8 +153,9 @@ sequenceDiagram
 │  - Token expiration enforced          │
 ├─────────────────────────────────────┤
 │  Layer 1: Transport Security        │
-│  - TLS 1.3 for all connections        │
 │  - CORS policy restrictions         │
+│  - TLS termination: not configured  │
+│    in dev/personal stacks           │
 └─────────────────────────────────────┘
 ```
 
@@ -157,17 +164,20 @@ sequenceDiagram
 ```json
 {
   "sub": "user-uuid-123",
-  "tenant_id": "tenant-uuid-456",
+  "iss": "knowledge-graph",
+  "user_id": "user-uuid-123",
+  "login": "user",
   "role": "member",
-  "permissions": [
-    "notes:read",
-    "notes:write:own",
-    "links:read"
-  ],
+  "token_type": "access",
+  "jti": "token-uuid",
   "iat": 1705312800,
+  "nbf": 1705312800,
   "exp": 1705399200
 }
 ```
+
+(`backend/internal/auth/jwt.go` — `TokenClaims`: `UserID`, `Login`, `Role`, `TokenType` plus
+registered claims. No `tenant_id` or `permissions` array — target-SaaS fields.)
 
 ## Data Lifecycle
 
@@ -177,8 +187,8 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> Active: Create Note
     Active --> SoftDeleted: User deletes
-    SoftDeleted --> Active: User restores (within 30 days)
-    SoftDeleted --> HardDeleted: Cleanup job (after 30 days)
+    SoftDeleted --> Active: User restores
+    SoftDeleted --> HardDeleted: Cleanup job (default 90 days, `cleanup.go`)
     HardDeleted --> [*]: Data permanently removed
     
     Active --> GDPRDeleted: GDPR erasure request
@@ -197,8 +207,8 @@ stateDiagram-v2
     PostgresSync --> DraftDeleted: Remove from MongoDB
     DraftDeleted --> [*]: Draft lifecycle complete
     
-    DraftSaved --> Abandoned: 30 days no activity
-    Abandoned --> [*]: TTL cleanup
+    DraftSaved --> Abandoned: 7 days no activity
+    Abandoned --> [*]: TTL cleanup (MongoDB index on updated_at)
 ```
 
 ## Performance Characteristics
