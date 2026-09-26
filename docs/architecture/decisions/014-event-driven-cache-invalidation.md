@@ -3,6 +3,8 @@
 ## Status
 Accepted
 
+**Implementation status:** implemented, with a different channel layout than the sketch below — a single `graph:events` channel carries typed events (`note_created`, `note_updated`, `note_deleted`, `link_*`) with `note_id`/`user_id` payloads (`infrastructure/events/publisher.go` → `graph-service/internal/subscriber/pubsub.go`). Since SYNC-1 the subscriber invalidates `note:*`/`full`/`delta:*` keys but preserves `snapshot:*` keys (immutable client-version snapshots, expire by TTL). `tenant_id` in the sketch is part of the deferred SaaS design.
+
 ## Context
 Knowledge Graph system has multiple layers of caching to improve performance:
 - In-memory caching in backend services

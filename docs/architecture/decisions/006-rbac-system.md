@@ -2,6 +2,7 @@
 
 ## Status
 Accepted
+**Implementation status:** design accepted; **partially** implemented — JWT carries a single `role` claim and `middleware.RequireNoteAccess` enforces object-level access, but tenant-scoped roles and JSONB `permissions` do not exist (verified in DOC-AUDIT-2, 2026-09-26).
 
 ## Context
 Multi-tenant SaaS requires fine-grained access control. Different roles need different permissions:

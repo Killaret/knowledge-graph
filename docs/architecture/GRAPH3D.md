@@ -8,10 +8,10 @@ The 3D graph provides an alternative, spatial way to explore the note graph. It 
 
 ## User-facing behavior
 
-- A **3D** toggle is available in `FloatingControls` alongside **2D** and **List**.
+- A **3D** toggle is available in `GraphTopBar` (`features/graph-ui/GraphTopBar.svelte`) alongside **2D** and **List**.
 - Selecting **3D** on the home page renders `Graph3DViewer` inside the existing `fullscreen-graph` container.
 - The 3D view respects the same `FilterState` (type filter and search) as the 2D graph.
-- Clicking a node fires `onNodeClick` and opens the existing `NoteSidePanel` via `graphStore.selectedNodeId`.
+- Clicking a node fires `onNodeClick` and opens the note details panel (`CockpitNoteDetails`) via `graphStore.selectedNodeId`.
 - Double-clicking a node focuses the camera on it.
 - `/graph/3d` and `/graph/3d/[id]` render the full graph or a centered ego-network.
 
@@ -74,7 +74,7 @@ This means the 2D canvas, the 3D viewer, and the list view all consume the same 
 
 `createLayoutProvider(runtime: Graph3DRuntimeConfig)` selects the active provider at runtime based on `frontend.graph.3d.layout_provider` in `knowledge-graph.config.json`. Routes `/graph/3d` and `/graph/3d/[id]` use `toRuntimeConfig()` + `createLayoutProvider()` instead of hard-coding a provider.
 
-On the home page, `FloatingControls` exposes a **D3 ↔ Graph-service** layout provider toggle when the 3D view is active. The toggle re-fetches graph data through the selected provider and updates the 3D scene.
+On the home page, `GraphTopBar` exposes a **D3 ↔ Graph-service** layout provider toggle when the 3D view is active. The toggle re-fetches graph data through the selected provider and updates the 3D scene.
 
 The backend `graph-service` HTTP server supports `?layout=3d` on `GET /api/v1/graph/note/:id` and invokes `engine.Layout3D` when requested. 2D results are still cached; 3D results bypass the 2D cache key.
 

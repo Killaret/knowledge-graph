@@ -190,13 +190,33 @@ function findMatchingRow(markers, sourceType) {
     for (const marker of markers) {
         let matched = false;
 
-        // 1. Identifier match (strong).
-        for (const row of decisionRows) {
-            if (row.used) continue;
-            if (hasCommonId(marker, row)) {
-                row.used = true;
-                matched = true;
-                break;
+        // 1. Identifier match (strong). Prefer rows with a compatible date:
+        //    a shared secondary id in another row's text must not steal the
+        //    row that actually belongs to a different decision date.
+        for (const strict of [true, false]) {
+            for (const row of decisionRows) {
+                if (row.used) continue;
+                if (strict && !dateCompatible(marker, row)) continue;
+                if (hasCommonId(marker, row)) {
+                    row.used = true;
+                    matched = true;
+                    break;
+                }
+            }
+            if (matched) break;
+        }
+
+        // 1b. Shared-decision fallback: several task files may cite the same
+        //     owner decision (e.g. MODEL-2 lives in two specs but the index row
+        //     links only one of them). An id- identical row is acceptable even
+        //     when another marker already consumed it — id equality is the
+        //     index contract, `used` must not turn a citation into an orphan.
+        if (!matched) {
+            for (const row of decisionRows) {
+                if (hasCommonId(marker, row)) {
+                    matched = true;
+                    break;
+                }
             }
         }
 

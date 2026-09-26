@@ -3,6 +3,8 @@
 ## Status
 Accepted
 
+**Implementation status:** partially implemented — links carry `deleted_at` and soft-delete via `DeleteAndSuppress`; notes have the column + `Restore`, but `NoteRepository.Delete` issues a hard `DELETE` (model field is `*time.Time`, not `gorm.DeletedAt`) — recorded as a DOC-AUDIT-2 finding.
+
 ## Context
 In a multi-tenant SaaS environment, accidental data deletion has severe consequences:
 - User error ("I didn't mean to delete that note")

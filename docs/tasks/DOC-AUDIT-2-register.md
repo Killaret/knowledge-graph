@@ -17,6 +17,11 @@
 | A-18 | Circuit breaker `sony/gobreaker` | ARCHITECTURE_SUMMARY.md (tech stack, «CB protected», мониторинг) | Нет в `go.mod`; NLP-клиент — прямой HTTP | Владельцу: нужен ли CB до 1.0 |
 | A-19 | Audit logging «90-day retention», MongoDB audit logs | ARCHITECTURE_SUMMARY.md (exec summary, C4, backup) | Таблица `audit_log` (миграция 016) и `AuditLogModel` есть, **писателей нет** — ни в PG, ни в Mongo | Владельцу: задел есть, механизм не заведён |
 | A-20 | TLS 1.3 «for all connections» | ARCHITECTURE_SUMMARY.md (security layers) | Dev/personal стеки — plain HTTP, `sslmode=disable` | Пометка; решение — деплойная тема |
+| A-26 | ADR 004 «soft delete» для заметок | ADR 004 + `note_repo.go` | `NoteModel.DeletedAt` — `*time.Time` (не `gorm.DeletedAt`), поэтому `NoteRepository.Delete`/`DeleteBatch` делают **жёсткий DELETE**; `Restore` и индекс `idx_notes_deleted_at` — мёртвый код. Ссылки при этом действительно мягко удаляются | **Кандидат-дефект**: либо владелец подтверждает hard-delete для заметок (тогда убрать Restore/колонку), либо чинить модель |
+| A-27 | Вертикаль ADR 003/006/007/008/009/010 как «принятое решение» | `decisions/003…010` | Решения приняты для SaaS-эволюции, но текст читается как действующая архитектура; RLS/tenancy/audit/CB в коде отсутствуют | Проставлены строки «Implementation status» (006 — частично: `role` claim + `RequireNoteAccess`) |
+| A-28 | Каналы `cache:invalidate:*` и payload с `tenant_id` | ADR 014 | Скетч показывает per-entity каналы; реально — один канал `graph:events` с типизированными событиями; снимки `snapshot:*` событиями не инвалидируются (SYNC-1) | Дописка о реальной схеме проставлена |
+| A-29 | Sidebar/CCC «stub, width:0, hidden» | FRONTEND_ARCHITECTURE_EN.md | Компонента нет в `frontend/src` вообще | Помечено «not implemented» |
+| A-30 | Сторож `check-decisions.mjs` краснел на RELEASE-1 | `scripts/testing/check-decisions.mjs` | Правило 2 помечало строки `used` при любом совпадении id: маркер `MODEL-2` (дата 09-24) забирал строку 67 (RELEASE-1, 09-26), потому что строка 67 упоминает MODEL-2 как составную часть; у маркера MODEL-2 отдельной строки нет — это цитата решения 60 | Сторож исправлен: id-совпадение сначала предпочитает строку с той же датой, затем разрешён общий id даже на занятой строке (несколько файлов могут цитировать одно решение) |
 
 ## Расхождения — исправлены в документах
 
@@ -48,3 +53,16 @@
 |---|---|---|---|---|---|
 | ARCHITECTURE_EN.md | ~45 | ~24 | 14 | 2 (SSE/WS, gRPC «primary») | 1 (статистика/таблицы — попутно) |
 | ARCHITECTURE_SUMMARY.md | ~40 | ~25 (pipeline-секции gamma/CHUNK-1/NLP-4/NOTE-QUALITY-1 в основном верны) | 10 | 4 (RLS/tenancy, CB, audit writer, TLS) | — |
+| ARCHITECTURE_PATTERNS.md | ~12 | 8 | — | 3 (RLS, permissions-claims, gobreaker — помечены «не реализовано») | 1 (устаревший список-«roadmap» в §7) |
+| README.md (architecture) | ~18 | ~15 | 1 (старый порядковый список ADR помечен легендарным) | — | 1 |
+| FRONTEND_ARCHITECTURE_EN.md | ~35 | ~18 | 9 (FloatingControls/NoteSidePanel/Sidebar-stub/Graph3D.svelte/graphStore/маршруты/BDD-файлы/perf-тезисы) | 2 (Sidebar-компонент, virtual scrolling) | 3 (3D «frozen», /notes/create, stores) |
+| GRAPH3D.md | ~30 | ~28 | 2 (FloatingControls→GraphTopBar, NoteSidePanel→CockpitNoteDetails) | — | — |
+| GRAPH_SERVICE_AUTH.md | ~20 | ~19 | 1 (порт 29091 уточнён как test-stack; dev — 9091) | — | 1 (находка №1 «JWT из query» — уже исправлена в коде) |
+| RECOMMENDATION_ARCHITECTURE.md | ~30 | ~27 | 3 (5-й уровень фолбэка `graph-service`, раздельные флаги fallback-ов, header-таблица) | — | — |
+| RECOMMENDATION_TROUBLESHOOTING.md | ~15 | ~13 | 2 (контейнер `kg-worker`, флаг `--batch-size` отсутствует у CLI) | — | — |
+| SaaS_DATABASE_SCHEMA.md | — (целиком целевое) | — | — | документ=задел (баннер «target-state, not implemented» + ada-002≠MiniLM) | — |
+| WEIGHTS_CALCULATION.md | ~8 | ~8 | — | — | — (λ с 2-го уровня и нормализация `(1-d)/2` подтверждены `bfs.go`) |
+| atam.md | ~10 | ~7 | 2 (BFS — итеративный Go, не CTE; лимита «50 первого уровня» нет — только `topN`) | 1 (лимит первого уровня) | — |
+| glossary.md | ~25 | ~24 | 1 (Link Type + `parent`/`child`) | — | — |
+| clustering.md | — | — | — | — | — (корректно помечена «отложена», с реальными причинами) |
+| decisions/001–018 | ~60 | ~50 | — | 6 (статусы «Implementation status» у 003/006/007/008/009/010/013/014; 004 — частично, 011 — реализовано) | 1 (список в README — легендарная нумерация) |
