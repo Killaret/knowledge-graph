@@ -63,6 +63,7 @@ services:
       - "127.0.0.1:15002:5000"
     environment:
       - NLP_MODEL_NAME=${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
+      - EMBED_CHUNKING=${EMBED_CHUNKING:-0}
       - HF_HOME=/root/.cache/huggingface
       - HF_HUB_DISABLE_TELEMETRY=1
       - HF_HUB_OFFLINE=0
@@ -98,6 +99,8 @@ services:
       REDIS_FLUSH_ON_STARTUP: "true"
       NLP_SERVICE_URL: http://nlp-test:5000
       NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
+      NLP_PIPELINE_ENABLED: ${NLP_PIPELINE_ENABLED:-false}
+      NLP_QUALITY_ENABLED: ${NLP_QUALITY_ENABLED:-false}
       APP_ENV: test
       SKIP_AUTH: ${SKIP_AUTH:-true}
       JWT_SECRET: ${JWT_SECRET:-test-jwt-secret-32-characters-long}
@@ -236,6 +239,12 @@ services:
       REDIS_URL: redis-test:6379
       NLP_SERVICE_URL: http://nlp-test:5000
       NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
+      MONGO_URL: mongodb://mongo-test:27017
+      MONGO_DATABASE: ${TEST_POSTGRES_DB:-knowledge_test}
+      NLP_PIPELINE_ENABLED: ${NLP_PIPELINE_ENABLED:-false}
+      NLP_QUALITY_ENABLED: ${NLP_QUALITY_ENABLED:-false}
+      NLP_HISTORY_ENABLED: ${NLP_HISTORY_ENABLED:-true}
+      NLP_NORMALIZATION_MIN_COSINE: ${NLP_NORMALIZATION_MIN_COSINE:-0.7}
       APP_ENV: test
       SKIP_AUTH: ${SKIP_AUTH:-true}
       JWT_SECRET: ${JWT_SECRET:-test-jwt-secret-32-characters-long}

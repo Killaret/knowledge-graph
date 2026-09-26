@@ -184,6 +184,18 @@ func setupRouter(
 		v1.DELETE("/notes/:id", writeLimiter, noteWrite, noteHandler.Delete)
 		v1.POST("/notes/:id/restore", writeLimiter, noteWrite, noteHandler.Restore)
 		v1.GET("/notes/:id/suggestions", cacheControlMiddleware(60), noteRead, noteHandler.GetSuggestions)
+
+		// NOTE-QUALITY-1: read answers with the same access rule as the note
+		// itself; the manual trigger is a write action.
+		v1.GET("/notes/:id/quality", noteRead, noteHandler.GetQuality)
+		v1.POST("/notes/:id/quality/assess", writeLimiter, noteWrite, noteHandler.AssessQuality)
+
+		// NOTE-QUALITY-1 part 3: re-fetch of truncated/stub imports. Preview
+		// reads (no mutation, but it does fetch the source URL — user action);
+		// apply and restore write.
+		v1.POST("/notes/:id/refetch/preview", writeLimiter, noteRead, noteHandler.RefetchPreview)
+		v1.POST("/notes/:id/refetch", writeLimiter, noteWrite, noteHandler.RefetchApply)
+		v1.POST("/notes/:id/refetch/restore", writeLimiter, noteWrite, noteHandler.RefetchRestore)
 		v1.GET("/notes", cacheControlMiddleware(60), noteHandler.List)
 		v1.GET("/notes/search", cacheControlMiddleware(30), noteHandler.Search)
 

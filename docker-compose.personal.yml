@@ -54,6 +54,7 @@ services:
       - "5001:5000"
     environment:
       - NLP_MODEL_NAME=${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
+      - EMBED_CHUNKING=${EMBED_CHUNKING:-0}
       - HF_HOME=/root/.cache/huggingface
       - HF_HUB_DISABLE_TELEMETRY=1
       - HF_HUB_OFFLINE=1
@@ -113,6 +114,8 @@ services:
       REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: http://nlp-personal:5000
       NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
+      NLP_PIPELINE_ENABLED: ${NLP_PIPELINE_ENABLED:-false}
+      NLP_QUALITY_ENABLED: ${NLP_QUALITY_ENABLED:-false}
       APP_ENV: development
       SKIP_AUTH: ${SKIP_AUTH:-false}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:18080,http://localhost:18081,http://localhost:18082,http://localhost:18084,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:5173,http://127.0.0.1:18080,http://127.0.0.1:18081,http://127.0.0.1:18082,http://127.0.0.1:18084}
@@ -151,6 +154,12 @@ services:
       REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: http://nlp-personal:5000
       NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
+      MONGO_URL: mongodb://mongo_personal:27017
+      MONGO_DATABASE: ${PERSONAL_MONGO_DATABASE:-knowledge_personal}
+      NLP_PIPELINE_ENABLED: ${NLP_PIPELINE_ENABLED:-false}
+      NLP_QUALITY_ENABLED: ${NLP_QUALITY_ENABLED:-false}
+      NLP_HISTORY_ENABLED: ${NLP_HISTORY_ENABLED:-true}
+      NLP_NORMALIZATION_MIN_COSINE: ${NLP_NORMALIZATION_MIN_COSINE:-0.7}
       APP_ENV: development
       SKIP_AUTH: ${SKIP_AUTH:-false}
       BACKUP_ENABLED: ${BACKUP_ENABLED:-true}

@@ -40,11 +40,15 @@
     getHoveredNeighborIds,
     applyDelta as applyDeltaToSimulation,
   } from "$entities/graph-canvas/lib";
+  import { addNodesToSimulation } from "$entities/graph-canvas/lib/incremental";
+  import { getLinkEndpointId } from "$entities/graph-canvas/lib/types";
+  import { computeLabeledNodeIds } from "$entities/graph-canvas/lib/labels";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
 
   const locale = getCurrentLocale();
-  const t = (key: string) => formatMessage(key, locale);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   // FSD imports
   import {
@@ -88,6 +92,7 @@
     nodes,
     links,
     onNodeClick,
+    onBackgroundClick,
     onLinkEdit,
     onLinkDelete,
     onLinkConfirm,
@@ -101,6 +106,7 @@
     disableVariation = false,
     readonly = false,
     showLinkTypeLegend = true,
+    progressiveReveal = false,
     className = "",
     controller = $bindable<
       | {
@@ -131,6 +137,8 @@
       last_weight_update?: string;
     }>;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
+    /** Click on empty graph space (UI-PANELS-1 — dismiss unpinned panels). */
+    onBackgroundClick?: () => void;
     onLinkEdit?: (link: {
       id?: string;
       source: string;
@@ -168,6 +176,8 @@
     disableVariation?: boolean;
     readonly?: boolean;
     showLinkTypeLegend?: boolean;
+    /** UI-LOAD-1: reveal large graphs in batches instead of all at once. */
+    progressiveReveal?: boolean;
     className?: string;
     controller?: {
       focusMode: boolean;
@@ -235,18 +245,41 @@
     fadeAnimationId: null,
   };
 
-  // Filter links based on hidden types and minimum weight
+  // Filter links based on hidden types, minimum weight and the auto-links
+  // toggle (UI-GRAPH-1): model-suggested links drop out of the simulation,
+  // the rendering and the hover picking at once.
   const visibleLinks = $derived(
     links.filter((l) => {
       const typeMatch = !graphStore.hiddenLinkTypes.includes(l.link_type ?? "related");
       const weightMatch = (l.weight ?? 0.5) >= graphStore.minLinkWeight;
-      return typeMatch && weightMatch;
+      const autoMatch = graphStore.showAutoLinks || l.source_type !== "gamma";
+      return typeMatch && weightMatch && autoMatch;
     })
   );
 
   // Для отслеживания изменений данных по содержимому (не по ссылке)
   let lastDataKey = "";
   let mounted = $state(false);
+
+  // UI-LOAD-1 progressive reveal: large graphs appear in batches — the most
+  // linked nodes first, the rest added to the live simulation in portions
+  // without restarting the layout.
+  const PROGRESSIVE_MIN_NODES = 40;
+  const REVEAL_FIRST_BATCH = 25;
+  const REVEAL_BATCH_SIZE = 12;
+  const REVEAL_INTERVAL_MS = 120;
+  let revealTimer: ReturnType<typeof setInterval> | null = null;
+  let revealShown = $state(0);
+  let revealTotal = $state(0);
+  let revealing = $state(false);
+
+  function stopReveal() {
+    if (revealTimer !== null) {
+      clearInterval(revealTimer);
+      revealTimer = null;
+    }
+    revealing = false;
+  }
 
   // Используем утилиты для resize
   const resizeState = { width, height };
@@ -363,11 +396,14 @@
     ghostNode = createGhostNode(width, height, nodes);
     gravitySystem = createGravitySystem();
 
-    // ResizeObserver для отслеживания размера контейнера
+    // ResizeObserver для отслеживания размера контейнера.
+    // Setting canvas.width clears the bitmap — request a frame immediately so
+    // the graph never sits blank while cockpit panels slide (UI-PANELS-1).
     observerCleanup = setupResizeObserver(canvas!, () => {
       resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
+      scheduleRedraw();
     });
 
     // Отложенный resize для стабильных размеров
@@ -375,6 +411,7 @@
       resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
+      scheduleRedraw();
     }, 100);
 
     // Start the animation loop. The loop ticks every rAF frame, but the
@@ -481,6 +518,7 @@
       observerCleanup?.disconnect();
       resizeCleanup?.clear();
       animationLoop?.stop();
+      stopReveal();
       clearSimulation(simState);
       particleSystem?.clear();
       clearAnimationState(angles, speeds);
@@ -498,7 +536,7 @@
     const linksCount = visibleLinks.length;
     const hiddenTypesCount = graphStore.hiddenLinkTypes.length;
     const minWeight = graphStore.minLinkWeight;
-    const dataKey = `${nodesCount}-${linksCount}-${hiddenTypesCount}-${minWeight}`;
+    const dataKey = `${nodesCount}-${linksCount}-${hiddenTypesCount}-${minWeight}-${graphStore.showAutoLinks}`;
 
     if (dataKey === lastDataKey) {
       return;
@@ -506,6 +544,9 @@
     lastDataKey = dataKey;
 
     if (!browser || !mounted) return;
+
+    // A data change supersedes any in-flight reveal before a new sim starts.
+    stopReveal();
 
     // The particle system is created once in onMount, but the node count
     // (and therefore the performance threshold) changes as data loads/filters.
@@ -528,10 +569,38 @@
     // Pin technical nodes (e.g. Knowledge Core) to fixed screen positions
     const pinnedNodes = pinTechnicalNodes(nodes);
 
+    // UI-LOAD-1: reveal large graphs in batches — hubs first, then the rest
+    // joins the live simulation in portions (no layout restart per batch).
+    const progressive = progressiveReveal && pinnedNodes.length > PROGRESSIVE_MIN_NODES;
+    let headNodes = pinnedNodes;
+    let queuedNodes: typeof pinnedNodes = [];
+    if (progressive) {
+      const degree = new Map<string, number>();
+      for (const l of visibleLinks) {
+        const s = getLinkEndpointId(l.source);
+        const t = getLinkEndpointId(l.target);
+        degree.set(s, (degree.get(s) ?? 0) + 1);
+        degree.set(t, (degree.get(t) ?? 0) + 1);
+      }
+      const ordered = [...pinnedNodes].sort(
+        (a, b) => (degree.get(b.id) ?? 0) - (degree.get(a.id) ?? 0)
+      );
+      headNodes = ordered.slice(0, REVEAL_FIRST_BATCH);
+      queuedNodes = ordered.slice(REVEAL_FIRST_BATCH);
+    }
+    const revealedIds = new Set(headNodes.map((n) => n.id));
+    const headLinks = progressive
+      ? visibleLinks.filter(
+          (l) =>
+            revealedIds.has(getLinkEndpointId(l.source)) &&
+            revealedIds.has(getLinkEndpointId(l.target))
+        )
+      : visibleLinks;
+
     // Запускаем новую симуляцию
     startSimulation(
-      pinnedNodes,
-      visibleLinks,
+      headNodes,
+      headLinks,
       width,
       height,
       simState,
@@ -549,6 +618,41 @@
         graphStable = true;
       }
     );
+
+    if (queuedNodes.length > 0) {
+      revealing = true;
+      revealShown = headNodes.length;
+      revealTotal = pinnedNodes.length;
+      const pendingLinks = visibleLinks.filter(
+        (l) =>
+          !(
+            revealedIds.has(getLinkEndpointId(l.source)) &&
+            revealedIds.has(getLinkEndpointId(l.target))
+          )
+      );
+      revealTimer = setInterval(() => {
+        const batch = queuedNodes.splice(0, REVEAL_BATCH_SIZE);
+        if (batch.length === 0) {
+          stopReveal();
+          return;
+        }
+        for (const n of batch) revealedIds.add(n.id);
+        const batchLinks = pendingLinks.filter(
+          (l) =>
+            revealedIds.has(getLinkEndpointId(l.source)) &&
+            revealedIds.has(getLinkEndpointId(l.target))
+        );
+        for (const l of batchLinks) {
+          pendingLinks.splice(pendingLinks.indexOf(l), 1);
+        }
+        addNodesToSimulation(simState, batch, batchLinks, width, height, () => {
+          graphStable = true;
+        });
+        revealShown = revealedIds.size;
+        redraw();
+        if (queuedNodes.length === 0) stopReveal();
+      }, REVEAL_INTERVAL_MS);
+    }
   });
 
   // Применяем дельта-обновления инкрементально
@@ -597,6 +701,7 @@
       ty: Math.round(transform.y),
       tk: transform.k.toFixed(3),
       hover: canvasState.hoveredNodeId ?? "",
+      sel: canvasState.selectedNodeId ?? "",
       focus: canvasState.focusMode,
       highlight: canvasState.highlightedLinkId ?? "",
       search: [...(hotkeysState.searchMatchIds ?? [])].sort().join(","),
@@ -686,7 +791,13 @@
       dragDropState.linkPreviewTarget,
       linkMousePos,
       fogState.snapshot,
-      hoveredNeighborIds
+      hoveredNeighborIds,
+      computeLabeledNodeIds(simNodes, simState.simLinks, {
+        hoveredId: canvasState.hoveredNodeId,
+        selectedId: canvasState.selectedNodeId,
+        searchMatchIds: hotkeysState.searchMatchIds,
+        zoomK: transform.k,
+      })
     );
     drawFog(targetCtx, width, height, fogState.snapshot);
 
@@ -768,6 +879,9 @@
     get onNodeClick() {
       return onNodeClick;
     },
+    get onBackgroundClick() {
+      return onBackgroundClick;
+    },
     get onNodeContextMenu() {
       return (node: { id: string; title: string; type?: string }, x: number, y: number) => {
         contextMenu = { visible: true, x, y, node };
@@ -820,6 +934,26 @@
     contextMenu = { ...contextMenu, visible: false };
   }}
 />
+
+<!-- UI-LOAD-1: unobtrusive "N of M" progress while batches still arrive -->
+{#if revealing}
+  <div class="reveal-progress" data-testid="reveal-progress" aria-live="polite">
+    {t("graph.revealProgress", { shown: revealShown, total: revealTotal })}
+  </div>
+{/if}
+
+<!-- UI-GRAPH-1: one-button show/hide for model-suggested links -->
+<button
+  type="button"
+  class="auto-links-toggle"
+  class:active={graphStore.showAutoLinks}
+  data-testid="auto-links-toggle"
+  aria-pressed={graphStore.showAutoLinks}
+  title={graphStore.showAutoLinks ? t("graph.autoLinks.hide") : t("graph.autoLinks.show")}
+  onclick={() => graphStore.toggleAutoLinks()}
+>
+  ✦ {t("graph.autoLinks.toggle")}
+</button>
 
 {#if showLinkTypeLegend}
   <LinkTypeLegend
@@ -883,3 +1017,49 @@
     onClose={() => canvasState.closeHelpModal(hotkeysState)}
   />
 {/if}
+
+<style>
+  .auto-links-toggle {
+    position: absolute;
+    /* top-right corner at 16px belongs to the focus-mode indicator. */
+    top: 56px;
+    right: 16px;
+    z-index: 20;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    background: rgba(18, 18, 26, 0.85);
+    color: var(--carbon-text-dim, #7a7a8e);
+    font-size: 12px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .auto-links-toggle.active {
+    color: var(--carbon-text, #f0f0f5);
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+
+  .auto-links-toggle:hover {
+    border-color: rgba(139, 92, 246, 0.7);
+    color: var(--carbon-text, #f0f0f5);
+  }
+
+  .reveal-progress {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 20;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(18, 18, 26, 0.75);
+    color: var(--carbon-text-dim, #7a7a8e);
+    font-size: 12px;
+    pointer-events: none;
+  }
+</style>

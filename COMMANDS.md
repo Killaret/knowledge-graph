@@ -135,6 +135,8 @@ go run ./cmd/embed-recompute       # Пересчёт эмбеддингов (-d
 go run ./cmd/keyword-recompute     # Пересчёт ключевых слов (те же флаги; NLP-2)
 go run ./cmd/gamma-links-regenerate # Пересоздание автосвязей (-dry-run; LINKS-1)
 #   ⚠ до LINKS-3 не запускать: пакетный подбор соседей выбирает наименьшие UUID, а не ближайших
+go run ./cmd/nlp-artifacts-recompute # Бэкфилл nlp_artifacts (-dry-run; NLP-4)
+go run ./cmd/quality-recompute      # Бэкфилл оценок качества (-dry-run, -export; NOTE-QUALITY-1)
 ```
 
 ### Тестирование

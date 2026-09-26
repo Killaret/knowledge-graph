@@ -153,10 +153,14 @@ or view modes — restarting only the backend leaves graph-service still bypassi
 ```
 
 **Actions:**
-- Stops and removes previous test stack (with volumes)
-- Builds and starts test stack
-- Waits for all containers to be healthy
-- Displays test stack URLs
+- Checks every existing `kg-test-*` container's `com.docker.compose.project.working_dir` label before destructive cleanup.
+- Refuses to touch containers owned by another worktree and prints their owner and start time.
+- Stops and removes the current worktree's previous test stack (with volumes).
+- Builds and starts test stack.
+- Waits for all containers to be healthy.
+- Displays test stack URLs.
+
+On Windows only, `start-test.ps1 -Force` explicitly takes over a foreign/stale stack. Use it only after confirming the owning agent is not running; the shell script deliberately has no force option.
 
 #### Rebuilding after frontend changes
 
@@ -202,6 +206,24 @@ Seeds the test database with test data.
 - Test user (login: testuser, password: TestPassword123!)
 - 5 test notes (star, planet, comet, galaxy, asteroid)
 - 2 test links between notes
+
+### Backend CLI commands against the test stack
+
+The recompute/backfill commands ship only in the `cli` image, not in `server`/`worker`. Run them from the host with `go run` and the test stack's host ports (PostgreSQL 15434, Redis 16381, MongoDB 27019):
+
+```powershell
+$env:DATABASE_URL = "postgresql://kb_user:kb_password@127.0.0.1:15434/knowledge_test?sslmode=disable"
+$env:REDIS_URL     = "127.0.0.1:16381"
+$env:MONGO_URL     = "mongodb://127.0.0.1:27019"
+$env:MONGO_DATABASE = "knowledge_test"
+cd backend
+
+go run ./cmd/nlp-artifacts-recompute --dry-run   # counts only, nothing enqueued
+go run ./cmd/nlp-artifacts-recompute            # enqueues nlp:normalize for missing/stale artifacts
+go run ./cmd/quality-recompute --dry-run        # same pattern for NOTE-QUALITY-1 assessments
+```
+
+`nlp-artifacts-recompute` skips notes whose current artifact already matches the source hash — a second run enqueues nothing. Both commands are explicit operator actions: they do not read `nlp.pipeline.enabled`, while `quality-recompute` enqueues nothing when `nlp.quality.enabled` is off. Workers on the test stack pick the enqueued tasks up.
 
 ### Local Core Checks
 
@@ -385,7 +407,7 @@ The manual test checklist covers:
 | Frontend | Functions | **82.38%** | 70% (min 70%) | ✅ Above minimum |
 | Frontend | Lines | **84.01%** | 70% (min 70%) | ✅ Above minimum |
 
-**Backend unit-coverage denominator:** measured over packages that contain unit-testable code. CLI main entrypoints (`cmd/cli`, `cmd/embed-recompute`, `cmd/gamma-links-regenerate`, `cmd/keyword-recompute`, `cmd/rotate-api-keys`, `cmd/seed`, `cmd/checkmigrations`, `cmd/worker`), test helpers (`internal/testutil`, `internal/domain/cache/cachetest`), and `scripts` are excluded from the threshold because they are covered by integration/E2E tests or are part of the test infrastructure. `internal/infrastructure/graph` is a handwritten gRPC client and is **not** excluded — its absence from unit coverage is real, not generated code.
+**Backend unit-coverage denominator:** measured over packages that contain unit-testable code. CLI main entrypoints (`cmd/cli`, `cmd/embed-recompute`, `cmd/gamma-links-regenerate`, `cmd/keyword-recompute`, `cmd/nlp-artifacts-recompute`, `cmd/quality-recompute`, `cmd/rotate-api-keys`, `cmd/seed`, `cmd/checkmigrations`, `cmd/worker`), test helpers (`internal/testutil`, `internal/domain/cache/cachetest`), and `scripts` are excluded from the threshold because they are covered by integration/E2E tests or are part of the test infrastructure. `internal/infrastructure/graph` is a handwritten gRPC client and is **not** excluded — its absence from unit coverage is real, not generated code.
 
 ### Backend Tests
 

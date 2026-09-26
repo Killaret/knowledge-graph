@@ -291,7 +291,7 @@ Directory index: [`docs/README.md`](docs/README.md).
 
 | Topic | Document |
 |---|---|
-| Where the project is going | [`ROADMAP.md`](ROADMAP.md), [`docs/product/BACKLOG.md`](docs/product/BACKLOG.md), [`docs/product/IDEAS.md`](docs/product/IDEAS.md) |
+| Where the project is going | [`ROADMAP.md`](ROADMAP.md), [`ROADMAP.ru.md`](ROADMAP.ru.md), [`docs/product/BACKLOG.md`](docs/product/BACKLOG.md), [`docs/product/IDEAS.md`](docs/product/IDEAS.md) |
 | What shipped | [`CHANGELOG.md`](CHANGELOG.md) |
 | Architecture | [`docs/architecture/README.md`](docs/architecture/README.md), [`docs/architecture/ARCHITECTURE_SUMMARY.md`](docs/architecture/ARCHITECTURE_SUMMARY.md) |
 | Deployment and configuration | [`DEPLOY.md`](DEPLOY.md) · [`DEPLOY.ru.md`](DEPLOY.ru.md), [`docs/operations/DEPLOYMENT_EN.md`](docs/operations/DEPLOYMENT_EN.md), [`docs/operations/CONFIGURATION_EN.md`](docs/operations/CONFIGURATION_EN.md), [`docs/operations/DOCKER.md`](docs/operations/DOCKER.md) |

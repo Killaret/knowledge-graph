@@ -1,11 +1,15 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	importer "knowledge-graph/internal/application/import"
 	"knowledge-graph/internal/shared/textutil"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,78 +20,102 @@ import (
 const (
 	maxFetchBodySize = 1 << 20 // 1 MiB
 	maxTitleRunes    = 200
-	maxTextRunes     = 5000
 )
 
-// ImportFetcher fetches a web page and extracts a readable title and text.
-// It is a production implementation of importer.ContentExtractor.
+// ImportFetcher fetches a web page and extracts its structured content
+// (URL-HEADING-1 stage A). It is the production implementation of
+// importer.ContentExtractor.
 type ImportFetcher struct {
-	client *http.Client
+	client          *http.Client
+	contentMaxRunes int
 }
 
-// NewImportFetcher creates an ImportFetcher with safe defaults.
+// NewImportFetcher creates an ImportFetcher with safe defaults. The section
+// budget comes from IMPORT_CONTENT_MAX_RUNES (default 20000, stage A).
 func NewImportFetcher() *ImportFetcher {
 	return &ImportFetcher{
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
+		contentMaxRunes: contentMaxRunesFromEnv(),
 	}
 }
 
 // NewImportFetcherWithClient creates an ImportFetcher with a custom HTTP client.
 func NewImportFetcherWithClient(client *http.Client) *ImportFetcher {
-	return &ImportFetcher{client: client}
+	f := NewImportFetcher()
+	f.client = client
+	return f
 }
 
-// Extract fetches the URL, parses HTML and returns title and plain text.
-// The caller (application layer) must already validate and normalize the URL.
-func (f *ImportFetcher) Extract(ctx context.Context, rawURL string) (string, string, error) {
+func contentMaxRunesFromEnv() int {
+	if v := os.Getenv("IMPORT_CONTENT_MAX_RUNES"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return defaultContentMaxRunes
+}
+
+// Extract fetches the URL, parses HTML and returns the structured page
+// (title candidates, outline, Markdown body, related links, truncation
+// metadata). The caller (application layer) must already validate and
+// normalize the URL.
+func (f *ImportFetcher) Extract(ctx context.Context, rawURL string) (*importer.ExtractedPage, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 	req.Header.Set("User-Agent", "KnowledgeGraphBot/1.0")
 
 	resp, err := f.client.Do(req)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return "", "", fmt.Errorf("HTTP %d", resp.StatusCode)
+		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
 
-	lr := io.LimitReader(resp.Body, maxFetchBodySize)
+	// Read the (1 MiB-capped) body fully: charset detection needs to inspect
+	// the bytes anyway, and buffering lets us override an uncertain guess —
+	// x/net falls back to windows-1252 on pages without a declaration
+	// (Confluence: <meta charset="">), which garbles legitimate UTF-8.
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxFetchBodySize))
+	if err != nil {
+		return nil, err
+	}
 
 	// Convert to UTF-8 based on the declared Content-Type or a <meta charset>
-	// declaration. If detection fails, fall back to reading the body as-is.
-	reader, err := charset.NewReader(lr, resp.Header.Get("Content-Type"))
-	if err != nil {
-		reader = lr
+	// declaration. When detection is not certain, HTML5 mandates UTF-8.
+	enc, _, certain := charset.DetermineEncoding(body, resp.Header.Get("Content-Type"))
+	var reader io.Reader = bytes.NewReader(body)
+	if certain && enc != nil {
+		reader = enc.NewDecoder().Reader(reader)
 	}
 
 	doc, err := html.Parse(reader)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
-	title := extractTitle(doc)
-	text := extractVisibleText(doc)
-
-	if title == "" {
-		title = rawURL
-	}
+	page := extractPage(doc, rawURL, f.contentMaxRunes)
 
 	// Sanitize so we never pass an invalid UTF-8 string further up.
-	title = textutil.SanitizeUTF8(cleanText(title))
-	text = textutil.SanitizeUTF8(cleanText(text))
+	page.Title = textutil.SanitizeUTF8(cleanText(page.Title))
+	page.Text = textutil.SanitizeUTF8(page.Text)
+	for i := range page.TitleCandidates {
+		page.TitleCandidates[i] = textutil.SanitizeUTF8(cleanText(page.TitleCandidates[i]))
+	}
+	for i := range page.Outline {
+		page.Outline[i].Text = textutil.SanitizeUTF8(page.Outline[i].Text)
+	}
 
-	// Truncate without splitting multi-byte runes.
-	title = textutil.TruncateToMaxRunes(title, maxTitleRunes)
-	text = textutil.TruncateToMaxRunes(text, maxTextRunes)
+	// Truncate the title without splitting multi-byte runes.
+	page.Title = textutil.TruncateToMaxRunes(page.Title, maxTitleRunes)
 
-	return title, text, nil
+	return page, nil
 }
 
 func extractTitle(n *html.Node) string {
@@ -100,41 +128,6 @@ func extractTitle(n *html.Node) string {
 		}
 	}
 	return ""
-}
-
-func extractVisibleText(n *html.Node) string {
-	if n.Type == html.TextNode {
-		return n.Data
-	}
-	if n.Type == html.DocumentNode {
-		var parts []string
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			if t := extractVisibleText(c); t != "" {
-				parts = append(parts, t)
-			}
-		}
-		return strings.Join(parts, " ")
-	}
-	if n.Type != html.ElementNode {
-		return ""
-	}
-
-	switch n.Data {
-	case "title", "script", "style", "noscript", "nav", "footer", "header", "aside", "button", "input", "select", "textarea":
-		return ""
-	}
-
-	var parts []string
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		if t := extractVisibleText(c); t != "" {
-			parts = append(parts, t)
-		}
-	}
-
-	if n.Data == "p" || n.Data == "div" || n.Data == "br" || n.Data == "li" || n.Data == "h1" || n.Data == "h2" || n.Data == "h3" || n.Data == "h4" || n.Data == "h5" || n.Data == "h6" {
-		return strings.Join(parts, " ") + "\n"
-	}
-	return strings.Join(parts, " ")
 }
 
 func cleanText(s string) string {

@@ -30,7 +30,11 @@ export const en: Record<string, string> = {
   "import.newBadge": "New",
   "import.duplicateBadge": "Duplicate",
   "import.titleOnly": "title only",
+  "import.titleCandidates": "Title variants",
+  "import.outline": "Page outline",
+  "import.noiseDropped": "noise blocks removed: {{count}}",
   "import.doneTitle": "Import complete",
+  "import.backToGraph": "Back to graph",
 };
 
 export const ru: Record<string, string> = {
@@ -61,5 +65,9 @@ export const ru: Record<string, string> = {
   "import.newBadge": "Новая",
   "import.duplicateBadge": "Дубликат",
   "import.titleOnly": "только заголовок",
+  "import.titleCandidates": "Варианты названия",
+  "import.outline": "Оглавление страницы",
+  "import.noiseDropped": "вырезано шумовых блоков: {{count}}",
   "import.doneTitle": "Импорт завершён",
+  "import.backToGraph": "К графу",
 };

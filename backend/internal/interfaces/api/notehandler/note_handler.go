@@ -45,6 +45,14 @@ type Handler struct {
 	achievementService *achievement.Service
 	importSvc          *importer.Service
 	eventPublisher     appevents.Publisher
+
+	// NOTE-QUALITY-1 — installed by SetQuality; disabled = zero deps.
+	qualityEnabled bool
+	qualityReader  QualityReader
+	qualityEnq     QualityEnqueuer
+
+	// Re-fetch (NOTE-QUALITY-1 part 3) — installed by SetRefetch.
+	refetchExtractor RefetchExtractor
 }
 
 // SuggestionsResponse represents the response for recommendations
@@ -322,6 +330,9 @@ func (h *Handler) Create(c *gin.Context) {
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("Failed to enqueue compute embedding: %v", err)
 		}
+		if err := h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID); err != nil {
+			log.Printf("Failed to enqueue normalize note: %v", err)
+		}
 		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), newNote.ID(), h.taskDelay); err != nil {
 			log.Printf("Failed to enqueue link weight recalculation: %v", err)
 		}
@@ -477,6 +488,9 @@ func (h *Handler) postprocessCreatedNote(c *gin.Context, n *note.Note) {
 		}
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("[NoteHandler] Failed to enqueue compute embedding for batch: %v", err)
+		}
+		if err := h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue normalize note for batch: %v", err)
 		}
 		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), n.ID(), h.taskDelay); err != nil {
 			log.Printf("[NoteHandler] Failed to enqueue link weight recalculation for batch: %v", err)
@@ -845,6 +859,9 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("Failed to enqueue compute embedding: %v", err)
 		}
+		if err := h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID); err != nil {
+			log.Printf("Failed to enqueue normalize note: %v", err)
+		}
 		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), newNote.ID(), h.taskDelay); err != nil {
 			log.Printf("Failed to enqueue link weight recalculation: %v", err)
 		}
@@ -1178,6 +1195,7 @@ func (h *Handler) Update(c *gin.Context) {
 		noteID := existing.ID().String()
 		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
 		_ = h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID)
+		_ = h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID)
 		_ = h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), existing.ID(), h.taskDelay)
 	}
 
@@ -1349,6 +1367,13 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
+	// NLP-4 cascade: drop the note's nlp_artifacts (no-op when absent).
+	if h.taskQueue != nil {
+		if err := h.taskQueue.EnqueueNlpArtifactsCleanup(c.Request.Context(), id.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue artifacts cleanup: %v", err)
+		}
+	}
+
 	if h.eventPublisher != nil {
 		if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), getUserIDString(c)); err != nil {
 			log.Printf("[NoteHandler] Failed to publish NoteDeleted event: %v", err)
@@ -1419,6 +1444,14 @@ func (h *Handler) DeleteBatch(c *gin.Context) {
 	if err := h.repo.DeleteBatch(c.Request.Context(), ids); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteNote)
 		return
+	}
+
+	if h.taskQueue != nil {
+		for _, id := range ids {
+			if err := h.taskQueue.EnqueueNlpArtifactsCleanup(c.Request.Context(), id.String()); err != nil {
+				log.Printf("[NoteHandler] Failed to enqueue artifacts cleanup for batch: %v", err)
+			}
+		}
 	}
 
 	if h.eventPublisher != nil {

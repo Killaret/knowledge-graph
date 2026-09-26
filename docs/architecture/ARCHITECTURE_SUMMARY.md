@@ -221,6 +221,115 @@ stateDiagram-v2
 - Threshold `0.6` and degree `2` are the cautious start of the W-1-recommended range (0.55–0.6 cosine, degree 2–3) — derived from the autolink precision curve on the `folder_path` ground truth, see `docs/tasks/W-1-eval-findings.md`. Recalibration on a real corpus is part of MODEL-1 follow-up.
 - Regeneration after a model change: `go run ./cmd/gamma-links-regenerate --dry-run` reports how many gamma links would be deleted and created and how many candidates were discarded by recorded rejections; without the flag it deletes only `source_type='gamma'` rows and regenerates for notes that have an embedding for the current model.
 
+## NLP Embedding Pipeline (CHUNK-1)
+
+- `nlp-service/app/core/chunking.py` is a pure module (no FastAPI/model/I/O):
+  `chunk(text, params) -> list[Chunk]` splits structure-first (headings, code
+  fences, tables — atomic while they fit), then sentences, then clauses
+  (`;:,`), with a hard `max_tokens` invariant and `forced_split` marking.
+  Each chunk carries `idx`, `text`, `heading_path`, `char_span` (exact source
+  offsets), `token_count`, `kind`. `aggregate(vectors)` = mean + L2 normalize.
+- Feature flag `EMBED_CHUNKING` (env, default `0`, wired in all compose files):
+  - `off` — `/embed` and the keyword `_doc_vector` behave exactly as before;
+    the worker sends `content`/`title` as separate fields and the service
+    recombines them into the legacy `title + " " + content` string.
+  - `on` — `/embed` chunks the text, runs one batched `encode`, averages +
+    L2-normalizes, and adds `chunks`/`no_content` to the response; the note
+    title is injected into every chunk's model input; heading-link stubs
+    (`## [title](url)`) produce zero chunks and embed the title only.
+    `_doc_vector` uses the same structural chunker under the flag.
+- **Conditional completeness:** the flag stays off until MODEL-2 activates it
+  together with the new model and normalized vectors (one recompute), and
+  corpus measurements must be re-run after NOTE-QUALITY-1 changes the input
+  corpus — see `docs/tasks/CHUNK-1-structure-aware-chunker.md`.
+
+## NLP Normalization Pipeline (NLP-4)
+
+- `nlp-service/app/core/normalization.py` is a pure module (no FastAPI/model/
+  I/O): `normalize(text, params)` runs **one deterministic pass** over a
+  ruleset ported from `scripts/measure_normalization.py` — boilerplate lines
+  (cookies, subscribe, share, footer, read-more), bare URL lines, navigation
+  runs (>=3 consecutive short unpunctuated lines), near-duplicate lines,
+  whitespace collapse. Inputs shorter than `min_chars` (100) pass through
+  untouched (`skipped=True`).
+- Two safety guards roll the result back to the source text: length
+  (`len(result) < min_chars` -> `too_short`) and cosine similarity
+  (`cos(emb(result), emb(source)) < min_cosine` -> `low_cosine`). The embed
+  function is injected, so the guard is unit-testable without a model.
+- `POST /normalize` (nlp-service) accepts `{text, title}` and returns
+  `normalized_text`, `chunks` (CHUNK-1 chunker), `metrics` (raw/norm tokens,
+  compression, iterations=1, `emb_cosine`, `stop_reason`), `rolled_back`,
+  `rollback_reason`, `skipped`, `pipeline_version="norm-v1"`. The endpoint is
+  stateless — persistence is the backend worker's job.
+- MongoDB collection `nlp_artifacts` stores the derived form:
+  `{note_id, source_hash (sha256 title+content), pipeline_version,
+  model_version, normalized_text, chunks[], metrics, rolled_back,
+  rollback_reason, status: current|superseded, created_at}`. Index
+  `(note_id, pipeline_version, status)` with a partial unique index on
+  `current`; `(note_id)` index serves the deletion cascade.
+- Worker task `nlp:normalize`: fetch note -> compute source hash -> skip
+  when the current artifact already matches -> call `/normalize` ->
+  `SaveCurrent` (supersedes the previous current document when
+  `nlp.history.enabled`, deletes it otherwise). Deleting a note enqueues
+  `nlp:artifacts_cleanup`, which removes all of its artifact documents.
+- `notes.content` is sacred: the pipeline never writes back — the artifact
+  is a derived projection. Embeddings still use raw `notes.content`;
+  switching vectors to the normalized form is deferred to MODEL-2.
+- Switches: `nlp.pipeline.enabled` (JSON `nlp.pipeline.enabled` / env
+  `NLP_PIPELINE_ENABLED`, default off — no task is enqueued and `/normalize`
+  is never called), `nlp.history.enabled` (default on),
+  `nlp.normalization.min_cosine` (default 0.7, e5-base scale, recalibrated
+  in MODEL-2). Backfill: `go run ./cmd/nlp-artifacts-recompute --dry-run`
+  prints create/skip counts; without the flag it enqueues `nlp:normalize`
+  for notes with missing or stale artifacts regardless of the pipeline flag
+  (explicit operator action).
+- **Conditional completeness:** same caveat as CHUNK-1 — the artifacts are
+  written but unused until MODEL-2 routes embedding inputs through them,
+  and measurements must be re-run after NOTE-QUALITY-1 changes the corpus.
+  See `docs/tasks/NLP-4-note-logical-form-normalization.md`.
+
+## Note Quality Pipeline (NOTE-QUALITY-1, stage 1)
+
+- `quality:assess` is enqueued after `nlp:normalize` and after each note
+  enrichment task (keywords, embedding, link updates). Manual assessments
+  come from `POST /api/v1/notes/{id}/quality/assess` or from
+  `quality-recompute`.
+- The assessor (`internal/application/quality`) computes deterministic
+  signals over the normalized artifact text (raw content when no artifact
+  matches the current `source_hash`): volume (`words`, `prose_words`),
+  completeness (`ends_with_sentence`, `truncated_by_import`,
+  `unclosed_fence`), structure (`headings`, `fragment_share`,
+  `max_block_words`), presence of thought (`sentences`, `prose_share`,
+  `kind` = stub/collection/text), readiness counters (keywords, links,
+  embedding), and `mojibake`. Model-dependent signals (`coherence_min/median`,
+  `title_text_similarity`) come through the embedder port and stay `null`
+  when the model is unavailable.
+- Four weight-free gates produce `verdict ∈ {create, enrich, manual}`:
+  `stub` → enrich, `truncated` → enrich, `empty` (no text, no source) →
+  manual, `mojibake` → manual. Stage 1 never blocks or mutates the note —
+  the record is an indicator only.
+- Stop rule per text version (`source_hash`): identical signals suppress a
+  new entry; automatic passes are capped at 3, a gate that still holds
+  after the third marks `needs_manual_review`. Manual triggers always
+  write.
+- Storage: the current `nlp_artifacts` document gets a `quality` field
+  (`signals, gates, verdict, reasons, attempt, computed_at`,
+  `pipeline_version: "quality-v1"`); every assessment is also appended to
+  MongoDB `quality_log` (last 10 per note).
+- `GET /api/v1/notes/{id}/quality` returns the latest record and the log;
+  note authorization applies. Switch `nlp.quality.enabled` (env
+  `NLP_QUALITY_ENABLED`, default off): no task is enqueued and the API
+  answers `{"enabled": false}`.
+- Refetch (user action only, never from the pipeline): preview → apply →
+  restore. Apply stores the previous body in `metadata.previous_content`;
+  restore puts it back byte-exactly.
+- Backfill: `go run ./cmd/quality-recompute --dry-run` prints due/assessed
+  counts; `--export <file.jsonl>` dumps ids + hashes + signals with no
+  note text (output goes to `work-quality/local/`, gitignored). A real run
+  enqueues manual `quality:assess` tasks — the client gate still honours
+  `nlp.quality.enabled`.
+- See `docs/tasks/NOTE-QUALITY-1-quality-loop.md` for the stage-1 spec.
+
 ## Operational Considerations
 
 ### Monitoring

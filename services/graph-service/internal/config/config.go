@@ -24,6 +24,7 @@ type JSONConfig struct {
 			NoteLayoutTTLSeconds int `json:"note_layout_ttl_seconds"`
 			FullLayoutTTLSeconds int `json:"full_layout_ttl_seconds"`
 			DeltaTTLSeconds      int `json:"delta_ttl_seconds"`
+			SnapshotTTLSeconds   int `json:"snapshot_ttl_seconds"`
 		} `json:"cache"`
 		Layout struct {
 			Radius2D        float64 `json:"2d_radius"`
@@ -52,6 +53,7 @@ type Config struct {
 	NoteLayoutTTL time.Duration
 	FullLayoutTTL time.Duration
 	DeltaTTL      time.Duration
+	SnapshotTTL   time.Duration
 
 	// Layout engine
 	Layout2DRadius  float64
@@ -99,6 +101,7 @@ func Load() (*Config, error) {
 		NoteLayoutTTL: time.Duration(getIntEnv("CACHE_NOTE_TTL_SECONDS", getJSONInt(jsonCfg, func(j *JSONConfig) int { return j.GraphService.Cache.NoteLayoutTTLSeconds }, 300))) * time.Second,
 		FullLayoutTTL: time.Duration(getIntEnv("CACHE_FULL_TTL_SECONDS", getJSONInt(jsonCfg, func(j *JSONConfig) int { return j.GraphService.Cache.FullLayoutTTLSeconds }, 300))) * time.Second,
 		DeltaTTL:      time.Duration(getIntEnv("CACHE_DELTA_TTL_SECONDS", getJSONInt(jsonCfg, func(j *JSONConfig) int { return j.GraphService.Cache.DeltaTTLSeconds }, 60))) * time.Second,
+		SnapshotTTL:   time.Duration(getIntEnv("CACHE_SNAPSHOT_TTL_SECONDS", getJSONInt(jsonCfg, func(j *JSONConfig) int { return j.GraphService.Cache.SnapshotTTLSeconds }, 900))) * time.Second,
 
 		// Layout engine constants
 		Layout2DRadius:  getJSONFloat(jsonCfg, func(j *JSONConfig) float64 { return j.GraphService.Layout.Radius2D }, 100.0),

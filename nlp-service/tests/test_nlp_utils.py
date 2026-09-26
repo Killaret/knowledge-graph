@@ -1,6 +1,7 @@
 import pytest
 import sys
 import os
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import numpy as np
@@ -272,6 +273,64 @@ class TestEmbeddingModel:
         assert len(emb1) == len(emb2)
         assert any(abs(x - y) > 1e-6 for x, y in zip(emb1, emb2))
 
+    def test_chunk_inputs_fit_window_including_special_tokens(self, embedding_model):
+        """CHUNK-1 window invariant with the real tokenizer: every model input
+        (title + chunk) must encode within max_seq_length once the tokenizer
+        adds its special tokens ([CLS]/[SEP])."""
+        from app.core.chunking import ChunkingParams, chunk, embedding_inputs
+
+        tokenizer = getattr(embedding_model, "tokenizer", None)
+        if tokenizer is None:
+            pytest.skip("model exposes no tokenizer")
+
+        window = int(embedding_model.max_seq_length)
+        params = ChunkingParams(
+            token_counter=nlp_utils._chunk_token_counter(embedding_model),
+            target_tokens=256,
+            max_tokens=nlp_utils._chunk_max_tokens(embedding_model),
+            title="Window probe",
+        )
+        text = " ".join(f"word{i}" for i in range(3000))
+        inputs = embedding_inputs(chunk(text, params), params)
+
+        lengths = [len(tokenizer.encode(s)) for s in inputs]
+        assert max(lengths) <= window
+        # Packing must actually reach the window: a greedy filler far below
+        # it would mean this test cannot detect a missing reserve.
+        assert max(lengths) > window - 8
+
+
+class TestChunkMaxTokens:
+    """_chunk_max_tokens: window budget minus the special tokens the model
+    tokenizer adds to every input."""
+
+    class _Tokenizer:
+        def __init__(self, specials):
+            self._specials = specials
+
+        def num_special_tokens_to_add(self, already_has_special_tokens=False):
+            return self._specials
+
+    class _Model:
+        def __init__(self, window, tokenizer="unset"):
+            self.max_seq_length = window
+            if tokenizer != "unset":
+                self.tokenizer = tokenizer
+
+    def test_special_tokens_reserved(self):
+        model = self._Model(128, tokenizer=self._Tokenizer(2))
+        assert nlp_utils._chunk_max_tokens(model) == 126
+
+    def test_no_tokenizer_keeps_window(self):
+        assert nlp_utils._chunk_max_tokens(self._Model(128)) == 128
+
+    def test_tokenizer_without_specials_api_keeps_window(self):
+        assert nlp_utils._chunk_max_tokens(self._Model(128, tokenizer=object())) == 128
+
+    def test_reserve_never_goes_below_one(self):
+        model = self._Model(2, tokenizer=self._Tokenizer(5))
+        assert nlp_utils._chunk_max_tokens(model) == 1
+
 
 class TestModels:
     def test_extract_keywords_request_model(self):
@@ -315,6 +374,19 @@ class TestModels:
 
 
 class TestEmbeddingModelHelpers:
+    def test_deploy_uses_persistent_minimal_model_cache(self):
+        repo_root = Path(__file__).resolve().parents[2]
+        compose = (repo_root / "docker-compose.deploy.yml").read_text(encoding="utf-8")
+        entrypoint = (repo_root / "nlp-service" / "entrypoint.sh").read_text(encoding="utf-8")
+
+        assert "HF_HUB_OFFLINE=0" in compose
+        assert "nlp_hf_cache:/root/.cache/huggingface" in compose
+        assert compose.count("nlp_hf_cache:") == 2
+        for pattern in nlp_utils.MODEL_ALLOW_PATTERNS:
+            assert repr(pattern) in entrypoint
+        assert "*.bin" not in nlp_utils.MODEL_ALLOW_PATTERNS
+        assert "*.onnx" not in nlp_utils.MODEL_ALLOW_PATTERNS
+
     def test_hf_offline_enabled(self):
         prev = os.environ.get("HF_HUB_OFFLINE")
         try:
@@ -340,7 +412,12 @@ class TestEmbeddingModelHelpers:
             mock_download.return_value = "/fake/model/path"
             path = nlp_utils._resolve_model_path(local_only=True)
             assert path == "/fake/model/path"
-            mock_download.assert_called_once()
+            mock_download.assert_called_once_with(
+                repo_id=f"sentence-transformers/{nlp_utils.MODEL_NAME}",
+                cache_dir=nlp_utils.HF_CACHE,
+                local_files_only=True,
+                allow_patterns=nlp_utils.MODEL_ALLOW_PATTERNS,
+            )
 
     def test_get_embedding_model_loads_from_cache(self):
         reset_model_state()

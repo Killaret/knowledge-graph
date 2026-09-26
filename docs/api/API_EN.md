@@ -185,9 +185,61 @@ its own UUIDs in `import/batch`, and a foreign id that already exists is rejecte
 than overwritten. The contract for that is still being decided (see
 `docs/tasks/BATCH-1-api-design.md`), so treat it as provisional.
 
+### 10.1 Bookmark import preview (URL-HEADING-1 stage A)
+
+`POST /api/v1/import/bookmarks/preview` accepts `items` (max 50) plus
+`options.extract_content`. With extraction enabled each returned item carries the
+structured extraction result on top of the dedup fields:
+
+- `title_candidates` — up to 5 candidates in priority order: every `h1` inside the
+  content container → `og:title` → `<title>` minus the site suffix → last URL path
+  segment. The user picks one; the choice is sent back as `title`.
+- `title_source` — always `"rule"` at stage A (NLP ranking is stage B).
+- `outline` — extracted page headings `{level, text}`, normalized so the first
+  heading is level 2 and the depth is clamped to 6.
+- `noise_dropped` — number of noise elements removed from the content container.
+
+The created note's `metadata` keeps `title_candidates`, `title_source`,
+`related_links` (≤ 20 http(s) anchors collected from nav/footer/aside, never
+rendered into the body) and, when the section budget cut content,
+`import_truncated.sections_dropped`. The body budget itself is
+`IMPORT_CONTENT_MAX_RUNES` (default 20 000 runes) — see
+`docs/operations/CONFIGURATION_EN.md`.
+
 Batch creation runs the same post-processing as single creation — keywords, embeddings,
 link weights and recommendations. Mass **import** does not yet enqueue recommendations;
 that gap is tracked as IMP-4.
+
+## 11. Note quality and refetch (NOTE-QUALITY-1 stage 1)
+
+The stage-1 quality pipeline is read-only and indicator-only — it never edits or blocks
+a note. Two endpoints expose it:
+
+```bash
+GET  /api/v1/notes/{id}/quality          # latest assessment + quality_log entries
+POST /api/v1/notes/{id}/quality/assess   # enqueue a manual re-assessment
+```
+
+Both share the note's authorization. When `nlp.quality.enabled` is off they answer
+`{"enabled": false}` — the frontend hides the quality row entirely. `GET` returns the
+latest record (`signals`, `gates`, `verdict` ∈ `create|enrich|manual`, `reasons[]`,
+`attempt`, `needs_manual_review`, `pipeline_version`) plus the log; with no assessment
+yet, the record is absent. `POST` is not capped by the three-attempt stop rule — a
+manual trigger always writes.
+
+Refetch is a **user action**, never part of the pipeline:
+
+```bash
+POST /api/v1/notes/{id}/refetch/preview   # extraction preview, note untouched
+POST /api/v1/notes/{id}/refetch           # apply; body → metadata.previous_content
+POST /api/v1/notes/{id}/refetch/restore   # put previous_content back byte-exactly
+```
+
+Preview shows the stage-A extraction result (chosen title, outline, length) without
+mutating anything. Apply requires confirmation, accepts an optional `title` override,
+and stores the previous body in `metadata.previous_content`; restore uses that field.
+A fetch failure leaves the note unchanged. Refetch is offered for `stub`/`truncated`
+verdicts when `source_url` is present.
 
 ## Notes for maintainers
 

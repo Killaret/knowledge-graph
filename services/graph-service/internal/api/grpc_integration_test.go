@@ -13,7 +13,9 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
 	"knowledge-graph-graph-service/internal/cache"
@@ -178,18 +180,23 @@ func (s *GRPCIntegrationTestSuite) TestGetDelta() {
 	stream, err := s.client.GetFullLayout(ctx, req)
 	s.Require().NoError(err)
 
-	// Consume the stream
+	// Consume the stream and capture the served hash (final chunk "hash:<id>").
+	var servedHash string
 	for {
-		_, err := stream.Recv()
+		chunk, err := stream.Recv()
 		if err != nil {
 			break
 		}
+		if len(chunk.ChunkId) > 5 && chunk.ChunkId[:5] == "hash:" {
+			servedHash = chunk.ChunkId[5:]
+		}
 	}
+	s.NotEmpty(servedHash, "stream must end with a hash chunk")
 
-	// Now get delta
+	// Now get delta against the version the client actually holds
 	deltaReq := &graphservice.DeltaRequest{
 		UserId:   userID,
-		LastHash: "some-previous-hash",
+		LastHash: servedHash,
 	}
 
 	deltaResp, err := s.client.GetDelta(ctx, deltaReq)
@@ -212,6 +219,15 @@ func (s *GRPCIntegrationTestSuite) TestInvalidRequest() {
 	}
 	_, err = s.client.GetDelta(ctx, deltaReq)
 	s.Error(err)
+
+	// Unknown last_hash — no snapshot: server answers NotFound (resync)
+	unknownReq := &graphservice.DeltaRequest{
+		UserId:   "test-user-unknown-hash",
+		LastHash: "never-served-hash",
+	}
+	_, err = s.client.GetDelta(ctx, unknownReq)
+	s.Require().Error(err)
+	s.Equal(codes.NotFound, status.Code(err))
 }
 
 // stubPostgresClient is a mock implementation for testing

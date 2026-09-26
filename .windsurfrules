@@ -225,6 +225,17 @@ optional:
    Every failing test either exposes a defect (fix the code) or proves the test
    wrong (fix the test). Repeat while meaningful failures are still findable.
 
+The distinction is about **how a test is discovered**, not its final syntax. A
+phase-one negative checks a known contract before reading for loopholes (missing
+required field, documented max+1, known unauthorized request). A phase-two test
+attacks an implementation-specific assumption discovered by tracing the real path
+(reverse direction, legacy NULL, a field dropped by an intermediate mapper, a
+missing side effect). It must first fail on current broken code or on a mutation of
+the real execution path; after the fix it remains as an ordinary green regression.
+A final green suite alone cannot prove this phase happened, so the task/findings
+file must record the attempted mutations and defects found (or state that no new
+defect was found after the listed attacks).
+
 Categories to work through: length boundaries (0, 1, max, max+1), enum validity
 including fallbacks, empty and maximal arrays, ownership and IDOR, duplicate ids
 and links, side effects (post-processing, metadata, `source_url`).
@@ -342,6 +353,17 @@ reaches, or a check the caller bypasses proves nothing about coverage. Mutate th
 execution path, or pick a different mutation. (Lesson of 2026-09-23: mutating
 `Suppression.Blocks` stayed green not because the test was blind but because the
 generator filters through a `pairKey` map; the honest mutation was there.)
+
+Counterweight: **a mutation that stays green on the real path is a finding about the
+code.** Once the mutated line is known to execute, ask whether changing it *should*
+change the result. If it should — the line is there to do a job and does not do it —
+that is the defect: report it, do not trade it for a different mutation. Only when the
+line genuinely has no job (redundant, cosmetic) is the mutation idle; say which, and why.
+(Lesson of 2026-09-23: in the REG-2 review `score DESC → score ASC` in
+`FindSimilarNotesBatch` stayed green and was written off as idle, because the rows were
+already ordered by note ids. The cause was named right and the conclusion was wrong: the
+query did not pick the nearest neighbours at all, and until LINKS-3 only 3 of 200
+auto-links pointed at a true nearest pair.)
 
 Before reporting a finding, or accepting someone else's:
 

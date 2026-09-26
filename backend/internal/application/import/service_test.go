@@ -97,10 +97,11 @@ func (r *fakeNoteRepo) FindAllPaginated(ctx context.Context, userID uuid.UUID, l
 
 // fakeTaskQueue records EnqueueImportBookmarks calls.
 type fakeTaskQueue struct {
-	called bool
-	userID uuid.UUID
-	taskID string
-	items  []byte
+	called         bool
+	userID         uuid.UUID
+	taskID         string
+	items          []byte
+	normalizeCalls []string
 }
 
 func (q *fakeTaskQueue) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
@@ -144,6 +145,38 @@ var (
 	_ note.Repository  = (*fakeNoteRepo)(nil)
 	_ common.TaskQueue = (*fakeTaskQueue)(nil)
 )
+
+// fakePublisher records graph events (SYNC-1: every write path must publish).
+type fakePublisher struct {
+	noteCreated []string
+	userIDs     []string
+}
+
+func (p *fakePublisher) PublishNoteCreated(ctx context.Context, noteID, userID string) error {
+	p.noteCreated = append(p.noteCreated, noteID)
+	p.userIDs = append(p.userIDs, userID)
+	return nil
+}
+
+func (p *fakePublisher) PublishNoteUpdated(ctx context.Context, noteID, userID string) error {
+	return nil
+}
+
+func (p *fakePublisher) PublishNoteDeleted(ctx context.Context, noteID, userID string) error {
+	return nil
+}
+
+func (p *fakePublisher) PublishLinkCreated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
+	return nil
+}
+
+func (p *fakePublisher) PublishLinkUpdated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
+	return nil
+}
+
+func (p *fakePublisher) PublishLinkDeleted(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
+	return nil
+}
 
 func TestBuildContent(t *testing.T) {
 	tests := []struct {
@@ -404,6 +437,35 @@ func TestProcessImportTask(t *testing.T) {
 
 	// Notes saved.
 	require.Len(t, repo.notes, 2)
+
+	// NLP-4: every created note is enqueued for normalization — the queue
+	// client gates on nlp.pipeline.enabled, the service always calls.
+	require.Len(t, queue.normalizeCalls, 2)
+}
+
+// SYNC-1 hole #4: an import that publishes no events leaves the graph cache
+// stale — the created notes stay off the graph until TTL. Every created note
+// must produce a NoteCreated event.
+func TestProcessImportTask_PublishesNoteCreated(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+	repo := newFakeNoteRepo()
+	cache := cachetest.NewFakeCacheClient()
+	svc := NewService(repo, cache, nil, nil)
+	pub := &fakePublisher{}
+	svc.SetEventPublisher(pub)
+
+	items := []Item{
+		{Title: "First", URL: "https://example.com/first", Type: "asteroid"},
+		{Title: "Second", URL: "https://example.com/second", Type: "planet"},
+	}
+
+	require.NoError(t, svc.ProcessImportTask(ctx, userID, uuid.New().String(), items))
+	require.Len(t, repo.notes, 2)
+	require.Len(t, pub.noteCreated, 2)
+	for _, uid := range pub.userIDs {
+		require.Equal(t, userID.String(), uid)
+	}
 }
 
 func TestProcessImportTask_AllFail(t *testing.T) {
@@ -437,4 +499,95 @@ func TestPreview_ExceedsBatchSize(t *testing.T) {
 	items := make([]Item, MaxBatchSize+1)
 	_, err := svc.Preview(context.Background(), uuid.New(), items)
 	require.Error(t, err)
+}
+
+func (q *fakeTaskQueue) EnqueueNormalizeNote(ctx context.Context, noteID string) error {
+	q.normalizeCalls = append(q.normalizeCalls, noteID)
+	return nil
+}
+
+func (q *fakeTaskQueue) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
+	return nil
+}
+
+// fakeExtractor returns a fixed extraction result (URL-HEADING-1 stage A).
+type fakeExtractor struct {
+	page *ExtractedPage
+	err  error
+}
+
+func (f *fakeExtractor) Extract(ctx context.Context, rawURL string) (*ExtractedPage, error) {
+	return f.page, f.err
+}
+
+func TestProcessImportTask_ExtractionMetadata(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+	repo := newFakeNoteRepo()
+	cache := cachetest.NewFakeCacheClient()
+	queue := &fakeTaskQueue{}
+	extractor := &fakeExtractor{page: &ExtractedPage{
+		Title:           "Page Title",
+		Text:            "extracted body",
+		TitleCandidates: []string{"Page Title", "Page Title - Site"},
+		TitleSource:     "rule",
+		Outline:         []OutlineEntry{{Level: 2, Text: "Page Title"}},
+		RelatedLinks:    []RelatedLink{{Text: "Docs", URL: "https://docs.example.com"}},
+		NoiseDropped:    4,
+		SectionsDropped: 3,
+	}}
+	svc := NewService(repo, cache, queue, extractor)
+
+	items := []Item{{URL: "https://example.com/page", Type: "asteroid", ExtractContent: true}}
+	err := svc.ProcessImportTask(ctx, userID, uuid.New().String(), items)
+	require.NoError(t, err)
+	require.Len(t, repo.notes, 1)
+
+	var saved *note.Note
+	for _, n := range repo.notes {
+		saved = n
+	}
+	meta := saved.Metadata().Value()
+	require.Equal(t, "rule", meta["title_source"])
+	require.Equal(t, []string{"Page Title", "Page Title - Site"}, meta["title_candidates"])
+
+	links, ok := meta["related_links"].([]map[string]string)
+	require.True(t, ok)
+	require.Len(t, links, 1)
+	require.Equal(t, "https://docs.example.com", links[0]["url"])
+
+	trunc, ok := meta["import_truncated"].(map[string]interface{})
+	require.True(t, ok)
+	require.Equal(t, 3, trunc["sections_dropped"])
+
+	require.Equal(t, "Page Title", saved.Title().String())
+	require.Contains(t, saved.Content().String(), "## [Page Title](https://example.com/page)")
+	require.Contains(t, saved.Content().String(), "extracted body")
+}
+
+func TestPreview_ExtractionFields(t *testing.T) {
+	ctx := context.Background()
+	repo := newFakeNoteRepo()
+	extractor := &fakeExtractor{page: &ExtractedPage{
+		Title:           "P",
+		Text:            "body",
+		TitleCandidates: []string{"P", "Q"},
+		TitleSource:     "rule",
+		Outline:         []OutlineEntry{{Level: 2, Text: "P"}},
+		NoiseDropped:    2,
+	}}
+	svc := NewService(repo, cachetest.NewFakeCacheClient(), nil, extractor)
+
+	preview, err := svc.Preview(ctx, uuid.New(), []Item{
+		{URL: "https://example.com/a", Type: "asteroid", ExtractContent: true},
+	})
+	require.NoError(t, err)
+	require.Len(t, preview, 1)
+	pi := preview[0]
+	require.Equal(t, "P", pi.Title)
+	require.Equal(t, []string{"P", "Q"}, pi.TitleCandidates)
+	require.Equal(t, "rule", pi.TitleSource)
+	require.Equal(t, []OutlineEntry{{Level: 2, Text: "P"}}, pi.Outline)
+	require.Equal(t, 2, pi.NoiseDropped)
+	require.Empty(t, pi.Error)
 }

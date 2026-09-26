@@ -7,21 +7,36 @@
 //    docs/DECISIONS.md (matched by task identifier and/or date).
 // 3. Every decision marked as requiring code has at least one commit that names
 //    its task identifier in the subject or body.
-// 4. Terminal board rows in docs/AI_HANDOFF.md older than three days are archived.
+// 4. No terminal board rows in docs/AI_HANDOFF.md: a row marked "принято" or
+//    "отменено" belongs in docs/archive/board/YYYY-MM.md the moment it closes.
+//    "отклонено" is not terminal - it means rework and stays on the board.
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, resolve, dirname, relative } from "node:path";
 import { execSync } from "node:child_process";
 
-const repoRoot = resolve(process.argv[2] ?? ".");
+const args = process.argv.slice(2);
+let repoRoot = ".";
+let boardPath = null;
+for (const arg of args) {
+    if (arg.startsWith("--board=")) {
+        boardPath = resolve(arg.slice("--board=".length));
+    } else {
+        repoRoot = arg;
+    }
+}
+repoRoot = resolve(repoRoot);
 
 const DECISIONS_PATH = join(repoRoot, "docs", "DECISIONS.md");
-const HANDOFF_PATH = join(repoRoot, "docs", "AI_HANDOFF.md");
+const HANDOFF_PATH = boardPath ?? join(repoRoot, "docs", "AI_HANDOFF.md");
 const TASKS_DIR = join(repoRoot, "docs", "tasks");
 
 const DATE_RE = /\d{4}-\d{2}-\d{2}/;
 const ID_RE = /[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+/g; // e.g. PUB-2, P11-1, DEPENDABOT-79, AUTHOR-1
-const TERMINAL_STATUSES = new Set(["принято", "отклонено", "отменено"]);
+// Terminal means "closed forever": принято/отменено move to
+// docs/archive/board/. отклонено is rework, not closure - it stays with the
+// assignee and is never archived (owner decision 61, BOARD-3).
+const TERMINAL_STATUSES = new Set(["принято", "отменено"]);
 
 const errors = [];
 
@@ -423,24 +438,13 @@ for (const row of decisionRows) {
 }
 
 // ---------------------------------------------------------------------------
-// Rule 4: terminal board rows older than three days
+// Rule 4: no terminal rows on the board
 // ---------------------------------------------------------------------------
-
-const today = new Date();
-const threshold = new Date(today);
-threshold.setDate(threshold.getDate() - 3);
-threshold.setHours(0, 0, 0, 0);
 
 function parseBoardRows() {
     const text = readText(HANDOFF_PATH);
     const rows = [];
-    let inArchive = false;
     for (const line of text.split(/\r?\n/)) {
-        if (/^\s*<!--\s*archive\s*-->/i.test(line) || /^##\s+Архив/i.test(line)) {
-            inArchive = true;
-            break;
-        }
-        if (inArchive) continue;
         if (!/^\|/.test(line)) continue;
         if (/^\|[-\s|]+\|/.test(line)) continue; // separator
         const parts = line
@@ -466,11 +470,11 @@ function parseBoardRows() {
 }
 
 const boardRows = parseBoardRows();
-for (const { line, date } of boardRows) {
-    const d = new Date(date);
-    if (d < threshold) {
-        fail(`AI_HANDOFF.md board row is stale (older than 3 days): ${line}`);
-    }
+for (const { line } of boardRows) {
+    fail(
+        `AI_HANDOFF.md holds a terminal board row - it belongs in ` +
+            `docs/archive/board/YYYY-MM.md: ${line}`,
+    );
 }
 
 // ---------------------------------------------------------------------------

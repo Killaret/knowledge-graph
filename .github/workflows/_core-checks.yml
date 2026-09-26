@@ -252,6 +252,10 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-board-limits.test.mjs
 
+      - name: Run test stack ownership guard tests
+        working-directory: .
+        run: node scripts/testing/check-test-stack-ownership.test.mjs
+
       - name: Run docker skip reason tests
         working-directory: .
         run: node scripts/testing/check-all-docker-skip.test.mjs

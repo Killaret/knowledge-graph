@@ -81,7 +81,7 @@ func TestWorker_GenerateGammaLinks_PublishesAndRefreshes(t *testing.T) {
 	pub := &fakeLinkPublisher{}
 	enq := &fakeRefreshEnqueuer{}
 
-	w := NewWorker(nil, nil, nil, nil, nil, nil, runner, pub, enq, 5*time.Second)
+	w := NewWorker(nil, nil, nil, nil, nil, nil, runner, pub, enq, 5*time.Second, nil, false, "")
 	n := newWorkerNote(t, &creator)
 
 	err := w.generateGammaLinks(context.Background(), n, sourceID)
@@ -108,7 +108,7 @@ func TestWorker_GenerateGammaLinks_NoLinks(t *testing.T) {
 	pub := &fakeLinkPublisher{}
 	enq := &fakeRefreshEnqueuer{}
 
-	w := NewWorker(nil, nil, nil, nil, nil, nil, runner, pub, enq, 0)
+	w := NewWorker(nil, nil, nil, nil, nil, nil, runner, pub, enq, 0, nil, false, "")
 	err := w.generateGammaLinks(context.Background(), newWorkerNote(t, nil), sourceID)
 	require.NoError(t, err)
 	assert.Empty(t, pub.events)
@@ -118,7 +118,7 @@ func TestWorker_GenerateGammaLinks_NoLinks(t *testing.T) {
 // Generator failure propagates so asynq retries the task (idempotent).
 func TestWorker_GenerateGammaLinks_GeneratorErrorPropagates(t *testing.T) {
 	runner := &fakeGammaRunner{err: errors.New("db down")}
-	w := NewWorker(nil, nil, nil, nil, nil, nil, runner, &fakeLinkPublisher{}, &fakeRefreshEnqueuer{}, 0)
+	w := NewWorker(nil, nil, nil, nil, nil, nil, runner, &fakeLinkPublisher{}, &fakeRefreshEnqueuer{}, 0, nil, false, "")
 
 	err := w.generateGammaLinks(context.Background(), newWorkerNote(t, nil), uuid.New())
 	require.Error(t, err)

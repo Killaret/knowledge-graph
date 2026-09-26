@@ -24,13 +24,12 @@ if [ ! -d "${HF_CACHE_DIR}/${CACHE_NAME}" ]; then
     if [ "${HF_HUB_OFFLINE}" = "1" ]; then
         echo "ERROR: embedding model '${NLP_MODEL_NAME}' is not in the mounted cache and HF_HUB_OFFLINE=1." >&2
         echo "  Mounted cache dir (container): ${HF_CACHE_DIR}" >&2
-        echo "  The image no longer bakes the model — point HF_CACHE_DIR in .env at the shared cache" >&2
-        echo "  (on this machine: HF_CACHE_DIR=D:/kg-hf-cache), or populate it once on the host:" >&2
-        echo "    HF_HOME=D:/kg-hf-cache python -c \"from huggingface_hub import snapshot_download; snapshot_download(repo_id='sentence-transformers/${NLP_MODEL_NAME}')\"" >&2
+        echo "  The image does not bake the model. Mount a persistent HuggingFace cache at ${HF_HOME:-/root/.cache/huggingface}" >&2
+        echo "  or populate the cache once with HF_HUB_OFFLINE=0." >&2
         exit 1
     fi
-    echo "Model not found in cache. Downloading..."
-    python -c "import os; from huggingface_hub import snapshot_download; snapshot_download(repo_id='sentence-transformers/${NLP_MODEL_NAME}', cache_dir='${HF_CACHE_DIR}')"
+    echo "Model not found in cache. Downloading required files..."
+    python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='sentence-transformers/${NLP_MODEL_NAME}', cache_dir='${HF_CACHE_DIR}', allow_patterns=['*.json', '*.txt', '*.model', '*.safetensors'])"
     echo "Model downloaded and cached successfully."
 else
     echo "Model found in cache. Skipping download."

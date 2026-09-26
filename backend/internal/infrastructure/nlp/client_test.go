@@ -11,6 +11,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -58,7 +59,7 @@ func TestNLPClient_ExtractKeywords_Success(t *testing.T) {
 
 	// Вызываем метод
 	ctx := context.Background()
-	res, err := client.ExtractKeywords(ctx, "machine learning", 5)
+	res, err := client.ExtractKeywords(ctx, "machine learning", "", 5)
 
 	// Проверяем результат
 	if err != nil {
@@ -95,7 +96,7 @@ func TestNLPClient_ExtractKeywords_HTTPError(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	_, err := client.ExtractKeywords(ctx, "test", 5)
+	_, err := client.ExtractKeywords(ctx, "test", "", 5)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -119,7 +120,7 @@ func TestNLPClient_ExtractKeywords_InvalidJSON(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	_, err := client.ExtractKeywords(ctx, "test", 5)
+	_, err := client.ExtractKeywords(ctx, "test", "", 5)
 
 	if err == nil {
 		t.Fatal("expected error for invalid JSON, got nil")
@@ -152,7 +153,7 @@ func TestNLPClient_Embed_Success(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	embedding, err := client.Embed(ctx, "test text")
+	embedding, err := client.Embed(ctx, "test text", "")
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -165,6 +166,57 @@ func TestNLPClient_Embed_Success(t *testing.T) {
 			t.Errorf("expected embedding[%d] = %f, got %f", i, v, embedding[i])
 		}
 	}
+}
+
+// TestNLPClient_Embed_SendsTitle проверяет, что title уходит отдельным полем
+// (CHUNK-1: сервис инжектирует заголовок в каждый чанк при EMBED_CHUNKING=on)
+func TestNLPClient_Embed_SendsTitle(t *testing.T) {
+	var gotBody map[string]interface{}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("failed to decode request: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+			"embedding":  []float32{0.1},
+			"chunks":     2,
+			"no_content": false,
+		}))
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	_, err := client.Embed(context.Background(), "note body", "Note Title")
+	require.NoError(t, err)
+	require.Equal(t, "note body", gotBody["text"])
+	require.Equal(t, "Note Title", gotBody["title"])
+}
+
+// TestNLPClient_ExtractKeywords_SendsTitle проверяет поле title в /extract_keywords
+func TestNLPClient_ExtractKeywords_SendsTitle(t *testing.T) {
+	var gotBody map[string]interface{}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("failed to decode request: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+			"extractor": "keybert-hybrid-0.9",
+			"keywords":  []Keyword{},
+		}))
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	_, err := client.ExtractKeywords(context.Background(), "note body", "Note Title", 5)
+	require.NoError(t, err)
+	require.Equal(t, "note body", gotBody["text"])
+	require.Equal(t, "Note Title", gotBody["title"])
+	require.Equal(t, float64(5), gotBody["top_n"])
 }
 
 // TestNLPClient_Embed_CacheHit тестирует получение эмбеддинга из кэша
@@ -188,13 +240,13 @@ func TestNLPClient_Embed_CacheHit(t *testing.T) {
 	ctx := context.Background()
 
 	// Первый вызов
-	_, err := client.Embed(ctx, "test text")
+	_, err := client.Embed(ctx, "test text", "")
 	if err != nil {
 		t.Fatalf("first call failed: %v", err)
 	}
 
 	// Второй вызов с тем же текстом (без кэша Redis должен сделать новый запрос)
-	_, err = client.Embed(ctx, "test text")
+	_, err = client.Embed(ctx, "test text", "")
 	if err != nil {
 		t.Fatalf("second call failed: %v", err)
 	}
@@ -220,7 +272,7 @@ func TestNLPClient_Embed_EmptyText(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	_, err := client.Embed(ctx, "")
+	_, err := client.Embed(ctx, "", "")
 
 	if err != nil {
 		t.Fatalf("unexpected error for empty text: %v", err)
@@ -242,7 +294,7 @@ func TestNLPClient_ExtractKeywords_EmptyResponse(t *testing.T) {
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	res, err := client.ExtractKeywords(ctx, "test", 5)
+	res, err := client.ExtractKeywords(ctx, "test", "", 5)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -340,12 +392,12 @@ func TestNLPClient_Embed_RedisCache(t *testing.T) {
 	client := NewNLPClient(server.URL, rdb, time.Hour)
 	ctx := context.Background()
 
-	first, err := client.Embed(ctx, "cached text")
+	first, err := client.Embed(ctx, "cached text", "")
 	if err != nil {
 		t.Fatalf("first call failed: %v", err)
 	}
 
-	second, err := client.Embed(ctx, "cached text")
+	second, err := client.Embed(ctx, "cached text", "")
 	if err != nil {
 		t.Fatalf("second call failed: %v", err)
 	}
@@ -480,11 +532,93 @@ func TestNLPClient_ExtractKeywords_Retry(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	res, err := client.ExtractKeywords(ctx, "test", 5)
+	res, err := client.ExtractKeywords(ctx, "test", "", 5)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(res.Keywords) != 1 || res.Keywords[0].Keyword != "retry" {
 		t.Errorf("unexpected keywords: %v", res.Keywords)
 	}
+}
+
+// TestNLPClient_Normalize_Success: /normalize round-trip — request shape,
+// artifact fields, chunk contract (NLP-4 criterion 2, Go side).
+func TestNLPClient_Normalize_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/normalize", r.URL.Path)
+		var reqBody map[string]interface{}
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&reqBody))
+		assert.Equal(t, "raw text", reqBody["text"])
+		assert.Equal(t, "the title", reqBody["title"])
+
+		cosine := 0.93
+		w.Header().Set("Content-Type", "application/json")
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+			"normalized_text": "clean text",
+			"chunks": []map[string]interface{}{{
+				"idx": 0, "text": "clean text", "heading_path": []string{"H"},
+				"char_span": []int{0, 10}, "token_count": 2, "kind": "prose", "forced_split": false,
+			}},
+			"metrics": map[string]interface{}{
+				"raw_tokens": 10, "norm_tokens": 2, "compression": 0.2,
+				"iterations": 1, "stop_reason": "single_pass", "emb_cosine": cosine,
+			},
+			"rolled_back":      false,
+			"rollback_reason":  "",
+			"skipped":          false,
+			"pipeline_version": "norm-v1",
+		}))
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	res, err := client.Normalize(context.Background(), "raw text", "the title")
+	require.NoError(t, err)
+	assert.Equal(t, "clean text", res.NormalizedText)
+	assert.Equal(t, "norm-v1", res.PipelineVersion)
+	assert.False(t, res.RolledBack)
+	require.Len(t, res.Chunks, 1)
+	assert.Equal(t, "clean text", res.Chunks[0].Text)
+	assert.Equal(t, [2]int{0, 10}, res.Chunks[0].CharSpan)
+	require.NotNil(t, res.Metrics.EmbCosine)
+	assert.InDelta(t, 0.93, *res.Metrics.EmbCosine, 1e-6)
+}
+
+// Rolled-back response still decodes: source text returns with the flag set.
+func TestNLPClient_Normalize_RolledBack(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+			"normalized_text":  "source text unchanged",
+			"chunks":           []map[string]interface{}{},
+			"metrics":          map[string]interface{}{"raw_tokens": 5, "norm_tokens": 5, "compression": 1.0, "iterations": 1, "stop_reason": "single_pass", "emb_cosine": 0.4},
+			"rolled_back":      true,
+			"rollback_reason":  "low_cosine",
+			"pipeline_version": "norm-v1",
+		}))
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	res, err := client.Normalize(context.Background(), "x", "")
+	require.NoError(t, err)
+	assert.True(t, res.RolledBack)
+	assert.Equal(t, "low_cosine", res.RollbackReason)
+}
+
+func TestNLPClient_Normalize_HTTPError(t *testing.T) {
+	client := &NLPClient{
+		httpClient: &http.Client{Timeout: 5 * time.Second},
+		maxRetries: 1,
+		retryDelay: 1 * time.Millisecond,
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	client.baseURL = server.URL
+
+	_, err := client.Normalize(context.Background(), "text", "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "500")
 }

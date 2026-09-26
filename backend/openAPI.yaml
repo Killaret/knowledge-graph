@@ -1112,6 +1112,193 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/notes/{id}/quality:
+    get:
+      summary: Latest NOTE-QUALITY-1 assessment for a note
+      description: |
+        Stage-1 quality loop: signals, gates, verdict and stop-rule state.
+        When `nlp.quality.enabled` is off the response is `{"enabled": false}`.
+        `quality` is null while the note was never assessed. `can_refetch`
+        marks truncated imports that still carry a source URL — the frontend
+        offers "Перезабрать страницу" for those (explicit user action only).
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Quality assessment or disabled marker
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/quality/assess:
+    post:
+      summary: Manually trigger a NOTE-QUALITY-1 assessment
+      description: |
+        Enqueues `quality:assess` with trigger `manual`. Manual assessments do
+        not count against the three-attempt auto cap. Disabled feature answers
+        `{"enabled": false}` with 200.
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Feature disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                    example: false
+        '202':
+          description: Assessment enqueued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                  enqueued:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          description: Quality queue unavailable
+
+  /api/v1/notes/{id}/refetch/preview:
+    post:
+      summary: Preview a re-fetch of the note's source URL (NOTE-QUALITY-1)
+      description: |
+        Runs the stage-A extraction against metadata.source_url and answers
+        with the suggested title, outline and new content length. Pure read —
+        nothing is stored. The only network access in the whole quality loop.
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Extraction preview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggested_title: { type: string }
+                  title_candidates: { type: array, items: { type: string } }
+                  title_source: { type: string }
+                  outline:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        level: { type: integer }
+                        text: { type: string }
+                  noise_dropped: { type: integer }
+                  sections_dropped: { type: integer }
+                  length_runes: { type: integer }
+                  current_runes: { type: integer }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { description: Source page could not be fetched }
+        '503': { description: Re-fetch extractor unavailable }
+
+  /api/v1/notes/{id}/refetch:
+    post:
+      summary: Apply a re-fetch — replace content with a fresh extraction
+      description: |
+        Saves the previous title and content to `metadata.previous_content`
+        before overwriting. Optional `{"title": "..."}` overrides the
+        suggested title.
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+      responses:
+        '200':
+          description: Content replaced
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title: { type: string }
+                  content_runes: { type: integer }
+                  restorable: { type: boolean }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { description: Source page could not be fetched }
+
+  /api/v1/notes/{id}/refetch/restore:
+    post:
+      summary: Restore the content saved in metadata.previous_content
+      description: Byte-for-byte restore of the version saved by refetch apply. Removes `previous_content` afterwards.
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  restored: { type: boolean }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /api/v1/notes/{id}/graph:
     get:
       summary: Graph data for note (BFS)
@@ -2119,6 +2306,79 @@ components:
       name: access_token
 
   schemas:
+    QualitySignals:
+      type: object
+      description: Stage-1 signal set (NOTE-QUALITY-1). Model-derived fields are null when unavailable.
+      properties:
+        words: { type: integer }
+        prose_words: { type: integer }
+        ends_with_sentence: { type: boolean }
+        truncated_by_import: { type: boolean }
+        unclosed_fence: { type: boolean }
+        headings: { type: integer }
+        coherence_min: { type: number, format: double, nullable: true }
+        coherence_median: { type: number, format: double, nullable: true }
+        sentences: { type: integer }
+        prose_share: { type: number, format: double }
+        kind: { type: string, enum: [stub, collection, text] }
+        fragment_share: { type: number, format: double }
+        max_block_words: { type: integer }
+        has_source_link: { type: boolean }
+        title_words: { type: integer }
+        title_generic: { type: boolean }
+        title_text_similarity: { type: number, format: double, nullable: true }
+        origin: { type: string, enum: [import, manual] }
+        keywords: { type: integer }
+        links: { type: integer }
+        has_embedding: { type: boolean }
+        mojibake: { type: boolean }
+
+    QualityRecord:
+      type: object
+      properties:
+        signals:
+          $ref: '#/components/schemas/QualitySignals'
+        gates:
+          type: array
+          items: { type: string, enum: [stub, truncated, empty, mojibake] }
+        verdict:
+          type: string
+          enum: [create, enrich, manual]
+        reasons:
+          type: array
+          items: { type: string }
+        attempt: { type: integer }
+        needs_manual_review: { type: boolean }
+        computed_at: { type: string, format: date-time }
+        pipeline_version: { type: string, example: quality-v1 }
+        source_hash: { type: string }
+        trigger: { type: string, enum: [auto, manual] }
+        can_refetch:
+          type: boolean
+          description: Truncated import with a source URL — the UI offers the re-fetch action.
+
+    QualityResponse:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        quality:
+          allOf:
+            - $ref: '#/components/schemas/QualityRecord'
+          nullable: true
+        log:
+          type: array
+          description: Last 10 assessments (newest first)
+          items:
+            type: object
+            properties:
+              note_id: { type: string, format: uuid }
+              source_hash: { type: string }
+              trigger: { type: string, enum: [auto, manual] }
+              changed: { type: boolean }
+              record:
+                $ref: '#/components/schemas/QualityRecord'
+
     SuccessResponse:
       type: object
       properties:
@@ -2320,6 +2580,39 @@ components:
           format: uuid
         error:
           type: string
+        title_candidates:
+          type: array
+          description: >-
+            URL-HEADING-1 stage A: page title candidates in priority order
+            (h1 → og:title → <title> minus site suffix → last URL segment).
+            Present only when content extraction ran.
+          items:
+            type: string
+        title_source:
+          type: string
+          description: >-
+            How `title` was chosen. Always "rule" at stage A; NLP ranking
+            ("model") arrives with stage B.
+          enum: [rule]
+        outline:
+          type: array
+          description: >-
+            Extracted page outline; heading levels are normalized so the
+            first heading is level 2 (the `## [title](url)` first line is
+            level 1 semantics), clamped to [2, 6].
+          items:
+            type: object
+            required: [level, text]
+            properties:
+              level:
+                type: integer
+                minimum: 2
+                maximum: 6
+              text:
+                type: string
+        noise_dropped:
+          type: integer
+          description: Number of noise elements removed inside the content container
 
     ImportBookmarksPreviewResponse:
       type: object

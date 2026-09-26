@@ -1,0 +1,98 @@
+{
+  "01": {
+    "url": "https://developers.onelogin.com/openid-connect/guides/auth-flow-pkce",
+    "title": "Auth Code Flow + PKCE",
+    "outline_first": ["Auth Code Flow + PKCE", "How does it work?", "Creating a code challenge"]
+  },
+  "02": {
+    "url": "https://www.keycloak.org/docs-api/latest/rest-api/index.html",
+    "title": "Keycloak Admin REST API",
+    "outline_first": ["Keycloak Admin REST API", "Overview", "Version information"]
+  },
+  "03": {
+    "url": "https://jwt.io/",
+    "title": "JSON Web Token (JWT) Debugger",
+    "outline_first": ["JSON Web Token (JWT) Debugger", "JWT Signature Verification(Optional)"]
+  },
+  "04": {
+    "url": "https://developers.onelogin.com/openid-connect/api/authorization-code-grant",
+    "title": "Auth Code Flow pt. 2",
+    "outline_first": ["Auth Code Flow pt. 2", "Resource URL", "Header Parameter"]
+  },
+  "05": {
+    "url": "https://visiology-doc.atlassian.net/wiki/spaces/trouble/pages/158728193/Keycloak+LDAP",
+    "title": "Запуск Keycloak и подключение LDAP каталога",
+    "outline_first": ["Запуск Keycloak и подключение LDAP каталога", "Введение", "1. Вводные данные"]
+  },
+  "06": {
+    "url": "https://openid.net/specs/openid-connect-registration-1_0.html",
+    "title": "OpenID Connect Dynamic Client Registration 1.0 incorporating errata set 2",
+    "outline_first": ["OpenID Connect Dynamic Client Registration 1.0 incorporating errata set 2", "Abstract", "Table of Contents"]
+  },
+  "07": {
+    "url": "https://jwt.io/introduction",
+    "title": "Introduction to JSON Web Tokens",
+    "outline_first": ["Introduction to JSON Web Tokens", "What is JSON Web Token?", "When should you use JSON Web Tokens?"]
+  },
+  "08": {
+    "url": "https://jsonformatter.org/",
+    "title": "JSON Formatter",
+    "outline_first": ["JSON Formatter", "JSON Validator"]
+  },
+  "09": {
+    "url": "https://cheloveki.zenclass.ru/public/products?code",
+    "title": "Курсы Романа Горбачёва",
+    "outline_first": []
+  },
+  "10": {
+    "url": "https://habr.com/ru/companies/ruvds/articles/512862/",
+    "title": "Профессиональное применение инструментов разработчика Chrome: 13 советов",
+    "outline_first": ["Профессиональное применение инструментов разработчика Chrome: 13 советов", "Общие сведения", "1. Пункт меню Run command"]
+  },
+  "11": {
+    "url": "https://practicum.yandex.ru/blog/devtools-instrumenty-razrabotchika/",
+    "title": "Гайд по DevTools: как открыть инструменты разработчика в браузере и чем они полезны",
+    "outline_first": ["Гайд по DevTools: как открыть инструменты разработчика в браузере и чем они полезны", "Что такое DevTools в браузере", "Как открыть в браузере"]
+  },
+  "12": {
+    "url": "https://skillbox.ru/media/code/chto-mozhno-delat-v-chrome-devtools-5-poleznykh-funktsiy-dlya-nachinayushchikh/",
+    "title": "Chrome DevTools: основные инструменты и полезные функции",
+    "outline_first": ["Chrome DevTools: основные инструменты и полезные функции", "Как открыть инструменты разработчика DevTools в браузере", "Какие вкладки есть в DevTools"]
+  },
+  "13": {
+    "url": "https://developer.mozilla.org/ru/docs/Learn/Common_questions/Tools_and_setup/What_are_browser_developer_tools",
+    "title": "Обзор инструментов разработки в браузерах",
+    "outline_first": ["Обзор инструментов разработки в браузерах", "Как открыть инструменты веб-разработчика в вашем браузере?", "Inspector: DOM обозреватель и CSS редактор"]
+  },
+  "14": {
+    "url": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/",
+    "title": "Гид по инструментам разработчика (DevTools) для маркетолога",
+    "outline_first": ["Гид по инструментам разработчика (DevTools) для маркетолога", "Вызываем инструменты разработчика в браузере", "Проверяем адаптивность"]
+  },
+  "15": {
+    "url": "https://babok-school.ru/blog/typical-errors-in-openapi-spec/",
+    "title": "Главные ошибки при разработке спецификации OpenAPI и как их исправить",
+    "outline_first": ["Главные ошибки при разработке спецификации OpenAPI и как их исправить", "9 типичных ошибок аналитика при разработке спецификации OpenAPI", "Основы архитектуры и интеграции информационных систем"]
+  },
+  "16": {
+    "url": "https://stepik.org/lesson/741960/step/1?after_pass_reset=true&unit=743634",
+    "title": "Тестирование ПО: Postman для тестирования API: урок Введение, шаг 1 — Stepik",
+    "outline_first": []
+  },
+  "17": {
+    "url": "https://docs.id.itmo.pro/auth-oidc/requests/",
+    "title": "",
+    "outline_first": [],
+    "fetch_error": true
+  },
+  "18": {
+    "url": "https://www.manning.com/books/api-design-patterns",
+    "title": "API Design Patterns",
+    "outline_first": ["API Design Patterns", "about the technology", "about the book"]
+  },
+  "19": {
+    "url": "https://karpov.courses/systemdesign",
+    "title": "Системный дизайн = проектирование систем как в крупных технологических компаниях |",
+    "outline_first": ["Системный дизайн = проектирование систем как в крупных технологических компаниях |", "записаться на курс или задать вопрос", "ВАШ ГОТОВЫЙ ПЛАН ПОДГОТОВКИК РЕШЕНИЮ ЗАДАЧ НОВОГО УРОВНЯ"]
+  }
+}

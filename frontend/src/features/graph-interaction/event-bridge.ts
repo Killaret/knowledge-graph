@@ -88,6 +88,8 @@ export interface GraphCanvasEventContext {
   setGhostNode(node: GhostNodeState): void;
 
   onNodeClick?(node: { id: string; title: string; type?: string }): void;
+  /** Click on empty graph space — used to dismiss unpinned cockpit panels. */
+  onBackgroundClick?(): void;
   onNodeContextMenu?(
     node: { id: string; title: string; type?: string },
     x: number,
@@ -465,6 +467,7 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
       });
     } else {
       context.setSelectedNodeId(null);
+      context.onBackgroundClick?.();
     }
   }
 

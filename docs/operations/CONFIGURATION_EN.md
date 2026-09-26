@@ -339,6 +339,7 @@ All other parameters can be configured via `knowledge-graph.config.json` or over
 | `SERVER_PORT` | backend | HTTP server port (Gin) | `8080` |
 | `REDIS_URL` | backend, worker | Redis address for asynq queues and recommendation cache | `localhost:6379` |
 | `NLP_SERVICE_URL` | backend, worker | Python NLP service URL | `http://localhost:5000` |
+| `IMPORT_CONTENT_MAX_RUNES` | backend | URL-HEADING-1 stage A: rune budget for the extracted page body — content is truncated by whole sections (never inside a list or a code fence); dropped sections are reported via `metadata.import_truncated.sections_dropped` | `20000` |
 
 ### Component Details
 
@@ -581,6 +582,40 @@ Used by `List` and `Search` endpoints for note pagination.
 }
 ```
 
+## NLP Service
+
+### JSON Configuration (`nlp`)
+
+```json
+{
+  "nlp": {
+    "model_name": "paraphrase-multilingual-MiniLM-L12-v2",
+    "max_text_length": 10000,
+    "embed_chunking": false,
+    "pipeline": { "enabled": false },
+    "history": { "enabled": true },
+    "normalization": { "min_cosine": 0.7 }
+  }
+}
+```
+
+### Environment Variable Overrides
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NLP_MODEL_NAME` | HuggingFace model name | `paraphrase-multilingual-MiniLM-L12-v2` |
+| `EMBED_CHUNKING` | Structural chunker in `/embed` and `_doc_vector` (CHUNK-1): `0` — legacy behaviour; `1` — chunks → one batched encode → mean + L2, note title injected into every chunk, response adds `chunks`/`no_content`. Enable only together with the model change (MODEL-2) | `0` |
+| `NLP_PIPELINE_ENABLED` | Normalization pipeline (NLP-4): enqueue `nlp:normalize` on note create/update/import so workers write `nlp_artifacts` to MongoDB. Vectors still use raw `notes.content` — activation waits for MODEL-2 | `false` |
+| `NLP_HISTORY_ENABLED` | Keep superseded `nlp_artifacts` versions; `false` deletes the previous document instead of marking it `superseded` | `true` |
+| `NLP_NORMALIZATION_MIN_COSINE` | Cosine rollback guard for `/normalize`: result rolled back to source when `cos(emb(result), emb(source))` is below this value. Model-scale dependent (measured on e5-base); recalibrated in MODEL-2. Values outside `(0, 1]` fall back to the default | `0.7` |
+| `NLP_QUALITY_ENABLED` | Note quality pipeline (NOTE-QUALITY-1 stage 1): enqueues `quality:assess` after `nlp:normalize` and after note enrichment tasks; enables `GET /api/v1/notes/{id}/quality` and `POST .../quality/assess`. `false` — nothing is enqueued, the API answers `{"enabled": false}` | `false` |
+| `NLP_QUALITY_COLLECTION_PROSE_SHARE` | Signal boundary: prose share below which a note counts as a `collection` | `0.3` |
+| `NLP_QUALITY_COLLECTION_MIN_LINKS` | Signal boundary: minimum link/bullet lines for `collection` | `3` |
+| `NLP_QUALITY_SENTENCE_MIN_WORDS` | Signal boundary: minimum words per counted sentence | `4` |
+| `NLP_QUALITY_FRAGMENT_MAX_WORDS` | Signal boundary: lines up to this many words count as fragments | `3` |
+| `NLP_QUALITY_MOJIBAKE_SHARE` | Signal boundary: share of replacement/mojibake characters that flags `mojibake` | `0.01` |
+| `NLP_QUALITY_LEGACY_TRUNCATED_RUNES` | Signal boundary: whole-content rune count that marks a legacy (pre-URL-HEADING-1) import as truncated | `4990` |
+
 ## Advanced Parameters (BFS + Asynq)
 
 These parameters are now fully integrated and loaded from `knowledge-graph.config.json`:
@@ -705,6 +740,23 @@ GRAPH_LINK_MAX_LIMIT=5000
 
 # Embedding
 EMBEDDING_SIMILARITY_LIMIT=30
+
+# NLP service (CHUNK-1): structural chunker switch, off by default.
+# on — /embed chunks text, one batched encode, mean + L2 normalize,
+# note title injected into every chunk; response adds chunks/no_content.
+# Enable only together with the model change (MODEL-2).
+EMBED_CHUNKING=0
+
+# NLP-4 normalization pipeline (worker + backend):
+# NLP_PIPELINE_ENABLED — enqueue nlp:normalize on note create/update/import
+#   so workers store nlp_artifacts in MongoDB. Vectors still use raw
+#   notes.content; activation waits for MODEL-2.
+# NLP_HISTORY_ENABLED — keep superseded nlp_artifacts versions.
+# NLP_NORMALIZATION_MIN_COSINE — cosine rollback guard for /normalize
+#   (e5-base scale, recalibrated in MODEL-2; values outside (0,1] fall back).
+NLP_PIPELINE_ENABLED=false
+NLP_HISTORY_ENABLED=true
+NLP_NORMALIZATION_MIN_COSINE=0.7
 
 # Asynq
 ASYNQ_CONCURRENCY=10
@@ -903,6 +955,7 @@ The `graph-service` is a separate gRPC microservice for layout computation and g
 | `CACHE_NOTE_TTL_SECONDS` | Note layout cache TTL | `300` (5 min) |
 | `CACHE_FULL_TTL_SECONDS` | Full layout cache TTL | `300` (5 min) |
 | `CACHE_DELTA_TTL_SECONDS` | Delta cache TTL | `60` (1 min) |
+| `CACHE_SNAPSHOT_TTL_SECONDS` | Per-version layout snapshot TTL (delta baseline) | `900` (15 min) |
 
 ### Layout Engine Parameters
 
@@ -918,6 +971,7 @@ The `graph-service` is a separate gRPC microservice for layout computation and g
 - **Note Layout Cache** (`CACHE_NOTE_TTL_SECONDS`): Per-note cached layouts (default: 5 min)
 - **Full Layout Cache** (`CACHE_FULL_TTL_SECONDS`): Full graph cached layouts (default: 5 min)
 - **Delta Cache** (`CACHE_DELTA_TTL_SECONDS`): Delta responses (default: 1 min)
+- **Snapshot Cache** (`CACHE_SNAPSHOT_TTL_SECONDS`): Immutable per-version layout snapshots that deltas are computed against (default: 15 min). Snapshots survive event invalidation — only the `full` pointer is cleared.
 
 Cache invalidation happens automatically via Redis Pub/Sub when notes or links are updated.
 

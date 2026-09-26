@@ -82,3 +82,42 @@ describe("Import bookmarks page — type selector", () => {
     }
   });
 });
+
+// UI-QUICK-1: mass-import page quick fixes — extract checkbox on by default,
+// real newline in the textarea placeholder, and a way back to the graph.
+describe("Import bookmarks page — UI-QUICK-1", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("checks the extract-content toggle by default", async () => {
+    const Page = (await import("./+page.svelte")).default;
+    render(Page);
+
+    const checkbox = (await waitFor(() =>
+      document.querySelector(".extract-toggle input[type=checkbox]")
+    )) as HTMLInputElement;
+    expect(checkbox).toBeTruthy();
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it("uses a real newline in the list placeholder, not a literal backslash-n", async () => {
+    const Page = (await import("./+page.svelte")).default;
+    render(Page);
+
+    const textarea = (await waitFor(() =>
+      document.getElementById("import-list")
+    )) as HTMLTextAreaElement;
+    const placeholder = textarea.getAttribute("placeholder") ?? "";
+    expect(placeholder).toContain("\n");
+    expect(placeholder).not.toContain(String.raw`\n`);
+  });
+
+  it("links back to the graph from the tabs row", async () => {
+    const Page = (await import("./+page.svelte")).default;
+    render(Page);
+
+    const back = await screen.findByTestId("back-to-graph");
+    expect(back.getAttribute("href")).toBe("/graph");
+  });
+});

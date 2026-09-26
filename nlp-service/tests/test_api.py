@@ -1,7 +1,9 @@
 import pytest
 import sys
 import os
+import re
 import asyncio
+import numpy as np
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 
@@ -52,7 +54,7 @@ class TestKeywordsEndpoint:
         assert data["keywords"][0]["weight"] == 0.8
 
         # Verify the mock was called with correct parameters
-        mock_extract.assert_called_once_with("Machine learning is great", 5)
+        mock_extract.assert_called_once_with("Machine learning is great", 5, "")
 
     @patch('app.main.extract_keywords')
     def test_extract_keywords_default_top_n(self, mock_extract):
@@ -66,7 +68,7 @@ class TestKeywordsEndpoint:
         response = client.post("/extract_keywords", json=request_data)
         
         assert response.status_code == 200
-        mock_extract.assert_called_once_with("Test text", 10)
+        mock_extract.assert_called_once_with("Test text", 10, "")
 
     @patch('app.main.extract_keywords')
     def test_extract_keywords_empty_result(self, mock_extract):
@@ -328,6 +330,136 @@ class TestLifespanAndHealth:
         response = client.get("/health")
         assert response.status_code == 503
         assert "not loaded" in response.json()["detail"]
+
+
+class _FakeTokenizer:
+    def encode(self, text, add_special_tokens=False):
+        return re.findall(r"\w+|[^\w\s]", text, flags=re.UNICODE)
+
+
+class _FakeModel:
+    """Word-token model: records every batched encode input."""
+
+    max_seq_length = 8
+    tokenizer = _FakeTokenizer()
+
+    def __init__(self):
+        self.inputs = []
+
+    def encode(self, texts, **kwargs):
+        if isinstance(texts, str):
+            texts = [texts]
+        self.inputs.extend(texts)
+        return np.ones((len(texts), 2), dtype=np.float32)
+
+
+class TestEmbedChunkingFlag:
+    @patch("app.main.get_embedding_model")
+    def test_embed_off_combines_title_and_text(self, mock_get_model):
+        mock_model = MagicMock()
+        mock_get_model.return_value = mock_model
+        mock_model.encode.return_value = MagicMock()
+        mock_model.encode.return_value.tolist.return_value = [0.1, 0.2]
+
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("EMBED_CHUNKING", None)
+            response = client.post(
+                "/embed", json={"text": "Body text", "title": "My Title"}
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["embedding"] == [0.1, 0.2]
+        assert "chunks" not in data
+        assert "no_content" not in data
+        mock_model.encode.assert_called_once_with("My Title Body text")
+
+    @patch("app.main.get_embedding_model")
+    def test_embed_on_chunks_and_injects_title(self, mock_get_model):
+        model = _FakeModel()
+        mock_get_model.return_value = model
+
+        with patch.dict(os.environ, {"EMBED_CHUNKING": "1"}):
+            response = client.post(
+                "/embed",
+                json={
+                    "text": "First sentence here. Second sentence here. Third sentence here.",
+                    "title": "Note",
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["chunks"] >= 2
+        assert data["no_content"] is False
+        assert data["embedding"] == pytest.approx([2**-0.5, 2**-0.5])
+        assert model.inputs
+        assert all(value.startswith("Note\n\n") for value in model.inputs)
+
+    @patch("app.main.get_embedding_model")
+    def test_embed_on_stub_note_is_no_content(self, mock_get_model):
+        model = _FakeModel()
+        mock_get_model.return_value = model
+
+        with patch.dict(os.environ, {"EMBED_CHUNKING": "on"}):
+            response = client.post(
+                "/embed",
+                json={
+                    "text": "## [Imported page](https://example.com/page)",
+                    "title": "Imported page",
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["chunks"] == 0
+        assert data["no_content"] is True
+        assert model.inputs == ["Imported page"]
+
+    @patch('app.main.extract_keywords')
+    def test_extract_keywords_passes_title(self, mock_extract):
+        mock_extract.return_value = [("test", "test", 0.5)]
+
+        response = client.post(
+            "/extract_keywords",
+            json={"text": "Body", "top_n": 5, "title": "T"},
+        )
+
+        assert response.status_code == 200
+        mock_extract.assert_called_once_with("Body", 5, "T")
+
+
+class TestDocVectorFlag:
+    @patch("app.nlp_utils.get_embedding_model")
+    def test_doc_vector_on_uses_structural_chunks(self, mock_get_model):
+        from app.nlp_utils import _doc_vector
+
+        model = _FakeModel()
+        mock_get_model.return_value = model
+
+        with patch.dict(os.environ, {"EMBED_CHUNKING": "1"}):
+            vec = _doc_vector(
+                "First sentence here. Second sentence here. Third one.", "T"
+            )
+
+        assert vec is not None
+        assert model.inputs
+        assert all(value.startswith("T\n\n") for value in model.inputs)
+
+    @patch("app.nlp_utils.get_embedding_model")
+    def test_doc_vector_off_uses_legacy_word_chunks(self, mock_get_model):
+        from app.nlp_utils import _doc_vector
+
+        model = _FakeModel()
+        mock_get_model.return_value = model
+
+        env = dict(os.environ)
+        env.pop("EMBED_CHUNKING", None)
+        with patch.dict(os.environ, env, clear=True):
+            vec = _doc_vector("Body words here", "T")
+
+        assert vec is not None
+        assert model.inputs == ["T Body words here"]
 
 
 if __name__ == "__main__":

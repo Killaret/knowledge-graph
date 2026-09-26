@@ -495,11 +495,17 @@ POST /embed               → EmbedResponse
 #### 3.2 Models (`app/models.py`)
 
 ```python
-ExtractKeywordsRequest:  {text: str, top_n: int}
-ExtractKeywordsResponse: {keywords: [{keyword, weight}]}
-EmbedRequest:          {text: str}
-EmbedResponse:         {embedding: float[]}
+ExtractKeywordsRequest:  {text: str, top_n: int, title: str}
+ExtractKeywordsResponse: {extractor, keywords: [{keyword, surface, weight}]}
+EmbedRequest:          {text: str, title: str}
+EmbedResponse:         {embedding: float[], chunks?: int, no_content?: bool}
 ```
+
+`chunks`/`no_content` are returned only when `EMBED_CHUNKING=on` (CHUNK-1):
+`app/core/chunking.py` splits the note into structure-aware chunks, the service
+encodes them in one batched call, and the document vector is the L2-normalized
+mean. The note title is injected into every chunk's model input. Off is the
+default and preserves the legacy single-encode behavior.
 
 #### 3.3 NLP Utils (`app/nlp_utils.py`)
 
@@ -899,9 +905,20 @@ Supported events: `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `LinkCreated`, `L
 
 ### Caching Strategy
 
-- `layout:note:{noteId}:depth-{depth}` - Note neighborhood layout (30 min TTL)
-- `layout:full:{userId}` - Full user graph layout (30 min TTL)
-- `layout:delta:{userId}:{lastHash}` - Delta between versions (5 min TTL)
+All keys live under the `graph-service:` prefix:
+
+- `graph-service:full:{userId}` - Current full-layout pointer (5 min TTL). Events delete it.
+- `graph-service:snapshot:{userId}:{dataHash}` - Immutable snapshot of the layout served under a data hash (15 min TTL, `CACHE_SNAPSHOT_TTL_SECONDS`). Events must NOT delete snapshots: a snapshot is the baseline the delta is computed against — the version the client actually holds, not whatever is cached as current.
+- `graph-service:delta:{userId}:{lastHash}` - Cached delta response (1 min TTL).
+- `graph-service:note:{userId}:{noteId}:depth-{d}` - Note neighborhood layout (5 min TTL).
+
+### Delta Contract (SYNC-1)
+
+- The graph version (`meta.hash`, `X-Layout-Hash`, `current_hash`) is a hash of the **served data** — sorted note/link fields — never of the computed layout, so a layout recalculation alone cannot roll the version forward.
+- `GET /api/v1/graph/delta?last_hash={hash}` diffs the current data against the snapshot stored under `{hash}`. If no snapshot exists, the response is `{"resync": true}` and the client reloads the graph wholesale — it must never pretend the whole graph was added.
+- Removals are explicit (`removed_nodes`, `removed_links`); a link that keeps its key but changes fields (weight, source_type, gamma_origin) is re-sent in `added_links` and replaces the old entry on the client.
+- On gRPC the same contract applies; a missing snapshot is answered with `NotFound` instead of a JSON flag.
+- Every write path that creates/updates/deletes notes or links must publish a `graph:events` event; `scripts/testing/check-graph-write-paths.mjs` fails the build on a write site with no event.
 
 ### Direct PostgreSQL Reading
 

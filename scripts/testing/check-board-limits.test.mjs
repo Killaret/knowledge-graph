@@ -55,14 +55,39 @@ const cases = [
         expectExit: 0,
         stderrIncludes: ["На человеке: 8 rows", "soft limit is 7"],
     },
+    {
+        name: "reply longer than 600 characters",
+        fixture: "m7-replica-long.md",
+        expectExit: 1,
+        stderrIncludes: ["limit is 600"],
+        extraArgs: ["--today=2026-09-28"],
+    },
+    {
+        name: "reply older than three days",
+        fixture: "m8-replica-stale.md",
+        expectExit: 1,
+        stderrIncludes: ["older than 3 days"],
+        extraArgs: ["--today=2026-09-28"],
+    },
+    {
+        name: "fresh replies pass, three-day boundary kept",
+        fixture: "r1-replies-fresh.md",
+        expectExit: 0,
+        stdoutIncludes: "Board limits OK",
+        extraArgs: ["--today=2026-09-28"],
+    },
 ];
 
 let failed = false;
 for (const c of cases) {
     const board = join(fixtures, c.fixture);
-    const res = spawnSync("node", [guard, ".", `--board=${board}`], {
-        encoding: "utf8",
-    });
+    const res = spawnSync(
+        "node",
+        [guard, ".", `--board=${board}`, ...(c.extraArgs ?? [])],
+        {
+            encoding: "utf8",
+        },
+    );
     const code = res.status ?? 1;
     const output = `${res.stdout ?? ""}${res.stderr ?? ""}`;
 

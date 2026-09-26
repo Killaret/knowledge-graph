@@ -286,7 +286,8 @@ export function drawAllNodes(
   searchMatchIds?: Set<string>,
   visibleNodeIds?: Set<string>,
   simplified: boolean = false,
-  hoveredNeighborIds?: Set<string>
+  hoveredNeighborIds?: Set<string>,
+  labeledNodeIds?: Set<string>
 ): void {
   const r = BASE_NODE_RADIUS;
   const nodeCount = nodes.length;
@@ -343,7 +344,10 @@ export function drawAllNodes(
       nodeSimplified
     );
 
-    if (!nodeSimplified) {
+    // UI-GRAPH-1: labels are selective — only the ids in labeledNodeIds get a
+    // caption (hubs, hovered/selected, search matches). Snapshot mode
+    // (disableVariation) keeps every label for deterministic captures.
+    if (!nodeSimplified && (disableVariation || !labeledNodeIds || labeledNodeIds.has(node.id))) {
       drawNodeTitle(ctx, node, r, finalOpacity, disableVariation);
 
       // Search match outline
@@ -430,7 +434,8 @@ export function draw(
   linkPreviewTarget?: { sourceId: string; targetId: string } | null,
   linkPreviewMousePos?: { sourceId: string; x: number; y: number } | null,
   fog: FogRenderParams = defaultFogRenderParams(),
-  hoveredNeighborIds?: Set<string>
+  hoveredNeighborIds?: Set<string>,
+  labeledNodeIds?: Set<string>
 ): void {
   ctx.clearRect(0, 0, width, height);
 
@@ -544,7 +549,8 @@ export function draw(
     searchMatchIdSet,
     visibleNodeIds,
     simplified,
-    hoveredNeighborIds
+    hoveredNeighborIds,
+    labeledNodeIds
   );
 
   ctx.restore();

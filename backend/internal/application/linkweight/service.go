@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 
+	appevents "knowledge-graph/internal/application/events"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 
@@ -20,9 +21,10 @@ type SimilarityClient interface {
 
 // Recalculator recalculates link weights from note content similarity.
 type Recalculator struct {
-	linkRepo  link.Repository
-	noteRepo  note.Repository
-	nlpClient SimilarityClient
+	linkRepo       link.Repository
+	noteRepo       note.Repository
+	nlpClient      SimilarityClient
+	eventPublisher appevents.Publisher
 }
 
 // NewRecalculator creates a new link-weight recalculator.
@@ -32,6 +34,13 @@ func NewRecalculator(linkRepo link.Repository, noteRepo note.Repository, nlpClie
 		noteRepo:  noteRepo,
 		nlpClient: nlpClient,
 	}
+}
+
+// SetEventPublisher sets the optional graph event publisher. A weight change
+// is a write to graph data — it must publish LinkUpdated or the change stays
+// invisible to open graphs until TTL.
+func (r *Recalculator) SetEventPublisher(p appevents.Publisher) {
+	r.eventPublisher = p
 }
 
 // RecalculateForNote recalculates weights for all links connected to the note.
@@ -88,6 +97,18 @@ func (r *Recalculator) RecalculateForNote(ctx context.Context, noteID uuid.UUID)
 		if err := r.linkRepo.Update(ctx, l); err != nil {
 			log.Printf("[LinkWeightRecalculator] failed to update link %s: %v", l.ID(), err)
 			continue
+		}
+
+		if r.eventPublisher != nil {
+			userID := ""
+			if source.CreatorID() != nil {
+				userID = source.CreatorID().String()
+			} else if target.CreatorID() != nil {
+				userID = target.CreatorID().String()
+			}
+			if err := r.eventPublisher.PublishLinkUpdated(ctx, l.SourceNoteID().String(), l.TargetNoteID().String(), userID); err != nil {
+				log.Printf("[LinkWeightRecalculator] failed to publish LinkUpdated for %s: %v", l.ID(), err)
+			}
 		}
 
 		log.Printf("[LinkWeightRecalculator] updated link %s weight to %.4f", l.ID(), weight.Value())

@@ -236,12 +236,14 @@
           <span
             class="note-card__indicator note-card__indicator--new"
             data-visual-test="transparent"
+            title={t("noteCard.newNote")}
             aria-label={t("noteCard.newNote")}
           ></span>
         {:else if isRecentlyUpdated()}
           <span
             class="note-card__indicator note-card__indicator--updated"
             data-visual-test="transparent"
+            title={t("noteCard.recentlyUpdated")}
             aria-label={t("noteCard.recentlyUpdated")}
           ></span>
         {/if}
@@ -271,7 +273,7 @@
 
     <div class="note-card__footer">
       <span class="note-card__date" data-testid="note-date" data-visual-test="transparent">
-        {t("noteCard.starLit", { date: formatDate(note.created_at) })}
+        {t("noteCard.created", { date: formatDate(note.created_at) })}
       </span>
       {#if isRecentlyUpdated()}
         <span
@@ -484,7 +486,7 @@
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
     font-size: 0.75rem;
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
   }
 
   .note-card__date--updated {
@@ -542,7 +544,7 @@
 
   :global(.nc-tooltip-date) {
     font-size: 0.75rem;
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
   }
 
   :global(.nc-tooltip-keywords) {

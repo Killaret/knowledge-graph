@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
@@ -12,6 +13,7 @@ import (
 	"knowledge-graph/internal/application/graph"
 	importer "knowledge-graph/internal/application/import"
 	"knowledge-graph/internal/application/linkweight"
+	appquality "knowledge-graph/internal/application/quality"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
@@ -21,6 +23,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/events"
+	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
@@ -103,7 +106,7 @@ func main() {
 	nlpClient := nlp.NewNLPClient(nlpURL, redisClient, 24*time.Hour)
 
 	// Task queue client for the import worker to enqueue note processing tasks.
-	queueClient, err := queue.NewAsynqClient(redisAddr, cfg.BackupEnabled)
+	queueClient, err := queue.NewAsynqClient(redisAddr, cfg.BackupEnabled, cfg.NLPPipelineEnabled, cfg.NLPQualityEnabled)
 	if err != nil {
 		log.Printf("[Worker] WARNING: failed to create asynq client: %v", err)
 		queueClient = nil
@@ -129,18 +132,81 @@ func main() {
 	} else {
 		log.Println("[Worker] EVENT_CHANNEL not set, gamma-link events will not be published")
 	}
+	// SYNC-1: every write path that creates notes must publish events —
+	// the import service runs inside this worker, so wire it here.
+	if eventPublisher != nil {
+		importSvc.SetEventPublisher(eventPublisher)
+	}
+
 	gammaGen := recommendation.NewGammaLinkGenerator(embeddingRepo, linkRepo, 2, cfg.GammaLinkMinScore)
 	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
 
+	// NLP-4: artifacts live in MongoDB. The worker connects whenever Mongo
+	// is configured — even with the pipeline flag off — so nlp:normalize
+	// tasks enqueued manually (nlp-artifacts-recompute) and artifact
+	// cleanup on note deletion still work.
+	var artifactsStore queue.NlpArtifactsStore
+	var artifactsRepo *mongo.NlpArtifactsRepository
+	var mongoClient *mongo.Client
+	if cfg.MongoDBURL != "" {
+		mc, err := mongo.NewClient(context.Background(), cfg.MongoDBURL, cfg.MongoDBDatabase)
+		if err != nil {
+			log.Printf("[Worker] WARNING: failed to connect to MongoDB at %s: %v — NLP-4 artifacts disabled", maskURL(cfg.MongoDBURL), err)
+		} else {
+			mongoClient = mc
+			defer func() {
+				if err := mongoClient.Close(context.Background()); err != nil {
+					log.Printf("[MongoDB] Error closing client: %v", err)
+				}
+			}()
+			repo := mongo.NewNlpArtifactsRepository(mongoClient)
+			if err := repo.EnsureIndexes(context.Background()); err != nil {
+				log.Printf("[Worker] WARNING: failed to ensure nlp_artifacts indexes: %v", err)
+			}
+			artifactsRepo = repo
+			artifactsStore = repo
+			log.Printf("[MongoDB] Connected to %s/%s (nlp_artifacts store ready)", maskURL(cfg.MongoDBURL), cfg.MongoDBDatabase)
+		}
+	} else {
+		log.Println("[MongoDB] MONGO_URL not configured — NLP-4 artifacts disabled")
+	}
+
 	// Воркер (обработчик задач)
 	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc,
-		gammaGen, eventPublisher, queueClient, taskDelay)
+		gammaGen, eventPublisher, queueClient, taskDelay,
+		artifactsStore, cfg.NLPHistoryEnabled, cfg.NLPModelName)
+
+	// NOTE-QUALITY-1: the assessor needs Mongo (quality_log + artifact
+	// stamps). Gated by nlp.quality.enabled — off means the handler no-ops
+	// and nothing is enqueued.
+	if cfg.NLPQualityEnabled && mongoClient != nil {
+		qualityLog := mongo.NewQualityLogRepository(mongoClient)
+		if err := qualityLog.EnsureIndexes(context.Background()); err != nil {
+			log.Printf("[Worker] WARNING: failed to ensure quality_log indexes: %v", err)
+		}
+		assessor := queue.NewQualityAssessor(noteRepo, artifactsRepo, qualityLog,
+			postgres.NewQualityStatsRepository(database), nlpClient, appquality.Thresholds{
+				CollectionProseShare: cfg.NLPQualityCollectionProseShare,
+				CollectionMinLinks:   cfg.NLPQualityCollectionMinLinks,
+				SentenceMinWords:     cfg.NLPQualitySentenceMinWords,
+				FragmentMaxWords:     cfg.NLPQualityFragmentMaxWords,
+				MojibakeShare:        cfg.NLPQualityMojibakeShare,
+				LegacyTruncatedRunes: cfg.NLPQualityLegacyTruncatedRunes,
+			})
+		worker.UseQuality(assessor, queueClient)
+		log.Println("[Worker] NOTE-QUALITY-1 quality assessment enabled")
+	} else if cfg.NLPQualityEnabled {
+		log.Println("[Worker] NLP_QUALITY_ENABLED set but MongoDB is unavailable — quality assessment disabled")
+	}
 
 	// Graph traversal service for recommendations
 	neighborLoader := graph.NewNeighborLoader(linkRepo, noteRepo)
 
 	// Link weight recalculation service
 	weightRecalc := linkweight.NewRecalculator(linkRepo, noteRepo, nlpClient)
+	if eventPublisher != nil {
+		weightRecalc.SetEventPublisher(eventPublisher)
+	}
 
 	// Create keyword similarity strategy from config
 	keywordSimilarity, err := recommendation.NewKeywordSimilarity(
@@ -201,6 +267,9 @@ func main() {
 	mux.HandleFunc(queue.TypeRecalculateLinkWeights, queue.RecalculateLinkWeightsHandler(weightRecalc))
 	mux.HandleFunc(queue.TypeRefreshRecommendations, queue.RefreshRecommendationsHandler(refreshSvc))
 	mux.HandleFunc(queue.TypeImportBookmarks, worker.HandleImportBookmarks)
+	mux.HandleFunc(queue.TypeNormalizeNote, worker.HandleNormalizeNote)
+	mux.HandleFunc(queue.TypeNlpArtifactsCleanup, worker.HandleNlpArtifactsCleanup)
+	mux.HandleFunc(queue.TypeAssessQuality, worker.HandleAssessQuality)
 	if cfg.BackupEnabled {
 		mux.HandleFunc(queue.TypeDatabaseBackup, queue.BackupDatabaseHandler(backupRunner))
 		if backupSvc != nil {

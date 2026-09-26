@@ -15,8 +15,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"knowledge-graph/internal/application/common"
+	appevents "knowledge-graph/internal/application/events"
 	dcache "knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/shared/textutil"
@@ -29,7 +31,12 @@ const (
 	// MaxBatchSize limits the number of bookmarks accepted in one request.
 	MaxBatchSize = 50
 
-	maxContentLen = 10000
+	// maxContentLen is the domain Content limit in runes
+	// (note.NewContent rejects anything above 50 000). The URL-HEADING-1
+	// stage-A body budget (IMPORT_CONTENT_MAX_RUNES, default 20 000) is
+	// applied earlier, per-section, in the extractor — this cap only guards
+	// the assembled note body.
+	maxContentLen = 50000
 
 	cacheKeyPrefix = "import:task:"
 	cacheTTL       = time.Hour
@@ -49,15 +56,21 @@ type Item struct {
 	ExtractContent bool   `json:"extract_content,omitempty"`
 }
 
-// PreviewItem extends Item with deduplication and per-item validation info.
+// PreviewItem extends Item with deduplication, per-item validation info and
+// the URL-HEADING-1 stage-A extraction data: title candidates, outline,
+// noise counter and title_source (see docs/tasks/URL-HEADING-1, A6).
 type PreviewItem struct {
-	Title          string `json:"title"`
-	URL            string `json:"url"`
-	Text           string `json:"text"`
-	Type           string `json:"type"`
-	IsNew          bool   `json:"is_new"`
-	ExistingNoteID string `json:"existing_note_id,omitempty"`
-	Error          string `json:"error,omitempty"`
+	Title           string         `json:"title"`
+	URL             string         `json:"url"`
+	Text            string         `json:"text"`
+	Type            string         `json:"type"`
+	IsNew           bool           `json:"is_new"`
+	ExistingNoteID  string         `json:"existing_note_id,omitempty"`
+	Error           string         `json:"error,omitempty"`
+	TitleCandidates []string       `json:"title_candidates,omitempty"`
+	TitleSource     string         `json:"title_source,omitempty"`
+	Outline         []OutlineEntry `json:"outline,omitempty"`
+	NoiseDropped    int            `json:"noise_dropped,omitempty"`
 }
 
 // TaskStatusProgress holds the progress counters for an import task.
@@ -79,10 +92,11 @@ type TaskStatus struct {
 // Service orchestrates bookmark import: parsing, preview, deduplication,
 // async task creation, and background processing.
 type Service struct {
-	repo      note.Repository
-	cache     dcache.CacheClient
-	taskQueue common.TaskQueue
-	extractor ContentExtractor
+	repo           note.Repository
+	cache          dcache.CacheClient
+	taskQueue      common.TaskQueue
+	extractor      ContentExtractor
+	eventPublisher appevents.Publisher
 }
 
 // NewService creates a new ImportService.
@@ -95,18 +109,25 @@ func NewService(repo note.Repository, cache dcache.CacheClient, taskQueue common
 	}
 }
 
-// BuildContent creates Markdown body with title, URL and selected text,
-// matching the bookmarklet format used by NoteHandler.
-// It keeps the result under the domain Content limit and never splits a
-// multi-byte UTF-8 rune.
+// SetEventPublisher sets the optional graph event publisher. Every note the
+// import creates must publish NoteCreated — otherwise the graph cache is not
+// invalidated and imported notes stay invisible on the graph until TTL.
+func (s *Service) SetEventPublisher(p appevents.Publisher) {
+	s.eventPublisher = p
+}
+
+// BuildContent creates Markdown body with title, URL and extracted Markdown
+// sections, matching the bookmarklet format used by NoteHandler.
+// It keeps the result under the domain Content limit (runes) and never splits
+// a multi-byte UTF-8 rune.
 func BuildContent(title, urlStr, text string) string {
 	prefix := fmt.Sprintf("## [%s](%s)\n\n", title, urlStr)
-	remaining := maxContentLen - len(prefix)
+	remaining := maxContentLen - utf8.RuneCountInString(prefix)
 	if remaining <= 0 {
 		// Extremely long title+URL combination; keep a valid, truncated prefix.
-		return textutil.TruncateToMaxBytes(prefix, maxContentLen)
+		return textutil.TruncateToMaxRunes(prefix, maxContentLen)
 	}
-	return prefix + textutil.TruncateToMaxBytes(text, remaining)
+	return prefix + textutil.TruncateToMaxRunes(text, remaining)
 }
 
 // IsAllowedURL returns true for public http(s) URLs that are safe to fetch.
@@ -274,41 +295,43 @@ func extractText(n *html.Node) string {
 // maybeExtract fetches the page when the caller explicitly asked for content
 // extraction, or when the title is missing. URL policy (scheme, host, IP) is
 // enforced here, before passing the normalized URL to the infrastructure
-// ContentExtractor.
-func (s *Service) maybeExtract(ctx context.Context, it Item) (Item, error) {
+// ContentExtractor. The returned *ExtractedPage carries the stage-A contract
+// (title candidates, outline, related links, truncation counters); it is nil
+// when no extraction happened.
+func (s *Service) maybeExtract(ctx context.Context, it Item) (Item, *ExtractedPage, error) {
 	if s.extractor == nil {
-		return it, nil
+		return it, nil, nil
 	}
 
 	needsExtraction := it.ExtractContent || it.Title == ""
 	if !needsExtraction {
-		return it, nil
+		return it, nil, nil
 	}
 
 	if !IsAllowedURL(it.URL) {
-		return it, fmt.Errorf("URL is not allowed: %s", it.URL)
+		return it, nil, fmt.Errorf("URL is not allowed: %s", it.URL)
 	}
 	normalized, err := NormalizeURL(it.URL)
 	if err != nil {
-		return it, err
+		return it, nil, err
 	}
 	it.URL = normalized
 
-	title, text, err := s.extractor.Extract(ctx, it.URL)
+	page, err := s.extractor.Extract(ctx, it.URL)
 	if err != nil {
-		return it, err
+		return it, nil, err
 	}
 
 	if it.ExtractContent {
-		it.Title = title
-		it.Text = text
+		it.Title = page.Title
+		it.Text = page.Text
 	} else if it.Title == "" {
-		it.Title = title
+		it.Title = page.Title
 		if it.Text == "" {
-			it.Text = text
+			it.Text = page.Text
 		}
 	}
-	return it, nil
+	return it, page, nil
 }
 
 // previewConcurrency bounds parallel page fetches during preview so a 50-item
@@ -346,7 +369,7 @@ func (s *Service) Preview(ctx context.Context, userID uuid.UUID, items []Item) (
 }
 
 func (s *Service) previewItem(ctx context.Context, it Item, existing map[string]string) PreviewItem {
-	it, err := s.maybeExtract(ctx, it)
+	it, page, err := s.maybeExtract(ctx, it)
 	if err != nil {
 		return PreviewItem{
 			Title: it.Title,
@@ -362,6 +385,12 @@ func (s *Service) previewItem(ctx context.Context, it Item, existing map[string]
 		Text:  it.Text,
 		Type:  it.Type,
 		IsNew: true,
+	}
+	if page != nil {
+		pi.TitleCandidates = page.TitleCandidates
+		pi.TitleSource = page.TitleSource
+		pi.Outline = page.Outline
+		pi.NoiseDropped = page.NoiseDropped
 	}
 
 	normalized, err := NormalizeURL(it.URL)
@@ -461,7 +490,7 @@ func (s *Service) ProcessImportTask(ctx context.Context, userID uuid.UUID, taskI
 	for _, it := range items {
 		status.Progress.Processed++
 
-		extracted, err := s.maybeExtract(ctx, it)
+		extracted, page, err := s.maybeExtract(ctx, it)
 		if err != nil {
 			log.Printf("[ImportService] content extraction failed for %s: %v", it.URL, err)
 		} else {
@@ -515,10 +544,30 @@ func (s *Service) ProcessImportTask(ctx context.Context, userID uuid.UUID, taskI
 			continue
 		}
 
-		metadata, err := note.NewMetadata(map[string]interface{}{
+		metaMap := map[string]interface{}{
 			"source_url": it.URL,
 			"type":       noteType,
-		})
+		}
+		// URL-HEADING-1 stage-A extraction metadata (see task file, A5/A6 and
+		// question 3): candidates and related links live in metadata, never in
+		// the note body or domain model.
+		if page != nil {
+			metaMap["title_candidates"] = page.TitleCandidates
+			metaMap["title_source"] = page.TitleSource
+			if len(page.RelatedLinks) > 0 {
+				links := make([]map[string]string, 0, len(page.RelatedLinks))
+				for _, l := range page.RelatedLinks {
+					links = append(links, map[string]string{"text": l.Text, "url": l.URL})
+				}
+				metaMap["related_links"] = links
+			}
+			if page.SectionsDropped > 0 {
+				metaMap["import_truncated"] = map[string]interface{}{
+					"sections_dropped": page.SectionsDropped,
+				}
+			}
+		}
+		metadata, err := note.NewMetadata(metaMap)
 		if err != nil {
 			status.Progress.Failed++
 			_ = s.storeStatus(ctx, status)
@@ -530,6 +579,12 @@ func (s *Service) ProcessImportTask(ctx context.Context, userID uuid.UUID, taskI
 			status.Progress.Failed++
 			_ = s.storeStatus(ctx, status)
 			continue
+		}
+
+		if s.eventPublisher != nil {
+			if err := s.eventPublisher.PublishNoteCreated(ctx, newNote.ID().String(), userID.String()); err != nil {
+				log.Printf("[ImportService] failed to publish NoteCreated for %s: %v", newNote.ID(), err)
+			}
 		}
 
 		status.Progress.Created++
@@ -544,6 +599,9 @@ func (s *Service) ProcessImportTask(ctx context.Context, userID uuid.UUID, taskI
 			}
 			if err := s.taskQueue.EnqueueComputeEmbedding(ctx, newNote.ID().String()); err != nil {
 				log.Printf("[ImportService] failed to enqueue compute embedding for %s: %v", newNote.ID(), err)
+			}
+			if err := s.taskQueue.EnqueueNormalizeNote(ctx, newNote.ID().String()); err != nil {
+				log.Printf("[ImportService] failed to enqueue normalize note for %s: %v", newNote.ID(), err)
 			}
 			if err := s.taskQueue.EnqueueRecalculateLinkWeights(ctx, newNote.ID(), 0); err != nil {
 				log.Printf("[ImportService] failed to enqueue link weight recalculation for %s: %v", newNote.ID(), err)

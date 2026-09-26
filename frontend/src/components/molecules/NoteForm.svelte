@@ -181,7 +181,7 @@
 
   input::placeholder,
   textarea::placeholder {
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
   }
 
   input:focus,
@@ -222,7 +222,7 @@
 
   .length-indicator {
     font-size: 12px;
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
     text-align: right;
   }
 

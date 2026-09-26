@@ -460,3 +460,22 @@ Create a new bullet under the right section with:
 - **Cleanup:** `docker compose -p knowledge-graph -f docker-compose.personal.yml stop` — all containers stopped, named volumes untouched. The test stack (`kg-test-*`) was left running as before.
 - **Screenshot / Logs:** worker log lines and `ls -la` output above; file present at `C:\Users\89209\Desktop\my items\backup-personal-auto-2026-09-21-214357.sql.gz` (666 478 B).
 - **Note:** minting the JWT locally needed the owner's `JWT_SECRET` from `.env`; the token was used once for the PUT and expires 15 min after issue. No secret values were copied into docs or commits.
+
+## Verification
+
+### LINKS-2 (condition rework) — confirming and deleting links from the canvas
+
+- **Scope:** criterion 11 of `docs/tasks/LINKS-2-manual-link-over-gamma.md` and the condition from `docs/tasks/LINKS-2-review-findings.md`: deleting a link that carries model provenance must explain that the pair will be recorded as "not related".
+- **Date:** 2026-09-24
+- **Agent:** Claude Code (review of `bf790fe`)
+- **Environment:** isolated test stack from `bf790fe` (`start-test.ps1`, `SKIP_AUTH=true`), default seed: 100 notes, 251 links (191 model-proposed, 54 manual, 6 promoted by the seed).
+- **How the hover was driven:** node positions and transform from `window.__graphCanvas`; a point on the target link farther than 8 units from other links (`findLinkAtPosition` tolerance) received `mousemove`; tooltip and modal buttons were pressed with real clicks; the hovered link was matched to the database by note titles.
+- **Observed:**
+  - Model-proposed link: tooltip shows «Recommended», «Confirm link», «Not related». «Confirm link» → `POST /api/v1/links` 200, same row (`id`, `created_at`) now `source_type='user'` with `metadata.gamma`; the tooltip loses «Recommended».
+  - Model-proposed link, «Not related» → modal «Remove this suggested link? The pair will be marked as not related and will not be suggested again.» → «Confirm» → `DELETE` 204, row in `link_suppressions`.
+  - Manual link, «Delete» → no modal (expected), `DELETE` 204, no suppression.
+  - **Defect:** the link confirmed in the first step, «Delete» → **no modal**, `DELETE` 204 21 s after the confirmation, suppression recorded. The same for a seed-promoted link. Cause: `frontend/src/shared/services/graphLoader.ts:148–156` drops `gamma_origin`.
+  - Experiment: with one line `gamma_origin: link.gamma_origin` added in `graphLoader.ts` and only the frontend rebuilt, «Delete» on a promoted link shows the modal; «Cancel» keeps the link. Reverted, frontend rebuilt from clean source.
+- **Screenshot / Logs:** backend log lines `POST "/api/v1/links"` 200 at 15:38:55 UTC and `DELETE "/api/v1/links/32b83c36-…"` 204 at 15:39:16 UTC; `link_suppressions` rows at 15:30:59, 15:33:15, 15:39:16 UTC; modal text copied from the DOM above. Full table — `docs/tasks/LINKS-2-review-findings.md`, section «Ревью доработки — Claude Code, 2026-09-24».
+- **Result:** not accepted — the explanation never reaches promoted links on the canvas.
+- **Cleanup:** `stop-test.ps1` destroyed the test stack; Personal containers and volumes untouched.

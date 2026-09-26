@@ -133,4 +133,40 @@ describe("link renderers", () => {
     expect(ctx.stroke).toHaveBeenCalled();
     expect(ctx.fill).toHaveBeenCalled();
   });
+
+  it("renders model-suggested links thinner and more transparent than manual ones", () => {
+    // UI-GRAPH-1: gamma links must be visually weaker than user-created links.
+    const alpha = (style: string) => parseFloat(style.slice(style.lastIndexOf(",") + 1));
+
+    const userLink = makeLink("reference", "a", "b", 0.5);
+    drawLink(ctx as any, userLink, makeNode("a", 0, 0), makeNode("b", 10, 10), 1);
+    const userWidth = ctx.lineWidth;
+    const userAlpha = alpha(ctx.strokeStyle);
+
+    const gammaLink = { ...userLink, source_type: "gamma" } as SimulationLink;
+    drawLink(ctx as any, gammaLink, makeNode("a", 0, 0), makeNode("b", 10, 10), 1);
+    const gammaWidth = ctx.lineWidth;
+    const gammaAlpha = alpha(ctx.strokeStyle);
+
+    expect(gammaWidth).toBeLessThan(userWidth);
+    expect(gammaAlpha).toBeLessThan(userAlpha);
+    expect(gammaAlpha).toBeCloseTo(userAlpha * 0.45, 5);
+  });
+
+  it("renders a promoted gamma_origin link like a manual one", () => {
+    // gamma_origin only records provenance — once source_type is "user" the
+    // link is confirmed and renders at full strength.
+    const alpha = (style: string) => parseFloat(style.slice(style.lastIndexOf(",") + 1));
+
+    const manual = makeLink("reference", "a", "b", 0.5);
+    drawLink(ctx as any, manual, makeNode("a", 0, 0), makeNode("b", 10, 10), 1);
+    const manualAlpha = alpha(ctx.strokeStyle);
+
+    const promoted = {
+      ...makeLink("reference", "a", "b", 0.5),
+      gamma_origin: true,
+    } as SimulationLink;
+    drawLink(ctx as any, promoted, makeNode("a", 0, 0), makeNode("b", 10, 10), 1);
+    expect(alpha(ctx.strokeStyle)).toBeCloseTo(manualAlpha, 5);
+  });
 });

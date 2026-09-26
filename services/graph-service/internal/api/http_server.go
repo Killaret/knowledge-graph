@@ -2,9 +2,12 @@ package api
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -87,6 +90,36 @@ func parseLayout(r *http.Request) string {
 		return "3d"
 	}
 	return "2d"
+}
+
+// computeDataHash is the graph version the client holds: it depends only on the
+// served data (sorted note/link fields), never on computed positions, so a
+// layout recalculation alone cannot roll the version forward.
+func computeDataHash(notes []*db.Note, links []*db.Link) string {
+	type nodeRec struct {
+		ID, Title, Type string
+	}
+	type linkRec struct {
+		ID, Source, Target, LinkType, SourceType string
+		Weight                                   float64
+		GammaOrigin                              bool
+	}
+	ns := make([]nodeRec, len(notes))
+	for i, n := range notes {
+		ns[i] = nodeRec{ID: n.ID, Title: n.Title, Type: n.Type}
+	}
+	sort.Slice(ns, func(i, j int) bool { return ns[i].ID < ns[j].ID })
+	ls := make([]linkRec, len(links))
+	for i, l := range links {
+		ls[i] = linkRec{ID: l.ID, Source: l.Source, Target: l.Target, LinkType: l.LinkType, Weight: l.Weight, SourceType: l.SourceType, GammaOrigin: l.GammaOrigin}
+	}
+	sort.Slice(ls, func(i, j int) bool { return ls[i].ID < ls[j].ID })
+	data, _ := json.Marshal(struct {
+		Nodes []nodeRec `json:"n"`
+		Links []linkRec `json:"l"`
+	}{ns, ls})
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
 }
 
 // GetNoteGraphHandler handles GET /api/v1/graph/note/:id
@@ -205,10 +238,15 @@ func (s *HTTPServer) GetFullGraphHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	layout := engine.Layout3D(notes, links)
-	hash := computeLayoutHash(layout)
+	hash := computeDataHash(notes, links)
 
 	if err := s.cache.SaveFullLayout(ctx, cacheUserID, layout, hash); err != nil {
 		log.Printf("[GraphService] Failed to cache full layout: %v", err)
+	}
+	// The served layout becomes the snapshot future deltas are computed
+	// against — keyed by the data hash the client will send as last_hash.
+	if err := s.cache.SaveSnapshot(ctx, cacheUserID, hash, "3d", layout); err != nil {
+		log.Printf("[GraphService] Failed to save layout snapshot: %v", err)
 	}
 
 	log.Printf("[GraphService] GetFullGraph completed in %v", time.Since(startTime))
@@ -274,10 +312,13 @@ func (s *HTTPServer) GetPublicGraphHandler(w http.ResponseWriter, r *http.Reques
 	} else {
 		layout = engine.Layout2D(notes, links, "")
 	}
-	hash := computeLayoutHash(layout)
+	hash := computeDataHash(notes, links)
 
 	if err := s.cache.SaveFullLayout(ctx, "public", layout, hash); err != nil {
 		log.Printf("[GraphService] Failed to cache public layout: %v", err)
+	}
+	if err := s.cache.SaveSnapshot(ctx, "public", hash, layoutType, layout); err != nil {
+		log.Printf("[GraphService] Failed to save public layout snapshot: %v", err)
 	}
 
 	log.Printf("[GraphService] GetPublicGraph completed in %v", time.Since(startTime))
@@ -300,6 +341,22 @@ func (s *HTTPServer) GetDeltaHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[GraphService] HTTP GetDelta: userID=%s, public=%v, lastHash=%s", filter.UserID, filter.IsPublic, lastHash)
 
+	// The delta is always computed against the snapshot the client actually
+	// holds (keyed by the data hash it sent) — never against whatever happens
+	// to be cached as the current full layout. Events clear the "full" pointer
+	// but must not clear snapshots.
+	snap, err := s.cache.LoadSnapshot(ctx, cacheUserID, lastHash)
+	if err != nil {
+		log.Printf("[GraphService] Failed to load snapshot %s: %v", lastHash, err)
+	}
+	if snap == nil || snap.Layout == nil {
+		// The client's version is unknown — resync instead of pretending
+		// the whole graph was added.
+		log.Printf("[GraphService] No snapshot for hash %s — answering resync", lastHash)
+		s.sendDeltaData(w, &engine.DeltaResponse{Resync: true})
+		return
+	}
+
 	if delta, err := s.cache.LoadDelta(ctx, cacheUserID, lastHash); err == nil && delta != nil {
 		log.Printf("[GraphService] Cache hit for delta (took %v)", time.Since(startTime))
 		s.sendDeltaData(w, delta)
@@ -312,26 +369,27 @@ func (s *HTTPServer) GetDeltaHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to load current layout", http.StatusInternalServerError)
 		return
 	}
+	currentHash := computeDataHash(notes, links)
 
-	current := engine.Layout3D(notes, links)
-	currentHash := computeLayoutHash(current)
-
-	oldLayout, _, err := s.cache.LoadFullLayout(ctx, cacheUserID)
-	if err != nil {
-		delta := &engine.DeltaResponse{
-			AddedNodes:  current.Nodes,
-			AddedLinks:  current.Links,
-			CurrentHash: currentHash,
-		}
-		s.sendDeltaData(w, delta)
-		return
+	// Positions in the delta are meaningful only in the same layout kind the
+	// client's snapshot was computed in.
+	var current *engine.LayoutResponse
+	if snap.LayoutKind == "2d" {
+		current = engine.Layout2D(notes, links, "")
+	} else {
+		current = engine.Layout3D(notes, links)
 	}
 
-	delta := engine.ComputeDelta(oldLayout, current)
+	delta := engine.ComputeDelta(snap.Layout, current)
 	delta.CurrentHash = currentHash
 
 	if err := s.cache.SaveDelta(ctx, cacheUserID, lastHash, delta); err != nil {
 		log.Printf("[GraphService] Warning: failed to cache delta: %v", err)
+	}
+	// Keep a snapshot under the new hash too: the client's next poll diffs
+	// against this version.
+	if err := s.cache.SaveSnapshot(ctx, cacheUserID, currentHash, snap.LayoutKind, current); err != nil {
+		log.Printf("[GraphService] Warning: failed to save layout snapshot: %v", err)
 	}
 	if err := s.cache.SaveFullLayout(ctx, cacheUserID, current, currentHash); err != nil {
 		log.Printf("[GraphService] Warning: failed to update full layout cache: %v", err)
