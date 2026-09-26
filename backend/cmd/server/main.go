@@ -286,6 +286,10 @@ func run(
 	if eventPublisher != nil {
 		noteHandler.SetEventPublisher(eventPublisher)
 		linkHandler.SetEventPublisher(eventPublisher)
+		// Server-side import service only enqueues tasks (processing happens
+		// in the worker), but keep the wiring uniform — any future direct
+		// write path here is covered.
+		importService.SetEventPublisher(eventPublisher)
 	}
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
 	tagRepo := postgres.NewTagRepository(database)

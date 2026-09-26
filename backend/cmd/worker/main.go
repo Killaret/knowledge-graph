@@ -132,6 +132,12 @@ func main() {
 	} else {
 		log.Println("[Worker] EVENT_CHANNEL not set, gamma-link events will not be published")
 	}
+	// SYNC-1: every write path that creates notes must publish events —
+	// the import service runs inside this worker, so wire it here.
+	if eventPublisher != nil {
+		importSvc.SetEventPublisher(eventPublisher)
+	}
+
 	gammaGen := recommendation.NewGammaLinkGenerator(embeddingRepo, linkRepo, 2, cfg.GammaLinkMinScore)
 	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
 
@@ -198,6 +204,9 @@ func main() {
 
 	// Link weight recalculation service
 	weightRecalc := linkweight.NewRecalculator(linkRepo, noteRepo, nlpClient)
+	if eventPublisher != nil {
+		weightRecalc.SetEventPublisher(eventPublisher)
+	}
 
 	// Create keyword similarity strategy from config
 	keywordSimilarity, err := recommendation.NewKeywordSimilarity(

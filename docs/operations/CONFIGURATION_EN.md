@@ -955,6 +955,7 @@ The `graph-service` is a separate gRPC microservice for layout computation and g
 | `CACHE_NOTE_TTL_SECONDS` | Note layout cache TTL | `300` (5 min) |
 | `CACHE_FULL_TTL_SECONDS` | Full layout cache TTL | `300` (5 min) |
 | `CACHE_DELTA_TTL_SECONDS` | Delta cache TTL | `60` (1 min) |
+| `CACHE_SNAPSHOT_TTL_SECONDS` | Per-version layout snapshot TTL (delta baseline) | `900` (15 min) |
 
 ### Layout Engine Parameters
 
@@ -970,6 +971,7 @@ The `graph-service` is a separate gRPC microservice for layout computation and g
 - **Note Layout Cache** (`CACHE_NOTE_TTL_SECONDS`): Per-note cached layouts (default: 5 min)
 - **Full Layout Cache** (`CACHE_FULL_TTL_SECONDS`): Full graph cached layouts (default: 5 min)
 - **Delta Cache** (`CACHE_DELTA_TTL_SECONDS`): Delta responses (default: 1 min)
+- **Snapshot Cache** (`CACHE_SNAPSHOT_TTL_SECONDS`): Immutable per-version layout snapshots that deltas are computed against (default: 15 min). Snapshots survive event invalidation — only the `full` pointer is cleared.
 
 Cache invalidation happens automatically via Redis Pub/Sub when notes or links are updated.
 

@@ -18,6 +18,7 @@ import (
 	"unicode/utf8"
 
 	"knowledge-graph/internal/application/common"
+	appevents "knowledge-graph/internal/application/events"
 	dcache "knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/shared/textutil"
@@ -91,10 +92,11 @@ type TaskStatus struct {
 // Service orchestrates bookmark import: parsing, preview, deduplication,
 // async task creation, and background processing.
 type Service struct {
-	repo      note.Repository
-	cache     dcache.CacheClient
-	taskQueue common.TaskQueue
-	extractor ContentExtractor
+	repo           note.Repository
+	cache          dcache.CacheClient
+	taskQueue      common.TaskQueue
+	extractor      ContentExtractor
+	eventPublisher appevents.Publisher
 }
 
 // NewService creates a new ImportService.
@@ -105,6 +107,13 @@ func NewService(repo note.Repository, cache dcache.CacheClient, taskQueue common
 		taskQueue: taskQueue,
 		extractor: extractor,
 	}
+}
+
+// SetEventPublisher sets the optional graph event publisher. Every note the
+// import creates must publish NoteCreated — otherwise the graph cache is not
+// invalidated and imported notes stay invisible on the graph until TTL.
+func (s *Service) SetEventPublisher(p appevents.Publisher) {
+	s.eventPublisher = p
 }
 
 // BuildContent creates Markdown body with title, URL and extracted Markdown
@@ -570,6 +579,12 @@ func (s *Service) ProcessImportTask(ctx context.Context, userID uuid.UUID, taskI
 			status.Progress.Failed++
 			_ = s.storeStatus(ctx, status)
 			continue
+		}
+
+		if s.eventPublisher != nil {
+			if err := s.eventPublisher.PublishNoteCreated(ctx, newNote.ID().String(), userID.String()); err != nil {
+				log.Printf("[ImportService] failed to publish NoteCreated for %s: %v", newNote.ID(), err)
+			}
 		}
 
 		status.Progress.Created++

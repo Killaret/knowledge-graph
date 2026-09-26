@@ -250,7 +250,8 @@
     "cache": {
       "note_layout_ttl_seconds": 300,
       "full_layout_ttl_seconds": 300,
-      "delta_ttl_seconds": 60
+      "delta_ttl_seconds": 60,
+      "snapshot_ttl_seconds": 900
     },
     "layout": {
       "2d_radius": 100,

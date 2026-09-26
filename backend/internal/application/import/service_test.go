@@ -146,6 +146,38 @@ var (
 	_ common.TaskQueue = (*fakeTaskQueue)(nil)
 )
 
+// fakePublisher records graph events (SYNC-1: every write path must publish).
+type fakePublisher struct {
+	noteCreated []string
+	userIDs     []string
+}
+
+func (p *fakePublisher) PublishNoteCreated(ctx context.Context, noteID, userID string) error {
+	p.noteCreated = append(p.noteCreated, noteID)
+	p.userIDs = append(p.userIDs, userID)
+	return nil
+}
+
+func (p *fakePublisher) PublishNoteUpdated(ctx context.Context, noteID, userID string) error {
+	return nil
+}
+
+func (p *fakePublisher) PublishNoteDeleted(ctx context.Context, noteID, userID string) error {
+	return nil
+}
+
+func (p *fakePublisher) PublishLinkCreated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
+	return nil
+}
+
+func (p *fakePublisher) PublishLinkUpdated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
+	return nil
+}
+
+func (p *fakePublisher) PublishLinkDeleted(ctx context.Context, sourceNoteID, targetNoteID, userID string) error {
+	return nil
+}
+
 func TestBuildContent(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -409,6 +441,31 @@ func TestProcessImportTask(t *testing.T) {
 	// NLP-4: every created note is enqueued for normalization — the queue
 	// client gates on nlp.pipeline.enabled, the service always calls.
 	require.Len(t, queue.normalizeCalls, 2)
+}
+
+// SYNC-1 hole #4: an import that publishes no events leaves the graph cache
+// stale — the created notes stay off the graph until TTL. Every created note
+// must produce a NoteCreated event.
+func TestProcessImportTask_PublishesNoteCreated(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+	repo := newFakeNoteRepo()
+	cache := cachetest.NewFakeCacheClient()
+	svc := NewService(repo, cache, nil, nil)
+	pub := &fakePublisher{}
+	svc.SetEventPublisher(pub)
+
+	items := []Item{
+		{Title: "First", URL: "https://example.com/first", Type: "asteroid"},
+		{Title: "Second", URL: "https://example.com/second", Type: "planet"},
+	}
+
+	require.NoError(t, svc.ProcessImportTask(ctx, userID, uuid.New().String(), items))
+	require.Len(t, repo.notes, 2)
+	require.Len(t, pub.noteCreated, 2)
+	for _, uid := range pub.userIDs {
+		require.Equal(t, userID.String(), uid)
+	}
 }
 
 func TestProcessImportTask_AllFail(t *testing.T) {

@@ -303,6 +303,9 @@ export interface GraphDeltaData {
   removed_links?: GraphLink[];
   // Hash of the graph version this delta transitions to
   current_hash?: string;
+  // Server no longer knows our version — the graph must be reloaded
+  // wholesale instead of merging this delta.
+  resync?: boolean;
 }
 
 // Fresh graph response with optional delta

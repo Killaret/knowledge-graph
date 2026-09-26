@@ -16,10 +16,44 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	appevents "knowledge-graph/internal/application/events"
 	importer "knowledge-graph/internal/application/import"
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/note"
 )
+
+// recordingPublisher captures NoteUpdated events (SYNC-1: every write path
+// must publish, including refetch/restore which rewrite title and content).
+type recordingPublisher struct {
+	updated []string
+}
+
+func (p *recordingPublisher) PublishNoteCreated(ctx context.Context, noteID, userID string) error {
+	return nil
+}
+
+func (p *recordingPublisher) PublishNoteUpdated(ctx context.Context, noteID, userID string) error {
+	p.updated = append(p.updated, noteID)
+	return nil
+}
+
+func (p *recordingPublisher) PublishNoteDeleted(ctx context.Context, noteID, userID string) error {
+	return nil
+}
+
+func (p *recordingPublisher) PublishLinkCreated(ctx context.Context, a, b, userID string) error {
+	return nil
+}
+
+func (p *recordingPublisher) PublishLinkUpdated(ctx context.Context, a, b, userID string) error {
+	return nil
+}
+
+func (p *recordingPublisher) PublishLinkDeleted(ctx context.Context, a, b, userID string) error {
+	return nil
+}
+
+var _ appevents.Publisher = (*recordingPublisher)(nil)
 
 type fakeExtractor struct {
 	page  *importer.ExtractedPage
@@ -172,6 +206,29 @@ func TestRefetchRestore_ByteExact(t *testing.T) {
 	rec = httptest.NewRecorder()
 	r.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/notes/"+n.ID().String()+"/refetch/restore", nil))
 	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestRefetch_PublishesNoteUpdated(t *testing.T) {
+	n := refetchNote(t, "старое", "https://example.com/a")
+	repo := &noteRepoMock{}
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("Save", mock.Anything, n).Return(nil)
+	x := &fakeExtractor{page: &importer.ExtractedPage{Title: "новое", Text: "новый текст"}}
+	h := refetchHandler(repo, x)
+	pub := &recordingPublisher{}
+	h.SetEventPublisher(pub)
+	r := refetchRouter(h)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/notes/"+n.ID().String()+"/refetch", nil))
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	require.Equal(t, []string{n.ID().String()}, pub.updated)
+
+	// Restore rewrites the note again — it must publish too.
+	rec = httptest.NewRecorder()
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/notes/"+n.ID().String()+"/refetch/restore", nil))
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	require.Equal(t, []string{n.ID().String(), n.ID().String()}, pub.updated)
 }
 
 func TestRefetchApply_FetchError(t *testing.T) {

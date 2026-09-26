@@ -11,6 +11,7 @@ import (
 	"knowledge-graph-graph-service/internal/cache"
 	"knowledge-graph-graph-service/internal/config"
 	"knowledge-graph-graph-service/internal/db"
+	"knowledge-graph-graph-service/internal/engine"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
@@ -251,4 +252,137 @@ func TestGetNoteGraphHandlerPublicContext(t *testing.T) {
 	var resp GraphApiResponse
 	assert.NoError(t, json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Len(t, resp.Data.Nodes, 1)
+}
+
+// ── SYNC-1 stage A: delta must be computed against the client's own ────────
+// snapshot, removals must reach the client, and an unknown version must be
+// answered with resync — never with "everything was added".
+
+func TestGetDeltaHandler_UsesClientSnapshotNotCurrentCache(t *testing.T) {
+	mockDB := &mockPostgresClient{}
+	c, mr := newTestCache(t)
+	defer mr.Close()
+	rc := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rc.Close()
+	ctx := context.Background()
+
+	server := NewHTTPServer(mockDB, c, 1000, 2)
+
+	noteA := &db.Note{ID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", Title: "A", Type: "star"}
+	noteB := &db.Note{ID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", Title: "B", Type: "star"}
+
+	// Tab A loads the graph when it has one note.
+	mockDB.On("GetNotes", mock.Anything, db.NotesFilter{UserID: "user-1"}).
+		Return([]*db.Note{noteA}, []*db.Link{}, nil).Once()
+	fullReq := httptest.NewRequest(http.MethodGet, "/api/v1/graph/full", nil)
+	fullReq = fullReq.WithContext(withUserID(fullReq.Context(), "user-1"))
+	rr := httptest.NewRecorder()
+	server.GetFullGraphHandler(rr, fullReq)
+	require.Equal(t, http.StatusOK, rr.Code)
+	var resp1 GraphApiResponse
+	require.NoError(t, json.Unmarshal(rr.Body.Bytes(), &resp1))
+	hashA := resp1.Meta.Hash
+	require.NotEmpty(t, hashA)
+
+	// A second note is created; the event clears the "full" pointer (and
+	// deltas), but the snapshot the client holds must survive.
+	mockDB.On("GetNotes", mock.Anything, db.NotesFilter{UserID: "user-1"}).
+		Return([]*db.Note{noteA, noteB}, []*db.Link{}, nil).Twice()
+	require.NoError(t, rc.Del(ctx, "graph-service:full:user-1").Err())
+
+	// Another tab reloads: the full-layout cache now holds the newer version.
+	rr = httptest.NewRecorder()
+	server.GetFullGraphHandler(rr, fullReq)
+	require.Equal(t, http.StatusOK, rr.Code)
+
+	// Tab A polls its delta — it must contain note B, not an empty delta
+	// computed against the other tab's cached layout.
+	deltaReq := httptest.NewRequest(http.MethodGet, "/api/v1/graph/delta?last_hash="+hashA, nil)
+	deltaReq = deltaReq.WithContext(withUserID(deltaReq.Context(), "user-1"))
+	drr := httptest.NewRecorder()
+	server.GetDeltaHandler(drr, deltaReq)
+	require.Equal(t, http.StatusOK, drr.Code)
+
+	var delta engine.DeltaResponse
+	require.NoError(t, json.Unmarshal(drr.Body.Bytes(), &delta))
+	assert.False(t, delta.Resync)
+	require.Len(t, delta.AddedNodes, 1)
+	assert.Equal(t, noteB.ID, delta.AddedNodes[0].ID)
+	assert.NotEmpty(t, delta.CurrentHash)
+	assert.NotEqual(t, hashA, delta.CurrentHash)
+}
+
+func TestGetDeltaHandler_RemovedLinkReachesClient(t *testing.T) {
+	mockDB := &mockPostgresClient{}
+	c, mr := newTestCache(t)
+	defer mr.Close()
+	rc := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rc.Close()
+	ctx := context.Background()
+
+	server := NewHTTPServer(mockDB, c, 1000, 2)
+
+	noteA := &db.Note{ID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", Title: "A", Type: "star"}
+	noteB := &db.Note{ID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", Title: "B", Type: "star"}
+	linkAB := &db.Link{
+		ID:         "660e8400-e29b-41d4-a716-446655440002",
+		Source:     noteA.ID,
+		Target:     noteB.ID,
+		LinkType:   "related",
+		Weight:     0.9,
+		SourceType: "user",
+	}
+
+	// Client holds the version with the link.
+	mockDB.On("GetNotes", mock.Anything, db.NotesFilter{UserID: "user-1"}).
+		Return([]*db.Note{noteA, noteB}, []*db.Link{linkAB}, nil).Once()
+	fullReq := httptest.NewRequest(http.MethodGet, "/api/v1/graph/full", nil)
+	fullReq = fullReq.WithContext(withUserID(fullReq.Context(), "user-1"))
+	rr := httptest.NewRecorder()
+	server.GetFullGraphHandler(rr, fullReq)
+	require.Equal(t, http.StatusOK, rr.Code)
+	var resp GraphApiResponse
+	require.NoError(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+	hashA := resp.Meta.Hash
+
+	// The link is deleted; the event clears the full-layout cache.
+	mockDB.On("GetNotes", mock.Anything, db.NotesFilter{UserID: "user-1"}).
+		Return([]*db.Note{noteA, noteB}, []*db.Link{}, nil).Once()
+	require.NoError(t, rc.Del(ctx, "graph-service:full:user-1").Err())
+
+	deltaReq := httptest.NewRequest(http.MethodGet, "/api/v1/graph/delta?last_hash="+hashA, nil)
+	deltaReq = deltaReq.WithContext(withUserID(deltaReq.Context(), "user-1"))
+	drr := httptest.NewRecorder()
+	server.GetDeltaHandler(drr, deltaReq)
+	require.Equal(t, http.StatusOK, drr.Code)
+
+	var delta engine.DeltaResponse
+	require.NoError(t, json.Unmarshal(drr.Body.Bytes(), &delta))
+	assert.False(t, delta.Resync)
+	assert.Empty(t, delta.AddedNodes)
+	require.Len(t, delta.RemovedLinks, 1)
+	assert.Equal(t, linkAB.Source, delta.RemovedLinks[0].Source)
+	assert.Equal(t, linkAB.Target, delta.RemovedLinks[0].Target)
+}
+
+func TestGetDeltaHandler_UnknownSnapshotAnswersResync(t *testing.T) {
+	mockDB := &mockPostgresClient{}
+	c, mr := newTestCache(t)
+	defer mr.Close()
+
+	server := NewHTTPServer(mockDB, c, 1000, 2)
+
+	deltaReq := httptest.NewRequest(http.MethodGet, "/api/v1/graph/delta?last_hash=never-served", nil)
+	deltaReq = deltaReq.WithContext(withUserID(deltaReq.Context(), "user-1"))
+	drr := httptest.NewRecorder()
+	server.GetDeltaHandler(drr, deltaReq)
+	require.Equal(t, http.StatusOK, drr.Code)
+
+	var delta engine.DeltaResponse
+	require.NoError(t, json.Unmarshal(drr.Body.Bytes(), &delta))
+	assert.True(t, delta.Resync)
+	assert.Empty(t, delta.AddedNodes)
+	assert.Empty(t, delta.AddedLinks)
+	// No snapshot, no work: the handler must not even query Postgres.
+	mockDB.AssertNotCalled(t, "GetNotes", mock.Anything, mock.Anything)
 }

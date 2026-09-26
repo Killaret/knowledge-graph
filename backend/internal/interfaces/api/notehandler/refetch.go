@@ -177,6 +177,11 @@ func (h *Handler) RefetchApply(c *gin.Context) {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedUpdateNote)
 		return
 	}
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), n.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] failed to publish NoteUpdated for refetch %s: %v", n.ID(), err)
+		}
+	}
 
 	// Same text-changed triggers as Update: keywords, embedding, normalize,
 	// link weights — the worker then re-assesses quality itself.
@@ -242,6 +247,11 @@ func (h *Handler) RefetchRestore(c *gin.Context) {
 	if err := h.repo.Save(c.Request.Context(), n); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedUpdateNote)
 		return
+	}
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), n.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] failed to publish NoteUpdated for refetch restore %s: %v", n.ID(), err)
+		}
 	}
 
 	if h.taskQueue != nil {
