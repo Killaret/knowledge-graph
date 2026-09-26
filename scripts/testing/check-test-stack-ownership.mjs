@@ -33,8 +33,19 @@ export function inspectTestContainers() {
   });
 }
 
-export function checkOwnership(repoDir, force = false, records = inspectTestContainers()) {
-  const foreign = findForeignContainers(records, repoDir);
+export function checkOwnership(repoDir, force = false, records = undefined) {
+  let list = records;
+  if (list === undefined) {
+    try {
+      list = inspectTestContainers();
+    } catch (err) {
+      console.error(`ERROR: Docker is unavailable: ${String(err.message).split("\n")[0]}`);
+      console.error("Start Docker and retry; nothing was removed.");
+      process.exitCode = 1;
+      return [];
+    }
+  }
+  const foreign = findForeignContainers(list, repoDir);
   if (foreign.length === 0 || force) return foreign;
 
   console.error("ERROR: test stack belongs to another working tree; nothing was removed.");

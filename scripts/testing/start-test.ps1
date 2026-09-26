@@ -36,8 +36,12 @@ Write-Host "Starting test stack setup..." -ForegroundColor Cyan
 # port inside a reserved range makes compose up fail with a cryptic bind error.
 # Check every host port published by docker-compose.test.yml before touching anything.
 $testPorts = Get-Content "$repoDir\docker-compose.test.yml" | ForEach-Object {
-    # matches both "127.0.0.1:29090:9090" and "127.0.0.1:${FRONTEND_PORT:-3002}:3000"
-    if ($_ -match '127\.0\.0\.1:(?:\$\{[^}:]+:-)?(\d+)\}?:') { [int]$matches[1] }
+    # matches both "127.0.0.1:29090:9090" and "127.0.0.1:${FRONTEND_PORT:-3002}:3000";
+    # an env override wins over the compose default
+    if ($_ -match '127\.0\.0\.1:\$\{([A-Za-z_][A-Za-z0-9_]*):-(\d+)\}:') {
+        $override = [Environment]::GetEnvironmentVariable($matches[1])
+        if ($override -match '^\d+$') { [int]$override } else { [int]$matches[2] }
+    } elseif ($_ -match '127\.0\.0\.1:(\d+):') { [int]$matches[1] }
 }
 $reserved = netsh interface ipv4 show excludedportrange protocol=tcp | ForEach-Object {
     if ($_ -match '^\s*(\d+)\s+(\d+)\s') {
