@@ -95,12 +95,14 @@
 >
   <!-- Graph/List Container -->
   <div class="graph-content" data-testid="graph-2d-container">
+    <!-- UI-LOAD-1: a corner chip, never a covering layer — the UI stays usable. -->
     {#if homePage.loading}
-      <div class="loading-overlay">
-        <div class="spinner"></div>
-        <p>{t("page.loadingNotes")}</p>
+      <div class="loading-chip" data-testid="loading-chip" aria-live="polite">
+        <span class="spinner"></span>
+        {t("page.loadingNotes")}
       </div>
-    {:else if homePage.apiError}
+    {/if}
+    {#if homePage.apiError}
       <ApiErrorDisplay error={homePage.apiError} onClose={clearApiError} />
       <button
         onclick={() => {
@@ -132,6 +134,7 @@
           onNoteDelete={handleDeleteRequest}
           onCreateChildNote={handleCreateChildNote}
           showLinkTypeLegend={false}
+          progressiveReveal={true}
           readonly={!isAuthenticated() || graphView.mode === "community"}
           bind:controller={canvasController}
         />
@@ -376,6 +379,7 @@
 
 <style>
   .graph-content {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -619,30 +623,30 @@
     opacity: 0.85;
   }
 
-  .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+  .loading-chip {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 30;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 16px;
-    z-index: 1000;
-    color: white;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    background: rgba(18, 18, 26, 0.85);
+    color: var(--carbon-text-dim, #7a7a8e);
+    font-size: 12px;
+    pointer-events: none;
   }
 
   .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #e2e8f0;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #e2e8f0;
     border-top-color: #3b82f6;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 16px;
   }
 
   @keyframes spin {

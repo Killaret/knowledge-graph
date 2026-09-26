@@ -320,9 +320,22 @@ sequenceDiagram
 3. **Reactive filtering**: `filteredNotes` and `filteredGraphData` are derived from `filterState`; `FloatingControls` updates `filterState` immutably via `filterState.with({...})`.
 4. **Cache busting**: `getNotes`, `getFreshGraph`, and `getGraphWithPreload` use `cache: "no-store"` so that tests and reloads never reuse stale responses.
 
+### Progressive rendering (UI-LOAD-1)
+
+Loading never covers the UI with a blocking overlay:
+
+- **Notes first**: `loadGraph()` accepts `onNotesReady` and fires it as soon as the notes list resolves — `+page.svelte` shows the list and search while the graph request is still in flight.
+- **No covering layer**: the old full-screen `.loading-overlay` is gone; a non-blocking `.loading-chip` (`pointer-events: none`) in the corner shows "Loading…" instead. `SplashScreen` is decorative and also `pointer-events: none`, so it never swallows clicks or typing.
+- **Batched reveal**: `GraphCanvas` with `progressiveReveal` renders large graphs (> 40 nodes) in portions — the ~25 most-linked nodes start the simulation, then batches of 12 nodes every ~120 ms join the *live* simulation via `addNodesToSimulation()` (`entities/graph-canvas/lib/incremental.ts`): `simulation.nodes()` is extended, the link force gets the new edges, and the layout is reheated (`alpha(0.4).restart()`) rather than rebuilt. A `N of M` chip reports progress and disappears when done.
+- **Below the threshold** the graph starts in one pass — no artificial staging for small datasets.
+
 ### Related code
 
-- `frontend/src/routes/+page.svelte` — `loadDataParallel()`, `loadGraphData()`, `applyFiltersAndSort()`
+- `frontend/src/features/home-page/home-page.svelte.ts` — `loadData()`, `applyFiltersAndSort()`
+- `frontend/src/routes/+page.svelte` — view switching, `loading-chip`
+- `frontend/src/shared/services/graphLoader.ts` — `loadGraph()` / `onNotesReady`
+- `frontend/src/widgets/graph-canvas/GraphCanvas.svelte` — progressive reveal loop
+- `frontend/src/entities/graph-canvas/lib/incremental.ts` — `addNodesToSimulation()`
 - `frontend/src/entities/filter-state.ts` — `FilterState.filterGraphData()` / `applyFiltersAndSort()`
 - `frontend/src/shared/api/notes.ts` — `getNotes()`
 - `frontend/src/shared/api/graph.ts` — `getFreshGraph()`, `getGraphWithPreload()`, `getFullGraphData()`

@@ -201,6 +201,7 @@ export const en: Record<string, string> = {
   "graphModals.createLink": "Create Link",
   // Graph context menu
   "graph.autoLinks.show": "Show suggested links",
+  "graph.revealProgress": "Graph: {{shown}} of {{total}} notes",
   "graph.autoLinks.hide": "Hide suggested links",
   "graph.autoLinks.toggle": "Suggested links (model)",
   "graph.contextMenu.ariaLabel": "Node actions",
@@ -428,6 +429,7 @@ export const ru: Record<string, string> = {
   "graphModals.createLink": "Создать связь",
   // Graph context menu
   "graph.autoLinks.show": "Показать предложения модели",
+  "graph.revealProgress": "Граф: {{shown}} из {{total}} заметок",
   "graph.autoLinks.hide": "Скрыть предложения модели",
   "graph.autoLinks.toggle": "Предложения модели",
   "graph.contextMenu.ariaLabel": "Действия с узлом",

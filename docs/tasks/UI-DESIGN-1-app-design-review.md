@@ -290,6 +290,52 @@ graph-canvas/graph-3d/graph-canvas widget. Мутации красные: фил
 тест, что следующая порция узлов добавляется без перезапуска раскладки. Раздел «Progressive
 Rendering» в `FRONTEND_ARCHITECTURE_EN.md` описывает то, что сделано. Скриншоты загрузки 2D и 3D.
 
+### Реализация (Devin, 2026-09-28)
+
+**Шаг 1 — ничего не закрывает.**
+
+- `.loading-overlay` в `routes/+page.svelte` удалён целиком (разметка и CSS). Вместо него —
+  `.loading-chip` в углу `graph-content`: `position: absolute`, `pointer-events: none`,
+  `data-testid="loading-chip"`. Контент рендерится всегда, ветвление теперь только
+  `apiError` / вид.
+- `graphLoader.loadGraph()` получил опцию `onNotesReady(notes)` — вызывается сразу после
+  ответа заметок, до ожидания графа. `home-page.svelte.ts` в колбэке заполняет `allNotes` и
+  гонит `applyFiltersAndSort()` — список и поиск живы, пока граф в пути.
+- `SplashScreen` получил `pointer-events: none` — заставка декоративная, ввод не глотает
+  (2,5 с + затухание остались, раз за сессию).
+
+**Шаг 2 — граф по частям (2D).**
+
+- Новый модуль `entities/graph-canvas/lib/incremental.ts`: `addNodesToSimulation(state,
+  nodes, links, w, h, onStable)` дописывает узлы в `sim.nodes()` и рёбра в link-force,
+  размещает новичка рядом с уже размещённым соседом (иначе у центра), прогревает
+  `alpha(0.4).restart()` — пересоздания симуляции нет. Новые узлы/связи входят с opacity 0
+  через те же `nodeOpacity`/`linkOpacity`; `startFadeAnimation` перезапускается, если цикл
+  уже завершился (иначе порция осталась бы невидимой — поймано при реализации).
+- `GraphCanvas` с `progressiveReveal` при > 40 узлах: первая порция — 25 самых связанных
+  (сортировка по степени), дальше по 12 узлов каждые ~120 мс. Чип `N из M`
+  (`data-testid="reveal-progress"`, `graph.revealProgress` в i18n) висит в левом нижнем
+  углу холста и исчезает по окончании. `stopReveal()` вызывается при любой смене данных и
+  при размонтировании.
+- Найденный при реализации дефект: `return stopReveal` как cleanup `$effect` убивал reveal
+  при любом повторном запуске эффекта, даже на раннем выходе по `dataKey` — порция так и не
+  доходила. Вынесено в явный вызов перед пересозданием симуляции.
+- Пороги: `PROGRESSIVE_MIN_NODES=40`, `REVEAL_FIRST_BATCH=25`, `REVEAL_BATCH_SIZE=12`,
+  `REVEAL_INTERVAL_MS=120` — константы в `GraphCanvas.svelte`.
+
+**Осталось за рамками / на ревью:** «проявление из тумана» в 2D осталось в виде fade-in
+порций (механизма «зона ясности от центра» нет — реализован через opacity-волну, тот же
+визуальный приём что у существующего fade); 3D получает данные разом, как и раньше —
+порционная подача там не делалась (отдельный движок). Скриншоты — для ревью на живом стеке.
+
+**Тесты:** `incremental.test.ts` (5: та же симуляция, рёбра в link-force, alpha-reheat,
+якорь у соседа, opacity=0); `GraphCanvas.reveal.spec.ts` (3: первая порция < 50 → дорастает
+до 50 без второго `forceSimulation`, чип `N of M` появляется и исчезает, порог/выключатель);
+`home-page.svelte.test.ts` — заметки видны при висящем графе; `page.spec.ts` — список и
+открытие заметки при pending-графе, `loading-overlay` отсутствует. Мутации красные:
+возврат `.loading-overlay` (2 теста), `progressive = false` (спека порций). Затронутые
+пакеты 347/347 зелёные, svelte-check 0/0.
+
 ## Уже на доске, в разбор не дублируется
 
 - панель заметки пишет «Links (undefined)» вместо связей — PANEL-LINKS-1;

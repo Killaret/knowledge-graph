@@ -40,12 +40,15 @@
     getHoveredNeighborIds,
     applyDelta as applyDeltaToSimulation,
   } from "$entities/graph-canvas/lib";
+  import { addNodesToSimulation } from "$entities/graph-canvas/lib/incremental";
+  import { getLinkEndpointId } from "$entities/graph-canvas/lib/types";
   import { computeLabeledNodeIds } from "$entities/graph-canvas/lib/labels";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
 
   const locale = getCurrentLocale();
-  const t = (key: string) => formatMessage(key, locale);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   // FSD imports
   import {
@@ -103,6 +106,7 @@
     disableVariation = false,
     readonly = false,
     showLinkTypeLegend = true,
+    progressiveReveal = false,
     className = "",
     controller = $bindable<
       | {
@@ -172,6 +176,8 @@
     disableVariation?: boolean;
     readonly?: boolean;
     showLinkTypeLegend?: boolean;
+    /** UI-LOAD-1: reveal large graphs in batches instead of all at once. */
+    progressiveReveal?: boolean;
     className?: string;
     controller?: {
       focusMode: boolean;
@@ -254,6 +260,26 @@
   // Для отслеживания изменений данных по содержимому (не по ссылке)
   let lastDataKey = "";
   let mounted = $state(false);
+
+  // UI-LOAD-1 progressive reveal: large graphs appear in batches — the most
+  // linked nodes first, the rest added to the live simulation in portions
+  // without restarting the layout.
+  const PROGRESSIVE_MIN_NODES = 40;
+  const REVEAL_FIRST_BATCH = 25;
+  const REVEAL_BATCH_SIZE = 12;
+  const REVEAL_INTERVAL_MS = 120;
+  let revealTimer: ReturnType<typeof setInterval> | null = null;
+  let revealShown = $state(0);
+  let revealTotal = $state(0);
+  let revealing = $state(false);
+
+  function stopReveal() {
+    if (revealTimer !== null) {
+      clearInterval(revealTimer);
+      revealTimer = null;
+    }
+    revealing = false;
+  }
 
   // Используем утилиты для resize
   const resizeState = { width, height };
@@ -492,6 +518,7 @@
       observerCleanup?.disconnect();
       resizeCleanup?.clear();
       animationLoop?.stop();
+      stopReveal();
       clearSimulation(simState);
       particleSystem?.clear();
       clearAnimationState(angles, speeds);
@@ -518,6 +545,9 @@
 
     if (!browser || !mounted) return;
 
+    // A data change supersedes any in-flight reveal before a new sim starts.
+    stopReveal();
+
     // The particle system is created once in onMount, but the node count
     // (and therefore the performance threshold) changes as data loads/filters.
     particleSystem?.updateNodeCount(nodes.length);
@@ -539,10 +569,38 @@
     // Pin technical nodes (e.g. Knowledge Core) to fixed screen positions
     const pinnedNodes = pinTechnicalNodes(nodes);
 
+    // UI-LOAD-1: reveal large graphs in batches — hubs first, then the rest
+    // joins the live simulation in portions (no layout restart per batch).
+    const progressive = progressiveReveal && pinnedNodes.length > PROGRESSIVE_MIN_NODES;
+    let headNodes = pinnedNodes;
+    let queuedNodes: typeof pinnedNodes = [];
+    if (progressive) {
+      const degree = new Map<string, number>();
+      for (const l of visibleLinks) {
+        const s = getLinkEndpointId(l.source);
+        const t = getLinkEndpointId(l.target);
+        degree.set(s, (degree.get(s) ?? 0) + 1);
+        degree.set(t, (degree.get(t) ?? 0) + 1);
+      }
+      const ordered = [...pinnedNodes].sort(
+        (a, b) => (degree.get(b.id) ?? 0) - (degree.get(a.id) ?? 0)
+      );
+      headNodes = ordered.slice(0, REVEAL_FIRST_BATCH);
+      queuedNodes = ordered.slice(REVEAL_FIRST_BATCH);
+    }
+    const revealedIds = new Set(headNodes.map((n) => n.id));
+    const headLinks = progressive
+      ? visibleLinks.filter(
+          (l) =>
+            revealedIds.has(getLinkEndpointId(l.source)) &&
+            revealedIds.has(getLinkEndpointId(l.target))
+        )
+      : visibleLinks;
+
     // Запускаем новую симуляцию
     startSimulation(
-      pinnedNodes,
-      visibleLinks,
+      headNodes,
+      headLinks,
       width,
       height,
       simState,
@@ -560,6 +618,41 @@
         graphStable = true;
       }
     );
+
+    if (queuedNodes.length > 0) {
+      revealing = true;
+      revealShown = headNodes.length;
+      revealTotal = pinnedNodes.length;
+      const pendingLinks = visibleLinks.filter(
+        (l) =>
+          !(
+            revealedIds.has(getLinkEndpointId(l.source)) &&
+            revealedIds.has(getLinkEndpointId(l.target))
+          )
+      );
+      revealTimer = setInterval(() => {
+        const batch = queuedNodes.splice(0, REVEAL_BATCH_SIZE);
+        if (batch.length === 0) {
+          stopReveal();
+          return;
+        }
+        for (const n of batch) revealedIds.add(n.id);
+        const batchLinks = pendingLinks.filter(
+          (l) =>
+            revealedIds.has(getLinkEndpointId(l.source)) &&
+            revealedIds.has(getLinkEndpointId(l.target))
+        );
+        for (const l of batchLinks) {
+          pendingLinks.splice(pendingLinks.indexOf(l), 1);
+        }
+        addNodesToSimulation(simState, batch, batchLinks, width, height, () => {
+          graphStable = true;
+        });
+        revealShown = revealedIds.size;
+        redraw();
+        if (queuedNodes.length === 0) stopReveal();
+      }, REVEAL_INTERVAL_MS);
+    }
   });
 
   // Применяем дельта-обновления инкрементально
@@ -842,6 +935,13 @@
   }}
 />
 
+<!-- UI-LOAD-1: unobtrusive "N of M" progress while batches still arrive -->
+{#if revealing}
+  <div class="reveal-progress" data-testid="reveal-progress" aria-live="polite">
+    {t("graph.revealProgress", { shown: revealShown, total: revealTotal })}
+  </div>
+{/if}
+
 <!-- UI-GRAPH-1: one-button show/hide for model-suggested links -->
 <button
   type="button"
@@ -948,5 +1048,18 @@
   .auto-links-toggle:hover {
     border-color: rgba(139, 92, 246, 0.7);
     color: var(--carbon-text, #f0f0f5);
+  }
+
+  .reveal-progress {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 20;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(18, 18, 26, 0.75);
+    color: var(--carbon-text-dim, #7a7a8e);
+    font-size: 12px;
+    pointer-events: none;
   }
 </style>
