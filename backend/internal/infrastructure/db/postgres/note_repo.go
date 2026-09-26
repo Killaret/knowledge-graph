@@ -110,20 +110,29 @@ func (r *NoteRepository) FindByID(ctx context.Context, id uuid.UUID) (*note.Note
 }
 
 func (r *NoteRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	if err := r.db.WithContext(ctx).Delete(&NoteModel{}, "id = ?", id).Error; err != nil {
-		return err
-	}
-	// Инвалидация кэша при удалении заметки
-	r.invalidateCache(ctx)
-	return nil
+	return r.DeleteBatch(ctx, []uuid.UUID{id})
 }
 
 // DeleteBatch soft-deletes multiple notes by ID in a single transaction.
+// The notes' still-live links are soft-deleted alongside and marked via
+// deleted_via_note_id so Restore can tell them from links removed on their
+// own.
 func (r *NoteRepository) DeleteBatch(ctx context.Context, ids []uuid.UUID) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	if err := r.db.WithContext(ctx).Delete(&NoteModel{}, "id IN ?", ids).Error; err != nil {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&LinkModel{}).
+			Where("deleted_at IS NULL AND (source_note_id IN ? OR target_note_id IN ?)", ids, ids).
+			Updates(map[string]any{
+				"deleted_at":          gorm.Expr("now()"),
+				"deleted_via_note_id": gorm.Expr("CASE WHEN source_note_id IN ? THEN source_note_id ELSE target_note_id END", ids),
+			}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&NoteModel{}, "id IN ?", ids).Error
+	})
+	if err != nil {
 		return err
 	}
 	// Инвалидация кэша при удалении заметок
@@ -132,20 +141,58 @@ func (r *NoteRepository) DeleteBatch(ctx context.Context, ids []uuid.UUID) error
 }
 
 // Restore recovers a soft-deleted note by clearing its deleted_at timestamp.
+// Links that went down with the note come back once both endpoints are
+// alive again; links deleted on their own stay deleted.
 func (r *NoteRepository) Restore(ctx context.Context, id uuid.UUID) error {
-	result := r.db.WithContext(ctx).Unscoped().
-		Model(&NoteModel{}).
-		Where("id = ?", id).
-		Update("deleted_at", nil)
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return note.ErrNoteNotFound
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		result := tx.Unscoped().
+			Model(&NoteModel{}).
+			Where("id = ? AND deleted_at IS NOT NULL", id).
+			Update("deleted_at", nil)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return note.ErrNoteNotFound
+		}
+		return tx.Exec(`
+			UPDATE links l
+			SET deleted_at = NULL, deleted_via_note_id = NULL
+			WHERE l.deleted_via_note_id IS NOT NULL
+			  AND (l.source_note_id = ? OR l.target_note_id = ?)
+			  AND NOT EXISTS (
+			      SELECT 1 FROM notes n
+			      WHERE n.id IN (l.source_note_id, l.target_note_id)
+			        AND n.deleted_at IS NOT NULL
+			  )`, id, id).Error
+	})
+	if err != nil {
+		return err
 	}
 	// Инвалидация кэша при восстановлении заметки
 	r.invalidateCache(ctx)
 	return nil
+}
+
+// PurgeDeletedBefore hard-deletes notes soft-deleted before cutoff; their
+// link rows go through the FK cascade. Links soft-deleted on their own are
+// removed by the same horizon. Returns the number of notes purged.
+func (r *NoteRepository) PurgeDeletedBefore(ctx context.Context, cutoff time.Time) (int64, error) {
+	var purged int64
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("DELETE FROM links WHERE deleted_at IS NOT NULL AND deleted_at < ?", cutoff).Error; err != nil {
+			return err
+		}
+		res := tx.Unscoped().
+			Where("deleted_at IS NOT NULL AND deleted_at < ?", cutoff).
+			Delete(&NoteModel{})
+		if res.Error != nil {
+			return res.Error
+		}
+		purged = res.RowsAffected
+		return nil
+	})
+	return purged, err
 }
 
 // FindAllPaginated возвращает заметки с пагинацией на уровне БД.

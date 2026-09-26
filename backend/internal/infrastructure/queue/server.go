@@ -83,3 +83,10 @@ func BackupToCloudHandler(svc tasks.BackupServiceInterface) func(context.Context
 		return tasks.HandleBackupToCloud(ctx, t, svc)
 	}
 }
+
+// CleanupSoftDeletedHandler returns a handler that dispatches to tasks.HandleCleanupSoftDeleted.
+func CleanupSoftDeletedHandler(svc tasks.CleanupServiceInterface) func(context.Context, *asynq.Task) error {
+	return func(ctx context.Context, t *asynq.Task) error {
+		return tasks.HandleCleanupSoftDeleted(ctx, t, svc)
+	}
+}

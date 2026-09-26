@@ -70,7 +70,7 @@ func (r *LinkRepository) updateModel(ctx context.Context, existing *LinkModel, l
 
 func (r *LinkRepository) FindByID(ctx context.Context, id uuid.UUID) (*link.Link, error) {
 	var model LinkModel
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error
+	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&model).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -82,7 +82,7 @@ func (r *LinkRepository) FindByID(ctx context.Context, id uuid.UUID) (*link.Link
 
 func (r *LinkRepository) FindBySource(ctx context.Context, sourceID uuid.UUID) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("source_note_id = ? AND deleted_at IS NULL", sourceID).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (r *LinkRepository) FindBySource(ctx context.Context, sourceID uuid.UUID) (
 
 func (r *LinkRepository) FindByTarget(ctx context.Context, targetID uuid.UUID) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("target_note_id = ?", targetID).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("target_note_id = ? AND deleted_at IS NULL", targetID).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (r *LinkRepository) FindBySourceIDs(ctx context.Context, sourceIDs []uuid.U
 	}
 
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("source_note_id IN ?", sourceIDs).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("source_note_id IN ? AND deleted_at IS NULL", sourceIDs).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (r *LinkRepository) FindByTargetIDs(ctx context.Context, targetIDs []uuid.U
 	}
 
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("target_note_id IN ?", targetIDs).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("target_note_id IN ? AND deleted_at IS NULL", targetIDs).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +358,7 @@ func (r *LinkRepository) DeleteBySource(ctx context.Context, sourceID uuid.UUID)
 // events with correct source/target pairs.
 func (r *LinkRepository) FindBySourceType(ctx context.Context, sourceType string) ([]*link.Link, error) {
 	var models []LinkModel
-	if err := r.db.WithContext(ctx).Where("source_type = ?", sourceType).Find(&models).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("source_type = ? AND deleted_at IS NULL", sourceType).Find(&models).Error; err != nil {
 		return nil, err
 	}
 	result := make([]*link.Link, 0, len(models))
@@ -383,7 +383,7 @@ func (r *LinkRepository) DeleteBySourceType(ctx context.Context, sourceType stri
 // CountBySourceType returns how many links carry the given source_type.
 func (r *LinkRepository) CountBySourceType(ctx context.Context, sourceType string) (int64, error) {
 	var count int64
-	err := r.db.WithContext(ctx).Model(&LinkModel{}).Where("source_type = ?", sourceType).Count(&count).Error
+	err := r.db.WithContext(ctx).Model(&LinkModel{}).Where("source_type = ? AND deleted_at IS NULL", sourceType).Count(&count).Error
 	return count, err
 }
 
@@ -393,7 +393,7 @@ func (r *LinkRepository) FindAllPaginated(ctx context.Context, limit, offset int
 	var total int64
 
 	// Считаем общее количество
-	if err := r.db.WithContext(ctx).Model(&LinkModel{}).Count(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&LinkModel{}).Where("deleted_at IS NULL").Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -404,7 +404,7 @@ func (r *LinkRepository) FindAllPaginated(ctx context.Context, limit, offset int
 	}
 
 	var models []LinkModel
-	if err := query.Find(&models).Error; err != nil {
+	if err := query.Where("deleted_at IS NULL").Find(&models).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -415,7 +415,7 @@ func (r *LinkRepository) FindAllPaginated(ctx context.Context, limit, offset int
 // DEPRECATED: используйте FindAllPaginated для больших наборов данных
 func (r *LinkRepository) FindAll(ctx context.Context) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Find(&models).Error
+	err := r.db.WithContext(ctx).Where("deleted_at IS NULL").Find(&models).Error
 	if err != nil {
 		return nil, err
 	}

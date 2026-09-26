@@ -506,3 +506,16 @@ Create a new bullet under the right section with:
   - Worker log: zero `42703`/ERROR lines (the review saw 1050).
 - **Screenshot / Logs:** mongosh counts and the API response quoted above; worker startup lines in `docker logs kg-test-worker`.
 - **Result:** criterion 9 verified live — assessment runs, writes Mongo, and serves the API.
+
+### NOTE-DELETE-1 — trash delete/restore live on the test stack
+
+- **Scope:** criterion 4 of `docs/tasks/NOTE-DELETE-1-soft-delete.md` — delete → restore on the stand.
+- **Date:** 2026-09-27
+- **Agent:** Devin
+- **Environment:** isolated test stack (`start-test.ps1 -Force`), seed: 100 notes, 60 links; backend/worker images built from this tree with migration 035.
+- **Observed:**
+  - Worker boot log: `[Worker] daily trash cleanup scheduled (retention 90 days)`; `links.deleted_via_note_id` present in `knowledge_test`.
+  - Note `d4a96761-…` had **12 live links**. `DELETE /api/v1/notes/{id}` → 204; `GET` → 404; `notes.deleted_at` set; all 12 link rows soft-deleted **with** `deleted_via_note_id` = the note id.
+  - `POST /api/v1/notes/{id}/restore` → 204; `GET` → 200 with the original content; all 12 links live again (`deleted_at` NULL, marker cleared). Note list total back to 100.
+- **Screenshot / Logs:** psql counts and HTTP codes quoted above; `docker logs kg-test-worker`.
+- **Result:** criterion 4 verified live — trash, restore with links, and the 90-day purge schedule all run on the stand. UI undo toast calls the same `restore` endpoint (existing `deleteNote`/`restoreNote` flow unchanged).

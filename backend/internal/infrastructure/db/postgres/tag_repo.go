@@ -139,7 +139,7 @@ func (r *TagRepository) GetNotesForTag(ctx context.Context, tagID uuid.UUID) ([]
 		Table("notes").
 		Select("notes.*").
 		Joins("JOIN note_tags ON note_tags.note_id = notes.id").
-		Where("note_tags.tag_id = ?", tagID).
+		Where("note_tags.tag_id = ? AND notes.deleted_at IS NULL", tagID).
 		Find(&notes).Error
 	return notes, err
 }

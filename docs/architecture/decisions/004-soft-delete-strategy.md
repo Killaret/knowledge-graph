@@ -3,7 +3,14 @@
 ## Status
 Accepted
 
-**Implementation status:** partially implemented — links carry `deleted_at` and soft-delete via `DeleteAndSuppress`; notes have the column + `Restore`, but `NoteRepository.Delete` issues a hard `DELETE` (model field is `*time.Time`, not `gorm.DeletedAt`) — recorded as a DOC-AUDIT-2 finding.
+**Implementation status:** implemented (NOTE-DELETE-1, 2026-09-27). `NoteModel.DeletedAt`
+is `gorm.DeletedAt`, so every GORM read path auto-filters trashed rows; `Delete`/`DeleteBatch`
+soft-delete the note in one transaction that also soft-deletes its still-live links and marks
+them via `links.deleted_via_note_id` (migration 035). `Restore` clears `deleted_at` and revives
+exactly those marked links whose both endpoints are alive again — links removed on their own are
+hard-deleted and never resurface. Retention is **90 days** (owner decision, NOTE-DELETE-1 —
+supersedes the 30-day figure below): the worker schedules `cleanup:soft_deleted` daily, and
+`PurgeDeletedBefore` hard-deletes notes older than the horizon (links go through the FK cascade).
 
 ## Context
 In a multi-tenant SaaS environment, accidental data deletion has severe consequences:

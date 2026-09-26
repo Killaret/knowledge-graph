@@ -195,6 +195,19 @@ stateDiagram-v2
     GDPRDeleted --> [*]: Immediate hard delete
 ```
 
+As implemented (NOTE-DELETE-1): `NoteModel.DeletedAt` is `gorm.DeletedAt`, so all
+GORM note queries auto-filter trashed rows; raw SQL paths (`note_embeddings`,
+`note_keywords`, tag joins, similarity candidates) filter `deleted_at IS NULL`
+explicitly. `Delete`/`DeleteBatch` run one transaction that soft-deletes the
+note and its still-live links, stamping `links.deleted_via_note_id` so
+`Restore` revives exactly the links that went down with the note — and only
+once both endpoints are alive again. A link removed on its own is a hard
+delete and never resurfaces. The worker schedules `cleanup:soft_deleted`
+daily; `PurgeDeletedBefore` hard-deletes notes past the 90-day horizon and
+their links through the FK cascade. Deletion publishes `NoteDeleted`,
+restoration `NoteUpdated`, so graph-service refreshes `note_links_closure`
+through the regular event flow.
+
 ### Draft Synchronization
 
 ```mermaid

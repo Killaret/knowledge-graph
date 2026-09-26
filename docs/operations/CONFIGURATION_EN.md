@@ -326,6 +326,22 @@ MongoDB is used for storing note drafts with the following features:
 
 ---
 
+## Soft-Deleted Notes (Trash Retention)
+
+Deleting a note is soft: the row keeps `deleted_at` and can be restored within
+the retention window (see ADR 004 and NOTE-DELETE-1).
+
+- **Retention**: **90 days**, fixed default in `tasks.NewCleanupSoftDeletedTask`
+  (no env/JSON key yet).
+- **Schedule**: the worker registers a daily `cleanup:soft_deleted` Asynq task;
+  `PurgeDeletedBefore` hard-deletes notes past the horizon and their links via
+  the FK cascade.
+- **Restore**: `POST /api/v1/notes/{id}/restore` returns the note together with
+  the links that were deleted alongside it (`links.deleted_via_note_id`).
+  Links removed on their own are hard-deleted and do not resurface.
+
+---
+
 ## Required Environment Variables
 
 These must be set via environment variables (not in JSON):

@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 
 	"knowledge-graph/internal/application/graph"
@@ -256,11 +257,30 @@ func main() {
 	mux.HandleFunc(queue.TypeNormalizeNote, worker.HandleNormalizeNote)
 	mux.HandleFunc(queue.TypeNlpArtifactsCleanup, worker.HandleNlpArtifactsCleanup)
 	mux.HandleFunc(queue.TypeAssessQuality, worker.HandleAssessQuality)
+	mux.HandleFunc(tasks.TypeCleanupSoftDeleted,
+		queue.CleanupSoftDeletedHandler(softDeletedCleanup{purger: noteRepo}))
 	if cfg.BackupEnabled {
 		mux.HandleFunc(queue.TypeDatabaseBackup, queue.BackupDatabaseHandler(backupRunner))
 		if backupSvc != nil {
 			mux.HandleFunc(queue.TypeBackupToCloud, queue.BackupToCloudHandler(backupSvc))
 		}
+	}
+
+	// NOTE-DELETE-1: daily trash purge — the task defaults to a 90-day
+	// retention window (see tasks.NewCleanupSoftDeletedTask).
+	scheduler := asynq.NewScheduler(asynq.RedisClientOpt{Addr: redisAddr}, nil)
+	if cleanupTask, err := tasks.NewCleanupSoftDeletedTask(0, nil); err != nil {
+		log.Printf("[Worker] WARNING: failed to build trash cleanup task: %v", err)
+	} else if _, err := scheduler.Register("@daily", cleanupTask); err != nil {
+		log.Printf("[Worker] WARNING: failed to schedule trash cleanup: %v", err)
+	} else {
+		go func() {
+			if err := scheduler.Run(); err != nil {
+				log.Printf("[Worker] scheduler stopped: %v", err)
+			}
+		}()
+		defer scheduler.Shutdown()
+		log.Println("[Worker] daily trash cleanup scheduled (retention 90 days)")
 	}
 
 	log.Printf("Worker started with config: Concurrency=%d, QueueMaxLen=%d", cfg.AsynqConcurrency, cfg.AsynqQueueMaxLen)

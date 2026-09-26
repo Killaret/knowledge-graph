@@ -22,6 +22,10 @@ type LinkModel struct {
 	UpdatedAt        time.Time      `gorm:"column:updated_at"`
 	LastWeightUpdate *time.Time     `gorm:"column:last_weight_update"`
 	DeletedAt        *time.Time     `gorm:"column:deleted_at;index"`
+	// DeletedViaNoteID marks a link removed together with a soft-deleted
+	// note (NOTE-DELETE-1); restore revives only these. Links deleted on
+	// their own keep this NULL.
+	DeletedViaNoteID *uuid.UUID `gorm:"type:uuid;index"`
 
 	SourceNote NoteModel `gorm:"foreignKey:SourceNoteID;references:ID;constraint:OnDelete:CASCADE"`
 	TargetNote NoteModel `gorm:"foreignKey:TargetNoteID;references:ID;constraint:OnDelete:CASCADE"`

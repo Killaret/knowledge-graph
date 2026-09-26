@@ -55,7 +55,7 @@ func TestLinkRepository_Save_Create(t *testing.T) {
 	l := link.NewLink(sourceID, targetID, linkType, weight, metadata)
 
 	// Ожидаем запрос на проверку существования
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 ORDER BY "links"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 AND deleted_at IS NULL ORDER BY "links"."id" LIMIT \$2`).
 		WithArgs(l.ID(), 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
@@ -92,7 +92,7 @@ func TestLinkRepository_FindByID_Found(t *testing.T) {
 	now := time.Now()
 
 	// Ожидаем SELECT
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 ORDER BY "links"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 AND deleted_at IS NULL ORDER BY "links"."id" LIMIT \$2`).
 		WithArgs(id, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(id, sourceID, targetID, "reference", 0.7, `{}`, now))
@@ -133,7 +133,7 @@ func TestLinkRepository_FindByID_NotFound(t *testing.T) {
 
 	id := uuid.New()
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 ORDER BY "links"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE id = \$1 AND deleted_at IS NULL ORDER BY "links"."id" LIMIT \$2`).
 		WithArgs(id, 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
@@ -164,7 +164,7 @@ func TestLinkRepository_FindBySource_Unit(t *testing.T) {
 	targetID2 := uuid.New()
 	now := time.Now()
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_note_id = \$1`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_note_id = \$1 AND deleted_at IS NULL`).
 		WithArgs(sourceID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), sourceID, targetID1, "reference", 0.8, `{}`, now).
@@ -196,7 +196,7 @@ func TestLinkRepository_FindByTarget(t *testing.T) {
 	sourceID := uuid.New()
 	now := time.Now()
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_note_id = \$1`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_note_id = \$1 AND deleted_at IS NULL`).
 		WithArgs(targetID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), sourceID, targetID, "reference", 0.9, `{}`, now))
@@ -230,7 +230,7 @@ func TestLinkRepository_FindBySourceIDs_Batch(t *testing.T) {
 
 	sourceIDs := []uuid.UUID{sourceID1, sourceID2}
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_note_id IN \(\$1,\$2\)`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_note_id IN \(\$1,\$2\) AND deleted_at IS NULL`).
 		WithArgs(sourceID1, sourceID2).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), sourceID1, targetID, "reference", 0.8, `{}`, now).
@@ -289,7 +289,7 @@ func TestLinkRepository_FindByTargetIDs_Batch(t *testing.T) {
 
 	targetIDs := []uuid.UUID{targetID1, targetID2}
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_note_id IN \(\$1,\$2\)`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_note_id IN \(\$1,\$2\) AND deleted_at IS NULL`).
 		WithArgs(targetID1, targetID2).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), sourceID, targetID1, "reference", 0.8, `{}`, now).
@@ -373,7 +373,7 @@ func TestLinkRepository_FindAll(t *testing.T) {
 
 	now := time.Now()
 
-	mock.ExpectQuery(`SELECT \* FROM "links"`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE deleted_at IS NULL`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}).
 			AddRow(uuid.New(), uuid.New(), uuid.New(), "reference", 0.8, `{}`, now).
 			AddRow(uuid.New(), uuid.New(), uuid.New(), "related", 0.6, `{}`, now))
@@ -548,7 +548,7 @@ func TestLinkRepository_FindBySource_DBError(t *testing.T) {
 
 	sourceID := uuid.New()
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_note_id = \$1`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE source_note_id = \$1 AND deleted_at IS NULL`).
 		WithArgs(sourceID).
 		WillReturnError(errors.New("database connection failed"))
 
@@ -573,7 +573,7 @@ func TestLinkRepository_FindByTarget_EmptyResult(t *testing.T) {
 
 	targetID := uuid.New()
 
-	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_note_id = \$1`).
+	mock.ExpectQuery(`SELECT \* FROM "links" WHERE target_note_id = \$1 AND deleted_at IS NULL`).
 		WithArgs(targetID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "source_note_id", "target_note_id", "link_type", "weight", "metadata", "created_at"}))
 
