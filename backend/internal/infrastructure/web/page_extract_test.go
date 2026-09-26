@@ -1,10 +1,8 @@
 package web
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -17,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/html"
-	"golang.org/x/net/html/charset"
 )
 
 // goldenEntry mirrors expected.json: the human-verified expected values from
@@ -48,14 +45,8 @@ func extractSnapshot(t *testing.T, id, rawURL string) *importer.ExtractedPage {
 	if err != nil {
 		t.Fatalf("open snapshot %s: %v", id, err)
 	}
-	// Mirror ImportFetcher.Extract: certain detection decodes, uncertain
-	// guesses default to UTF-8 (HTML5).
-	enc, _, certain := charset.DetermineEncoding(data, "")
-	var reader io.Reader = bytes.NewReader(data)
-	if certain && enc != nil {
-		reader = enc.NewDecoder().Reader(reader)
-	}
-	doc, err := html.Parse(reader)
+	// Snapshots carry no HTTP headers; "" mirrors a missing Content-Type.
+	doc, err := html.Parse(decodeHTMLBody(data, ""))
 	if err != nil {
 		t.Fatalf("parse %s: %v", id, err)
 	}
@@ -246,7 +237,7 @@ func TestRelatedLinksCapAndSchemeFilter(t *testing.T) {
 		`<a href="ftp://x/f">ftp</a><a href="/relative">rel</a>`)
 	b.WriteString(`</nav><article><h1>T</h1><p>text</p></article></body></html>`)
 	page := extractPage(parseHTML(t, b.String()), "https://example.com/", defaultContentMaxRunes)
-	assert.Len(t, page.RelatedLinks, maxRelatedLinks)
+	assert.Len(t, page.RelatedLinks, 20, "spec: related_links is capped at 20")
 	for _, l := range page.RelatedLinks {
 		assert.True(t, strings.HasPrefix(l.URL, "https://"), "non-http link leaked: %s", l.URL)
 	}

@@ -87,15 +87,7 @@ func (f *ImportFetcher) Extract(ctx context.Context, rawURL string) (*importer.E
 		return nil, err
 	}
 
-	// Convert to UTF-8 based on the declared Content-Type or a <meta charset>
-	// declaration. When detection is not certain, HTML5 mandates UTF-8.
-	enc, _, certain := charset.DetermineEncoding(body, resp.Header.Get("Content-Type"))
-	var reader io.Reader = bytes.NewReader(body)
-	if certain && enc != nil {
-		reader = enc.NewDecoder().Reader(reader)
-	}
-
-	doc, err := html.Parse(reader)
+	doc, err := html.Parse(decodeHTMLBody(body, resp.Header.Get("Content-Type")))
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +108,20 @@ func (f *ImportFetcher) Extract(ctx context.Context, rawURL string) (*importer.E
 	page.Title = textutil.TruncateToMaxRunes(page.Title, maxTitleRunes)
 
 	return page, nil
+}
+
+// decodeHTMLBody converts body to a UTF-8 reader based on the declared
+// Content-Type or a <meta charset> declaration. When detection is not
+// certain, HTML5 mandates UTF-8 — an uncertain guess (x/net falls back to
+// windows-1252 on pages without a declaration, e.g. Confluence's
+// <meta charset="">) must not decode, or legitimate UTF-8 is garbled.
+func decodeHTMLBody(body []byte, contentType string) io.Reader {
+	enc, _, certain := charset.DetermineEncoding(body, contentType)
+	var reader io.Reader = bytes.NewReader(body)
+	if certain && enc != nil {
+		reader = enc.NewDecoder().Reader(reader)
+	}
+	return reader
 }
 
 func extractTitle(n *html.Node) string {
