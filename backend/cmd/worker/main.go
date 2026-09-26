@@ -179,21 +179,7 @@ func main() {
 	// NOTE-QUALITY-1: the assessor needs Mongo (quality_log + artifact
 	// stamps). Gated by nlp.quality.enabled — off means the handler no-ops
 	// and nothing is enqueued.
-	if cfg.NLPQualityEnabled && mongoClient != nil {
-		qualityLog := mongo.NewQualityLogRepository(mongoClient)
-		if err := qualityLog.EnsureIndexes(context.Background()); err != nil {
-			log.Printf("[Worker] WARNING: failed to ensure quality_log indexes: %v", err)
-		}
-		assessor := queue.NewQualityAssessor(noteRepo, artifactsRepo, qualityLog,
-			postgres.NewQualityStatsRepository(database), nlpClient, appquality.Thresholds{
-				CollectionProseShare: cfg.NLPQualityCollectionProseShare,
-				CollectionMinLinks:   cfg.NLPQualityCollectionMinLinks,
-				SentenceMinWords:     cfg.NLPQualitySentenceMinWords,
-				FragmentMaxWords:     cfg.NLPQualityFragmentMaxWords,
-				MojibakeShare:        cfg.NLPQualityMojibakeShare,
-				LegacyTruncatedRunes: cfg.NLPQualityLegacyTruncatedRunes,
-			})
-		worker.UseQuality(assessor, queueClient)
+	if installQualityPipeline(worker, cfg, mongoClient, noteRepo, artifactsRepo, postgres.NewQualityStatsRepository(database), nlpClient, queueClient) {
 		log.Println("[Worker] NOTE-QUALITY-1 quality assessment enabled")
 	} else if cfg.NLPQualityEnabled {
 		log.Println("[Worker] NLP_QUALITY_ENABLED set but MongoDB is unavailable — quality assessment disabled")
@@ -368,4 +354,31 @@ func findSubstring(s, substr string) int {
 		}
 	}
 	return -1
+}
+
+// installQualityPipeline wires the NOTE-QUALITY-1 assessor into the worker
+// when both the feature flag and its Mongo storage are present; otherwise
+// the worker stays a no-op for quality tasks and nothing is enqueued.
+// Returns whether the pipeline was installed.
+func installQualityPipeline(w *queue.Worker, cfg *config.Config, mongoClient *mongo.Client,
+	noteRepo *postgres.NoteRepository, artifactsRepo *mongo.NlpArtifactsRepository,
+	stats appquality.StatsReader, nlpClient *nlp.NLPClient, enq queue.QualityEnqueuer) bool {
+	if !cfg.NLPQualityEnabled || mongoClient == nil {
+		return false
+	}
+	qualityLog := mongo.NewQualityLogRepository(mongoClient)
+	if err := qualityLog.EnsureIndexes(context.Background()); err != nil {
+		log.Printf("[Worker] WARNING: failed to ensure quality_log indexes: %v", err)
+	}
+	assessor := queue.NewQualityAssessor(noteRepo, artifactsRepo, qualityLog, stats, nlpClient,
+		appquality.Thresholds{
+			CollectionProseShare: cfg.NLPQualityCollectionProseShare,
+			CollectionMinLinks:   cfg.NLPQualityCollectionMinLinks,
+			SentenceMinWords:     cfg.NLPQualitySentenceMinWords,
+			FragmentMaxWords:     cfg.NLPQualityFragmentMaxWords,
+			MojibakeShare:        cfg.NLPQualityMojibakeShare,
+			LegacyTruncatedRunes: cfg.NLPQualityLegacyTruncatedRunes,
+		})
+	w.UseQuality(assessor, enq)
+	return true
 }

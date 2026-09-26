@@ -20,9 +20,13 @@ import (
 	"knowledge-graph/internal/config"
 )
 
-type fakeQualityReader struct{ entry *appquality.LogEntry }
+type fakeQualityReader struct {
+	entry *appquality.LogEntry
+	calls int
+}
 
 func (f *fakeQualityReader) LatestQuality(context.Context, uuid.UUID) (*appquality.LogEntry, error) {
+	f.calls++
 	return f.entry, nil
 }
 
@@ -162,4 +166,36 @@ func TestAssessQuality_Disabled(t *testing.T) {
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.JSONEq(t, `{"enabled": false}`, rec.Body.String())
 	assert.Empty(t, enq.calls)
+}
+
+// The flag check itself: the dependencies are wired (reader and enqueuer
+// non-nil) but enabled=false must still answer disabled without touching
+// either of them.
+func TestGetQuality_DisabledWithReader(t *testing.T) {
+	reader := &fakeQualityReader{entry: &appquality.LogEntry{
+		NoteID: uuid.New(),
+		Record: appquality.Record{Verdict: appquality.VerdictEnrich},
+	}}
+	h := newQualityHandler(t)
+	h.SetQuality(false, reader, &fakeQualityEnq{})
+	r := qualityRouter(h)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/notes/"+uuid.NewString()+"/quality", nil))
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.JSONEq(t, `{"enabled": false}`, rec.Body.String())
+	assert.Equal(t, 0, reader.calls, "disabled flag must not reach the reader")
+}
+
+func TestAssessQuality_DisabledWithQueue(t *testing.T) {
+	enq := &fakeQualityEnq{}
+	h := newQualityHandler(t)
+	h.SetQuality(false, &fakeQualityReader{}, enq)
+	r := qualityRouter(h)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/notes/"+uuid.NewString()+"/quality/assess", nil))
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.JSONEq(t, `{"enabled": false}`, rec.Body.String())
+	assert.Empty(t, enq.calls, "disabled flag must not enqueue")
 }

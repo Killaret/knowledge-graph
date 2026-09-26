@@ -270,16 +270,7 @@ func run(
 	// NOTE-QUALITY-1: endpoints stay mounted but answer {"enabled": false}
 	// until the flag and Mongo are both present. The enqueuer is the task
 	// queue only when it implements the (narrow) quality enqueue method.
-	if cfg.NLPQualityEnabled && mongoClient != nil {
-		qualityLog := mongo.NewQualityLogRepository(mongoClient)
-		if err := qualityLog.EnsureIndexes(ctx); err != nil {
-			log.Printf("[Quality] WARNING: failed to ensure quality_log indexes: %v", err)
-		}
-		var qualityEnq notehandler.QualityEnqueuer
-		if e, ok := taskQueue.(notehandler.QualityEnqueuer); ok {
-			qualityEnq = e
-		}
-		noteHandler.SetQuality(true, qualityLog, qualityEnq)
+	if installQualityEndpoints(ctx, noteHandler, cfg.NLPQualityEnabled, mongoClient, taskQueue) {
 		log.Println("[Quality] NOTE-QUALITY-1 endpoints enabled")
 	}
 	linkHandler := linkhandler.New(linkRepo, noteRepo, achievementService, graphCache)
@@ -494,4 +485,24 @@ func newAsynqClient(cfg *config.Config) common.TaskQueue {
 	}
 	log.Printf("Asynq client created successfully")
 	return asynqClient
+}
+
+// installQualityEndpoints wires the NOTE-QUALITY-1 endpoints when both the
+// feature flag and its Mongo storage are present; otherwise the mounted
+// endpoints keep answering {"enabled": false} and nothing touches Mongo or
+// the queue. Returns whether the feature was enabled.
+func installQualityEndpoints(ctx context.Context, h *notehandler.Handler, enabled bool, mongoClient *mongo.Client, taskQueue common.TaskQueue) bool {
+	if !enabled || mongoClient == nil {
+		return false
+	}
+	qualityLog := mongo.NewQualityLogRepository(mongoClient)
+	if err := qualityLog.EnsureIndexes(ctx); err != nil {
+		log.Printf("[Quality] WARNING: failed to ensure quality_log indexes: %v", err)
+	}
+	var qualityEnq notehandler.QualityEnqueuer
+	if e, ok := taskQueue.(notehandler.QualityEnqueuer); ok {
+		qualityEnq = e
+	}
+	h.SetQuality(true, qualityLog, qualityEnq)
+	return true
 }

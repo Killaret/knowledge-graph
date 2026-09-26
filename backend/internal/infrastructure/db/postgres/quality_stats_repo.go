@@ -30,7 +30,7 @@ func (r *QualityStatsRepository) LinkCount(ctx context.Context, noteID uuid.UUID
 	var n int64
 	err := r.db.WithContext(ctx).
 		Model(&LinkModel{}).
-		Where("source_id = ? OR target_id = ?", noteID, noteID).
+		Where("source_note_id = ? OR target_note_id = ?", noteID, noteID).
 		Count(&n).Error
 	return int(n), err
 }

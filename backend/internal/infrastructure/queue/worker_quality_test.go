@@ -137,9 +137,11 @@ func TestWorker_ScheduleQuality_OffMeansNothing(t *testing.T) {
 	defer server.Close()
 
 	enq := &fakeQualityEnqueuer{}
-	// No UseQuality → scheduleQuality is a no-op.
+	// Feature off at assembly = UseQuality never called → no assessor. The
+	// enqueuer is still wired in directly: if the nil-assessor guard in
+	// scheduleQuality is dropped, the fake queue must observe the call.
 	w := NewWorker(repo, nil, nil, nlp.NewNLPClient(server.URL, nil, 0), nil, nil, nil, nil, nil, 0, &fakeNlpArtifactsStore{}, false, "m")
-	_ = enq
+	w.qualityEnq = enq
 	err := w.HandleNormalizeNote(context.Background(), normalizeTask(n.ID()))
 	require.NoError(t, err)
 	assert.Empty(t, enq.calls)
