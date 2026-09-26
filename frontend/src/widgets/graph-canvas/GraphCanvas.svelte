@@ -40,6 +40,7 @@
     getHoveredNeighborIds,
     applyDelta as applyDeltaToSimulation,
   } from "$entities/graph-canvas/lib";
+  import { computeLabeledNodeIds } from "$entities/graph-canvas/lib/labels";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
 
@@ -238,12 +239,15 @@
     fadeAnimationId: null,
   };
 
-  // Filter links based on hidden types and minimum weight
+  // Filter links based on hidden types, minimum weight and the auto-links
+  // toggle (UI-GRAPH-1): model-suggested links drop out of the simulation,
+  // the rendering and the hover picking at once.
   const visibleLinks = $derived(
     links.filter((l) => {
       const typeMatch = !graphStore.hiddenLinkTypes.includes(l.link_type ?? "related");
       const weightMatch = (l.weight ?? 0.5) >= graphStore.minLinkWeight;
-      return typeMatch && weightMatch;
+      const autoMatch = graphStore.showAutoLinks || l.source_type !== "gamma";
+      return typeMatch && weightMatch && autoMatch;
     })
   );
 
@@ -505,7 +509,7 @@
     const linksCount = visibleLinks.length;
     const hiddenTypesCount = graphStore.hiddenLinkTypes.length;
     const minWeight = graphStore.minLinkWeight;
-    const dataKey = `${nodesCount}-${linksCount}-${hiddenTypesCount}-${minWeight}`;
+    const dataKey = `${nodesCount}-${linksCount}-${hiddenTypesCount}-${minWeight}-${graphStore.showAutoLinks}`;
 
     if (dataKey === lastDataKey) {
       return;
@@ -604,6 +608,7 @@
       ty: Math.round(transform.y),
       tk: transform.k.toFixed(3),
       hover: canvasState.hoveredNodeId ?? "",
+      sel: canvasState.selectedNodeId ?? "",
       focus: canvasState.focusMode,
       highlight: canvasState.highlightedLinkId ?? "",
       search: [...(hotkeysState.searchMatchIds ?? [])].sort().join(","),
@@ -693,7 +698,13 @@
       dragDropState.linkPreviewTarget,
       linkMousePos,
       fogState.snapshot,
-      hoveredNeighborIds
+      hoveredNeighborIds,
+      computeLabeledNodeIds(simNodes, simState.simLinks, {
+        hoveredId: canvasState.hoveredNodeId,
+        selectedId: canvasState.selectedNodeId,
+        searchMatchIds: hotkeysState.searchMatchIds,
+        zoomK: transform.k,
+      })
     );
     drawFog(targetCtx, width, height, fogState.snapshot);
 
@@ -831,6 +842,19 @@
   }}
 />
 
+<!-- UI-GRAPH-1: one-button show/hide for model-suggested links -->
+<button
+  type="button"
+  class="auto-links-toggle"
+  class:active={graphStore.showAutoLinks}
+  data-testid="auto-links-toggle"
+  aria-pressed={graphStore.showAutoLinks}
+  title={graphStore.showAutoLinks ? t("graph.autoLinks.hide") : t("graph.autoLinks.show")}
+  onclick={() => graphStore.toggleAutoLinks()}
+>
+  ✦ {t("graph.autoLinks.toggle")}
+</button>
+
 {#if showLinkTypeLegend}
   <LinkTypeLegend
     hiddenTypes={graphStore.hiddenLinkTypes}
@@ -893,3 +917,36 @@
     onClose={() => canvasState.closeHelpModal(hotkeysState)}
   />
 {/if}
+
+<style>
+  .auto-links-toggle {
+    position: absolute;
+    /* top-right corner at 16px belongs to the focus-mode indicator. */
+    top: 56px;
+    right: 16px;
+    z-index: 20;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    background: rgba(18, 18, 26, 0.85);
+    color: var(--carbon-text-dim, #7a7a8e);
+    font-size: 12px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .auto-links-toggle.active {
+    color: var(--carbon-text, #f0f0f5);
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+
+  .auto-links-toggle:hover {
+    border-color: rgba(139, 92, 246, 0.7);
+    color: var(--carbon-text, #f0f0f5);
+  }
+</style>

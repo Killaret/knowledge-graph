@@ -99,7 +99,8 @@ export const en: Record<string, string> = {
   "note.relatedNotes": "Connected notes",
   "note.noLinks": "No connections yet.",
   "note.createFirstLink": "Create first connection",
-  "note.linkWeight": "Link weight {{weight}}",
+  "note.linkWeight":
+    "Link strength: {{weight}} — the bar shows how strongly the notes are connected",
   "note.direction.outgoing": "outgoing",
   "note.direction.incoming": "incoming",
   "note.deleteConfirmTitle": "Delete note",
@@ -272,7 +273,7 @@ export const ru: Record<string, string> = {
   "note.relatedNotes": "Связанные заметки",
   "note.noLinks": "Пока нет связей.",
   "note.createFirstLink": "Создать первую связь",
-  "note.linkWeight": "Вес связи {{weight}}",
+  "note.linkWeight": "Сила связи: {{weight}} — полоска показывает, насколько тесно связаны заметки",
   "note.direction.outgoing": "исходящая",
   "note.direction.incoming": "входящая",
   "note.deleteConfirmTitle": "Удалить заметку",

@@ -12,6 +12,18 @@ const PERFORMANCE_THRESHOLD_LINKS = graphConfig2D.animated_links_threshold;
 export const BIDIRECTIONAL_LINK_OFFSET = 24;
 
 /**
+ * UI-GRAPH-1: model-suggested links (source_type "gamma") render thinner and
+ * more transparent than user-created ones so the hand-made structure reads
+ * first on a dense graph.
+ */
+export const AUTO_LINK_WIDTH_FACTOR = 0.55;
+export const AUTO_LINK_OPACITY_FACTOR = 0.45;
+
+export function isAutoLink(link: SimulationLink): boolean {
+  return link.source_type === "gamma";
+}
+
+/**
  * Draw a quadratic bezier path between two nodes, optionally curving it
  * perpendicular to the straight segment by `curveOffset`.
  */
@@ -126,6 +138,7 @@ export function drawAnimatedLink(
         (hoveredNeighborIds.has(targetId) && targetId === hoveredNodeId)
       : false;
   let opacity = hoveredNodeId ? (isHovered ? 1 : isNeighborLink ? 0.7 : 0.3) : baseOpacity;
+  if (isAutoLink(link)) opacity *= AUTO_LINK_OPACITY_FACTOR;
   const weight = link.weight ?? 0.5;
   const linkType = LinkType.fromString(link.link_type);
   const dashArray = linkType.getLineDash(weight);
@@ -133,7 +146,10 @@ export function drawAnimatedLink(
   ctx.beginPath();
   drawCurvedLinkPath(ctx, source, target, curveOffset);
 
-  const lineWidth = Math.max(1, weight * 4) * (isDuplicateHighlighted ? 1.5 : 1);
+  const lineWidth =
+    Math.max(1, weight * 4) *
+    (isDuplicateHighlighted ? 1.5 : 1) *
+    (isAutoLink(link) ? AUTO_LINK_WIDTH_FACTOR : 1);
   ctx.lineWidth = lineWidth;
 
   if (isDuplicateHighlighted) {
@@ -186,7 +202,8 @@ export function drawLink(
     hoveredNodeId && hoveredNeighborIds
       ? hoveredNeighborIds.has(sourceId) && hoveredNeighborIds.has(targetId)
       : false;
-  const finalOpacity = hoveredNodeId ? (isHovered ? 1 : isNeighborLink ? 0.7 : 0.3) : opacity;
+  let finalOpacity = hoveredNodeId ? (isHovered ? 1 : isNeighborLink ? 0.7 : 0.3) : opacity;
+  if (isAutoLink(link)) finalOpacity *= AUTO_LINK_OPACITY_FACTOR;
 
   ctx.beginPath();
   drawCurvedLinkPath(ctx, sourceNode, targetNode, curveOffset);
@@ -194,7 +211,10 @@ export function drawLink(
   const weight = link.weight ?? 0.5;
   const linkType = LinkType.fromString(link.link_type);
 
-  const lineWidth = Math.max(1, weight * 4) * (isDuplicateHighlighted ? 1.5 : 1);
+  const lineWidth =
+    Math.max(1, weight * 4) *
+    (isDuplicateHighlighted ? 1.5 : 1) *
+    (isAutoLink(link) ? AUTO_LINK_WIDTH_FACTOR : 1);
   ctx.lineWidth = lineWidth;
   ctx.strokeStyle = isDuplicateHighlighted
     ? `rgba(255, 204, 0, ${finalOpacity})`

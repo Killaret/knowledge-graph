@@ -633,9 +633,8 @@
   .link-title {
     flex: 1;
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* UI-GRAPH-1: there is room — show the full title instead of truncating. */
+    overflow-wrap: break-word;
     font-weight: 500;
   }
 

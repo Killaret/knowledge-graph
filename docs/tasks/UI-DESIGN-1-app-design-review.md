@@ -198,6 +198,40 @@ svelte-check 0/0, prettier чистый. Скриншоты до/после — 
 отрисовки и из наведения; в 3D подписей меньше, чем узлов; легенда совпадает с цветами);
 скриншоты до/после на том же сиде.
 
+### Реализация (Devin, 2026-09-27)
+
+1. **Автосвязи тоньше и прозрачнее.** `isAutoLink()` в
+   `entities/graph-canvas/lib/link-renderers.ts` — `source_type === "gamma"`; ширина ×0,55
+   (`AUTO_LINK_WIDTH_FACTOR`), прозрачность ×0,45 (`AUTO_LINK_OPACITY_FACTOR`) в `drawLink` и
+   `drawAnimatedLink`. `gamma_origin` намеренно **не** считается автосвязью: это поле происхождения
+   — повышенная вручную связь рисуется как ручная (тест «promoted gamma_origin renders like a
+   manual one»).
+2. **Выключатель одной кнопкой.** `graphStore.showAutoLinks` (по умолчанию вкл.) + кнопка
+   `data-testid="auto-links-toggle"` на 2D-холсте. Фильтрация в `visibleLinks` — автосвязи выпадают
+   из раскладки, отрисовки и наведения разом; `showAutoLinks` добавлен в `dataKey`, чтобы
+   симуляция пересобиралась на переключение.
+3. **Подписи выборочно (2D).** `entities/graph-canvas/lib/labels.ts` → `computeLabeledNodeIds`:
+   хабы (степень ≥ 3), наведённый узел и его соседи, выбранный, совпадения поиска; зум ≥ 1,5 или
+   граф ≤ 20 узлов → все подписи. `drawAllNodes` получил `labeledNodeIds`; в режиме
+   `disableVariation` (детерминированный снимок) подписи остаются у всех — визуальный тест не
+   зависит от выборки. `selectedNodeId` добавлен в cache-key.
+4. **3D.** `LabelManager.setLabels(nodes, labeledIds)` — выборочные подписи; движок считает хабов
+   (степень ≥ 3) + выбранный узел (`setSelectedNodeId` перестраивает набор), графы ≤ 20 узлов —
+   все подписи. Легенда `LinkTypeLegend` смонтирована в `Graph3DViewer` — цвета совпадают с 2D по
+   построению (тот же компонент).
+5. **«Connected notes».** `.link-title` больше не обрезает название (перенос вместо ellipsis);
+   подсказка полоски: «Сила связи: {weight} — полоска показывает, насколько тесно связаны
+   заметки» / en.
+
+Тесты: `labels.test.ts` (6), `link-renderers.test.ts` (+2), `renderer-orchestrator.test.ts` (+2),
+`labels.test.ts` 3D (5), `GraphCanvas.auto-links.spec.ts` (2) — 313 зелёных по пакетам
+graph-canvas/graph-3d/graph-canvas widget. Мутации красные: фильтр `visibleLinks`, `isAutoLink`,
+хаб-правило, гард `labeledNodeIds` в `drawAllNodes`, `labeledIds` в 3D.
+
+Отложено на живую проверку: скриншоты до/после на сиде 100 заметок и подбор констант
+(`AUTO_LINK_*`, `HUB_MIN_DEGREE`, `FULL_LABEL_ZOOM`, порог 20) — за владельцем/Клодом по
+протоколу.
+
 ## UI-LOAD-1 — загрузка не закрывает граф
 
 Замысел (слово владельца 2026-09-26; `docs/architecture/FRONTEND_ARCHITECTURE_EN.md`, раздел

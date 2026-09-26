@@ -141,6 +141,60 @@ describe("renderer-orchestrator performance regressions", () => {
     expect(strokeCalls.length).toBe(2);
   });
 
+  it("drawAllNodes draws titles only for ids in labeledNodeIds (UI-GRAPH-1)", () => {
+    const nodes = makeNodes(3).map((n, i) => ({ ...n, x: i * 50, y: i * 50 }));
+    const ctx = createMockCanvasContext();
+    const angles = new Map<string, number>();
+
+    drawAllNodes(
+      ctx,
+      nodes,
+      angles,
+      false,
+      undefined,
+      false,
+      0,
+      null,
+      null,
+      false,
+      undefined,
+      undefined,
+      false,
+      undefined,
+      new Set(["node-1"])
+    );
+
+    const titles = vi.mocked(ctx.fillText).mock.calls.map((c) => c[0]);
+    expect(titles).toEqual(["Note 1"]);
+  });
+
+  it("drawAllNodes draws every title in deterministic snapshot mode", () => {
+    const nodes = makeNodes(3).map((n, i) => ({ ...n, x: i * 50, y: i * 50 }));
+    const ctx = createMockCanvasContext();
+    const angles = new Map<string, number>();
+
+    drawAllNodes(
+      ctx,
+      nodes,
+      angles,
+      false,
+      undefined,
+      true, // disableVariation — stableRender snapshot
+      0,
+      null,
+      null,
+      false,
+      undefined,
+      undefined,
+      false,
+      undefined,
+      new Set(["node-1"])
+    );
+
+    const titles = vi.mocked(ctx.fillText).mock.calls.map((c) => c[0]);
+    expect(titles.length).toBe(3);
+  });
+
   it("drawAllNodes draws simplified circles when zoomed out", () => {
     const nodes = makeNodes(3).map((n, i) => ({ ...n, x: i * 50, y: i * 50 }));
     const ctx = createMockCanvasContext();

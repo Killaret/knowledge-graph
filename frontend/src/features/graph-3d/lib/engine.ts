@@ -38,6 +38,7 @@ export class Graph3DEngine {
   private labelManager: LabelManager;
   private sim: ReturnType<typeof createGraphSimulation> | null = null;
   private simNodes: SimulationNode[] = [];
+  private selectedNodeId: string | null = null;
   private simLinks: GraphLink[] = [];
   private rafId: number | null = null;
   private disposed = false;
@@ -117,7 +118,7 @@ export class Graph3DEngine {
 
       this.nodeManager.setNodes(this.simNodes);
       this.linkManager.setLinks(this.simLinks, this.nodeManager.getPositionMap(this.simNodes));
-      this.labelManager.setLabels(this.simNodes);
+      this.labelManager.setLabels(this.simNodes, this.computeLabeledIds());
 
       this.updateScene();
       this.centerCamera();
@@ -354,7 +355,39 @@ export class Graph3DEngine {
 
   setSelectedNodeId(nodeId: string | null | undefined) {
     if (this.disposed) return;
+    this.selectedNodeId = nodeId ?? null;
     this.nodeManager.setSelectedNodeId(nodeId);
+    // UI-GRAPH-1: the selected node always carries a label.
+    if (this.simNodes.length > 0) {
+      this.labelManager.setLabels(this.simNodes, this.computeLabeledIds());
+    }
+  }
+
+  /**
+   * UI-GRAPH-1: selective labels — hubs (degree >= 3) plus the selected node.
+   * `undefined` means "label every node" (small graphs stay fully captioned).
+   */
+  private computeLabeledIds(): Set<string> | undefined {
+    const SMALL_GRAPH_ALL_LABELS = 20;
+    if (this.simNodes.length <= SMALL_GRAPH_ALL_LABELS) return undefined;
+
+    const degree = new Map<string, number>();
+    for (const link of this.simLinks) {
+      // d3-force mutates endpoints into node objects at runtime.
+      const src: unknown = link.source;
+      const tgt: unknown = link.target;
+      const s = typeof src === "object" && src !== null ? (src as { id: string }).id : String(src);
+      const t = typeof tgt === "object" && tgt !== null ? (tgt as { id: string }).id : String(tgt);
+      degree.set(s, (degree.get(s) ?? 0) + 1);
+      degree.set(t, (degree.get(t) ?? 0) + 1);
+    }
+
+    const labeled = new Set<string>();
+    for (const node of this.simNodes) {
+      if ((degree.get(node.id) ?? 0) >= 3) labeled.add(node.id);
+    }
+    if (this.selectedNodeId) labeled.add(this.selectedNodeId);
+    return labeled;
   }
 
   handleResize() {
