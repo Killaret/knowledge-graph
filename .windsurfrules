@@ -354,6 +354,17 @@ execution path, or pick a different mutation. (Lesson of 2026-09-23: mutating
 `Suppression.Blocks` stayed green not because the test was blind but because the
 generator filters through a `pairKey` map; the honest mutation was there.)
 
+Counterweight: **a mutation that stays green on the real path is a finding about the
+code.** Once the mutated line is known to execute, ask whether changing it *should*
+change the result. If it should — the line is there to do a job and does not do it —
+that is the defect: report it, do not trade it for a different mutation. Only when the
+line genuinely has no job (redundant, cosmetic) is the mutation idle; say which, and why.
+(Lesson of 2026-09-23: in the REG-2 review `score DESC → score ASC` in
+`FindSimilarNotesBatch` stayed green and was written off as idle, because the rows were
+already ordered by note ids. The cause was named right and the conclusion was wrong: the
+query did not pick the nearest neighbours at all, and until LINKS-3 only 3 of 200
+auto-links pointed at a true nearest pair.)
+
 Before reporting a finding, or accepting someone else's:
 
 - **read the surrounding context**, not the matching line — a count of
