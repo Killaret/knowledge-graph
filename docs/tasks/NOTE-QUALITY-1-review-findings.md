@@ -85,3 +85,50 @@
 - Откат перезабора — байт в байт, с тестом, который это ловит.
 - Извлечение этапа A на живом импорте: названия из `h1`, структура страницы в Markdown, потолок
   5 000 больше не режет.
+
+## Ревью доработки — Claude Code, 2026-09-27
+
+Доработка: Devin, `c55ceb3`, `f93fc79`. **Вердикт: принято; хвост — NOTE-QUALITY-1-TAIL.**
+
+### Блокер 1 закрыт
+
+Колонки теперь `source_note_id` и `target_note_id`. Интеграционный тест против настоящей схемы
+`TestQualityStatsRepository_LinkCountUsesNoteColumns` зелёный, мутация «вернуть `source_id`» —
+**красная**.
+
+**Живьём:** стенд из `3f79503` через `start-test.ps1`, `NLP_PIPELINE_ENABLED=true`,
+`NLP_QUALITY_ENABLED=true`, стандартный сид — 100 заметок, 60 связей.
+
+| Проверка | Было 2026-09-26 | Сейчас |
+|---|---|---|
+| `nlp_artifacts` с полем `quality` | 0 из 101 | **100 из 100** |
+| `quality_log` | 0 | **126** записей, `trigger = auto` |
+| ошибки воркера `42703` | 1 050 | **0**; строк `ERROR` в логе — 0 |
+| `GET /notes/{id}/quality` | `quality: null` | оценка с сигналами, `links = 15` — исправленный запрос работает |
+| индикатор в панели заметки | — | «Quality: looks fine» и «Re-assess», в подсказке сигналы; снимок — в `MANUAL_TEST_FEEDBACK.md` |
+
+### Блокер 2 закрыт
+
+Семь мутаций, все **красные**:
+
+| Уровень | Мутация | Тест |
+|---|---|---|
+| сборка сервера | флаг убран из `installQualityEndpoints` | `TestInstallQualityEndpoints_FlagOff` |
+| сборка воркера | флаг убран из `installQualityPipeline` | `TestInstallQualityPipeline_FlagOff` |
+| клиент очереди | проверка `qualityEnabled` снята | `TestAsynqClient_QualityGatedByFlag`, `TestAsynqClient_QualityNotEnqueuedWhenDisabled` |
+| API, чтение | флаг снят в `GetQuality` | `TestGetQuality_DisabledWithReader` |
+| API, оценка | флаг снят в `AssessQuality` | `TestAssessQuality_Disabled`, `TestAssessQuality_DisabledWithQueue` |
+| воркер | снята защита «нет оценщика» | `TestWorker_ScheduleQuality_OffMeansNothing` |
+| репозиторий | колонка `source_id` | `TestQualityStatsRepository_LinkCountUsesNoteColumns` |
+
+### Хвост — NOTE-QUALITY-1-TAIL
+
+Критерий 9 требует импорт трёх снимков золотого набора через локальный сервер. Этого не сделал
+никто: свидетельство Devin — сид из 20 заметок, мой прогон — сид из 100. Запуск локального сервера
+снимков у меня заблокирован настройкой разрешений. Все 126 вердиктов — `create`: заметки сида
+ровные. Вердиктов `enrich` и `manual` живьём не видел никто.
+
+По коду путь признака обрезки цел: импорт пишет `metadata.import_truncated` словарём
+(`application/import/service.go:565`), оценщик читает тот же ключ и тот же тип
+(`application/quality/service.go:325`). Хвост — прогнать импорт трёх снимков. Свидетельство: вердикты
+`enrich` или `manual` в `quality_log` и предупреждение в индикаторе на экране.

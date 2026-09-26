@@ -533,3 +533,19 @@ Create a new bullet under the right section with:
   - Test-seed user has UUID `00000000-…`, so `user_id` in payloads is nil — faithful to the stored `creator_id`, not a defect.
 - **Screenshot / Logs:** psql `graph_outbox` rows and graph-service log lines quoted above.
 - **Result:** writes commit together with their outbox row and the relay delivers to Redis end-to-end — manual publish calls are gone and nothing is lost.
+
+### NOTE-QUALITY-1 and UI-GRAPH-1 reworks — reviewer live check
+
+- **Scope:** reviews of the NOTE-QUALITY-1 stage 1 rework (`c55ceb3`) and the UI-GRAPH-1 rework (`789494a`); verdicts in `docs/tasks/NOTE-QUALITY-1-review-findings.md` and `docs/tasks/UI-DESIGN-1-review-findings.md`.
+- **Date:** 2026-09-27 (build `3f79503`)
+- **Agent:** Claude Code
+- **Environment:** isolated test stack via `scripts/testing/start-test.ps1`, `SKIP_AUTH=true`, `NLP_PIPELINE_ENABLED=true`, `NLP_QUALITY_ENABLED=true`, `FRONTEND_PORT=13002`; standard seed (100 notes, 60 links, 248 graph links). Headless Chromium.
+- **Observed:**
+  - Worker: `[Worker] NOTE-QUALITY-1 quality assessment enabled`; zero `42703` and zero `ERROR` lines.
+  - Mongo `knowledge_test`: `nlp_artifacts` 100, all 100 with `quality`; `quality_log` 126 records, all `trigger=auto`, all `verdict=create`.
+  - `GET /api/v1/notes/{id}/quality` for the most linked note: `enabled=true`, signals with `links=15`, `keywords=5`, `has_embedding=true`.
+  - Cockpit note panel (list view → first card): quality row "looks fine" with "Re-assess"; tooltip lists the signals and `verdict=create`.
+  - Home graph at 1280×720: about 15 captions, all on the dense centre; the outer nodes carry none. Several centre captions overlap.
+- **Not covered:** criterion 9 import of three golden snapshots — the local snapshot server is blocked by this session's permissions; tracked as NOTE-QUALITY-1-TAIL.
+- **Screenshot / Logs:** `docs/agents/screenshots/note-quality-1/quality-indicator.png`; mongosh counts and the API response above.
+- **Result:** NOTE-QUALITY-1 stage 1 accepted with a tail; UI-GRAPH-1 accepted.
