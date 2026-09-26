@@ -18,9 +18,12 @@ import { execSync } from "node:child_process";
 const args = process.argv.slice(2);
 let repoRoot = ".";
 let boardPath = null;
+let tasksDir = null;
 for (const arg of args) {
     if (arg.startsWith("--board=")) {
         boardPath = resolve(arg.slice("--board=".length));
+    } else if (arg.startsWith("--tasks=")) {
+        tasksDir = resolve(arg.slice("--tasks=".length));
     } else {
         repoRoot = arg;
     }
@@ -29,7 +32,7 @@ repoRoot = resolve(repoRoot);
 
 const DECISIONS_PATH = join(repoRoot, "docs", "DECISIONS.md");
 const HANDOFF_PATH = boardPath ?? join(repoRoot, "docs", "AI_HANDOFF.md");
-const TASKS_DIR = join(repoRoot, "docs", "tasks");
+const TASKS_DIR = tasksDir ?? join(repoRoot, "docs", "tasks");
 
 const DATE_RE = /\d{4}-\d{2}-\d{2}/;
 const ID_RE = /[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+/g; // e.g. PUB-2, P11-1, DEPENDABOT-79, AUTHOR-1
@@ -190,42 +193,30 @@ function findMatchingRow(markers, sourceType) {
     for (const marker of markers) {
         let matched = false;
 
-        // 1. Identifier match (strong). Prefer rows with a compatible date:
-        //    a shared secondary id in another row's text must not steal the
-        //    row that actually belongs to a different decision date.
-        for (const strict of [true, false]) {
-            for (const row of decisionRows) {
-                if (row.used) continue;
-                if (strict && !dateCompatible(marker, row)) continue;
-                if (hasCommonId(marker, row)) {
-                    row.used = true;
-                    matched = true;
-                    break;
-                }
-            }
-            if (matched) break;
-        }
-
-        // 1b. Shared-decision fallback: several task files may cite the same
-        //     owner decision (e.g. MODEL-2 lives in two specs but the index row
-        //     links only one of them). An id- identical row is acceptable even
-        //     when another marker already consumed it — id equality is the
-        //     index contract, `used` must not turn a citation into an orphan.
-        if (!matched) {
-            for (const row of decisionRows) {
-                if (hasCommonId(marker, row)) {
-                    matched = true;
-                    break;
-                }
+        // 1. Identifier match (strong). The marker's decision date must equal
+        //    the row's date: a citation copies the original marker including
+        //    its date, while a new decision needs a row of its own — otherwise
+        //    any marker quoting a used id would pass without an index row.
+        //    A used row may be claimed again: several task files may cite the
+        //    same decision while the index links only one of them.
+        for (const row of decisionRows) {
+            if (!dateCompatible(marker, row)) continue;
+            if (hasCommonId(marker, row)) {
+                row.used = true;
+                matched = true;
+                break;
             }
         }
 
         // 2. For task files, match by the source file name against row ids or
-        //    resolved row references.
+        //    resolved row references. Same date rule as step 1.
         if (!matched && sourceType === "task" && marker.taskFileIdentifier) {
             for (const row of decisionRows) {
                 if (row.used) continue;
+                // Weak match — the file id appears in the row's id set:
+                // require the same date, as in step 1.
                 if (
+                    dateCompatible(marker, row) &&
                     row.ids.some(
                         (id) => id.toLowerCase() === marker.taskFileIdentifier.toLowerCase(),
                     )
@@ -234,6 +225,8 @@ function findMatchingRow(markers, sourceType) {
                     matched = true;
                     break;
                 }
+                // Strong match — the index row links to the marker's own
+                // file; the link identifies the decision on its own.
                 if (
                     marker.filePath &&
                     row.refs.some(

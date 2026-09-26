@@ -30,12 +30,24 @@ const cases = [
         expectExit: 0,
         stdoutIncludes: "Decisions OK",
     },
+    {
+        // CHECK-DECISIONS-2: a marker for a new decision quoting an existing
+        // id (MODEL-2) but carrying a date no index row has must fail —
+        // before the fix it slipped through on a shared/used row.
+        name: "new-decision marker with borrowed id has no row",
+        fixture: "rejected-on-board.md",
+        tasks: "tasks-probe",
+        expectExit: 1,
+        stderrIncludes: ["CHECK-DECISIONS-2-probe.md", "2026-10-01", "no matching row"],
+    },
 ];
 
 let failed = false;
 for (const c of cases) {
     const board = join(fixtures, c.fixture);
-    const res = spawnSync("node", [guard, repoRoot, `--board=${board}`], {
+    const spawnArgs = [guard, repoRoot, `--board=${board}`];
+    if (c.tasks) spawnArgs.push(`--tasks=${join(fixtures, c.tasks)}`);
+    const res = spawnSync("node", spawnArgs, {
         encoding: "utf8",
     });
     const code = res.status ?? 1;
