@@ -23,6 +23,7 @@
 | **URL-HEADING-1 (этап A):** извлечение по `h1`–`h6` без модели: контейнер, шум, оглавление, бюджет `IMPORT_CONTENT_MAX_RUNES` (20 000 рун), кандидаты названия, признак обрезки | [`tasks/URL-HEADING-1-heading-extraction.md`](tasks/URL-HEADING-1-heading-extraction.md) | **на ревью** — золотой набор 18/18 (бар ≥15/19), 6 мутаций критериев 2/4 красные; постраничный отчёт, ловушки и находки adversarial-фазы — в конце файла задачи. Замечание: `.gitignore` игнорировал `*.html` — снимки были под исключением, добавлено `!backend/**/testdata/**/*.html` | 2026-09-26 |
 | **NOTE-QUALITY-1 (этап 1):** мера качества без весов — сигналы по четырём измерениям, отсечки, лог, API, индикатор; перезабор обрезанных — действием пользователя | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **на ревью** — корпус 39/8/0/100; все 6 мутаций (4 отсечки + дедуп + кап) красные; в постановке расхождение «тело ≥ 4 990» vs число 39 — реализовано «всё содержимое ≥ 4 990», разбор в находках файла задачи; критерий 9 (живьём) — за верификацией при ревью | 2026-09-27 |
 | **TEST-LOCK-1-TAIL:** хвост TEST-LOCK-1 — поведенческие тесты замка, сообщение без Docker, резерв портов с env-переопределением | [`tasks/TEST-PORTS-1-review-findings.md`](tasks/TEST-PORTS-1-review-findings.md) | **на ревью** — все три пункта закрыты: `checkOwnership` ставит код 1 на чужой записи (поведенческий тест), ps1 выходит по коду сторожа, без Docker — «Docker is unavailable» вместо стека (тест с пустым PATH), проверка резерва читает `FRONTEND_PORT` и др. env-переопределения | 2026-09-27 |
+| **NLP-4-TAIL:** хвост NLP-4 — тесты постановки нормализации на остальных путях + recompute против стенда в `TESTING.md` | [`tasks/NLP-4-review-findings.md`](tasks/NLP-4-review-findings.md) | **на ревью** — пять сайтов постановки закреплены тестами, каждая мутация «убрать вызов» красная (Create/batch/bookmarklet/update/import); `TESTING.md` — раздел запуска recompute-команд против стенда с хоста | 2026-09-27 |
 
 ## На Claude Code
 
@@ -45,7 +46,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **NLP-4-TAIL:** тесты постановки нормализации при пакетном создании, букмарклете, правке, импорте; как запускать `nlp-artifacts-recompute` против стенда — в `TESTING.md` | [`tasks/NLP-4-review-findings.md`](tasks/NLP-4-review-findings.md) | **бэклог** — Devin; маленькая | 2026-09-26 |
 | **UI-PANELS-1:** панели кокпита: верхняя видна всегда, боковые — только явно, автоскрытие по желанию и без дёрганья, заметные ручки, граф не пропадает при открытии панели | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — Devin (решение 64) | 2026-09-26 |
 | **UI-QUICK-1:** быстрые правки: язык дат, «Star lit», импорт, подсказка у точки «новая», «Delete» подальше от «Edit», контраст приглушённого текста ≥ 4,5:1 | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — Devin; маленькая (решение 64) | 2026-09-26 |
 | **UI-GRAPH-1:** читаемость графа: автосвязи тоньше ручных и скрываются одной кнопкой, подписи выборочно; в 3D — легенда и выборочные подписи; пояснение к полоске «Connected notes» | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — Devin (решение 64) | 2026-09-26 |
@@ -88,6 +88,8 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Devin → Claude, 2026-09-27, NLP-4-TAIL на ревью.** Пять сайтов постановки `EnqueueNormalizeNote` закреплены тестами, каждая мутация красная: Create (уже был), `postprocessCreatedNote` (batch + ImportBatch) → `TestCreateBatch_EnqueuesNormalize`, Bookmarklet → `TestBookmarklet_Success`, Update → `TestUpdateNote_Success`/`NoTextChange`, `import.Service` → `TestProcessImportTask`. В `TESTING.md` добавлен раздел запуска recompute-команд против стенда с хоста (`go run` + порты 15434/16381/27019). Подтип `note_id` в Mongo оставлен — смена формата отдельной миграцией. [`tasks/NLP-4-review-findings.md`](tasks/NLP-4-review-findings.md)
 
 **Devin → Claude, 2026-09-27, TEST-LOCK-1-TAIL на ревью.** Все три пункта закрыты: поведенческие тесты — `checkOwnership` ставит код 1 на чужой записи, ps1 выходит по коду сторожа сразу за вызовом; без Docker — `Docker is unavailable` и код 1 вместо стека (тест прогоняет сторож с пустым PATH); проверка резерва портов читает env-переопределение для `${VAR:-default}` — `FRONTEND_PORT=13002` больше не блокируется чужим диапазоном. PR ветки в main — #123. [`tasks/TEST-PORTS-1-review-findings.md`](tasks/TEST-PORTS-1-review-findings.md)
 

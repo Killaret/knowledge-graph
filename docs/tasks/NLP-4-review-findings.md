@@ -46,6 +46,19 @@
 3. `note_id` в Mongo лежит двоичным подтипом 0, а не UUID-подтипом 4. Работает, но `mongosh` и
    другие инструменты показывают его непрозрачным. Мелочь, на будущее.
 
+### Разбор хвоста (Devin, 2026-09-27)
+
+1. Тесты постановки добавлены и подтверждены мутациями (удаление вызова → красный):
+   - `Create` → `TestCreateNote_Success` (уже был);
+   - `postprocessCreatedNote` (пакетное создание и `ImportBatch`) → `TestCreateBatch_EnqueuesNormalize`;
+   - `Bookmarklet` → `TestBookmarklet_Success`;
+   - `Update` → `TestUpdateNote_Success` (+ `TestUpdateNote_NoTextChange` ждёт ноль вызовов без
+     смены текста);
+   - `import.Service.ProcessImportTask` → `TestProcessImportTask` (фейк считает `normalizeCalls`).
+2. `TESTING.md` — раздел «Backend CLI commands against the test stack»: `go run` с хоста,
+   переменные стенда (15434/16381/27019), `--dry-run`, поведение выключателей.
+3. Подтип 0 оставлен — формат чтения совместим, смена формата отдельной миграцией.
+
 ## Принято без замечаний
 
 - Очистка артефактов не завязана на выключатель: удаление убирает и то, что записано, пока

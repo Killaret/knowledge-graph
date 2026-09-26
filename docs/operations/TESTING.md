@@ -207,6 +207,24 @@ Seeds the test database with test data.
 - 5 test notes (star, planet, comet, galaxy, asteroid)
 - 2 test links between notes
 
+### Backend CLI commands against the test stack
+
+The recompute/backfill commands ship only in the `cli` image, not in `server`/`worker`. Run them from the host with `go run` and the test stack's host ports (PostgreSQL 15434, Redis 16381, MongoDB 27019):
+
+```powershell
+$env:DATABASE_URL = "postgresql://kb_user:kb_password@127.0.0.1:15434/knowledge_test?sslmode=disable"
+$env:REDIS_URL     = "127.0.0.1:16381"
+$env:MONGO_URL     = "mongodb://127.0.0.1:27019"
+$env:MONGO_DATABASE = "knowledge_test"
+cd backend
+
+go run ./cmd/nlp-artifacts-recompute --dry-run   # counts only, nothing enqueued
+go run ./cmd/nlp-artifacts-recompute            # enqueues nlp:normalize for missing/stale artifacts
+go run ./cmd/quality-recompute --dry-run        # same pattern for NOTE-QUALITY-1 assessments
+```
+
+`nlp-artifacts-recompute` skips notes whose current artifact already matches the source hash — a second run enqueues nothing. Both commands are explicit operator actions: they do not read `nlp.pipeline.enabled`, while `quality-recompute` enqueues nothing when `nlp.quality.enabled` is off. Workers on the test stack pick the enqueued tasks up.
+
 ### Local Core Checks
 
 Runs the same command-bearing checks as the five jobs in `.github/workflows/_core-checks.yml` without managing dev or personal stacks. Both scripts read the same phase manifest and report unavailable tools as `[SKIP]` with a reason.

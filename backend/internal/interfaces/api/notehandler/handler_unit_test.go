@@ -233,6 +233,24 @@ func TestCreateNote_Success(t *testing.T) {
 	assert.Len(t, tq.normalizeCalls, 1)
 }
 
+func TestCreateBatch_EnqueuesNormalize(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+
+	body := `{"notes":[{"title":"Batch 1","content":"one"},{"title":"Batch 2","content":"two"}]}`
+	_, c := newContext(t, http.MethodPost, "/notes/batch/create", body)
+	h.CreateBatch(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	repo.AssertExpectations(t)
+	// NLP-4: each note created in a batch goes through normalization.
+	assert.Len(t, tq.normalizeCalls, 2)
+}
+
 func TestCreateNote_WithUser(t *testing.T) {
 	h, repo, tq, _, _, _ := setupUnitHandler(t)
 	userID := uuid.New()
@@ -381,6 +399,9 @@ func TestUpdateNote_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "New Title")
 	repo.AssertExpectations(t)
 	tq.AssertExpectations(t)
+	// NLP-4: editing note text re-enqueues normalization — without it the
+	// artifact silently goes stale.
+	assert.Len(t, tq.normalizeCalls, 1)
 }
 
 func TestUpdateNote_NoTextChange(t *testing.T) {
@@ -399,6 +420,7 @@ func TestUpdateNote_NoTextChange(t *testing.T) {
 	assert.Equal(t, http.StatusOK, c.Writer.Status())
 	tq.AssertNotCalled(t, "EnqueueExtractKeywords")
 	tq.AssertNotCalled(t, "EnqueueComputeEmbedding")
+	assert.Empty(t, tq.normalizeCalls, "no text change — no normalization")
 }
 
 func TestUpdateNote_InvalidID(t *testing.T) {
@@ -1081,6 +1103,8 @@ func TestBookmarklet_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "asteroid")
 	repo.AssertExpectations(t)
 	tq.AssertExpectations(t)
+	// NLP-4: bookmarklet-created notes go through normalization too.
+	assert.Len(t, tq.normalizeCalls, 1)
 }
 
 func TestBookmarklet_DefaultTypeAndTruncation(t *testing.T) {

@@ -97,10 +97,11 @@ func (r *fakeNoteRepo) FindAllPaginated(ctx context.Context, userID uuid.UUID, l
 
 // fakeTaskQueue records EnqueueImportBookmarks calls.
 type fakeTaskQueue struct {
-	called bool
-	userID uuid.UUID
-	taskID string
-	items  []byte
+	called         bool
+	userID         uuid.UUID
+	taskID         string
+	items          []byte
+	normalizeCalls []string
 }
 
 func (q *fakeTaskQueue) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
@@ -404,6 +405,10 @@ func TestProcessImportTask(t *testing.T) {
 
 	// Notes saved.
 	require.Len(t, repo.notes, 2)
+
+	// NLP-4: every created note is enqueued for normalization — the queue
+	// client gates on nlp.pipeline.enabled, the service always calls.
+	require.Len(t, queue.normalizeCalls, 2)
 }
 
 func TestProcessImportTask_AllFail(t *testing.T) {
@@ -440,6 +445,7 @@ func TestPreview_ExceedsBatchSize(t *testing.T) {
 }
 
 func (q *fakeTaskQueue) EnqueueNormalizeNote(ctx context.Context, noteID string) error {
+	q.normalizeCalls = append(q.normalizeCalls, noteID)
 	return nil
 }
 
