@@ -479,3 +479,15 @@ Create a new bullet under the right section with:
 - **Screenshot / Logs:** backend log lines `POST "/api/v1/links"` 200 at 15:38:55 UTC and `DELETE "/api/v1/links/32b83c36-…"` 204 at 15:39:16 UTC; `link_suppressions` rows at 15:30:59, 15:33:15, 15:39:16 UTC; modal text copied from the DOM above. Full table — `docs/tasks/LINKS-2-review-findings.md`, section «Ревью доработки — Claude Code, 2026-09-24».
 - **Result:** not accepted — the explanation never reaches promoted links on the canvas.
 - **Cleanup:** `stop-test.ps1` destroyed the test stack; Personal containers and volumes untouched.
+
+### UI-GRAPH-1 rework — selective labels on the home graph
+
+- **Scope:** the UI-GRAPH-1 rejection in `docs/tasks/UI-DESIGN-1-review-findings.md` — the absolute "degree >= 3" threshold captioned nearly every node on a normal-density graph.
+- **Date:** 2026-09-28 (local time 2026-09-26, `a14d640`)
+- **Agent:** Devin
+- **Environment:** isolated test stack (`start-test.ps1`, SKIP_AUTH=true), default seed: 100 notes, 241 graph links — same seed profile as the review (251 links). Headless Chromium 1280x720, page `/` **without** `stableRender` (snapshot mode intentionally labels every node, see `renderer-orchestrator.ts` disableVariation).
+- **Observed:**
+  - Before (labels.ts from `a14d640~`): ~40 overlapping captions on the canvas — the reviewer's complaint reproduced.
+  - After (`a14d640`): ~10 readable captions — top hubs only; `frontend.graph.label_hub_count=15`.
+- **Screenshot / Logs:** `docs/agents/screenshots/ui-graph-1/home-before.png`, `docs/agents/screenshots/ui-graph-1/home-after.png`; capture script `scripts/testing/temp/screenshot-home.mjs` (throwaway, not committed).
+- **Result:** criterion evidence — selective labels now bounded on a dense graph.
