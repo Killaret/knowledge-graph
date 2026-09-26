@@ -52,6 +52,61 @@
 - до/после с экрана — в `docs/agents/MANUAL_TEST_FEEDBACK.md`, окончательные задержки выбирает
   владелец по живому стенду.
 
+### Реализация (Devin, 2026-09-27)
+
+Сделано:
+
+1. **Верхняя панель закреплена по умолчанию** — `top: { open: true, pinned: true }` при создании
+   стора (`model/cockpit.svelte.ts`). Автоскрытие остаётся настройкой; `closeUnpinnedPanels()`
+   закрывает все незакреплённые панели разом.
+2. **Видимость — только явное состояние.** `isOpen = panel.open || panel.pinned` — `hovering`
+   убран из формулы и в панели, и в `visibleSize()` лэйаута. Боковые панели открываются явно
+   (клик по заметке, кнопка, перетаскивание за ручку), закрываются Escape, кликом по пустому
+   месту графа или крестиком.
+3. **Спокойное автоскрытие** (только в режиме `autoCollapse`):
+   - выезд по `hoverDelay` как раньше, но голое наведение панель больше не выдёргивает;
+   - скрытие через `COCKPIT_CLOSE_DELAY` = 600 мс, анимация 0.15 s (была 0.3 s);
+   - перед скрытием проверяются фокус внутри панели и открытые выпадающие списки
+     (`[aria-expanded="true"], details[open]`) — панель не прячется, пока пользователь в ней;
+   - `prefers-reduced-motion` учитывается: `matchMedia` в `onMount` лэйаута →
+     `cockpitStore.systemReducedMotion`, переходы через `motionReduced` (настройка ИЛИ ОС).
+4. **Ручки заметнее:** `COCKPIT_EDGE_SIZE` 14 → 22 px, стрелка 14 → 18 px, контраст бордера
+   0.22 → 0.45, `title`-подсказка с именем панели на ручке.
+5. **Граф не пропадает:** при ресайзе канвас вызывает `scheduleRedraw()` сразу — кадр
+   запрашивается синхронно с изменением размера, а не ждёт следующего тика.
+
+Проводка клика по пустому месту: `event-bridge` → `onBackgroundClick?()` при снятии выделения;
+`GraphCanvas` пробрасывает пропс; `routes/graph/+page.svelte` → `handleNodeSelect(null)` →
+лэйаут вызывает `closeUnpinnedPanels()`. Escape — `keydown` на window с гардом
+`input/textarea/select/[contenteditable]`, не крадёт клавишу у полей ввода и не трогает
+закреплённые панели.
+
+Мутации (все красные и откачены):
+
+- `isOpen` снова с `|| panel.hovering` → красные «does not slide out on a bare hover (flicker
+  guard)» и «ignores hover-open entirely when auto-collapse is off»;
+- снятие гарда фокуса/дропдауна в `scheduleClose` → красные «does not hide while a dropdown
+  inside the panel is open» и «does not hide while focus is inside the panel» (обе пойманы
+  полным откатом файла на ревизию до задачи — 6 тестов красных);
+- `visibleSize` снова с `|| panel.hovering` → красный «keeps the frame inset at handle size on
+  bare hover — hovering never opens space».
+
+Тесты: `CockpitPanel.spec.ts` 32, `CosmicCockpitLayout.spec.ts` 10, `event-bridge.test.ts` 26 —
+68 зелёных. `svelte-check` 0/0, prettier чистый.
+
+Ловушки:
+
+- `matchMedia` в jsdom отсутствует — опциональная цепочка `window.matchMedia?.(...)`,
+  подписка через `addEventListener?.("change")`.
+- `e.target` у `keydown` на window может быть не-элементом — проверка `instanceof Element`
+  перед `.closest`.
+- Мутационная проверка на `git checkout` сносит весь рабочий файл — откатывать точечно,
+  или реверт станет сам себе мутацией (здесь случайно доказал ценность всех шести новых
+  тестов разом).
+
+Оставлено владельцу по живому стенду: финальные задержки (`hoverDelay`/`COCKPIT_CLOSE_DELAY`)
+и скриншоты до/после — критерий из постановки.
+
 ## UI-QUICK-1 — быстрые правки интерфейса
 
 1. **Один язык.** Даты всегда форматируются по-русски: `shared/utils/date.ts:11`,

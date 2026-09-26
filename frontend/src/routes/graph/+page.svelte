@@ -421,6 +421,7 @@
             links={graphData.links}
             readonly={graphView.mode === "community"}
             onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
+            onBackgroundClick={() => handleNodeSelect(null)}
             onNoteDelete={handleDeleteRequest}
             onNoteRestore={handleNoteRestore}
             onNoteCreate={handleNoteCreate}

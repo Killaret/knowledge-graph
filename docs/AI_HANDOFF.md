@@ -24,6 +24,7 @@
 | **NOTE-QUALITY-1 (этап 1):** мера качества без весов — сигналы по четырём измерениям, отсечки, лог, API, индикатор; перезабор обрезанных — действием пользователя | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **на ревью** — корпус 39/8/0/100; все 6 мутаций (4 отсечки + дедуп + кап) красные; в постановке расхождение «тело ≥ 4 990» vs число 39 — реализовано «всё содержимое ≥ 4 990», разбор в находках файла задачи; критерий 9 (живьём) — за верификацией при ревью | 2026-09-27 |
 | **TEST-LOCK-1-TAIL:** хвост TEST-LOCK-1 — поведенческие тесты замка, сообщение без Docker, резерв портов с env-переопределением | [`tasks/TEST-PORTS-1-review-findings.md`](tasks/TEST-PORTS-1-review-findings.md) | **на ревью** — все три пункта закрыты: `checkOwnership` ставит код 1 на чужой записи (поведенческий тест), ps1 выходит по коду сторожа, без Docker — «Docker is unavailable» вместо стека (тест с пустым PATH), проверка резерва читает `FRONTEND_PORT` и др. env-переопределения | 2026-09-27 |
 | **NLP-4-TAIL:** хвост NLP-4 — тесты постановки нормализации на остальных путях + recompute против стенда в `TESTING.md` | [`tasks/NLP-4-review-findings.md`](tasks/NLP-4-review-findings.md) | **на ревью** — пять сайтов постановки закреплены тестами, каждая мутация «убрать вызов» красная (Create/batch/bookmarklet/update/import); `TESTING.md` — раздел запуска recompute-команд против стенда с хоста | 2026-09-27 |
+| **UI-PANELS-1:** панели кокпита: верхняя видна всегда, боковые — только явно, автоскрытие по желанию и без дёрганья, заметные ручки, граф не пропадает при открытии панели | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **на ревью** — видимость без `hovering`, верхняя закреплена по умолчанию, `closeUnpinnedPanels` (Escape + клик по пустому графу), закрытие 600 мс/анимация 0.15 s, гарды фокуса и дропдауна, `prefers-reduced-motion`, ручки 22 px; 68 тестов, мутации красные | 2026-09-27 |
 
 ## На Claude Code
 
@@ -46,7 +47,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **UI-PANELS-1:** панели кокпита: верхняя видна всегда, боковые — только явно, автоскрытие по желанию и без дёрганья, заметные ручки, граф не пропадает при открытии панели | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — Devin (решение 64) | 2026-09-26 |
 | **UI-QUICK-1:** быстрые правки: язык дат, «Star lit», импорт, подсказка у точки «новая», «Delete» подальше от «Edit», контраст приглушённого текста ≥ 4,5:1 | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — Devin; маленькая (решение 64) | 2026-09-26 |
 | **UI-GRAPH-1:** читаемость графа: автосвязи тоньше ручных и скрываются одной кнопкой, подписи выборочно; в 3D — легенда и выборочные подписи; пояснение к полоске «Connected notes» | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — Devin (решение 64) | 2026-09-26 |
 | **UI-LOAD-1:** загрузка не закрывает граф: без оверлея и блокирующей заставки, заметки доступны до графа, граф проявляется из тумана (2D и 3D), потом — порциями | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — Devin (решение 65) | 2026-09-26 |
@@ -88,6 +88,9 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Devin → Claude, 2026-09-27, UI-PANELS-1 на ревью.** Все пять пунктов закрыты: верхняя панель закреплена по умолчанию, видимость отвязана от голого `hovering`, боковые — только явно; `closeUnpinnedPanels()` на Escape и клик по пустому графу (`onBackgroundClick` через event-bridge → GraphCanvas → page); автоскрытие только в режиме `autoCollapse`, закрытие 600 мс с гардами фокуса/дропдауна, анимация 0.15 s и `prefers-reduced-motion` из ОС; ручки 22 px со стрелкой и подсказкой; граф перерисовывается сразу на ресайзе. 68 тестов зелёные, мутации на `hovering` в isOpen и visibleSize красные. Финальные задержки — владельцу по живому стенду. [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md)
+
 
 **Devin → Claude, 2026-09-27, NLP-4-TAIL на ревью.** Пять сайтов постановки `EnqueueNormalizeNote` закреплены тестами, каждая мутация красная: Create (уже был), `postprocessCreatedNote` (batch + ImportBatch) → `TestCreateBatch_EnqueuesNormalize`, Bookmarklet → `TestBookmarklet_Success`, Update → `TestUpdateNote_Success`/`NoTextChange`, `import.Service` → `TestProcessImportTask`. В `TESTING.md` добавлен раздел запуска recompute-команд против стенда с хоста (`go run` + порты 15434/16381/27019). Подтип `note_id` в Mongo оставлен — смена формата отдельной миграцией. [`tasks/NLP-4-review-findings.md`](tasks/NLP-4-review-findings.md)
 

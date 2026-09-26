@@ -1,11 +1,38 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/svelte";
 import CosmicCockpitLayout from "./CosmicCockpitLayout.svelte";
-import { cockpitStore } from "$features/cosmic-cockpit";
+import { COCKPIT_EDGE_SIZE, COCKPIT_PANEL_GAP, cockpitStore } from "$features/cosmic-cockpit";
+
+describe("CosmicCockpitLayout — UI-PANELS-1 defaults", () => {
+  it("pins the top panel open by default", () => {
+    expect(cockpitStore.panels.top.pinned).toBe(true);
+    expect(cockpitStore.panels.top.open).toBe(true);
+  });
+});
+
+describe("CosmicCockpitLayout — UI-PANELS-1 insets", () => {
+  afterEach(() => {
+    cockpitStore.setPanel("right", { open: false, pinned: false, hovering: false });
+    cleanup();
+  });
+
+  it("keeps the frame inset at handle size on bare hover — hovering never opens space", () => {
+    const { container } = render(CosmicCockpitLayout, { props: { isAuthenticated: false } });
+
+    cockpitStore.hoverPanel("right", true);
+
+    const shell = container.querySelector(".cosmic-cockpit") as HTMLElement;
+    expect(shell.getAttribute("style") ?? "").toContain(
+      `--inset-right: ${COCKPIT_EDGE_SIZE + COCKPIT_PANEL_GAP}px`
+    );
+  });
+});
 
 describe("CosmicCockpitLayout — first-person Escape hotkey", () => {
   afterEach(() => {
     cockpitStore.setFirstPerson(false);
+    cockpitStore.closePanel("left");
+    cockpitStore.closePanel("right");
     cleanup();
   });
 
@@ -37,6 +64,34 @@ describe("CosmicCockpitLayout — first-person Escape hotkey", () => {
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
 
     expect(cockpitStore.firstPerson).toBe(true);
+  });
+
+  it("Escape closes open unpinned panels but keeps pinned ones", () => {
+    render(CosmicCockpitLayout, { props: { isAuthenticated: false } });
+
+    cockpitStore.openPanel("left");
+    cockpitStore.openPanel("right");
+    expect(cockpitStore.panels.left.open).toBe(true);
+    expect(cockpitStore.panels.right.open).toBe(true);
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+
+    expect(cockpitStore.panels.left.open).toBe(false);
+    expect(cockpitStore.panels.right.open).toBe(false);
+    expect(cockpitStore.panels.top.open).toBe(true);
+  });
+
+  it("Escape does not steal the key from a focused input", () => {
+    render(CosmicCockpitLayout, { props: { isAuthenticated: false } });
+    cockpitStore.openPanel("left");
+
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    document.body.removeChild(input);
+
+    expect(cockpitStore.panels.left.open).toBe(true);
   });
 });
 

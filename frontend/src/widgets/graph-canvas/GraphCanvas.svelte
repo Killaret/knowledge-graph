@@ -88,6 +88,7 @@
     nodes,
     links,
     onNodeClick,
+    onBackgroundClick,
     onLinkEdit,
     onLinkDelete,
     onLinkConfirm,
@@ -131,6 +132,8 @@
       last_weight_update?: string;
     }>;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
+    /** Click on empty graph space (UI-PANELS-1 — dismiss unpinned panels). */
+    onBackgroundClick?: () => void;
     onLinkEdit?: (link: {
       id?: string;
       source: string;
@@ -363,11 +366,14 @@
     ghostNode = createGhostNode(width, height, nodes);
     gravitySystem = createGravitySystem();
 
-    // ResizeObserver для отслеживания размера контейнера
+    // ResizeObserver для отслеживания размера контейнера.
+    // Setting canvas.width clears the bitmap — request a frame immediately so
+    // the graph never sits blank while cockpit panels slide (UI-PANELS-1).
     observerCleanup = setupResizeObserver(canvas!, () => {
       resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
+      scheduleRedraw();
     });
 
     // Отложенный resize для стабильных размеров
@@ -375,6 +381,7 @@
       resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
+      scheduleRedraw();
     }, 100);
 
     // Start the animation loop. The loop ticks every rAF frame, but the
@@ -767,6 +774,9 @@
     },
     get onNodeClick() {
       return onNodeClick;
+    },
+    get onBackgroundClick() {
+      return onBackgroundClick;
     },
     get onNodeContextMenu() {
       return (node: { id: string; title: string; type?: string }, x: number, y: number) => {

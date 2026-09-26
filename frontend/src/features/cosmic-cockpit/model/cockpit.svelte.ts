@@ -62,12 +62,16 @@ function createCockpitStore() {
   let autoCollapse = $state(initialSettings.autoCollapse);
   let reducedMotion = $state(initialSettings.reducedMotion);
 
+  // The top panel is pinned open by default (UI-PANELS-1): the user sees it
+  // always; auto-collapse is an opt-in mode, not the default behaviour.
   const panels = $state<CockpitPanelsState>({
-    top: { ...defaultPanel },
+    top: { ...defaultPanel, open: true, pinned: true },
     bottom: { ...defaultPanel },
     left: { ...defaultPanel },
     right: { ...defaultPanel },
   });
+
+  let systemReducedMotion = $state(false);
 
   function getSettings(): CockpitSettings {
     return {
@@ -99,6 +103,18 @@ function createCockpitStore() {
 
   function hoverPanel(position: CockpitPanelPosition, hovering: boolean) {
     setPanel(position, { hovering });
+  }
+
+  // Explicit dismissal (Escape / click on empty graph area): close every
+  // panel that is not pinned. Pinned panels — notably the top bar — stay.
+  function closeUnpinnedPanels() {
+    (Object.keys(panels) as CockpitPanelPosition[]).forEach((position) => {
+      closePanel(position);
+    });
+  }
+
+  function setSystemReducedMotion(value: boolean) {
+    systemReducedMotion = value;
   }
 
   function setFirstPerson(value: boolean) {
@@ -168,6 +184,13 @@ function createCockpitStore() {
     set reducedMotion(value: boolean) {
       reducedMotion = value;
     },
+    get systemReducedMotion() {
+      return systemReducedMotion;
+    },
+    /** User setting OR the OS-level prefers-reduced-motion flag. */
+    get motionReduced() {
+      return reducedMotion || systemReducedMotion;
+    },
     get panels() {
       return panels;
     },
@@ -181,7 +204,9 @@ function createCockpitStore() {
     togglePin,
     openPanel,
     closePanel,
+    closeUnpinnedPanels,
     hoverPanel,
+    setSystemReducedMotion,
     setFirstPerson,
     toggleFirstPerson,
     exitFirstPerson,

@@ -104,6 +104,7 @@ function createMockContext(canvas: HTMLCanvasElement) {
       ghostNode = node;
     }),
     onNodeClick: vi.fn(),
+    onBackgroundClick: vi.fn(),
     onNodeContextMenu: vi.fn(),
     onNoteDelete: vi.fn(),
     onSingularityDrop: vi.fn(),
@@ -203,6 +204,18 @@ describe("event-bridge", () => {
       title: "A",
       type: undefined,
     });
+  });
+
+  it("fires onBackgroundClick on empty-space click (UI-PANELS-1)", () => {
+    bridge.onClick(new MouseEvent("click", { clientX: 400, clientY: 300 }));
+    expect(context.setSelectedNodeId).toHaveBeenCalledWith(null);
+    expect(context.onBackgroundClick).toHaveBeenCalled();
+    expect(context.onNodeClick).not.toHaveBeenCalled();
+  });
+
+  it("does not fire onBackgroundClick when a node is hit", () => {
+    bridge.onClick(new MouseEvent("click", { clientX: 1, clientY: 11 }));
+    expect(context.onBackgroundClick).not.toHaveBeenCalled();
   });
 
   it("handles node context menu", () => {
