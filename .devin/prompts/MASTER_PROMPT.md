@@ -206,6 +206,8 @@ Corollary: **an operation that reports success has not been verified.** Check th
 
 Corollary for mutations: **a green mutation is a finding about the mutation first, not about the test.** Before declaring a test blind, verify the mutation sits on the path the code actually executes — mutating a helper nobody calls, a branch the fixture never reaches, or a check the caller bypasses proves nothing about coverage. Mutate the real execution path, or pick a different mutation.
 
+Counterweight: **a mutation that stays green on the real path is a finding about the code.** Once the mutated line is known to execute, ask whether changing it should change the result. If it should, that is the defect — report it, do not trade it for a different mutation. Only when the line genuinely has no job (redundant, cosmetic) is the mutation idle; say which, and why.
+
 - Read the surrounding context, not the matching line. A hit inside a
   "do not do this" list, a code example, or a dated journal entry is not a
   defect, and a count of occurrences is not evidence.
