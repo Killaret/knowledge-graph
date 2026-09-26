@@ -4,6 +4,7 @@ import { LabelManager } from "./labels";
 import { Graph3DEngine } from "./engine";
 import type { Graph3DConfig, SimulationNode } from "../model/types";
 import type { GraphNode, GraphLink } from "../model/types";
+import { graphLabelHubCount } from "$shared/config";
 
 const config = { enableLabels: true } as Graph3DConfig;
 
@@ -68,13 +69,39 @@ describe("Graph3DEngine — UI-GRAPH-1 selective labels", () => {
     { source: "hub", target: "n3", weight: 0.5, link_type: "related" },
   ];
 
-  it("labels only hub nodes on a dense graph", () => {
+  // The hub's four neighbours have degree 1 — under the shared top-N rule
+  // they rank below the cap too, so the label set is the connected five.
+  it("labels top-degree nodes on a graph above the small-graph size", () => {
     const engine = new Graph3DEngine(createContainer(), {}, {});
     stubRenderer(engine);
     engine.setData(bigNodes, bigLinks);
 
     const labelManager = (engine as any).labelManager as LabelManager;
-    expect(labelManager.size).toBe(1); // only the hub
+    expect(labelManager.size).toBe(5); // hub + its four neighbours
+    engine.dispose();
+  });
+
+  it("caps labels at the configured hub count on a dense graph", () => {
+    // 60 nodes, ring + webs: every node is connected, average degree ~4+.
+    const nodes: GraphNode[] = Array.from({ length: 60 }, (_, i) => ({
+      id: `d${i}`,
+      title: `D${i}`,
+      type: "planet",
+      x: 0,
+      y: 0,
+      z: 0,
+    }));
+    const links: GraphLink[] = [];
+    for (let i = 0; i < 60; i++) {
+      links.push({ source: `d${i}`, target: `d${(i + 1) % 60}` } as GraphLink);
+      links.push({ source: `d${i}`, target: `d${(i * 7 + 3) % 60}` } as GraphLink);
+    }
+    const engine = new Graph3DEngine(createContainer(), {}, {});
+    stubRenderer(engine);
+    engine.setData(nodes, links);
+
+    const labelManager = (engine as any).labelManager as LabelManager;
+    expect(labelManager.size).toBeLessThanOrEqual(graphLabelHubCount);
     engine.dispose();
   });
 
@@ -85,7 +112,7 @@ describe("Graph3DEngine — UI-GRAPH-1 selective labels", () => {
 
     engine.setSelectedNodeId("n10");
     const labelManager = (engine as any).labelManager as LabelManager;
-    expect(labelManager.size).toBe(2); // hub + selected
+    expect(labelManager.size).toBe(6); // connected five + selected isolate
     engine.dispose();
   });
 

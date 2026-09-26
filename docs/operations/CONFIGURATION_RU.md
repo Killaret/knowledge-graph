@@ -58,7 +58,7 @@ npm run build-config
   "graph_service": { ... },
   "frontend": {
     "test": { ... },
-    "graph": { "2d": { ... }, "3d": { ... } },
+    "graph": { "label_hub_count": 15, "2d": { ... }, "3d": { ... } },
     "api": { ... },
     "achievements": { ... }
   },
@@ -82,6 +82,12 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 ```
 
 ---
+
+## Общие параметры графа (`frontend.graph`)
+
+| Параметр | Тип | По умолчанию | Где используется | Описание |
+|----------|-----|--------------|------------------|----------|
+| `label_hub_count` | integer | `15` | `entities/graph-canvas/lib/labels.ts` — общий для 2D-канваса и 3D-движка | Максимум подписей хабов при отдалении: top-N узлов по связности. Отбор относительный — абсолютный порог подписывал почти все узлы на плотном графе |
 
 ## Параметры 2D-графа (`frontend.graph.2d`)
 

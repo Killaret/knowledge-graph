@@ -58,7 +58,7 @@ Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.c
   "graph_service": { ... },
   "frontend": {
     "test": { ... },
-    "graph": { "2d": { ... }, "3d": { ... } },
+    "graph": { "label_hub_count": 15, "2d": { ... }, "3d": { ... } },
     "api": { ... },
     "achievements": { ... }
   },
@@ -82,6 +82,12 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 ```
 
 ---
+
+## Shared Graph Parameters (`frontend.graph`)
+
+| Parameter | Type | Default | Used in | Description |
+|-----------|------|---------|---------|-------------|
+| `label_hub_count` | integer | `15` | `entities/graph-canvas/lib/labels.ts` — shared by 2D canvas and 3D engine | Maximum number of hub labels drawn at low zoom: the top-N nodes by link degree. Relative selection — an absolute degree threshold captions almost every node on a dense graph |
 
 ## Frontend Graph 2D Parameters (`frontend.graph.2d`)
 

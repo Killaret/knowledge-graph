@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-26 — 1b54b10
-Прочитано: Devin — 2026-09-28 — 3ad9f49
+Прочитано: Devin — 2026-09-28 — 1d16692
 ```
 
 ---
@@ -19,10 +19,11 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **URL-HEADING-1 (этап A):** извлечение по `h1`–`h6` без модели | [`tasks/URL-HEADING-1-heading-extraction.md`](tasks/URL-HEADING-1-heading-extraction.md) | **отклонено** — тесты проверяют свою копию логики: лимит ссылок и кодировка без объявления, обе мутации зелёные. [`tasks/URL-HEADING-1-review-findings.md`](tasks/URL-HEADING-1-review-findings.md) | 2026-09-26 |
+| **URL-HEADING-1 (этап A):** извлечение по `h1`–`h6` без модели | [`tasks/URL-HEADING-1-heading-extraction.md`](tasks/URL-HEADING-1-heading-extraction.md) | **на ревью** — доработано: золотые снимки идут через рабочий `decodeHTMLBody`, лимит сверяется с числом 20; обе мутации красные (`febca68`). [`tasks/URL-HEADING-1-review-findings.md`](tasks/URL-HEADING-1-review-findings.md) | 2026-09-28 |
 | **NOTE-QUALITY-1 (этап 1):** мера качества без весов, перезабор | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **отклонено** — живьём оценка падает на каждой заметке: `source_id` в `quality_stats_repo.go:34`; выключатель не держит ни один тест. [`tasks/NOTE-QUALITY-1-review-findings.md`](tasks/NOTE-QUALITY-1-review-findings.md) | 2026-09-26 |
 | **SPEC-AUDIT-1:** все постановки против кода: вердикт с доказательством на каждое требование; «потеряно» и «не сделано» — владельцу с историей | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md), [`tasks/SPEC-AUDIT-1-register.md`](tasks/SPEC-AUDIT-1-register.md) | **на ревью** — реестр полный: этапы 0+A–E, 169 файлов, 0 потерь, 3 новых находки; список владельцу в конце реестра | 2026-09-28 |
 | **UI-GRAPH-1:** читаемость графа: автосвязи тоньше и скрываются кнопкой, подписи выборочно; в 3D — легенда; пояснение полоски «Connected notes» | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **отклонено** — подписи почти у всех узлов: порог «связность ≥ 3» при средней связности 5. [`tasks/UI-DESIGN-1-review-findings.md`](tasks/UI-DESIGN-1-review-findings.md) | 2026-09-26 |
+| **CHECK-DECISIONS-2:** откатить шаг 1b в `check-decisions.mjs` — маркер нового решения без своей строки в `DECISIONS.md` сейчас проходит; тест с этой пробой обязан быть красным | [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) | **на ревью** — проба красная: id-совпадение теперь требует ту же дату; цитата делит строку, новое решение — нет. Тест с фикстурой (`61ddadd`) | 2026-09-28 |
 
 ## На Claude Code
 
@@ -47,7 +48,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **CHECK-DECISIONS-2:** откатить шаг 1b в `check-decisions.mjs` — маркер нового решения без своей строки в `DECISIONS.md` сейчас проходит; тест с этой пробой обязан быть красным | [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) | **бэклог** — Devin, первой; маленькая | 2026-09-26 |
 | **NOTE-DELETE-1:** мягкое удаление заметок: сейчас удаление окончательное, «Восстановить» отвечает 404; корзина, восстановление со связями, чистка через 90 дней | [`tasks/NOTE-DELETE-1-soft-delete.md`](tasks/NOTE-DELETE-1-soft-delete.md) | **бэклог** — 1.0 · Devin (решение 72) | 2026-09-26 |
 | **SYNC-1 (этапы A2, B, C):** события через обёртку и outbox (первыми — сторож путей записи в CI и событие синхронизации черновика), применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **бэклог** — 1.0 · Devin (решения 69, 71) | 2026-09-26 |
 | **BOARD-3:** архив доски — папка `docs/archive/board/` по месяцам; сторож реплик; правило 4 | [`tasks/BOARD-3-board-archive.md`](tasks/BOARD-3-board-archive.md) | **бэклог** — ждёт Claude Code: реализация готова | 2026-09-28 |

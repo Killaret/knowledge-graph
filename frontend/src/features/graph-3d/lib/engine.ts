@@ -7,6 +7,7 @@ import { createGraphSimulation } from "./simulation";
 import { autoZoomToFit, centerCameraOnNode } from "./camera";
 import { filterValidLinks } from "$shared/utils/graphUtils";
 import { graphConfig3D, graphPerformanceConfig } from "$shared/config/config";
+import { computeLabeledNodeIds } from "$entities/graph-canvas/lib/labels";
 import { createPerformanceMonitor } from "$shared/lib/performance-monitor";
 import { toSimulationNodes } from "../config";
 import { applyFogPreset } from "./fog";
@@ -364,30 +365,16 @@ export class Graph3DEngine {
   }
 
   /**
-   * UI-GRAPH-1: selective labels — hubs (degree >= 3) plus the selected node.
-   * `undefined` means "label every node" (small graphs stay fully captioned).
+   * UI-GRAPH-1: selective labels — the shared top-N hub rule from
+   * `entities/graph-canvas/lib/labels` plus the selected node. `undefined`
+   * means "label every node" (small graphs stay fully captioned).
    */
   private computeLabeledIds(): Set<string> | undefined {
-    const SMALL_GRAPH_ALL_LABELS = 20;
-    if (this.simNodes.length <= SMALL_GRAPH_ALL_LABELS) return undefined;
-
-    const degree = new Map<string, number>();
-    for (const link of this.simLinks) {
-      // d3-force mutates endpoints into node objects at runtime.
-      const src: unknown = link.source;
-      const tgt: unknown = link.target;
-      const s = typeof src === "object" && src !== null ? (src as { id: string }).id : String(src);
-      const t = typeof tgt === "object" && tgt !== null ? (tgt as { id: string }).id : String(tgt);
-      degree.set(s, (degree.get(s) ?? 0) + 1);
-      degree.set(t, (degree.get(t) ?? 0) + 1);
-    }
-
-    const labeled = new Set<string>();
-    for (const node of this.simNodes) {
-      if ((degree.get(node.id) ?? 0) >= 3) labeled.add(node.id);
-    }
-    if (this.selectedNodeId) labeled.add(this.selectedNodeId);
-    return labeled;
+    return computeLabeledNodeIds(this.simNodes, this.simLinks, {
+      // 3D has no zoom-based reveal; labels stay selective at any distance.
+      zoomK: 0,
+      selectedId: this.selectedNodeId,
+    });
   }
 
   handleResize() {

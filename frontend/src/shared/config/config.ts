@@ -41,6 +41,8 @@ export interface Config {
       mock_goto_delay_ms: number;
     };
     graph: {
+      /** Max number of hub (top-degree) labels drawn at low zoom — shared 2D/3D rule */
+      label_hub_count: number;
       "2d": {
         max_nodes: number;
         /** Node count below which CSS drop-shadows are rendered (performance) */
@@ -152,6 +154,7 @@ export const config: Config = configData as Config;
 
 // Convenience exports for common values
 export const graphConfig2D = config.frontend.graph["2d"];
+export const graphLabelHubCount = config.frontend.graph.label_hub_count;
 export const graphConfig3D = config.frontend.graph["3d"];
 export const graphPerformanceConfig = config.frontend.graph["3d"].performance;
 export const anomalyConfig = config.frontend.graph.anomaly;
