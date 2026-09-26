@@ -224,7 +224,7 @@
   }
 
   input::placeholder {
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
   }
 
   input:focus {

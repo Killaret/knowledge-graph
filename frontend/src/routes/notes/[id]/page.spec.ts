@@ -113,4 +113,36 @@ describe("Note detail page", () => {
       expect(screen.getByText(/not found/i)).toBeInTheDocument();
     });
   });
+
+  // UI-QUICK-1: Delete must not sit flush next to Edit — it is moved to the
+  // end of the actions row and rendered as an unobtrusive ghost button.
+  it("keeps the delete button away from edit at the end of the actions row", async () => {
+    setNoteResponse({
+      id: "note-1",
+      title: "Test note",
+      content: "Note body",
+      type: "star",
+      created_at: "2025-01-01T00:00:00Z",
+      updated_at: "2025-01-02T00:00:00Z",
+      metadata: {},
+    });
+
+    const Page = (await import("./+page.svelte")).default;
+    render(Page);
+
+    const editBtn = await screen.findByTestId("edit-note-btn");
+    const deleteBtn = await screen.findByTestId("delete-note-btn");
+    const actions = editBtn.closest(".actions") as HTMLElement;
+    expect(actions).toBeTruthy();
+
+    const buttons = Array.from(actions.querySelectorAll("button"));
+    const editIdx = buttons.indexOf(editBtn as HTMLButtonElement);
+    const deleteIdx = buttons.indexOf(deleteBtn as HTMLButtonElement);
+    expect(editIdx).toBeGreaterThanOrEqual(0);
+    expect(deleteIdx).toBeGreaterThanOrEqual(0);
+    expect(deleteIdx).toBe(buttons.length - 1);
+    expect(deleteIdx - editIdx).toBeGreaterThan(1);
+    expect(deleteBtn.className).toContain("ghost");
+    expect(deleteBtn.className).not.toContain("danger");
+  });
 });

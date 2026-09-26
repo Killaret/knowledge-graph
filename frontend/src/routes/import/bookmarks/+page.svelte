@@ -48,7 +48,7 @@
     "idle" | "loading" | "preview" | "importing" | "done" | "error" | "unauthorized"
   >("idle");
   let input = $state("");
-  let extractContent = $state(false);
+  let extractContent = $state(true);
   let dragOver = $state(false);
   let previewItems = $state<ImportPreviewItem[]>([]);
   let taskIds = $state<string[]>([]);
@@ -268,6 +268,7 @@
   <nav class="tabs" aria-label={t("import.massTitle")}>
     <a class="tab" href="/import">{t("import.singleImport")}</a>
     <a class="tab active" href="/import/bookmarks">{t("import.massImport")}</a>
+    <a class="tab" href="/graph" data-testid="back-to-graph">{t("import.backToGraph")}</a>
   </nav>
 
   <h1 class="import-title">{t("import.massTitle")}</h1>
@@ -291,7 +292,7 @@
         id="import-list"
         bind:value={input}
         rows="10"
-        placeholder="Example page | https://example.com\nhttps://another.example.com"></textarea>
+        placeholder={"Example page | https://example.com\nhttps://another.example.com"}></textarea>
 
       <label class="extract-toggle">
         <input type="checkbox" bind:checked={extractContent} />
@@ -612,7 +613,7 @@
   }
 
   textarea::placeholder {
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
   }
 
   textarea:focus {
@@ -830,7 +831,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
     font-size: 0.85rem;
   }
 
@@ -958,7 +959,7 @@
   .task-id {
     margin: 0;
     font-size: 0.85rem;
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
     word-break: break-all;
   }
 

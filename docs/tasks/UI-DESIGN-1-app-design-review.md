@@ -133,6 +133,51 @@
 умолчанию, подсказка точки, место «Delete»); контраст токена ≥ 4,5:1 — проверка в тесте;
 скриншоты до/после.
 
+### Реализация (Devin, 2026-09-27)
+
+1. **Язык дат.** `shared/utils/date.ts`: дефолтная локаль больше не `ru-RU` — `formatDate`,
+   `formatDateTime` и `formatRelativeDate` берут `getCurrentLocale()` (en → `en-US`,
+   ru → `ru-RU`), явный параметр `locale` по-прежнему перекрывает. Относительные строки
+   («сегодня»/«вчера»/«N дня назад») ушли из хардкода в i18n: новые ключи `time.today`,
+   `time.yesterday`, `time.daysAgoLong`, `time.invalidDate` (en/ru). Тесты `date.test.ts`:
+   месяц по-английски под `setLocale("en")`, по-русски под `"ru"`, относительные строки на
+   обоих языках.
+2. **«Star lit» → «Created»/«Создана».** Ключ переименован `noteCard.starLit` →
+   `noteCard.created` (en: «Created: {{date}}», ru: «Создана: {{date}}»), вызов в
+   `NoteCard.svelte` обновлён. Тест: дата карточки содержит «Created:» и не содержит «Star lit».
+3. **Импорт.** Плейсхолдер textarea переведён на JS-строку — `\n` теперь настоящий перенос;
+   `extractContent` по умолчанию `$state(true)`; в ряд табов добавлена ссылка «Back to graph» /
+   «К графу» (`href="/graph"`, ключ `import.backToGraph`, testid `back-to-graph`). Тесты:
+   чекбокс включён по умолчанию, плейсхолдер содержит реальный перевод строки и не содержит
+   литеральный `\n`, ссылка ведёт на `/graph`.
+4. **Точка-индикатор.** `title` добавлен к обоим индикаторам (`note-card__indicator--new` и
+   `--updated`) — тот же текст, что в `aria-label`. Тест: `title` равен `aria-label` и не пуст.
+5. **«Delete».** Кнопка перенесена в конец ряда действий (после «Show constellation») и
+   переведена на `variant="ghost"` с классом `delete-note-btn`; подтверждение
+   (`deleteConfirmOpen`) не тронуто. Тест: в `.actions` delete — последняя кнопка, между ней и
+   Edit минимум одна кнопка, класс `ghost` без `danger`.
+6. **Контраст.** `--carbon-text-dim: #5a5a6e → #7a7a8e` — 4,67:1 на `--carbon-graphite`
+   (#0b0b10). Все инлайн-фолбэки `var(--carbon-text-dim, #5a5a6e)` в 11 файлах подняты до
+   `#7a7a8e`. Тест `shared/styles/contrast.test.ts` читает `global.css` и считает WCAG-отношение
+   по токенам — регресс ниже 4,5:1 покрасит сборку.
+
+Мутации (все красные и откачены): локаль всегда `ru-RU` → красный «English month under EN»;
+`extractContent` обратно `false` → красный дефолт чекбокса; токен обратно `#5a5a6e` → красный
+контраст; снятие `title` у индикатора → красный тултип; «Delete» обратно к «Edit» в
+`variant="danger"` → красный тест позиции.
+
+Тесты: 42 зелёные (date 13, contrast 2, NoteCard 20, import-bookmarks 4, note page 3);
+svelte-check 0/0, prettier чистый. Скриншоты до/после — владельцу по живому стенду.
+
+Ловушки:
+
+- `formatRelativeDate`/`formatDate` раньше были фактически русскоязычными константами —
+  старые тесты жёстко ждали «Сегодня»; теперь дефолт — `localStorage.locale`, в тестах локаль
+  ставится через `setLocale` и чистится в `afterEach`.
+- `Button` принимает проп `class`, не `className` — svelte-check ловит на этапе типов.
+- В heredoc-python экранирование `\\n` легко записать в файл буквальный перевод строки —
+  для ловли литерального `\n` в JS использован `String.raw`.
+
 ## UI-GRAPH-1 — читаемость графа
 
 На сиде 100 заметок и 187 автосвязей граф выглядит клубком: все связи — одинаковые серые линии,

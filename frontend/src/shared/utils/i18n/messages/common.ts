@@ -38,6 +38,10 @@ export const en: Record<string, string> = {
   "time.minutesAgo": "{{count}} min ago",
   "time.hoursAgo": "{{count}} h ago",
   "time.daysAgo": "{{count}} days ago",
+  "time.today": "today",
+  "time.yesterday": "yesterday",
+  "time.daysAgoLong": "{{count}} days ago",
+  "time.invalidDate": "Invalid date",
   // Routes
   "layout.skipAuthTitle": "Auth is disabled for testing (SKIP_AUTH=true)",
   // Modal
@@ -138,6 +142,10 @@ export const ru: Record<string, string> = {
   "time.minutesAgo": "{{count}} мин назад",
   "time.hoursAgo": "{{count}} ч назад",
   "time.daysAgo": "{{count}} дн назад",
+  "time.today": "сегодня",
+  "time.yesterday": "вчера",
+  "time.daysAgoLong": "{{count}} дня назад",
+  "time.invalidDate": "Некорректная дата",
   // Routes
   "layout.skipAuthTitle": "Авторизация отключена для тестирования (SKIP_AUTH=true)",
   // Modal
