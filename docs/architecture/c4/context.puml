@@ -6,15 +6,23 @@ actor "Пользователь" as User
 rectangle "Knowledge Graph" {
     component "Frontend\n(Svelte 5)" as Frontend
     component "Backend\n(Go + Gin)" as Backend
+    component "Graph Service\n(Go, HTTP+gRPC)" as GraphSvc
+    component "Worker\n(asynq)" as Worker
 }
 
 database "PostgreSQL\n+ pgvector" as DB
-database "Redis\n(очереди + кэш)" as Redis
+database "Redis\n(очереди + кэш + pub/sub)" as Redis
+database "MongoDB\n(drafts)" as Mongo
 component "NLP Service\n(Python + FastAPI)" as NLP
 
 User --> Frontend : "Просмотр и редактирование\nзаметок, графа"
-Frontend --> Backend : "REST API"
+Frontend --> Backend : "REST /api"
+Frontend --> GraphSvc : "REST /graph-service/api"
 Backend --> DB : "SQL"
-Backend --> Redis : "asynq / кэш"
+Backend --> Redis : "asynq / кэш / graph:events"
+Backend --> Mongo : "drafts"
 Backend --> NLP : "HTTP (эмбеддинги)"
+Backend --> GraphSvc : "HTTP"
+Worker --> Redis : "asynq"
+Worker --> NLP : "HTTP"
 @enduml

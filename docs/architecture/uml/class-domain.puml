@@ -24,6 +24,8 @@ class LinkType <<enum>> {
     dependency
     related
     custom
+    parent
+    child
 }
 
 class Weight {
@@ -40,11 +42,13 @@ class Note {
     - metadata: map[string]interface{}
     - createdAt: time.Time
     - updatedAt: time.Time
-    + NewNote(Title, Content, map) *Note
-    + UpdateContent(Content)
-    + AddLink(targetID UUID, linkType LinkType)
-    + RemoveLink(linkID UUID)
+    + NewNote(Title, Content, NoteType, Metadata, ...opts) *Note
+    + SetType(NoteType)
+    + SetIsPublic(bool)
+    + SetCreatorID(uuid)
 }
+' Примечание: связи создаются через Link aggregate / LinkRepository,
+' а не методами Note (AddLink/RemoveLink в сущности отсутствуют).
 
 class Link {
     - id: UUID

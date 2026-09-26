@@ -1,6 +1,15 @@
 @startuml
 skinparam linetype ortho
-title Sequence — Получение рекомендаций (синхронно, с кэшем)
+title Sequence — Рекомендации: фактическая цепочка GetSuggestions (2026-09)
+
+' Фактический порядок в notehandler.GetSuggestions:
+'   1. note_recommendations (предвычисленные, worker)
+'   2. suggestionsHandler — live BFS через graph-service / in-memory
+'   3. semantic fallback (pgvector), флаг RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED
+'   4. redis fallback (ключ recommendations:{noteID}), флаг RECOMMENDATION_FALLBACK_ENABLED
+'   5. 202 empty + enqueue refresh
+' Диаграмма ниже — внутренний сценарий уровня 2 (вычисление BFS),
+' кэш-ключи и α/β/γ уточнены по коду.
 
 actor "Пользователь" as User
 participant "Frontend" as FE
@@ -22,8 +31,8 @@ activate QryBus
 QryBus -> Handler : Execute(query)
 activate Handler
 
-' 1. Проверка кэша
-Handler -> Cache : GET suggestions:{noteID}:{limit}
+' 1. Проверка кэша (внутри suggestionsHandler; ключ реально recommendations:{noteID})
+Handler -> Cache : GET recommendations:{noteID}
 activate Cache
 alt Кэш попадание
     Cache --> Handler : cached suggestions (JSON)
@@ -55,7 +64,7 @@ else Кэш промах
 
     ' 4. Вычисление прямых весов direct(A,B)
     Handler -> Handler : combine candidates, compute direct weights
-    note right: α=0.5, β=0.2, γ=0.3
+    note right: α=0.5, β=0.5, γ=0.2 (config backend.recommendation)
 
     ' 5. BFS распространение весов (глубина 3)
     Handler -> Graph : PropagateWeights(startNote, depth=3, decay=0.5, candidates)
@@ -74,7 +83,7 @@ else Кэш промах
     Handler -> Handler : sort by score, top 10
 
     ' 7. Сохранение в кэш
-    Handler -> Cache : SET suggestions:{noteID}:{limit} = results, TTL=300
+    Handler -> Cache : SET recommendations:{noteID} = results, TTL=RECOMMENDATION_CACHE_TTL_SECONDS (300)
     activate Cache
     Cache --> Handler : ok
     deactivate Cache

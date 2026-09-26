@@ -201,7 +201,7 @@ cfg := config.Load()
 
 | Переменная | Описание | Умолчание |
 |-----------|----------|-----------|
-| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | Интервал опроса достижений | `0` |
+| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | ~~env~~ — только JSON-ключ `frontend.achievements.poll_interval_ms` в `knowledge-graph.config.json`; как env-переменная не читается | `0` |
 
 ### Типы условий достижений
 
@@ -267,13 +267,13 @@ cfg := config.Load()
 |-----------|----------|-----------|
 | `BACKUP_LOCAL_PATH` | Локальная директория для бэкапов воркера. В Personal-стеке — `/backups` (том `${KG_BACKUP_DIR}` примонтирован в `worker_personal`, BACKUP-3) | `./backups` |
 | `BACKUP_CLOUD_ENABLED` | Включить облачное резервирование | `false` |
-| `BACKUP_CLOUD_PROVIDER` | Провайдер облака (`yandex`) | `yandex` |
+| `BACKUP_CLOUD_PROVIDER` | Провайдер облака (реализован `yandex`; дефолт в коде `r2`) | `r2` |
 | `BACKUP_YANDEX_OAUTH_TOKEN` | OAuth-токен Яндекс.Диска | — |
 | `BACKUP_YANDEX_FOLDER` | Папка на Яндекс.Диске | `/KnowledgeGraphBackups` |
 | `BACKUP_YANDEX_MAX_BACKUPS` | Максимальное количество хранимых бэкапов | `10` |
 | `BACKUP_SCHEDULE` | Расписание cron | `0 2 * * *` |
 | `BACKUP_RETENTION_DAYS` | Срок хранения бэкапов (дни) | `7` |
-| `BACKUP_DRAFT_TTL_HOURS` | TTL черновиков в MongoDB | `168` |
+| `BACKUP_DRAFT_TTL_HOURS` | ~~env~~ — только JSON-ключ `backup.draft_ttl_hours`; парсится в структуру конфига, но код его пока не читает (TTL черновиков — фиксированные 7 дней) | `168` |
 
 ### Скрипты резервного копирования
 
@@ -389,7 +389,7 @@ MongoDB используется для хранения черновиков з
 | `SERVER_RATE_LIMIT_REQUESTS` | Общий лимит запросов | `100` |
 | `SERVER_RATE_LIMIT_WINDOW_SECONDS` | Временное окно | `60` |
 | `SERVER_PORT` | Порт HTTP-сервера | `8080` |
-| `SERVER_FALLBACK_PORTS` | Резервные порты (через запятую) | `8081,8082` |
+| `SERVER_FALLBACK_PORTS` | ~~env~~ — только JSON-ключ `backend.server.rate_limit.fallback_ports` (массив, не env через запятую) | `["8081","8082"]` |
 
 ### Поведение rate limiting
 
@@ -526,7 +526,6 @@ score = α × explicit_score + β × semantic_score
 | Переменная | Описание | Умолчание |
 |-----------|----------|-----------|
 | `GRAPH_LOAD_DEPTH` | Глубина загрузки графа | `2` |
-| `GRAPH_MAX_NODES` | Максимальное количество узлов | `500` |
 | `GRAPH_DEFAULT_LIMIT` | Лимит узлов по умолчанию | `100` |
 | `GRAPH_MAX_LIMIT` | Максимальный лимит узлов | `1000` |
 | `GRAPH_LINK_DEFAULT_LIMIT` | Лимит связей по умолчанию | `500` |

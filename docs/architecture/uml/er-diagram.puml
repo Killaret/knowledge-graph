@@ -3,6 +3,13 @@ skinparam linetype ortho
 skinparam classAttributeIconSize 0
 title ER-диаграмма — Knowledge Graph (PostgreSQL)
 
+' Полный список таблиц (миграции 001–068): notes, links, note_keywords,
+' note_embeddings, note_tags, tags, note_recommendations, note_likes,
+' suggestion_feedback, share_links, note_shares, users, user_roles,
+' role_permissions, user_settings, refresh_tokens, api_keys, audit_log,
+' achievements, user_achievements, link_suppressions.
+' На диаграмме — только графово-доменное ядро.
+
 ' === Таблица notes ===
 entity "notes" as notes {
     * id : UUID <<PK>>

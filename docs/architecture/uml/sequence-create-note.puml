@@ -4,76 +4,74 @@ title Sequence — Создание заметки (синхронно + аси�
 
 actor "Пользователь" as User
 participant "Frontend" as FE
-participant "API Handler" as API
-participant "Command Bus" as CmdBus
-participant "CreateNoteHandler" as Handler
+participant "Note Handler" as API
+participant "Note Service" as Service
 participant "Note Repository" as Repo
-participant "Event Bus" as EventBus
+participant "Events Publisher" as EventBus
 participant "Asynq Queue" as Queue
 participant "NLP Client" as NLP
-participant "Link Worker" as Worker
+participant "Asynq Worker" as Worker
 
 ' === СИНХРОННАЯ ЧАСТЬ ===
+' Примечание: Command/Query Bus в коде нет — хэндлер напрямую
+' вызывает application-сервис (notehandler → application/note).
 User -> FE : заполняет форму
-FE -> API : POST /notes
+FE -> API : POST /api/v1/notes
 activate API
 
-API -> CmdBus : Dispatch(CreateNoteCommand)
-activate CmdBus
-CmdBus -> Handler : Execute(command)
-activate Handler
+API -> Service : CreateNote(title, content, ...)
+activate Service
 
-Handler -> Handler : валидация (Value Objects)
+Service -> Service : валидация (Value Objects)
 
-Handler -> Repo : Save(note)
+Service -> Repo : Save(note)
 activate Repo
-Repo --> Handler : ok
+Repo --> Service : ok
 deactivate Repo
 
-Handler -> EventBus : Publish(NoteCreatedEvent)
+Service -> EventBus : PublishNoteCreated(noteID, userID)
 activate EventBus
-EventBus --> Handler : ok
+note right: канал graph:events — инвалидация\nкэша graph-service (SYNC-1)
+EventBus --> Service : ok
 deactivate EventBus
 
 ' Асинхронные вызовы (не блокируют ответ)
-Handler ->> Queue : Enqueue(ExtractLinksTask, noteID)
+Service ->> Queue : EnqueueExtractKeywords(noteID, 10)
 activate Queue
-Queue --> Handler : taskID
+Queue --> Service : ok
 deactivate Queue
 
-Handler ->> Queue : Enqueue(RecalculateEmbeddingTask, noteID)
-Queue --> Handler : taskID
+Service ->> Queue : EnqueueComputeEmbedding(noteID)
+Service ->> Queue : EnqueueNormalizeNote(noteID)
+Service ->> Queue : EnqueueRecalculateLinkWeights(noteID, delay)
+Service ->> Queue : EnqueueRefreshRecommendations(noteID, delay)
+Queue --> Service : ok
 
-Handler --> CmdBus : nil (успех)
-deactivate Handler
-CmdBus --> API : nil
-deactivate CmdBus
+Service --> API : note
+deactivate Service
 API --> FE : 201 Created
 deactivate API
 FE --> User : отобразить заметку
 
 ' === АСИНХРОННАЯ ФОНОВАЯ ОБРАБОТКА ===
 
-Queue ->> Worker : ExtractLinksTask
+Queue ->> Worker : extract:keywords
 activate Worker
-Worker -> Worker : парсинг [[...]] из content
-Worker -> Repo : FindByTitle / Create links (синхронно)
-activate Repo
-Repo --> Worker : ok
-deactivate Repo
-Worker --> Queue : done
+Worker -> NLP : extract keywords (HTTP)
+Worker -> Repo : сохранить note_keywords
 deactivate Worker
 
-Queue ->> Worker : RecalculateEmbeddingTask
+Queue ->> Worker : compute:embedding
 activate Worker
 Worker -> NLP : POST /embed (синхронно)
 activate NLP
 NLP --> Worker : embedding
 deactivate NLP
-Worker -> Repo : SaveEmbedding(noteID, embedding) (синхронно)
-activate Repo
-Repo --> Worker : ok
-deactivate Repo
-Worker --> Queue : done
+Worker -> Repo : сохранить note_embeddings
+deactivate Worker
+
+Queue ->> Worker : nlp:normalize / links:recalculate_weights / recommendation:refresh
+activate Worker
+Worker -> Repo : пересчёт весов / note_recommendations
 deactivate Worker
 @enduml

@@ -65,4 +65,27 @@
 | atam.md | ~10 | ~7 | 2 (BFS — итеративный Go, не CTE; лимита «50 первого уровня» нет — только `topN`) | 1 (лимит первого уровня) | — |
 | glossary.md | ~25 | ~24 | 1 (Link Type + `parent`/`child`) | — | — |
 | clustering.md | — | — | — | — | — (корректно помечена «отложена», с реальными причинами) |
-| decisions/001–018 | ~60 | ~50 | — | 6 (статусы «Implementation status» у 003/006/007/008/009/010/013/014; 004 — частично, 011 — реализовано) | 1 (список в README — легендарная нумерация) |
+| decisions/001–018 | ~60 | ~50 | — | 6 (статусы «Implementation status» у 003/006/007/008/009/010/013/014; 004 — частично, 011 — реализовано; **RBAC богаче, чем казалось:** `user_roles`+`role_permissions`+`permission_repo`+middleware существуют — нет только tenant-скоупа) | 1 (список в README — легендарная нумерация) |
+| c4/context.puml | ~8 | 4 | 4 (нет graph-service/worker/mongo) | — | — |
+| c4/container.puml | ~10 | 5 | 4 (нет worker/graph-service/mongo; «HTTPS/WebSocket») | — | — |
+| c4/component.puml | ~12 | 6 | 4 (Command/Query Bus нет в коде; Event Bus = Redis publisher) | — | — |
+| uml/er-diagram.puml | ~15 | ~12 | — | — | добавлен список всех 21 таблиц как комментарий |
+| uml/sequence-create-note.puml | ~15 | ~8 | 5 (шины, имена задач, `POST /api/v1/notes`) | — | — |
+| uml/sequence-suggestions.puml | ~15 | ~9 | 4 (фактическая 5-уровневая цепочка, ключ `recommendations:*`, α=0.5/β=0.5/γ=0.2) | — | — |
+| uml/deployment-local.puml | ~12 | ~7 | 4 (worker — отдельный контейнер kg-worker; mongo/graph-service; порт backend 9000→8080) | — | — |
+| uml/class-domain.puml | ~20 | ~16 | 2 (LinkType +parent/+child; сигнатура NewNote и методы) | — | — |
+| operations/DOCKER.md | ~25 | ~20 | 5 (frontend нет host-порта — только nginx:18081; Redis dev=16379/personal=16380, не 6379/6380; graph-service строка «gRPC» → 9091 HTTP + 9090 gRPC без клиентов) | — | — |
+| operations/STACK_CONFIGURATION_COMPARISON.md | ~20 | ~16 | 4 (те же redis-порты; frontend dev не опубликован) | — | — |
+| operations/DEPLOYMENT_EN.md | ~40 | ~25 | 10 (`migrate` CLI не существует ×4 — миграции только авто при старте `server`; `./seed` → `./test-seed` и только APP_ENV=test; `health-check.sh` ×2 несуществует; `/db-check` нет; `docker-compose.monitoring.yml` нет; порт 18086 — тест-стек, не dev) | 2 (k8s/ раздел + monitoring — помечены «target, not implemented») | — |
+| operations/CONFIGURATION_EN.md | ~50 | ~40 | 6 (env→JSON-only: `SERVER_FALLBACK_PORTS`, `GRAPH_DEFAULT_DEPTH`, `GRAPH_STREAM_CHUNK_SIZE`, `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS`, `BACKUP_DRAFT_TTL_HOURS`; `BACKUP_CLOUD_PROVIDER` дефолт `r2`, а не `yandex`) | 1 (`backup.draft_ttl_hours` — парсится, но никем не читается — мёртвый ключ) | — |
+| operations/CONFIGURATION_RU.md | ~30 | ~25 | 5 (те же env→JSON; `GRAPH_MAX_NODES` — выдуманная переменная, удалена) | — | — |
+| operations/TESTING.md | ~40 | ~40 | — | — | — (порты/команды тест-стека точны; `run-bdd.cjs`, recompute-команды верны) |
+| operations/TESTING_COMMANDS.md | ~20 | ~20 | — | — | — |
+| operations/REGRESSION_TEST_PLAN.md | ~30 | ~30 | — | — | — (`cleanup-test-artifacts.py`, `/graph/3d/[id]` — существуют) |
+| operations/BACKUP.md | ~40 | ~40 | — | — | — (актуален: KG_BACKUP_DIR, backup_scheduler, ретенции) |
+| operations/ARGOS.md | ~15 | ~15 | — | — | — (проекты visual/visual-real-auth, spec-файлы — на месте) |
+| operations/MANUAL_TEST_CHECKLIST_*.md | ~15 | ~15 | — | — | — |
+| api/API_EN.md | ~50 | ~50 | — | — | — (свежий, проверен против стека) |
+| api/RECOMMENDATION_API.md | ~25 | ~18 | 6 (в цепочке пропущен live graph-service/BFS шаг; реальные значения `X-Recommendations-Source`: `table`/`graph-service`/`semantic`/`redis`/`empty`, а не `*-fallback`; header ставится всегда) | — | — |
+| api/API_ERRORS_EN.md | ~30 | ~27 | 3 (+`DUPLICATE_LINK`/`INVALID_UUID`/`INVALID_REQUEST`; 429 без поля `code` — `error`+`retry_after`; `RATE_LIMIT_EXCEEDED` не существует) | — | — |
+| backend/openAPI.yaml | ~3400 | покрыт `router_contract_test.go` — дрейф невозможен | — | — | — |

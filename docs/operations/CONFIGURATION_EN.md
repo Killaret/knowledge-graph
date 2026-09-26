@@ -201,7 +201,7 @@ These settings can be updated via the user settings API and are respected by the
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | Achievement polling interval | `0` |
+| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | ~~env~~ — JSON-only key `frontend.achievements.poll_interval_ms` in `knowledge-graph.config.json`; not read as an env var | `0` |
 
 ### Achievement Condition Types
 
@@ -268,13 +268,13 @@ Achievements use JSON-based conditions stored in the `condition_json` field:
 | `KG_BACKUP_DIR` | Local backup directory used by scripts, guard and compose | `Desktop/my items` (resolved from `$HOME`) |
 | `BACKUP_LOCAL_PATH` | Local backup directory for the Go worker. In the personal stack it is `/backups` (`${KG_BACKUP_DIR}` is mounted into `worker_personal`, BACKUP-3) | `./backups` |
 | `BACKUP_CLOUD_ENABLED` | Enable cloud backup | `false` |
-| `BACKUP_CLOUD_PROVIDER` | Cloud provider (yandex) | `yandex` |
+| `BACKUP_CLOUD_PROVIDER` | Cloud provider (`yandex` implemented; `r2` is the code default) | `r2` |
 | `BACKUP_YANDEX_OAUTH_TOKEN` | Yandex.Disk OAuth token | - |
 | `BACKUP_YANDEX_FOLDER` | Yandex.Disk backup folder | `/KnowledgeGraphBackups` |
 | `BACKUP_YANDEX_MAX_BACKUPS` | Maximum number of backups to keep | `10` |
 | `BACKUP_SCHEDULE` | Cron schedule for backups | `0 2 * * *` |
 | `BACKUP_RETENTION_DAYS` | Backup retention period | `7` |
-| `BACKUP_DRAFT_TTL_HOURS` | Draft TTL in MongoDB | `168` |
+| `BACKUP_DRAFT_TTL_HOURS` | ~~env~~ — JSON-only key `backup.draft_ttl_hours`; parsed into the config struct but **not consumed by any code yet** (draft TTL currently uses a fixed 7-day constant) | `168` |
 
 ### Backup Scripts
 
@@ -390,7 +390,7 @@ All other parameters can be configured via `knowledge-graph.config.json` or over
 | `SERVER_RATE_LIMIT_REQUESTS` | General request limit | `100` |
 | `SERVER_RATE_LIMIT_WINDOW_SECONDS` | Time window | `60` |
 | `SERVER_PORT` | HTTP server port | `8080` |
-| `SERVER_FALLBACK_PORTS` | Backup ports (comma-separated) | `8081,8082` |
+| `SERVER_FALLBACK_PORTS` | ~~env~~ — JSON-only key `backend.server.rate_limit.fallback_ports` (array, not comma-separated env) | `["8081","8082"]` |
 
 ### Rate Limiting Behavior
 
@@ -693,7 +693,8 @@ SERVER_PORT=8080
 SERVER_RATE_LIMIT_ENABLED=true
 SERVER_RATE_LIMIT_REQUESTS=100
 SERVER_RATE_LIMIT_WINDOW_SECONDS=60
-SERVER_FALLBACK_PORTS=8081,8082
+# SERVER_FALLBACK_PORTS is not an env var — set
+# backend.server.rate_limit.fallback_ports in knowledge-graph.config.json
 
 # Database
 DATABASE_RETRY_MAX_ATTEMPTS=3
@@ -950,8 +951,8 @@ The `graph-service` is a separate gRPC microservice for layout computation and g
 | `REDIS_URL` | Redis address | `redis:6379` |
 | `EVENT_CHANNEL` | Redis Pub/Sub channel | `graph:events` |
 | `GRAPH_FULL_LIMIT` | Default full graph limit | `1000` |
-| `GRAPH_DEFAULT_DEPTH` | Default depth for note layout | `2` |
-| `GRAPH_STREAM_CHUNK_SIZE` | Nodes per chunk in streaming | `100` |
+| `GRAPH_DEFAULT_DEPTH` | ~~env~~ — JSON-only `graph_service.default_depth` | `2` |
+| `GRAPH_STREAM_CHUNK_SIZE` | ~~env~~ — JSON-only `graph_service.stream_chunk_size` | `100` |
 | `CACHE_NOTE_TTL_SECONDS` | Note layout cache TTL | `300` (5 min) |
 | `CACHE_FULL_TTL_SECONDS` | Full layout cache TTL | `300` (5 min) |
 | `CACHE_DELTA_TTL_SECONDS` | Delta cache TTL | `60` (1 min) |
