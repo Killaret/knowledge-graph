@@ -74,6 +74,9 @@ export function findLinkAtPosition(
     }
   }
 
+  let nearest: SimulationLink | null = null;
+  let nearestDistance = tolerance;
+
   for (const link of links) {
     const sourceNode = resolveLinkEndpoint(link.source, nodes, nodeMap);
     const targetNode = resolveLinkEndpoint(link.target, nodes, nodeMap);
@@ -96,11 +99,12 @@ export function findLinkAtPosition(
       targetNode.y
     );
 
-    if (distance <= tolerance) {
-      return link;
+    if (distance <= nearestDistance) {
+      nearest = link;
+      nearestDistance = distance;
     }
   }
-  return null;
+  return nearest;
 }
 
 /**

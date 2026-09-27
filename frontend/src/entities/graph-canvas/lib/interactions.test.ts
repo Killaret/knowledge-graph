@@ -113,6 +113,36 @@ describe("GraphCanvas interactions", () => {
       const result = findLinkAtPosition(50, 20, [link], nodes, { x: 0, y: 0, k: 1 }, 25);
       expect(result).toBe(link);
     });
+
+    // LINK-HIT-1: in a dense graph several links can be inside tolerance;
+    // the nearest one must win, not the first in the array.
+    const crossingNodes: SimulationNode[] = [
+      makeNode("a", 0, 0),
+      makeNode("b", 100, 0),
+      makeNode("d", 50, -6),
+      makeNode("e", 50, 6),
+    ];
+    const horizontal: SimulationLink = { source: "a", target: "b" }; // y=0
+    const vertical: SimulationLink = { source: "d", target: "e" }; // x=50
+
+    it("returns the nearest link when several are within tolerance", () => {
+      // (50,2): 2 from horizontal, 0 from vertical — both inside tolerance
+      const result = findLinkAtPosition(50, 2, [horizontal, vertical], crossingNodes, {
+        x: 0,
+        y: 0,
+        k: 1,
+      });
+      expect(result).toBe(vertical);
+    });
+
+    it("returns the nearer link regardless of array order", () => {
+      const result = findLinkAtPosition(50, 2, [vertical, horizontal], crossingNodes, {
+        x: 0,
+        y: 0,
+        k: 1,
+      });
+      expect(result).toBe(vertical);
+    });
   });
 
   describe("handleZoom", () => {

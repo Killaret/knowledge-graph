@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-27 — 4ca2f1a
-Прочитано: Devin — 2026-09-28 — 8a15c59
+Прочитано: Devin — 2026-09-28 — 4a11a3e
 ```
 
 ---
@@ -53,7 +53,7 @@
 | **PANEL-LINKS-1:** панель заметки пишет «Links (undefined)» — клиент ждёт массив, API отдаёт `{incoming, outgoing}` (с 2026-07-16); при починке — пояснение при удалении связи с происхождением | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **бэклог** — 1.0 · Devin; смысл массового удаления решает владелец | 2026-09-24 |
 | **LINK-TYPES-1:** типы связей: `related` по умолчанию, `reference` и `custom` сливаются в `related`, автосвязи своим цветом, легенда 2D и 3D, цепочка `dependency` при наведении | [`tasks/LINK-TYPES-1-link-types-and-visuals.md`](tasks/LINK-TYPES-1-link-types-and-visuals.md) | **бэклог** — 1.0 · Devin (решение 74) | 2026-09-27 |
 | **ORIGIN-1:** происхождение «рождена из» вместо `parent` и `child`: многие-ко-многим, ставится при создании заметки | [`tasks/ORIGIN-1-born-from-relation.md`](tasks/ORIGIN-1-born-from-relation.md) | **бэклог** — Devin; ждёт владельца: 1.0 или после, судьба `related` (решение 75) | 2026-09-27 |
-| **LINK-HIT-1:** наведение на связь берёт первую в пределах 8 единиц, а не ближайшую (`interactions.ts:62`) — в плотном графе подтвердить или удалить нужную связь нельзя | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **бэклог** — 1.0 · Devin; мешает сценариям LINKS-2 | 2026-09-24 |
+| **LINK-HIT-1:** наведение на связь берёт первую в пределах 8 единиц, а не ближайшую (`interactions.ts`) | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **в работе** — Devin: ближайшая в допуске + 2 красных→зелёных теста; ждёт слота ревью | 2026-09-28 |
 | **LINKS-2-TAIL:** хвосты LINKS-2: условие модалки на странице без теста (мутация зелёная); сид падает 409 на встречной паре; текст модалки для подтверждённой связи | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **бэклог** — 1.0 · Devin; маленькая | 2026-09-25 |
 | **CHUNK-1-TAIL:** тест через рабочий путь: `compute_chunked_embedding` и `/normalize` на длинном тексте — вход модели со служебными токенами не длиннее окна; откат места вызова к сырому окну сейчас не ловит ни один тест | [`tasks/CHUNK-1-review-findings.md`](tasks/CHUNK-1-review-findings.md) | **бэклог** — Devin; маленькая | 2026-09-26 |
 | **NOTE-QUALITY-1-TAIL:** старое правило обрезки метит целые длинные импорты и держит заметку в `enrich` после перезабора — починить; затем живьём импорт трёх снимков: `enrich`/`manual` в `quality_log` | [`tasks/NOTE-QUALITY-1-review-findings.md`](tasks/NOTE-QUALITY-1-review-findings.md) | **бэклог** — Devin; первой из NOTE-QUALITY | 2026-09-27 |
