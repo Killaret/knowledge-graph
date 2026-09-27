@@ -100,6 +100,10 @@ func (o *NoteRepository) FindByID(ctx context.Context, id uuid.UUID) (*note.Note
 	return o.inner.FindByID(ctx, id)
 }
 
+func (o *NoteRepository) FindByIDIncludingDeleted(ctx context.Context, id uuid.UUID) (*note.Note, error) {
+	return o.inner.FindByIDIncludingDeleted(ctx, id)
+}
+
 func (o *NoteRepository) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	return o.inner.List(ctx, userID, limit, offset)
 }

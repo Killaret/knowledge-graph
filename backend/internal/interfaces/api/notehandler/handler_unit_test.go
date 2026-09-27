@@ -895,12 +895,14 @@ func TestGetSuggestions_SemanticFallback(t *testing.T) {
 }
 
 func TestGetSuggestions_CacheFallback(t *testing.T) {
-	h, _, tq, recRepo, embRepo, cache := setupUnitHandler(t)
+	h, repo, tq, recRepo, embRepo, cache := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
 	suggestionID := uuid.New()
 
 	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{}, nil)
 	embRepo.On("FindSimilarNotes", mock.Anything, n.ID(), 5).Return([]recommendation.SimilarNote{}, nil)
+	// The cache path re-resolves each entry — deleted/gone notes drop out.
+	repo.On("FindByID", mock.Anything, suggestionID).Return(newTestNote(t, "Cached", "Body", "planet"), nil)
 
 	cached := fmt.Sprintf(`[{"note_id":%q,"score":0.7}]`, suggestionID.String())
 	_ = cache.Set(context.Background(), "recommendations:"+n.ID().String(), cached, 0)
@@ -914,6 +916,60 @@ func TestGetSuggestions_CacheFallback(t *testing.T) {
 	assert.Equal(t, http.StatusOK, c.Writer.Status())
 	assert.Equal(t, "redis", w.Header().Get("X-Recommendations-Source"))
 	assert.Contains(t, w.Body.String(), suggestionID.String())
+	tq.AssertExpectations(t)
+}
+
+// NOTE-DELETE-1 regression: a trashed note must not be suggested — the
+// precomputed table and the cache both carry stale rows. Mutation "keep
+// appending when FindByID returns nil" turns these red.
+func TestGetSuggestions_PrecomputedSkipsTrashed(t *testing.T) {
+	h, repo, _, recRepo, _, _ := setupUnitHandler(t)
+	n := newTestNote(t, "Sug", "Content", "star")
+	live := newTestNote(t, "Live", "Content", "planet")
+	trashedID := uuid.New()
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("FindByID", mock.Anything, live.ID()).Return(live, nil)
+	repo.On("FindByID", mock.Anything, trashedID).Return(nil, nil) // in the trash
+	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{
+		{NoteID: n.ID(), RecommendedNoteID: live.ID(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
+		{NoteID: n.ID(), RecommendedNoteID: trashedID, Score: 0.8, UpdatedAt: time.Now().Add(time.Hour)},
+	}, nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions", "")
+	withID(c, n.ID())
+	h.GetSuggestions(c)
+	_ = w
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.Contains(t, w.Body.String(), live.ID().String())
+	assert.NotContains(t, w.Body.String(), trashedID.String(), "trashed note must not be suggested")
+}
+
+func TestGetSuggestions_CacheSkipsTrashed(t *testing.T) {
+	h, repo, tq, recRepo, embRepo, cache := setupUnitHandler(t)
+	n := newTestNote(t, "Sug", "Content", "star")
+	liveID := uuid.New()
+	trashedID := uuid.New()
+
+	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{}, nil)
+	embRepo.On("FindSimilarNotes", mock.Anything, n.ID(), 5).Return([]recommendation.SimilarNote{}, nil)
+	repo.On("FindByID", mock.Anything, liveID).Return(newTestNote(t, "Live", "Body", "planet"), nil)
+	repo.On("FindByID", mock.Anything, trashedID).Return(nil, nil)
+
+	cached := fmt.Sprintf(`[{"note_id":%q,"score":0.7},{"note_id":%q,"score":0.6}]`, liveID.String(), trashedID.String())
+	_ = cache.Set(context.Background(), "recommendations:"+n.ID().String(), cached, 0)
+	tq.On("EnqueueRefreshRecommendations", mock.Anything, n.ID(), mock.AnythingOfType("time.Duration")).Return(nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions", "")
+	withID(c, n.ID())
+	h.GetSuggestions(c)
+	_ = w
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.Equal(t, "redis", w.Header().Get("X-Recommendations-Source"))
+	assert.Contains(t, w.Body.String(), liveID.String())
+	assert.NotContains(t, w.Body.String(), trashedID.String(), "cached suggestion for a trashed note must be dropped")
 	tq.AssertExpectations(t)
 }
 

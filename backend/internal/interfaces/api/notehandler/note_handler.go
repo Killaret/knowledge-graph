@@ -1536,13 +1536,14 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 				GeneratedAt: recs[0].UpdatedAt,
 			}
 			for _, rec := range recs {
-				title := ""
-				if noteEntity, err := h.repo.FindByID(ctx, rec.RecommendedNoteID); err == nil && noteEntity != nil {
-					title = noteEntity.Title().String()
+				noteEntity, err := h.repo.FindByID(ctx, rec.RecommendedNoteID)
+				if err != nil || noteEntity == nil {
+					// Deleted or gone — never suggest a trashed note.
+					continue
 				}
 				suggestionsResp.Suggestions = append(suggestionsResp.Suggestions, Suggestion{
 					NoteID: rec.RecommendedNoteID.String(),
-					Title:  title,
+					Title:  noteEntity.Title().String(),
 					Score:  rec.Score,
 				})
 			}
@@ -1582,13 +1583,13 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		if err == nil && len(neighbors) > 0 {
 			suggestions := make([]Suggestion, 0, len(neighbors))
 			for _, n := range neighbors {
-				title := ""
-				if noteEntity, err := h.repo.FindByID(ctx, n.NoteID); err == nil && noteEntity != nil {
-					title = noteEntity.Title().String()
+				noteEntity, err := h.repo.FindByID(ctx, n.NoteID)
+				if err != nil || noteEntity == nil {
+					continue
 				}
 				suggestions = append(suggestions, Suggestion{
 					NoteID: n.NoteID.String(),
-					Title:  title,
+					Title:  noteEntity.Title().String(),
 					Score:  n.Score,
 				})
 			}
@@ -1608,9 +1609,19 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		if err == nil && cached != "" {
 			var suggestions []Suggestion
 			if err := json.Unmarshal([]byte(cached), &suggestions); err == nil {
+				// The cache predates deletions — drop entries whose note is
+				// trashed or gone rather than serve a stale suggestion.
+				live := make([]Suggestion, 0, len(suggestions))
+				for _, s := range suggestions {
+					if sid, err := uuid.Parse(s.NoteID); err == nil {
+						if n, err := h.repo.FindByID(ctx, sid); err == nil && n != nil {
+							live = append(live, s)
+						}
+					}
+				}
 				c.Header("X-Recommendations-Source", "redis")
 				c.Header("X-Recommendations-Stale", "true")
-				c.JSON(200, SuggestionsResponse{Suggestions: suggestions})
+				c.JSON(200, SuggestionsResponse{Suggestions: live})
 				h.enqueueRefreshWithDelay(noteID)
 				return
 			}

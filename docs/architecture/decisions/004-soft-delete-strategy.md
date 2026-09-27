@@ -206,13 +206,13 @@ func (h *GDPRDeleteHandler) Execute(ctx context.Context, cmd GDPRDeleteCommand) 
 ## Consequences
 
 ### Positive
-- ✅ User recovery: 30-day window to restore accidentally deleted notes
+- ✅ User recovery: 90-day window to restore accidentally deleted notes
 - ✅ Bug resilience: Can undo batch operations gone wrong
 - ✅ Audit trail: deleted_at timestamp records when deletion occurred
 - ✅ Referential integrity: Links can detect broken references
 
 ### Negative
-- ⚠️ Storage overhead: Deleted records consume space for 30 days
+- ⚠️ Storage overhead: Deleted records consume space for 90 days
 - ⚠️ Query complexity: Every query needs `deleted_at IS NULL` check (handled by RLS)
 - ⚠️ Index bloat: Soft-deleted records remain in indexes
 - ⚠️ Backup size: Larger backups include soft-deleted data

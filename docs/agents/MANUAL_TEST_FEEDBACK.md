@@ -591,3 +591,18 @@ Create a new bullet under the right section with:
 - **Not covered:** Argos baselines — CI compares them against `main`, so the graph screens will differ there and need approving after the merge. Two old defects show in both looks: hovering a note at the end of a thread also shows that link's tooltip; the drag-to-delete black hole sits under the legend and grows out from behind it after the camera flies in.
 - **Screenshot / Logs:** `docs/agents/screenshots/graph-light-1/` — `before-graph.png`, `after-graph.png`, `before-hover.png`, `after-hover.png`, `before-selected.png`, `after-selected.png`.
 - **Result:** the light style is the default; the classic look stays available through `frontend.graph.style` and `?graphStyle=classic`.
+### NOTE-DELETE-1 — restore with real auth and recommendations filtering (review remediation)
+
+- **Scope:** the three blockers from `docs/tasks/NOTE-DELETE-1-review-findings.md` — restore with `SKIP_AUTH=false`, deleted targets in suggestions, the 90-day value under test.
+- **Date:** 2026-09-27
+- **Agent:** Devin
+- **Environment:** isolated test stack (`start-test.ps1`) with `SKIP_AUTH=false` in env; backend :18083; real JWT registration for two users (`notedel-a`, `notedel-b`); script `temp/check-note-delete-live.ps1` (temp, not committed).
+- **Observed (9/9 PASS):**
+  - create note → DELETE → GET returns 404;
+  - foreign user's POST /notes/:id/restore → 404 (IDOR closed);
+  - anonymous restore → 401;
+  - owner POST /notes/:id/restore → 204, subsequent GET returns the note with title intact;
+  - `note_recommendations` seeded directly: dead target (deleted) absent from GET /notes/:id/suggestions, live target present, no empty-title entry — response `{"suggestions":[{"note_id":"270cca99-…","title":"Stays alive","score":0.8}]}`.
+- **Unit/integration:** new middleware tests (`WriteIncludeDeleted`, unsupported-repo → 404), repo tests, SQLMock recommendations join test, payload test on `NewCleanupSoftDeletedTask`; mutations verified red: `days 90→1` fails the payload test, removing the trash-aware middleware branch fails the owner-restore test.
+- **Screenshot / Logs:** transcript above; stack stopped via `stop-test.ps1` after the run.
+- **Result:** all three review blockers reproduced-fixed-verified on a live stack with real auth.

@@ -197,8 +197,9 @@ stateDiagram-v2
 
 As implemented (NOTE-DELETE-1): `NoteModel.DeletedAt` is `gorm.DeletedAt`, so all
 GORM note queries auto-filter trashed rows; raw SQL paths (`note_embeddings`,
-`note_keywords`, tag joins, similarity candidates) filter `deleted_at IS NULL`
-explicitly. `Delete`/`DeleteBatch` run one transaction that soft-deletes the
+`note_keywords`, tag joins, similarity candidates, `note_recommendations`
+targets) filter `deleted_at IS NULL` explicitly, and the restore route's
+access check reads the trash through `FindByIDIncludingDeleted`. `Delete`/`DeleteBatch` run one transaction that soft-deletes the
 note and its still-live links, stamping `links.deleted_via_note_id` so
 `Restore` revives exactly the links that went down with the note — and only
 once both endpoints are alive again. A link removed on its own is a hard

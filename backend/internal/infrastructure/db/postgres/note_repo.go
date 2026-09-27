@@ -115,8 +115,22 @@ func (r *NoteRepository) SaveReturning(ctx context.Context, n *note.Note) (bool,
 }
 
 func (r *NoteRepository) FindByID(ctx context.Context, id uuid.UUID) (*note.Note, error) {
+	return r.findByID(ctx, id, false)
+}
+
+// FindByIDIncludingDeleted is FindByID without the soft-delete scope: the
+// restore route's access check needs the row that sits in the trash.
+func (r *NoteRepository) FindByIDIncludingDeleted(ctx context.Context, id uuid.UUID) (*note.Note, error) {
+	return r.findByID(ctx, id, true)
+}
+
+func (r *NoteRepository) findByID(ctx context.Context, id uuid.UUID, includeDeleted bool) (*note.Note, error) {
 	var model NoteModel
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error
+	query := r.db.WithContext(ctx)
+	if includeDeleted {
+		query = query.Unscoped()
+	}
+	err := query.Where("id = ?", id).First(&model).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Printf("[INFO] note not found: id=%s", id.String())
 		return nil, nil

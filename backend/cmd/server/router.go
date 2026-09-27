@@ -144,6 +144,9 @@ func setupRouter(
 		// indistinguishable from a missing one.
 		noteRead := middleware.RequireNoteAccess(noteRepo, middleware.NoteAccessRead)
 		noteWrite := middleware.RequireNoteAccess(noteRepo, middleware.NoteAccessWrite)
+		// Restore's target sits in the trash, so its access check must see
+		// soft-deleted notes.
+		noteWriteTrash := middleware.RequireNoteAccess(noteRepo, middleware.NoteAccessWriteIncludeDeleted)
 
 		// Share routes
 		v1.POST("/notes/:id/share", writeLimiter, noteWrite, shareHandler.ShareNote)
@@ -182,7 +185,7 @@ func setupRouter(
 		v1.POST("/notes/:id/publish", writeLimiter, noteWrite, noteHandler.Publish)
 		v1.POST("/notes/:id/unpublish", writeLimiter, noteWrite, noteHandler.Unpublish)
 		v1.DELETE("/notes/:id", writeLimiter, noteWrite, noteHandler.Delete)
-		v1.POST("/notes/:id/restore", writeLimiter, noteWrite, noteHandler.Restore)
+		v1.POST("/notes/:id/restore", writeLimiter, noteWriteTrash, noteHandler.Restore)
 		v1.GET("/notes/:id/suggestions", cacheControlMiddleware(60), noteRead, noteHandler.GetSuggestions)
 
 		// NOTE-QUALITY-1: read answers with the same access rule as the note

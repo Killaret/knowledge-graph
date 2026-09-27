@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockBackupService struct{}
@@ -78,10 +80,22 @@ func TestHandleCleanupExpiredDrafts(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// NOTE-DELETE-1: the 90-day retention is a user-facing promise — the payload
+// must carry it, not just the task type. Mutation «90 → any other number»
+// turns this test red.
 func TestNewCleanupSoftDeletedTask(t *testing.T) {
 	task, err := NewCleanupSoftDeletedTask(0, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, TypeCleanupSoftDeleted, task.Type())
+
+	var payload CleanupSoftDeletedPayload
+	require.NoError(t, json.Unmarshal(task.Payload(), &payload))
+	assert.Equal(t, 90, payload.Days, "default retention is 90 days — the restore promise")
+
+	task, err = NewCleanupSoftDeletedTask(45, nil)
+	assert.NoError(t, err)
+	require.NoError(t, json.Unmarshal(task.Payload(), &payload))
+	assert.Equal(t, 45, payload.Days, "explicit days pass through")
 }
 
 func TestHandleCleanupSoftDeleted(t *testing.T) {

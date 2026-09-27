@@ -254,3 +254,44 @@ func TestNoteSoftDelete_PurgeHorizon(t *testing.T) {
 	require.EqualValues(t, 1, freshCount, "89-day-old trash still rests")
 	require.EqualValues(t, 1, liveLinkCount)
 }
+
+// The restore route's access check runs before the handler can report 404 —
+// it needs a lookup that still sees the trashed row.
+func TestNoteSoftDelete_FindByIDIncludingDeletedSeesTrash(t *testing.T) {
+	f, cleanup := setupSoftDelete(t)
+	defer cleanup()
+
+	a := f.createNote(t, "a")
+	require.NoError(t, f.repo.Delete(f.ctx, a))
+
+	live, err := f.repo.FindByID(f.ctx, a)
+	require.NoError(t, err)
+	require.Nil(t, live, "regular read must not see the trash")
+
+	trashed, err := f.repo.FindByIDIncludingDeleted(f.ctx, a)
+	require.NoError(t, err)
+	require.NotNil(t, trashed, "including-deleted lookup must find the trashed row")
+	require.Equal(t, a, trashed.ID())
+}
+
+// Recommendations were computed before the delete and note_recommendations
+// has no trigger on notes.deleted_at — the read must filter the join itself.
+func TestNoteSoftDelete_RecommendationsHideTrashedTarget(t *testing.T) {
+	f, cleanup := setupSoftDelete(t)
+	defer cleanup()
+	require.NoError(t, f.db.AutoMigrate(&RecommendationModel{}))
+
+	a := f.createNote(t, "a")
+	live := f.createNote(t, "live candidate")
+	trashed := f.createNote(t, "trashed candidate")
+
+	recRepo := NewRecommendationRepository(f.db)
+	require.NoError(t, recRepo.SaveBatch(f.ctx, a, map[uuid.UUID]float64{live: 0.9, trashed: 0.8}))
+
+	require.NoError(t, f.repo.Delete(f.ctx, trashed))
+
+	recs, err := recRepo.GetRecommendations(f.ctx, a, 10)
+	require.NoError(t, err)
+	require.Len(t, recs, 1)
+	require.Equal(t, live, recs[0].RecommendedNoteID, "the trashed candidate must not be suggested")
+}
