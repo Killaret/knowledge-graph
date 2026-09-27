@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { CelestialBody } from "$entities";
+import { chainDepthOpacity } from "$entities/graph-canvas/lib/dependency-chain";
 import type { Graph3DConfig, SimulationNode } from "../model/types";
 
 interface NodeInstance {
@@ -148,6 +149,37 @@ export class NodeManager {
     this.selectionMesh.visible = true;
     const offset = instance.size * 1.6;
     this.selectionMesh.scale.set(offset, offset, offset);
+  }
+
+  /**
+   * LINK-TYPES-1: dim/brighten instances under the dependency-chain
+   * highlight. Instance colours multiply the material colour: chain members
+   * fade with BFS distance, everything else drops to a dim grey. `null`
+   * restores full brightness.
+   */
+  applyChainVisibility(nodeDepth: Map<string, number> | null): void {
+    const touched = new Set<THREE.InstancedMesh>();
+    const dim = new THREE.Color(0.18, 0.18, 0.22);
+    for (const [id, instance] of this.nodeInstances) {
+      const depth = nodeDepth?.get(id);
+      const scale =
+        nodeDepth === null || nodeDepth === undefined
+          ? 1
+          : depth === undefined
+            ? 0
+            : chainDepthOpacity(depth);
+      const color =
+        nodeDepth == null
+          ? new THREE.Color(1, 1, 1)
+          : depth === undefined
+            ? dim
+            : new THREE.Color(scale, scale, scale);
+      instance.mesh.setColorAt(instance.index, color);
+      touched.add(instance.mesh);
+    }
+    for (const mesh of touched) {
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
   }
 
   getPositionMap(nodes: SimulationNode[]): Map<string, THREE.Vector3> {

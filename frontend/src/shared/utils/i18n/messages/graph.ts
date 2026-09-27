@@ -180,6 +180,7 @@ export const en: Record<string, string> = {
   "linkLegend.showAll": "Show all",
   "linkLegend.hideAll": "Hide all",
   "linkLegend.minWeight": "Min weight: {{weight}}",
+  "linkLegend.auto": "Auto link (model)",
   // SmartGraph
   "smartGraph.loading": "Loading visualization...",
   "smartGraph.mode2D": "2D Mode (optimized)",
@@ -408,6 +409,7 @@ export const ru: Record<string, string> = {
   "linkLegend.showAll": "Показать все",
   "linkLegend.hideAll": "Скрыть все",
   "linkLegend.minWeight": "Мин. вес: {{weight}}",
+  "linkLegend.auto": "Автосвязь (модель)",
   // SmartGraph
   "smartGraph.loading": "Загрузка визуализации...",
   "smartGraph.mode2D": "2D режим (оптимизирован)",

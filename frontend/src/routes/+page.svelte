@@ -133,7 +133,7 @@
           onNoteCreate={handleNoteCreate}
           onNoteDelete={handleDeleteRequest}
           onCreateChildNote={handleCreateChildNote}
-          showLinkTypeLegend={false}
+          showLinkTypeLegend={true}
           progressiveReveal={true}
           readonly={!isAuthenticated() || graphView.mode === "community"}
           bind:controller={canvasController}

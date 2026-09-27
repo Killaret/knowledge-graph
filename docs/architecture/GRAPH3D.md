@@ -47,7 +47,7 @@ shared/
 ### Domain alignment
 
 - Node colors, emissive glow, and emoji come from `CelestialBody`.
-- Link colors and weights come from `LinkType`.
+- Manual link colors and weights come from `LinkType`; model-suggested (`source_type = "gamma"`) links use `AUTO_LINK_COLOR` (`#4ade80`) — a hue no manual type has — with brightness still following the weight (LINK-TYPES-1).
 - Node/link data flows through `filterValidLinks` from `$shared/utils/graphUtils`.
 
 ## Shared graph state
@@ -97,6 +97,11 @@ Named fog presets and FPS-based performance presets are implemented and driven b
 - `deep-space` — no fog.
 
 `applyFogPreset(scene, presetName, config)` returns `{ initial, final }` so `Graph3DEngine` can smoothly interpolate density as the graph settles. The default preset is configured via `frontend.graph.3d.fog.default_preset`.
+
+## Legend and dependency chains (LINK-TYPES-1)
+
+- `Graph3DViewer` embeds `LinkTypeLegend` — the same legend as the 2D canvas: manual link types plus a static "Auto link (model)" row.
+- Hovering a node (`pointermove` → `NodeManager.raycast`) that carries `dependency` links highlights the whole chain through it in both directions: `LinkManager.applyChainHighlight` brightens chain links (cycle members turn red `#ef4444`) and dims the rest to ~0.08, while `NodeManager.applyChainVisibility` scales instance colours by BFS depth. The walk is bounded by `frontend.graph.dependency_highlight_depth` (default 10) and recomputes when the cursor moves to another chain node.
 
 ## Performance presets
 

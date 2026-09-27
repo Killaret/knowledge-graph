@@ -2818,6 +2818,11 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          description: >-
+            Link type. `reference` and `custom` are DEPRECATED legacy values:
+            still accepted for backward compatibility, but persisted as
+            `related` (LINK-TYPES-1). `parent`/`child` are origin links
+            managed by the system, not selectable in the UI (ORIGIN-1).
         weight:
           type: number
           minimum: 0
@@ -2860,6 +2865,11 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          description: >-
+            Link type. `reference` and `custom` are DEPRECATED legacy values:
+            still accepted for backward compatibility, but persisted as
+            `related` (LINK-TYPES-1). `parent`/`child` are origin links
+            managed by the system, not selectable in the UI (ORIGIN-1).
         weight:
           type: number
           minimum: 0
@@ -2880,6 +2890,11 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          description: >-
+            Link type. `reference` and `custom` are DEPRECATED legacy values:
+            still accepted for backward compatibility, but persisted as
+            `related` (LINK-TYPES-1). `parent`/`child` are origin links
+            managed by the system, not selectable in the UI (ORIGIN-1).
         weight:
           type: number
           minimum: 0
@@ -2924,6 +2939,11 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          description: >-
+            Link type. `reference` and `custom` are DEPRECATED legacy values:
+            still accepted for backward compatibility, but persisted as
+            `related` (LINK-TYPES-1). `parent`/`child` are origin links
+            managed by the system, not selectable in the UI (ORIGIN-1).
         weight:
           type: number
           minimum: 0
@@ -2964,6 +2984,11 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          description: >-
+            Link type. `reference` and `custom` are DEPRECATED legacy values:
+            still accepted for backward compatibility, but persisted as
+            `related` (LINK-TYPES-1). `parent`/`child` are origin links
+            managed by the system, not selectable in the UI (ORIGIN-1).
         source_type:
           type: string
           enum: [user, gamma]

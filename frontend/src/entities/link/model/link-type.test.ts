@@ -19,17 +19,21 @@ describe("LinkType", () => {
   });
 
   it("exposes UI and creatable link types", () => {
+    // LINK-TYPES-1: `reference` and `custom` are legacy — hidden from pickers,
+    // filters and the legend; the API still accepts them but stores `related`.
     const uiTypes = LinkType.UI_TYPES.map((t) => t.type);
-    expect(uiTypes).toContain("reference");
     expect(uiTypes).toContain("dependency");
     expect(uiTypes).toContain("related");
     expect(uiTypes).toContain("parent");
     expect(uiTypes).toContain("child");
     expect(uiTypes).not.toContain("custom");
+    expect(uiTypes).not.toContain("reference");
 
     const creatableTypes = LinkType.CREATABLE_TYPES.map((t) => t.type);
-    expect(creatableTypes).toContain("custom");
-    expect(creatableTypes).toContain("reference");
+    expect(creatableTypes).not.toContain("custom");
+    expect(creatableTypes).not.toContain("reference");
+    expect(creatableTypes).toContain("related");
+    expect(creatableTypes).toContain("dependency");
     expect(creatableTypes).toContain("child");
   });
 
@@ -38,7 +42,7 @@ describe("LinkType", () => {
     expect(LinkType.REFERENCE.description.length).toBeGreaterThan(0);
     expect(LinkType.DEPENDENCY.icon).toBe("🔗");
     expect(LinkType.RELATED.example.length).toBeGreaterThan(0);
-    expect(LinkType.CUSTOM.creatable).toBe(true);
+    expect(LinkType.CUSTOM.creatable).toBe(false);
   });
 
   it("computes color with weight and fade opacity", () => {

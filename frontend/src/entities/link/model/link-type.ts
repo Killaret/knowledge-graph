@@ -95,6 +95,10 @@ export class LinkType {
     return LinkType.MAP.get(normalized) ?? LinkType.RELATED;
   }
 
+  /**
+   * LINK-TYPES-1: `reference` is a legacy value. The API still accepts it but
+   * persists `related`; it must not appear in pickers or the legend.
+   */
   static readonly REFERENCE = new LinkType({
     type: "reference",
     label: "linkType.reference",
@@ -104,6 +108,8 @@ export class LinkType {
     example: "linkType.reference.example",
     lineDash: [],
     defaultWeight: 0.8,
+    isUi: false,
+    creatable: false,
   });
 
   static readonly DEPENDENCY = new LinkType({
@@ -138,6 +144,7 @@ export class LinkType {
     lineDash: [2, 6],
     defaultWeight: 0.5,
     isUi: false,
+    creatable: false,
   });
 
   static readonly PARENT = new LinkType({
@@ -177,4 +184,21 @@ export class LinkType {
 
   static readonly UI_TYPES = LinkType.ALL_TYPES.filter((linkType) => linkType.isUi);
   static readonly CREATABLE_TYPES = LinkType.ALL_TYPES.filter((linkType) => linkType.creatable);
+}
+
+/**
+ * LINK-TYPES-1: automatic (gamma / model-suggested) links get a dedicated
+ * colour distinct from every manual link type so machine-proposed structure
+ * reads differently from the hand-made one. Brightness follows the link's
+ * similarity weight — the same rule `LinkType.getColor` uses.
+ */
+export const AUTO_LINK_COLOR = "#4ade80";
+
+export function getAutoLinkColor(weight: number, fadeOpacity: number = 1): string {
+  const baseOpacity = 0.4 + (weight ?? 0.5) * 0.4;
+  const finalOpacity = baseOpacity * fadeOpacity;
+  const r = parseInt(AUTO_LINK_COLOR.slice(1, 3), 16);
+  const g = parseInt(AUTO_LINK_COLOR.slice(3, 5), 16);
+  const b = parseInt(AUTO_LINK_COLOR.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${finalOpacity})`;
 }

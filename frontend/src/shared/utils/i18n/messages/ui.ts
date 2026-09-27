@@ -43,6 +43,10 @@ export const en: Record<string, string> = {
   "cockpit.noteDetails.updated": "Updated: {{date}}",
   "cockpit.noteDetails.linksTitle": "Links ({{count}})",
   "cockpit.noteDetails.noLinks": "No links yet.",
+  "cockpit.noteDetails.requires": "Requires",
+  "cockpit.noteDetails.neededFor": "Needed for",
+  "cockpit.noteDetails.depCycleWarning":
+    "Dependency cycle: this note is part of a circular task chain.",
   "cockpit.noteDetails.deleteAll": "Delete all",
   "cockpit.noteDetails.deleteAllAria": "Delete all links",
   "cockpit.noteDetails.weight": "w. {{weight}}",
@@ -232,6 +236,10 @@ export const ru: Record<string, string> = {
   "cockpit.noteDetails.updated": "Обновлено: {{date}}",
   "cockpit.noteDetails.linksTitle": "Связи ({{count}})",
   "cockpit.noteDetails.noLinks": "Пока нет связей.",
+  "cockpit.noteDetails.requires": "Требует",
+  "cockpit.noteDetails.neededFor": "Нужна для",
+  "cockpit.noteDetails.depCycleWarning":
+    "Цикл зависимостей: заметка входит в кольцевую цепочку задач.",
   "cockpit.noteDetails.deleteAll": "Удалить все",
   "cockpit.noteDetails.deleteAllAria": "Удалить все связи",
   "cockpit.noteDetails.weight": "в. {{weight}}",

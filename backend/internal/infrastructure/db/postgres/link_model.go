@@ -12,7 +12,7 @@ type LinkModel struct {
 	ID               uuid.UUID      `gorm:"type:uuid;primaryKey"`
 	SourceNoteID     uuid.UUID      `gorm:"type:uuid;not null;uniqueIndex:idx_links_source_target_type;column:source_note_id"`
 	TargetNoteID     uuid.UUID      `gorm:"type:uuid;not null;uniqueIndex:idx_links_source_target_type;column:target_note_id"`
-	LinkType         string         `gorm:"default:'reference';uniqueIndex:idx_links_source_target_type;column:link_type"`
+	LinkType         string         `gorm:"default:'related';uniqueIndex:idx_links_source_target_type;column:link_type"`
 	Weight           float64        `gorm:"default:1.0;column:weight"`
 	Metadata         datatypes.JSON `gorm:"type:jsonb;column:metadata"`
 	SourceType       string         `gorm:"default:'user';column:source_type;index"`

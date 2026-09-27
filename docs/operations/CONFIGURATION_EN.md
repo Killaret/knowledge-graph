@@ -59,7 +59,7 @@ Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.c
   "graph_service": { ... },
   "frontend": {
     "test": { ... },
-    "graph": { "label_hub_count": 15, "2d": { ... }, "3d": { ... } },
+    "graph": { "label_hub_count": 15, "dependency_highlight_depth": 10, "2d": { ... }, "3d": { ... } },
     "api": { ... },
     "achievements": { ... }
   },
@@ -89,6 +89,7 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 | Parameter | Type | Default | Used in | Description |
 |-----------|------|---------|---------|-------------|
 | `label_hub_count` | integer | `15` | `entities/graph-canvas/lib/labels.ts` — shared by 2D canvas and 3D engine | Maximum number of hub labels drawn at low zoom: the top-N nodes by link degree. Relative selection — an absolute degree threshold captions almost every node on a dense graph |
+| `dependency_highlight_depth` | integer | `10` | `entities/graph-canvas/lib/dependency-chain.ts` — shared by 2D canvas and 3D engine | Maximum BFS depth of the dependency-chain hover highlight (LINK-TYPES-1): how many hops from the hovered node the chain walk covers in both directions |
 
 ## Frontend Graph 2D Parameters (`frontend.graph.2d`)
 

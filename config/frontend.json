@@ -8,6 +8,7 @@
     },
     "graph": {
       "label_hub_count": 15,
+      "dependency_highlight_depth": 10,
       "2d": {
         "max_nodes": 500,
         "shadows_threshold": 100,

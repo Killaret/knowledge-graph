@@ -125,7 +125,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	linkType, err := link.NewLinkType(req.LinkType)
+	linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(req.LinkType))
 	if err != nil {
 		apicommon.BadRequest(c, []apicommon.FieldError{
 			apicommon.NewFieldErrorWithValue("link_type", apicommon.ReasonInvalidValue, err.Error(), req.LinkType),
@@ -268,7 +268,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	modified := false
 	if req.LinkType != "" {
-		linkType, err := link.NewLinkType(req.LinkType)
+		linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(req.LinkType))
 		if err != nil {
 			apicommon.BadRequest(c, []apicommon.FieldError{
 				apicommon.NewFieldErrorWithValue("link_type", apicommon.ReasonInvalidValue, err.Error(), req.LinkType),

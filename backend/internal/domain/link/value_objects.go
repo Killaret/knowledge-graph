@@ -15,6 +15,18 @@ func NewLinkType(value string) (LinkType, error) {
 	}
 }
 
+// NormalizeLinkTypeValue maps legacy generic types onto `related`
+// (LINK-TYPES-1): `reference` and `custom` remain accepted on write paths but
+// are persisted as `related`. All other values pass through unchanged.
+func NormalizeLinkTypeValue(value string) string {
+	switch value {
+	case "reference", "custom":
+		return "related"
+	default:
+		return value
+	}
+}
+
 func (t LinkType) String() string {
 	return t.value
 }

@@ -29,6 +29,7 @@ import {
   BIDIRECTIONAL_LINK_OFFSET,
 } from "./link-renderers";
 import { isNewNode } from "./renderer-utils";
+import { chainDepthOpacity, type DependencyChain } from "./dependency-chain";
 
 /**
  * Draw all links with animation and hover effects
@@ -45,7 +46,8 @@ export function drawAllLinks(
   dyingLinkOpacity: Map<string, number> = new Map(),
   nodeMap?: Map<string, SimulationNode>,
   visibleNodeIds?: Set<string>,
-  hoveredNeighborIds?: Set<string>
+  hoveredNeighborIds?: Set<string>,
+  depChain?: DependencyChain | null
 ): void {
   let drawnCount = 0;
   let skippedCount = 0;
@@ -110,7 +112,8 @@ export function drawAllLinks(
       curveOffset,
       opacity,
       isHighlighted,
-      hoveredNeighborIds
+      hoveredNeighborIds,
+      depChain
     );
     drawnCount++;
   });
@@ -287,7 +290,8 @@ export function drawAllNodes(
   visibleNodeIds?: Set<string>,
   simplified: boolean = false,
   hoveredNeighborIds?: Set<string>,
-  labeledNodeIds?: Set<string>
+  labeledNodeIds?: Set<string>,
+  depChain?: DependencyChain | null
 ): void {
   const r = BASE_NODE_RADIUS;
   const nodeCount = nodes.length;
@@ -324,7 +328,12 @@ export function drawAllNodes(
     const isNeighbor =
       hoveredNodeId != null && hoveredNeighborIds ? hoveredNeighborIds.has(node.id) : false;
     const isSearchMatch = searchMatchIds?.has(node.id) ?? false;
-    const finalOpacity = hoveredNodeId ? (isHovered ? 1 : isNeighbor ? 0.85 : 0.3) : opacity;
+    let finalOpacity = hoveredNodeId ? (isHovered ? 1 : isNeighbor ? 0.85 : 0.3) : opacity;
+    if (depChain && node.id) {
+      // LINK-TYPES-1: chain members fade with BFS distance, others dim hard.
+      const depth = depChain.nodeDepth.get(node.id);
+      finalOpacity = depth === undefined ? 0.2 : depth === 0 ? 1 : chainDepthOpacity(depth);
+    }
     const nodeSimplified = simplified && !isHovered && !isNeighbor;
 
     const previousAlpha = ctx.globalAlpha;
@@ -435,7 +444,8 @@ export function draw(
   linkPreviewMousePos?: { sourceId: string; x: number; y: number } | null,
   fog: FogRenderParams = defaultFogRenderParams(),
   hoveredNeighborIds?: Set<string>,
-  labeledNodeIds?: Set<string>
+  labeledNodeIds?: Set<string>,
+  depChain?: DependencyChain | null
 ): void {
   ctx.clearRect(0, 0, width, height);
 
@@ -497,7 +507,8 @@ export function draw(
     dyingLinkOpacity,
     nodeMap,
     visibleNodeIds,
-    hoveredNeighborIds
+    hoveredNeighborIds,
+    depChain
   );
 
   // Draw link preview if dragging for link creation
@@ -550,7 +561,8 @@ export function draw(
     visibleNodeIds,
     simplified,
     hoveredNeighborIds,
-    labeledNodeIds
+    labeledNodeIds,
+    depChain
   );
 
   ctx.restore();

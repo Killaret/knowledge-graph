@@ -123,7 +123,8 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_Success() {
 	s.NotEmpty(data["id"])
 	s.Equal(source.ID().String(), data["source_note_id"])
 	s.Equal(target.ID().String(), data["target_note_id"])
-	s.Equal("reference", data["link_type"])
+	// LINK-TYPES-1: legacy `reference` is accepted but persisted as `related`.
+	s.Equal("related", data["link_type"])
 	s.Equal(0.8, data["weight"])
 }
 
@@ -214,6 +215,44 @@ func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_Duplicate() {
 	err = json.Unmarshal(w2.Body.Bytes(), &wrappedResp2)
 	s.NoError(err)
 	s.Equal("CONFLICT", wrappedResp2["code"])
+}
+
+// TestCreateLink_LegacyTypesNormalized — LINK-TYPES-1: deprecated `reference`
+// and `custom` are still accepted but persisted as `related`.
+func (s *LinkHandlerIntegrationTestSuite) TestCreateLink_LegacyTypesNormalized() {
+	for _, legacyType := range []string{"reference", "custom"} {
+		source := s.createTestNote("Src "+legacyType, "content", "star")
+		target := s.createTestNote("Dst "+legacyType, "content", "planet")
+
+		reqBody := map[string]interface{}{
+			"source_note_id": source.ID().String(),
+			"target_note_id": target.ID().String(),
+			"link_type":      legacyType,
+			"weight":         0.7,
+		}
+		jsonBody, _ := json.Marshal(reqBody)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		s.router.ServeHTTP(w, req)
+
+		s.Equal(201, w.Code, "legacy type %s must still be accepted", legacyType)
+
+		var wrappedResponse map[string]interface{}
+		s.NoError(json.Unmarshal(w.Body.Bytes(), &wrappedResponse))
+		data := wrappedResponse["data"].(map[string]interface{})
+		s.Equal("related", data["link_type"], "legacy type %s must persist as related", legacyType)
+
+		// Read path returns the normalized type too.
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("GET", "/links/"+data["id"].(string), nil)
+		s.router.ServeHTTP(w2, req2)
+		s.Equal(200, w2.Code)
+		var wrappedGet map[string]interface{}
+		s.NoError(json.Unmarshal(w2.Body.Bytes(), &wrappedGet))
+		s.Equal("related", wrappedGet["data"].(map[string]interface{})["link_type"])
+	}
 }
 
 // TestCreateLink_InvalidJSON - невалидный JSON
@@ -505,7 +544,7 @@ func (s *LinkHandlerIntegrationTestSuite) TestFullLinkLifecycle() {
 	s.NoError(err)
 	createData := createWrappedResponse["data"].(map[string]interface{})
 	linkID := createData["id"].(string)
-	s.Equal("reference", createData["link_type"])
+	s.Equal("related", createData["link_type"])
 	s.Equal(0.9, createData["weight"])
 
 	// 2. Получаем связь

@@ -176,9 +176,12 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | IMP-6-review-findings.md | не начат |
 | IMP-7-import-title-only-fallback.md | не начат |
 | IMP-8-import-failed-item-description.md | не начат |
+| NOTE-DELETE-1-review-findings.md | не начат |
 | NOTE-DELETE-1-soft-delete.md | не начат |
+| NOTE-HEALTH-1-technical-and-user-health.md | не начат |
 | NOTE-QUALITY-1-quality-loop.md | не начат |
 | NOTE-QUALITY-1-review-findings.md | не начат |
+| NOTE-TYPES-1-type-taxonomy-review.md | не начат |
 | NOTE-TYPE-TAXONOMY.md | не начат |
 | PROMISES-1-user-promises.md | не начат |
 | URL-HEADING-1-findings-probe.md | не начат |
@@ -224,6 +227,8 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | P11-2-live-verification.md | не начат |
 | P11-2-multilingual-embeddings.md | не начат |
 | P11-2-review-findings.md | не начат |
+| P11-3-keyword-normalization.md | не начат |
+| P11-4-graph-clustering.md | не начат |
 | RECO-1-recommendation-formula.md | не начат |
 | W-1-eval-findings.md | не начат |
 | W-1-link-weight-formula-validation.md | не начат |
@@ -329,6 +334,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | PROJECT-SKILLS-1-review-findings.md | не начат |
 | PROTO-CRITERIA-1-review-findings.md | не начат |
 | RELEASE-1-scope-1.0.md | не начат |
+| RELEASE-TEST-1-manual-run-1.0.md | не начат |
 | SPEC-AUDIT-1-specs-vs-code.md | не начат (сама постановка) |
 | SPEC-AUDIT-1-review-findings.md | не начат (разбор этой задачи) |
 | SPECS-1-review-findings.md | не начат |
@@ -346,18 +352,18 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | Этап | файлов | есть+тест | без теста | иначе | потеряно | не сделано |
 |---|---|---|---|---|---|---|
 | A | 16 | 32 | 0 | 1 | 0 | 5 |
-| B | 28 | — | — | — | — | — |
-| C | 38 | — | — | — | — | — |
+| B | 31 | — | — | — | — | — |
+| C | 40 | — | — | — | — | — |
 | D | 60 | — | — | — | — | — |
-| E | 41 | — | — | — | — | — |
-| **Σ** | **183** | | | | | |
+| E | 42 | — | — | — | — | — |
+| **Σ** | **189** | | | | | |
 
 Счётчики этапа A — по строкам таблиц выше; «не сделано» там — осознанные отсрочки решением
 владельца (SYNC-B/C, UX-1, UI-LOAD-1 3D) и один открытый дефект VIS-1 round2 (F-1).
 «Потерь» на этапе A не найдено — все принятые постановки стоят в коде на текущем HEAD.
 
 Не распределено: `README.md` (генерируемый индекс) и `SPEC-AUDIT-1-register.md` (сам реестр).
-Итого 183 файла = все постановки и разборы каталога на 2026-09-28, включая постановку и разбор
+Итого 189 файлов = все постановки и разборы каталога на 2026-09-28, включая постановку и разбор
 SPEC-AUDIT-1. Полнота проверяется повторяемо: `node scripts/testing/check-spec-audit-1-register.mjs .`
 
 ---

@@ -24,10 +24,23 @@
     type RefetchPreview,
   } from "$shared/api/quality";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { computeDependencyCycleNodes } from "$entities/graph-canvas/lib/dependency-chain";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
+
+  interface NoteItem {
+    id: string;
+    title: string;
+    type?: string;
+  }
+
+  interface GraphLinkLike {
+    source: unknown;
+    target: unknown;
+    link_type?: string;
+  }
 
   interface Props {
     nodeId: string;
@@ -35,9 +48,22 @@
     onEdit?: (id: string) => void;
     onDelete?: (id: string) => void;
     onCreateChildNote?: (note: Note) => void;
+    /** Whole-graph data (needed to detect dependency cycles) — LINK-TYPES-1. */
+    notes?: NoteItem[];
+    links?: GraphLinkLike[];
+    onNodeSelect?: (id: string | null) => void;
   }
 
-  const { nodeId, onClose, onEdit, onDelete, onCreateChildNote }: Props = $props();
+  const {
+    nodeId,
+    onClose,
+    onEdit,
+    onDelete,
+    onCreateChildNote,
+    notes = [],
+    links: graphLinks = [],
+    onNodeSelect,
+  }: Props = $props();
 
   let note = $state<Note | null>(null);
   let links = $state<Link[]>([]);
@@ -49,6 +75,20 @@
   let linkActionError = $state("");
   let savingLink = $state(false);
   let deletingLinkId = $state<string | null>(null);
+
+  // LINK-TYPES-1: dependency edges split by direction — the sources the note
+  // requires and the dependents that need it.
+  const depRequires = $derived(
+    links.filter((l) => l.link_type === "dependency" && l.target_note_id === nodeId)
+  );
+  const depNeededFor = $derived(
+    links.filter((l) => l.link_type === "dependency" && l.source_note_id === nodeId)
+  );
+  const depInCycle = $derived(computeDependencyCycleNodes(graphLinks).has(nodeId));
+
+  function noteTitle(id: string): string {
+    return notes.find((n) => n.id === id)?.title ?? id.slice(0, 8);
+  }
 
   // NOTE-QUALITY-1: quality row state
   let qualityEnabled = $state(false);
@@ -453,6 +493,31 @@
         </div>
         {#if linkActionError}
           <div class="link-action-error" role="alert">{linkActionError}</div>
+        {/if}
+        {#if depInCycle}
+          <div class="dep-cycle-warning" role="alert" data-testid="dep-cycle-warning">
+            ⚠️ {t("cockpit.noteDetails.depCycleWarning")}
+          </div>
+        {/if}
+        {#if depRequires.length > 0}
+          <div class="dep-line" data-testid="dep-requires">
+            <span class="dep-label">{t("cockpit.noteDetails.requires")}:</span>
+            {#each depRequires as l}
+              <button type="button" class="dep-ref" onclick={() => onNodeSelect?.(l.source_note_id)}
+                >{noteTitle(l.source_note_id)}</button
+              >
+            {/each}
+          </div>
+        {/if}
+        {#if depNeededFor.length > 0}
+          <div class="dep-line" data-testid="dep-needed-for">
+            <span class="dep-label">{t("cockpit.noteDetails.neededFor")}:</span>
+            {#each depNeededFor as l}
+              <button type="button" class="dep-ref" onclick={() => onNodeSelect?.(l.target_note_id)}
+                >{noteTitle(l.target_note_id)}</button
+              >
+            {/each}
+          </div>
         {/if}
         {#if links.length === 0}
           <p class="no-links">{t("cockpit.noteDetails.noLinks")}</p>
@@ -881,6 +946,46 @@
     border: 1px solid rgba(248, 113, 113, 0.2);
     border-radius: 6px;
     font-size: 12px;
+  }
+
+  .dep-cycle-warning {
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .dep-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 2px 8px;
+    font-size: 12px;
+  }
+
+  .dep-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+  }
+
+  .dep-ref {
+    padding: 2px 8px;
+    border: 1px solid rgba(255, 102, 0, 0.4);
+    border-radius: 10px;
+    background: rgba(255, 102, 0, 0.12);
+    color: #fdba74;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .dep-ref:hover {
+    background: rgba(255, 102, 0, 0.25);
   }
 
   .link-item {

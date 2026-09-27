@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { LinkType } from "$entities";
+  import { LinkType, AUTO_LINK_COLOR } from "$entities";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
@@ -23,7 +23,10 @@
   } = $props();
 
   let collapsed = $state(false);
-  const types = $derived(LinkType.ALL_TYPES);
+  // LINK-TYPES-1: manual (UI-visible) types only — legacy `reference`/`custom`
+  // and system `parent`/`child` never appear here. Automatic model-suggested
+  // links get a separate, non-toggleable row below.
+  const types = $derived(LinkType.UI_TYPES);
   const isInteractive = $derived(!!onToggle);
   const areAllVisible = $derived(hiddenTypes.length === 0);
   const areAllHidden = $derived(hiddenTypes.length === types.length);
@@ -114,6 +117,16 @@
             </button>
           </div>
         {/each}
+        <!-- LINK-TYPES-1: model-suggested (gamma) links have their own colour;
+             the row is informational — autos are not a manual link type and are
+             not toggleable through the type filter. -->
+        <div class="legend-list-item" role="listitem">
+          <div class="legend-item legend-item-auto">
+            <span class="legend-line" style="background: {AUTO_LINK_COLOR}"></span>
+            <span class="legend-icon">✨</span>
+            <span class="legend-label">{t("linkLegend.auto")}</span>
+          </div>
+        </div>
       </div>
     </div>
   {/if}

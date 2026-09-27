@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
-  import { graphConfig2D } from "$shared/config";
+  import { graphConfig2D, graphDependencyHighlightDepth } from "$shared/config";
   import type { GraphDeltaData } from "$shared/api/graph";
   import { GraphCanvasOverlay, GraphCanvasModals, LinkTypeLegend } from "$features/graph-ui";
   import GraphNodeContextMenu from "$components/molecules/GraphNodeContextMenu.svelte";
@@ -42,6 +42,7 @@
   } from "$entities/graph-canvas/lib";
   import { addNodesToSimulation } from "$entities/graph-canvas/lib/incremental";
   import { getLinkEndpointId } from "$entities/graph-canvas/lib/types";
+  import { computeDependencyChain } from "$entities/graph-canvas/lib/dependency-chain";
   import { computeLabeledNodeIds } from "$entities/graph-canvas/lib/labels";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
@@ -481,6 +482,14 @@
         canvasState.hoveredNodeId,
         simState.simLinks
       );
+      // LINK-TYPES-1: hovering a node with dependency links highlights the
+      // whole chain through it (both directions, bounded depth); when there
+      // is no chain, regular neighbour highlighting applies.
+      const depChain = computeDependencyChain(
+        canvasState.hoveredNodeId,
+        simState.simLinks,
+        graphDependencyHighlightDepth
+      );
       fogState.update(
         width,
         height,
@@ -502,7 +511,7 @@
       );
 
       needsRedraw = true;
-      doRedraw(simNodes, hoveredNeighborIds);
+      doRedraw(simNodes, hoveredNeighborIds, depChain);
     });
 
     mounted = true; // triggers $effect re-run since it's $state
@@ -746,7 +755,11 @@
     return offscreenCtx!;
   }
 
-  function doRedraw(simNodes: SimulationNode[], hoveredNeighborIds: Set<string>) {
+  function doRedraw(
+    simNodes: SimulationNode[],
+    hoveredNeighborIds: Set<string>,
+    depChain: ReturnType<typeof computeDependencyChain> = null
+  ) {
     if (!needsRedraw || !ctx) return;
     needsRedraw = false;
 
@@ -797,7 +810,8 @@
         selectedId: canvasState.selectedNodeId,
         searchMatchIds: hotkeysState.searchMatchIds,
         zoomK: transform.k,
-      })
+      }),
+      depChain
     );
     drawFog(targetCtx, width, height, fogState.snapshot);
 

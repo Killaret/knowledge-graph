@@ -8,6 +8,8 @@ import { autoZoomToFit, centerCameraOnNode } from "./camera";
 import { filterValidLinks } from "$shared/utils/graphUtils";
 import { graphConfig3D, graphPerformanceConfig } from "$shared/config/config";
 import { computeLabeledNodeIds } from "$entities/graph-canvas/lib/labels";
+import { computeDependencyChain } from "$entities/graph-canvas/lib/dependency-chain";
+import { graphDependencyHighlightDepth } from "$shared/config/config";
 import { createPerformanceMonitor } from "$shared/lib/performance-monitor";
 import { toSimulationNodes } from "../config";
 import { applyFogPreset } from "./fog";
@@ -40,6 +42,7 @@ export class Graph3DEngine {
   private sim: ReturnType<typeof createGraphSimulation> | null = null;
   private simNodes: SimulationNode[] = [];
   private selectedNodeId: string | null = null;
+  private hoveredNodeId: string | null = null;
   private simLinks: GraphLink[] = [];
   private rafId: number | null = null;
   private disposed = false;
@@ -415,6 +418,22 @@ export class Graph3DEngine {
         type: node.type,
       });
     }
+  }
+
+  /**
+   * LINK-TYPES-1: hovering a node highlights its dependency chain (both
+   * directions, bounded depth) — chain links brighten or turn red on cycles,
+   * everything else dims.
+   */
+  handlePointerMove(event: MouseEvent) {
+    if (this.disposed || this.simNodes.length === 0) return;
+    const nodeId = this.raycastNodeId(event);
+    if (nodeId === this.hoveredNodeId) return;
+    this.hoveredNodeId = nodeId;
+
+    const chain = computeDependencyChain(nodeId, this.simLinks, graphDependencyHighlightDepth);
+    this.linkManager.applyChainHighlight(chain);
+    this.nodeManager.applyChainVisibility(chain?.nodeDepth ?? null);
   }
 
   private raycastNodeId(event: MouseEvent): string | null {

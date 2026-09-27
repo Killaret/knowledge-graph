@@ -660,7 +660,7 @@ func (h *Handler) ImportBatch(c *gin.Context) {
 				}
 			}
 
-			linkType, err := link.NewLinkType(item.LinkType)
+			linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(item.LinkType))
 			if err != nil {
 				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "link_type", Reason: string(apicommon.ReasonInvalidValue), Message: err.Error()})
 				continue

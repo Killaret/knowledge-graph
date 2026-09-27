@@ -431,7 +431,7 @@
             onLinkDelete={handleLinkDelete}
             onLinkConfirm={handleLinkConfirm}
             helpContent={knowledgeCore?.content}
-            showLinkTypeLegend={false}
+            showLinkTypeLegend={true}
             bind:controller={canvasController}
           />
         </div>

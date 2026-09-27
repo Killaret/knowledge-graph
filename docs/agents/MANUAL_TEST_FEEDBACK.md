@@ -176,6 +176,15 @@
 - **Status:** Devin cannot recover Docker Desktop from CLI; owner action required.
 - **Screenshot / Logs:** `docker ps` → `Docker Desktop is unable to start`; `docker desktop diagnose` bundle `C:\Users\89209\AppData\Local\Temp\E33C7E28-...\20260911110956.zip`.
 
+- **Case:** Cockpit details panel always shows "Links (0) / No links yet" (found during LINK-TYPES-1 live check)
+- **What:** `GET /api/v1/notes/{id}/links` returns `{data: {incoming: [...], outgoing: [...]}}`, but `getNoteLinks()` in `frontend/src/shared/api/links.ts` typed `data` as a flat `Link[]`. The panel received an object: `links.length` was `undefined` so the section silently rendered empty, and the new LINK-TYPES-1 `$derived` filters threw `e(...).filter is not a function` on every note open.
+- **Expected:** Panel lists the note's links and the "Requires / Needed for" dependency rows.
+- **Actual:** Links section permanently empty; pageerror in console. The unit test mocked `data: [...]` (flat array), so the suite stayed green while the real contract was different — a mocked lie, not a covered path.
+- **Hotfix applied:** `getNoteLinks` now accepts both shapes, merges `outgoing` + `incoming`, and dedupes by `id` (a self-loop appears in both lists).
+- **Regression tests:** `links.test.ts` — new case mocks the real `{incoming, outgoing}` envelope and asserts merge + self-loop dedupe; `src/shared/api/links.test.ts` 28/28 and `src/widgets/cosmic-cockpit/` 125/125 pass.
+- **Status:** fixed; frontend image rebuilt on the test stack and the panel now shows `Links (8)` with populated dependency sections (see LINK-TYPES-1 verification entry).
+- **Screenshot / Logs:** `docs/agents/screenshots/link-types-1/2d-cockpit-details.png` — panel with Links (8), "Requires: Seed star 001, Seed galaxy 004", "Needed for: Seed comet 003".
+
 ### Roadmap items
 
 <!-- Real feature work that is understood and has clear value. -->
@@ -549,3 +558,20 @@ Create a new bullet under the right section with:
 - **Not covered:** criterion 9 import of three golden snapshots — the local snapshot server is blocked by this session's permissions; tracked as NOTE-QUALITY-1-TAIL.
 - **Screenshot / Logs:** `docs/agents/screenshots/note-quality-1/quality-indicator.png`; mongosh counts and the API response above.
 - **Result:** NOTE-QUALITY-1 stage 1 accepted with a tail; UI-GRAPH-1 accepted.
+
+### LINK-TYPES-1 — link-type merge and visuals live on the test stack
+
+- **Scope:** criterion 5 of `docs/tasks/LINK-TYPES-1-link-types-and-visuals.md` — 2D/3D rendering, legend, dependency panel sections, legacy-type normalization.
+- **Date:** 2026-09-27
+- **Agent:** Devin
+- **Environment:** isolated test stack (`start-test.ps1`), images built from this tree with migration 037; seed: 20 notes, 10 links; plus a `dependency` chain a→b→c→d and a cycle edge d→b created via the API. Headless Chromium, `?stableRender=true`.
+- **Observed:**
+  - DB: `links.link_type` default is `'related'`; live rows are `related`/`parent`/`child` only — no `reference`/`custom` remain.
+  - `POST /api/v1/links` with `"link_type":"reference"` → 201, persisted `link_type:"related"` — legacy input accepted and normalized.
+  - 2D graph: legend present with rows Dependency / Related / Parent / Child / **Auto link (model)** — no `reference`, no `custom`; Show all / Hide all and min-weight slider intact.
+  - 3D graph (`/graph/3d`): same legend rendered; honeycomb view loads.
+  - Cockpit details panel for a mid-chain note: `Links (8)`, **Requires: Seed star 001, Seed galaxy 004** (incoming deps a→b, d→b), **Needed for: Seed comet 003** (outgoing dep b→c).
+  - Defect found and fixed in-flight: cockpit `getNoteLinks` expected a flat array while the API returns `{incoming, outgoing}` — see the "Links (0)" entry under Urgent fixes.
+- **Not covered live:** dependency-chain hover highlight and red cycle marking (covered by `dependency-chain.test.ts` 13/13 and `link-renderers.test.ts` 15/15; live hover targeting is not automatable reliably).
+- **Screenshot / Logs:** `docs/agents/screenshots/link-types-1/` — `2d-graph.png`, `2d-legend.png`, `3d-graph.png`, `3d-legend.png`, `note-panel.png`, `2d-cockpit-details.png`.
+- **Result:** migration, normalization, legends and panel dependency sections verified live end-to-end.

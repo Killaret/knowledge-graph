@@ -59,7 +59,7 @@ npm run build-config
   "graph_service": { ... },
   "frontend": {
     "test": { ... },
-    "graph": { "label_hub_count": 15, "2d": { ... }, "3d": { ... } },
+    "graph": { "label_hub_count": 15, "dependency_highlight_depth": 10, "2d": { ... }, "3d": { ... } },
     "api": { ... },
     "achievements": { ... }
   },
@@ -89,6 +89,7 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 | Параметр | Тип | По умолчанию | Где используется | Описание |
 |----------|-----|--------------|------------------|----------|
 | `label_hub_count` | integer | `15` | `entities/graph-canvas/lib/labels.ts` — общий для 2D-канваса и 3D-движка | Максимум подписей хабов при отдалении: top-N узлов по связности. Отбор относительный — абсолютный порог подписывал почти все узлы на плотном графе |
+| `dependency_highlight_depth` | integer | `10` | `entities/graph-canvas/lib/dependency-chain.ts` — общий для 2D-канваса и 3D-движка | Глубина подсветки цепочки `dependency` при наведении (LINK-TYPES-1): сколько шагов от заметки под курсором покрывает обход в обе стороны |
 
 ## Параметры 2D-графа (`frontend.graph.2d`)
 

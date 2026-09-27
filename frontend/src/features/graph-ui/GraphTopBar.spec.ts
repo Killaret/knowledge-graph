@@ -130,7 +130,7 @@ describe("GraphTopBar", () => {
   });
 
   it("opens link type dropdown and toggles a link type", async () => {
-    const firstType = LinkType.ALL_TYPES[0];
+    const firstType = LinkType.UI_TYPES[0];
     render(GraphTopBar, {
       props: { isAuthenticated: true, currentView: "graph" },
     });
@@ -159,7 +159,7 @@ describe("GraphTopBar", () => {
     const showAll = screen.getByTestId("link-types-show-all");
 
     await fireEvent.click(hideAll);
-    expect(graphStore.hiddenLinkTypes).toHaveLength(LinkType.ALL_TYPES.length);
+    expect(graphStore.hiddenLinkTypes).toHaveLength(LinkType.UI_TYPES.length);
 
     await fireEvent.click(showAll);
     expect(graphStore.hiddenLinkTypes).toHaveLength(0);

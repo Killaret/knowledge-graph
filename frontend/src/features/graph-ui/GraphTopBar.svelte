@@ -86,7 +86,7 @@
     },
   ];
 
-  const linkTypes = $derived(LinkType.ALL_TYPES);
+  const linkTypes = $derived(LinkType.UI_TYPES);
   const hiddenLinkSet = $derived(new Set(graphStore.hiddenLinkTypes));
   const areAllLinkTypesVisible = $derived(graphStore.hiddenLinkTypes.length === 0);
   const areAllLinkTypesHidden = $derived(graphStore.hiddenLinkTypes.length === linkTypes.length);
