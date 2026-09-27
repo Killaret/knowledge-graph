@@ -198,6 +198,7 @@ work-nlp4/notes_dataset.json
 work-*/notes_dataset*.json
 # MODEL-1B: артефакты с названиями заметок (пары, выдача, лист разметки) — только локально
 work-model1b/local/
+work-model2/
 # NOTE-QUALITY-1: выгрузка quality-recompute --export — только локально
 work-quality/local/
 

@@ -224,6 +224,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | MODEL-1B-separation-findings.md | не начат |
 | MODEL-1B-separation-public.md | не начат |
 | MODEL-2-e5-base-migration.md | не начат |
+| MODEL-2-final-findings.md | не начат |
 | MODEL-3-model-choice-on-larger-corpus.md | не начат |
 | NLP-2-review-findings.md | не начат |
 | NLP-2-yake-replace-keybert-lemmatization.md | не начат |
