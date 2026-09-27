@@ -128,6 +128,7 @@
 | 78 | 2026-09-27 | **Кометы — дела с необязательной датой и напоминанием, в 1.0 (COMET-1):** визит к врачу, кино, «посмотреть»; дата и напоминание — по желанию, повторов нет; нового типа нет; на графе комета «приближается» — ярче и с хвостом длиннее к дате | разговор с владельцем: кометы — «что-то записать», дата то есть, то нет; напоминание, вероятно, нужно; повторы — нет | [`tasks/COMET-1-event-reminder-fields.md`](tasks/COMET-1-event-reminder-fields.md) |
 | 79 | 2026-09-27 | **Кластеры в 1.0 (P11-4):** цветные области под узлами; два уровня — кластеры и подкластеры — с семантическим масштабом, имена по уровню; пересчёт сам, кнопки нет — принудительный командой из документации; глубину вложенности потом определяет сам кластер. Уточняет решение 28 | выбор по живому макету: области лучше для восприятия, масштаб как задумано | [`tasks/P11-4-graph-clustering.md`](tasks/P11-4-graph-clustering.md) |
 | 80 | 2026-09-27 | **Техническое и пользовательское здоровье заметки — раздельно (NOTE-HEALTH-1):** граница — кто чинит: техническое — система, пользовательское — только человек; техническое видно только при проблеме, пользовательское — всегда; у библиотеки и кластера — оба уровня. В 1.0: декоративный «HEALTH» скрыт, строка «Качество» становится «Обработкой» | строка «Качество» смешивает вину обработки и содержания; «HEALTH» в нижней панели — декорация (отношение связей к заметкам); мысль владельца 14.09 — здоровье как видимая функция | [`tasks/NOTE-HEALTH-1-technical-and-user-health.md`](tasks/NOTE-HEALTH-1-technical-and-user-health.md) |
+| 81 | 2026-09-27 | **Рекомендации на графе — третий вид линий (LINK-TYPES-1):** бледный пунктир своего цвета, плотность по силе близости, показ при наведении на заметку, вместе с автосвязями | выбор по живому макету; задумка владельца в `GRAPH_LINKS_VISUALIZATION.md` («Direct vs Recommended») не была реализована | [`tasks/LINK-TYPES-1-link-types-and-visuals.md`](tasks/LINK-TYPES-1-link-types-and-visuals.md) |
 
 ---
 
@@ -140,7 +141,6 @@
 | DEPENDABOT-1: судьба оставшихся Dependabot-PR | [`PROJECT_REVIEW_AI_AGENTS.md`](PROJECT_REVIEW_AI_AGENTS.md), §20 |
 | Дата 1.0 — после постановок P11-3, P11-4 и COMET-1, ориентир 17 октября | [`tasks/RELEASE-1-scope-1.0.md`](tasks/RELEASE-1-scope-1.0.md) |
 | ORIGIN-1: в 1.0 или после; остаётся ли `related` между заметками после переноса `parent` и `child` | [`tasks/ORIGIN-1-born-from-relation.md`](tasks/ORIGIN-1-born-from-relation.md) |
-| LINK-TYPES-1: рисовать ли рекомендации из `note_recommendations` третьим видом линий, как в `GRAPH_LINKS_VISUALIZATION.md` («Direct vs Recommended») | [`tasks/LINK-TYPES-1-link-types-and-visuals.md`](tasks/LINK-TYPES-1-link-types-and-visuals.md) |
 | WORKTREE-1: форма каталога Claude Code — отцеплённый `HEAD` (как сейчас) или локальная ветка `review` | [`agents/WORKTREES.md`](agents/WORKTREES.md), раздел «Вопрос владельцу» |
 | NOTE-TYPES-1: типы заметок пересекаются (`dust`, `asteroid`, `nebula`; `debris` затирает тип) — развести тип и стадию? | [`tasks/NOTE-TYPES-1-type-taxonomy-review.md`](tasks/NOTE-TYPES-1-type-taxonomy-review.md) |
 
