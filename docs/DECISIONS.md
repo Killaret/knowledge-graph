@@ -137,6 +137,7 @@
 | Дата 1.0 — после постановок P11-3, P11-4 и COMET-1, ориентир 17 октября | [`tasks/RELEASE-1-scope-1.0.md`](tasks/RELEASE-1-scope-1.0.md) |
 | NOTE-QUALITY-1: выход из `enrich` — число попыток, что такое «сырая» заметка, сеть для ссылок без текста, хранение первичной версии, огромные страницы (пример — Keycloak) | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md), раздел «Выход из `enrich`» |
 | ORIGIN-1: в 1.0 или после; остаётся ли `related` между заметками после переноса `parent` и `child` | [`tasks/ORIGIN-1-born-from-relation.md`](tasks/ORIGIN-1-born-from-relation.md) |
+| LINK-TYPES-1: рисовать ли рекомендации из `note_recommendations` третьим видом линий, как в `GRAPH_LINKS_VISUALIZATION.md` («Direct vs Recommended») | [`tasks/LINK-TYPES-1-link-types-and-visuals.md`](tasks/LINK-TYPES-1-link-types-and-visuals.md) |
 
 ---
 
