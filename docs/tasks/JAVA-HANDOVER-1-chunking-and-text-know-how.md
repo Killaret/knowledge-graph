@@ -25,7 +25,7 @@ Java-сервису `source-text-handler`, передаются позже от�
 | 3 | Медленные регулярные выражения на чужом тексте: пять шаблонов, строки-атаки, замена строковыми операциями, сверка «новое = старое» | коммит `1b54b10`, класс `TestRegexFreeScans` | §5, Pass 1: регулярные выражения. `java.util.regex` — тоже движок с возвратами |
 | 4 | Квадратичный разбор длинного абзаца: на каждой точке абзац копируется от начала | замер в `1b54b10`: абзац из «www.» в 400 КБ — 94 с | CHUNK-1: чанкер «будет портирован в Java-сервис (middleware, большие объёмы)» |
 | 5 | Заголовки и оглавление из HTML без модели, золотой набор | [`URL-HEADING-1-heading-extraction.md`](URL-HEADING-1-heading-extraction.md) | §18 «Требования к обработке URL-импорта» |
-| 6 | Мера качества заметки, формат `verdict` и `reasons` | [`NOTE-QUALITY-1-quality-loop.md`](NOTE-QUALITY-1-quality-loop.md), этап 3; решение 42 | §8 «Формула smart-скоринга» |
+| 6 | Мера качества заметки, формат `verdict` и `reasons`, правила выхода из `enrich` (решение 77) | [`NOTE-QUALITY-1-quality-loop.md`](NOTE-QUALITY-1-quality-loop.md), этап 3; решение 42 | §8 «Формула smart-скоринга» |
 | 7 | Нормализация текста перед векторами | [`NLP-4-normalization-measurement.md`](NLP-4-normalization-measurement.md) | §5, Pass 1: очистка |
 | 8 | Пакетное создание заметок и договор API | [`BATCH-1-api-design.md`](BATCH-1-api-design.md), [`API-1-openapi-contract-and-handover.md`](API-1-openapi-contract-and-handover.md) | §11 «HTTP-контракт с Go backend» |
 
