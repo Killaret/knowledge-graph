@@ -140,6 +140,7 @@
 | ORIGIN-1: в 1.0 или после; остаётся ли `related` между заметками после переноса `parent` и `child` | [`tasks/ORIGIN-1-born-from-relation.md`](tasks/ORIGIN-1-born-from-relation.md) |
 | LINK-TYPES-1: рисовать ли рекомендации из `note_recommendations` третьим видом линий, как в `GRAPH_LINKS_VISUALIZATION.md` («Direct vs Recommended») | [`tasks/LINK-TYPES-1-link-types-and-visuals.md`](tasks/LINK-TYPES-1-link-types-and-visuals.md) |
 | NOTE-TYPES-1: типы заметок пересекаются (`dust`, `asteroid`, `nebula`; `debris` затирает тип) — развести тип и стадию? | [`tasks/NOTE-TYPES-1-type-taxonomy-review.md`](tasks/NOTE-TYPES-1-type-taxonomy-review.md) |
+| P11-4: показ кластеров — области под узлами или оттенок узлов; имена на графе или в легенде; пересчёт сам или ещё по кнопке | [`tasks/P11-4-graph-clustering.md`](tasks/P11-4-graph-clustering.md), раздел «Показ на графе» |
 
 ---
 
