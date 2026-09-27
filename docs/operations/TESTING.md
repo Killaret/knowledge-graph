@@ -160,7 +160,7 @@ or view modes — restarting only the backend leaves graph-service still bypassi
 - Waits for all containers to be healthy.
 - Displays test stack URLs.
 
-On Windows only, `start-test.ps1 -Force` explicitly takes over a foreign/stale stack. Use it only after confirming the owning agent is not running; the shell script deliberately has no force option.
+On Windows only, `start-test.ps1 -Force` explicitly takes over a foreign/stale stack. Use it only after an explicit confirmation from the stack owner — the owning agent or the human, for example in a board reply — never on a guess that the stack looks idle (on 2026-09-27 a review stack was taken over mid-review this way); the shell script deliberately has no force option. Worktree map and session start: [`../agents/WORKTREES.md`](../agents/WORKTREES.md).
 
 #### Rebuilding after frontend changes
 

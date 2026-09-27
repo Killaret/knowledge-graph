@@ -141,6 +141,7 @@
 | Дата 1.0 — после постановок P11-3, P11-4 и COMET-1, ориентир 17 октября | [`tasks/RELEASE-1-scope-1.0.md`](tasks/RELEASE-1-scope-1.0.md) |
 | ORIGIN-1: в 1.0 или после; остаётся ли `related` между заметками после переноса `parent` и `child` | [`tasks/ORIGIN-1-born-from-relation.md`](tasks/ORIGIN-1-born-from-relation.md) |
 | LINK-TYPES-1: рисовать ли рекомендации из `note_recommendations` третьим видом линий, как в `GRAPH_LINKS_VISUALIZATION.md` («Direct vs Recommended») | [`tasks/LINK-TYPES-1-link-types-and-visuals.md`](tasks/LINK-TYPES-1-link-types-and-visuals.md) |
+| WORKTREE-1: форма каталога Claude Code — отцеплённый `HEAD` (как сейчас) или локальная ветка `review` | [`agents/WORKTREES.md`](agents/WORKTREES.md), раздел «Вопрос владельцу» |
 | NOTE-TYPES-1: типы заметок пересекаются (`dust`, `asteroid`, `nebula`; `debris` затирает тип) — развести тип и стадию? | [`tasks/NOTE-TYPES-1-type-taxonomy-review.md`](tasks/NOTE-TYPES-1-type-taxonomy-review.md) |
 
 ---
