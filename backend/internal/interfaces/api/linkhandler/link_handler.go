@@ -25,13 +25,6 @@ type Handler struct {
 	graphCache         *cache.GraphCache
 }
 
-func getUserIDString(c *gin.Context) string {
-	if userID, exists := middleware.GetUserID(c); exists && userID != uuid.Nil {
-		return userID.String()
-	}
-	return ""
-}
-
 func New(linkRepo link.Repository, noteRepo note.Repository, achievementService *achievement.Service, graphCache *cache.GraphCache) *Handler {
 	return &Handler{
 		linkRepo:           linkRepo,
