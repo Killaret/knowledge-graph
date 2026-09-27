@@ -344,6 +344,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | TRACE-1-decision-task-test.md | не начат |
 | VERIFY-FINDING-MIRROR-1-review-findings.md | не начат |
 | WORKTREE-1-agent-worktrees.md | не начат |
+| WORKTREE-1-review-findings.md | разобран — доработка у Claude Code (ветка отцеплена → норма; сторож реестра в пост-ребейзный список) |
 
 ---
 
