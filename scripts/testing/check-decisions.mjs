@@ -4,33 +4,46 @@
 // 1. Every link in docs/DECISIONS.md resolves.
 // 2. Every owner-decision marker in docs/tasks/*.md and in the
 //    "## Решения владельца" section of docs/AI_HANDOFF.md has a matching row in
-//    docs/DECISIONS.md (matched by task identifier and/or date).
+//    docs/DECISIONS.md (matched by task identifier and/or date — a citation
+//    copies the original date, a new decision needs a row of its own; the
+//    file-link match is no exception).
 // 3. Every decision marked as requiring code has at least one commit that names
 //    its task identifier in the subject or body.
 // 4. No terminal board rows in docs/AI_HANDOFF.md: a row marked "принято" or
 //    "отменено" belongs in docs/archive/board/YYYY-MM.md the moment it closes.
 //    "отклонено" is not terminal - it means rework and stays on the board.
+//
+// Known limitations (recorded per CHECK-DECISIONS-2 review, 2026-09-27):
+// - A second owner decision on the same task on the same day passes without
+//   its own row: such a marker is indistinguishable from a citation. Telling
+//   them apart needs marker-text analysis - a separate task if the owner cares.
+// - A marker without a date (`Решение владельца (SYNC-1):`) slips through:
+//   dateCompatible lets a dateless marker match any row. The norm requires a
+//   date, so the guard could complain - kept permissive for now.
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
-import { join, resolve, dirname, relative } from "node:path";
+import { join, resolve, dirname, relative, basename } from "node:path";
 import { execSync } from "node:child_process";
 
 const args = process.argv.slice(2);
 let repoRoot = ".";
 let boardPath = null;
 let tasksDir = null;
+let decisionsPath = null;
 for (const arg of args) {
     if (arg.startsWith("--board=")) {
         boardPath = resolve(arg.slice("--board=".length));
     } else if (arg.startsWith("--tasks=")) {
         tasksDir = resolve(arg.slice("--tasks=".length));
+    } else if (arg.startsWith("--decisions=")) {
+        decisionsPath = resolve(arg.slice("--decisions=".length));
     } else {
         repoRoot = arg;
     }
 }
 repoRoot = resolve(repoRoot);
 
-const DECISIONS_PATH = join(repoRoot, "docs", "DECISIONS.md");
+const DECISIONS_PATH = decisionsPath ?? join(repoRoot, "docs", "DECISIONS.md");
 const HANDOFF_PATH = boardPath ?? join(repoRoot, "docs", "AI_HANDOFF.md");
 const TASKS_DIR = tasksDir ?? join(repoRoot, "docs", "tasks");
 
@@ -226,9 +239,13 @@ function findMatchingRow(markers, sourceType) {
                     break;
                 }
                 // Strong match — the index row links to the marker's own
-                // file; the link identifies the decision on its own.
+                // file; the link identifies the decision on its own. The date
+                // rule still applies: a citation copies the original date, so
+                // a marker carrying a different date is a new decision and
+                // needs a row of its own (CHECK-DECISIONS-2 rework).
                 if (
                     marker.filePath &&
+                    dateCompatible(marker, row) &&
                     row.refs.some(
                         (ref) => ref.isLink && ref.resolved === marker.filePath,
                     )
@@ -283,9 +300,11 @@ function findMatchingRow(markers, sourceType) {
 function extractDecisionMarkersFromFile(filePath, relPath) {
     const text = readText(filePath);
     const lines = text.split(/\r?\n/);
-    const fileId = extractLeadingId(
-        relPath.replace(/\\/g, "/").replace(/^docs\/tasks\//, "").replace(/\.md$/, ""),
-    );
+    // The task identifier comes from the file name itself, not the relative
+    // path — so a fixture dir passed via --tasks= derives ids the same way
+    // docs/tasks/ does (CHECK-DECISIONS-2 rework: the two-row probe needs a
+    // real taskFileIdentifier to reach the file-link match).
+    const fileId = extractLeadingId(basename(filePath).replace(/\.md$/, ""));
     const markers = [];
 
     for (const line of lines) {

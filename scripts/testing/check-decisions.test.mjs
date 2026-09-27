@@ -40,6 +40,29 @@ const cases = [
         expectExit: 1,
         stderrIncludes: ["CHECK-DECISIONS-2-probe.md", "2026-10-01", "no matching row"],
     },
+    {
+        // CHECK-DECISIONS-2 rework: the real-path hole — a file linked by
+        // TWO index rows. The same-day markers claim the first row, the
+        // second stays free, and the new-date marker rode its file link
+        // straight through. With the date check on the strong match it must
+        // be red.
+        name: "new-decision marker riding a second file-linked row",
+        fixture: "rejected-on-board.md",
+        tasks: "tasks-probe-tworrow",
+        decisions: "DECISIONS-tworrow.md",
+        expectExit: 1,
+        stderrIncludes: ["TWOROW-1-probe.md", "2026-10-01", "no matching row"],
+    },
+    {
+        // Control: drop the new-date marker — the two citations alone must
+        // stay green under the same fixture index.
+        name: "same-day citations on a two-row file stay green",
+        fixture: "rejected-on-board.md",
+        tasks: "tasks-probe-tworrow-green",
+        decisions: "DECISIONS-tworrow.md",
+        expectExit: 0,
+        stdoutIncludes: "Decisions OK",
+    },
 ];
 
 let failed = false;
@@ -47,6 +70,7 @@ for (const c of cases) {
     const board = join(fixtures, c.fixture);
     const spawnArgs = [guard, repoRoot, `--board=${board}`];
     if (c.tasks) spawnArgs.push(`--tasks=${join(fixtures, c.tasks)}`);
+    if (c.decisions) spawnArgs.push(`--decisions=${join(fixtures, c.decisions)}`);
     const res = spawnSync("node", spawnArgs, {
         encoding: "utf8",
     });
