@@ -148,7 +148,7 @@ Do not edit it manually; run the generator after changing the task directory.
 | P11-2 | P11-2. Мультиязычная модель эмбеддингов | [P11-2-multilingual-embeddings.md](P11-2-multilingual-embeddings.md) | — | 2026-09-22 |
 | P11-2 | P11-2. Ревью мультиязычной модели эмбеддингов | [P11-2-review-findings.md](P11-2-review-findings.md) | — | 2026-09-11 |
 | P11-3 | P11-3. Нормализация ключевых слов — закрыта NLP-2; остаток — пустые наборы | [P11-3-keyword-normalization.md](P11-3-keyword-normalization.md) | **бэклог** — 1.0 · Devin; маленькая | 2026-09-27 |
-| P11-4 | P11-4. Кластеризация графа | [P11-4-graph-clustering.md](P11-4-graph-clustering.md) | **бэклог** — 1.0 · Devin; после MODEL-2; три вопроса владельцу о показе | 2026-09-27 |
+| P11-4 | P11-4. Кластеризация графа | [P11-4-graph-clustering.md](P11-4-graph-clustering.md) | **бэклог** — 1.0 · Devin; после MODEL-2 (решения 28, 79) | 2026-09-27 |
 | PROJECT-SKILLS-1 | Ревью: Проектные скиллы (e95eba8) | [PROJECT-SKILLS-1-review-findings.md](PROJECT-SKILLS-1-review-findings.md) | — | 2026-09-22 |
 | PROMISES-1 | PROMISES-1. Обещания пользователю — каталог и сквозные тесты | [PROMISES-1-user-promises.md](PROMISES-1-user-promises.md) | **бэклог** — 1.0 · Devin | 2026-09-26 |
 | PROTO-CRITERIA-1 | PROTO-CRITERIA-1 — разбор ревью | [PROTO-CRITERIA-1-review-findings.md](PROTO-CRITERIA-1-review-findings.md) | — | 2026-09-21 |
