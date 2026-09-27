@@ -94,7 +94,7 @@ sequenceDiagram
     end
 
     User->>Browser: Clicks "Publish"
-    Browser->>API: POST /api/v1/notes/:id/publish
+    Browser->>API: POST /api/v1/drafts/:draft_id/sync
     API->>Mongo: Load draft by ID
     Mongo-->>API: Draft document
     
@@ -356,15 +356,15 @@ stateDiagram-v2
 ## Operational Considerations
 
 ### Monitoring
-- Circuit breaker state changes emit alerts
-- Redis queue depth monitored for backlog
-- MongoDB TTL expiry tracked for compliance
-- RLS policy effectiveness via query plans
+- ~~Circuit breaker state changes emit alerts~~ *(circuit breakers not implemented — scope note)*
+- Redis queue depth monitored for backlog *(asynqmon/manual redis-cli — see RECOMMENDATION_TROUBLESHOOTING.md; no automated alerting exists)*
+- MongoDB TTL expiry tracked for compliance *(TTL index exists on `drafts`; no dedicated monitoring job)*
+- ~~RLS policy effectiveness via query plans~~ *(RLS not implemented — scope note)*
 
 ### Backup Strategy
-- PostgreSQL: Daily snapshots + WAL archiving
-- MongoDB: Daily snapshots (audit logs = 90 days only)
-- Redis: RDB snapshots (queues = ephemeral)
+- PostgreSQL (personal stack): `backup_scheduler` runs `pg_dump` daily + weekly via cron (retention 7/90 days, optional Yandex.Disk upload — `scripts/devops/backup-personal.*`); **no WAL archiving**
+- MongoDB: **no backup** — drafts/artifacts are regenerable
+- Redis: **no backup** — queues/cache are ephemeral
 
 ### Scaling Vectors
 - **Read scaling**: Read replicas for CQRS queries

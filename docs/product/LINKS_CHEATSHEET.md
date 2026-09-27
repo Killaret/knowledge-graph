@@ -68,16 +68,18 @@ opacity = 0.4 + weight × 0.4
 
 ### ✅ Разрешено
 ```typescript
-['accept', 'content-type', 'x-request-id']
+['accept', 'content-type', 'x-request-id', 'authorization', 'cookie']
 ```
 
 ### ❌ Заблокировано
 ```typescript
-['cookie', 'authorization', 'connection', 'proxy-',
- 'transfer-encoding', 'keep-alive', 'upgrade', 'te', 'host']
+['connection', 'proxy-', 'transfer-encoding',
+ 'keep-alive', 'upgrade', 'te']
 ```
 
-**Почему:** Cookie и токены управляются client-side API клиентом.
+**Почему:** `authorization` и `cookie` пробрасываются намеренно — real-auth
+идёт через same-origin прокси `/api` и `/graph-service/api` (hooks.server.ts);
+блокируются только hop-by-hop заголовки.
 
 **Файл:** `frontend/src/hooks.server.ts`
 

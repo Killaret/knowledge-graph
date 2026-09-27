@@ -7,7 +7,7 @@ The Knowledge Graph frontend is a **note-centric Svelte 5 application** with gra
 ### Key Features
 - **Progressive Graph Loading**: graphs reveal nodes incrementally — fog-of-war in 3D (`features/graph-3d/lib/fog.ts`), batched reveal in 2D (`entities/graph-canvas/lib/incremental.ts`)
 - **Three.js Modular Architecture**: `features/graph-3d/lib/` (scene, simulation, camera, fog, nodes, links, labels, engine)
-- **Device-Adaptive**: `SmartGraph.svelte` chooses 2D vs 3D from device/WebGL capabilities
+- **Device-Adaptive**: *not implemented* — `SmartGraph.svelte` is a thin 2D wrapper and `shared/utils/deviceCapabilities.ts` (WebGL/low-end probe) is currently unused; 2D vs 3D is chosen by route (`/graph/:id` vs `/graph/3d/:id`). Awaiting owner decision (DOC-AUDIT-2).
 - **SSR-Safe**: All browser APIs properly guarded for server-side rendering
 
 ## Core Principles
@@ -157,11 +157,11 @@ Reusable confirmation dialog:
 
 ### 6. SmartGraph.svelte
 
-Smart component that decides between 2D and 3D:
-- Detects device capabilities
-- Checks WebGL support
-- Respects user preference via URL param (`?force3d=1`)
-- Falls back to 2D on low-end devices
+Thin wrapper used on `/graph/:id`: shows a loading state, then renders
+`GraphCanvas` (2D). The documented device-adaptive behaviour (WebGL probe,
+`?force3d=1` URL param, 2D fallback on low-end devices) is **not implemented** —
+`shared/utils/deviceCapabilities.ts` exists but has no callers; 3D is reached by
+navigating to `/graph/3d/:id`. Awaiting owner decision (DOC-AUDIT-2).
 
 ### 7. Sidebar / Context Control Center 🆕 (planned)
 
@@ -450,34 +450,26 @@ function handleDelete() {
 ## BDD Testing with Cucumber
 
 ### Feature Files Location
+
+The wired suite (what `npm run test:cucumber` / `test:bdd` actually runs —
+`cucumber.mjs` points at `frontend/tests/features/`):
+
 ```
-tests/features/                    # 13 feature files:
-├── achievements.feature           # Achievements
-├── auth_cosmic_theme.feature      # Auth + cosmic theme
-├── camera_navigation.feature      # 3D camera
-├── celestial_body_types.feature   # Node types
-├── full_3d_graph.feature          # Full 3D graph
-├── graph_navigation.feature       # Graph interaction scenarios
-├── graph_view.feature             # 2D/3D view modes
-├── import_export.feature          # Import/export
-├── link_types.feature             # Link type behaviours
-├── local_3d_graph.feature         # Per-note 3D graph
-├── note_management.feature        # CRUD operations
-├── search_and_discovery.feature   # Search
-└── type_filters.feature           # Filtering by type
+frontend/tests/features/           # 2 feature files:
+├── graph_2d_list.feature          # 2D graph on the list page
+└── login.feature                  # Auth flow
+frontend/tests/features/step_definitions/
+├── auth.steps.ts
+├── common.steps.ts
+├── graph_3d_loading.steps.ts
+└── graph_interaction.steps.ts
 ```
 
-### Step Definitions
-```
-tests/features/step_definitions/
-├── auth_cosmic_steps.ts
-├── camera_steps.ts
-├── graph_steps.ts
-├── import_export_steps.ts
-├── note_steps.ts
-├── progressive-graph-steps.ts
-└── search_steps.ts
-```
+A legacy set of 13 feature files (`achievements.feature`,
+`camera_navigation.feature`, …) plus 7 step files still lives under the
+repository-root `tests/features/` — it is **not referenced** by `cucumber.mjs`,
+`package.json`, CI, or the test scripts, so it does not execute
+(DOC-AUDIT-2; retirement/rewiring is on the owner's list).
 
 ### Running Tests
 
@@ -499,8 +491,8 @@ CUCUMBER_TAGS="@smoke" npm run test:cucumber
 
 1. **Lazy Loading**: 3D module is dynamically imported only when needed
 2. **Canvas Rendering**: 2D graph uses Canvas API for smooth 60fps animation
-3. **Device Detection**: `SmartGraph` adjusts 2D/3D choice by capabilities
-4. **Batched progressive reveal**: large graphs (2D and 3D) render in batches instead of one blocking pass
+3. **Batched progressive reveal**: large graphs (2D and 3D) render in batches instead of one blocking pass
+4. ~~Device Detection~~ — *not implemented*: `SmartGraph` does not adjust the 2D/3D choice (DOC-AUDIT-2)
 
 > Not implemented (historical text removed): virtual scrolling in the note list, fixed 500 ms search debounce.
 

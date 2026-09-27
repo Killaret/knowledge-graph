@@ -14,7 +14,7 @@ Correctness of the foundation, before new surface area.
 
 | Work | Why it comes first |
 |---|---|
-| Close the audit blockers: data isolation under `SKIP_AUTH`, seeded credentials in migrations, internal auth headers at the gateway, private responses marked cacheable | Each one blocks multi-user deployment. Status (DOC-AUDIT-2, 2026-09-26): header stripping done — both nginx configs null out `X-Internal-Auth`/`X-User-Id`; `SKIP_AUTH` is restricted to the seeded test user. Still open: migration `019_add_test_user` ships a known-password account; no `Cache-Control`/`no-store` on private responses |
+| Close the audit blockers: data isolation under `SKIP_AUTH`, seeded credentials in migrations, internal auth headers at the gateway, private responses marked cacheable | Each one blocks multi-user deployment. Status (DOC-AUDIT-2, 2026-09-26): header stripping done — both nginx configs null out `X-Internal-Auth`/`X-User-Id`; `SKIP_AUTH` is restricted to the seeded test user; authorized responses now send `Cache-Control: private` + `Vary: Authorization, Cookie` (`cacheControlMiddleware` in `router.go`). Still open: migration `019_add_test_user` inserts the known-password account into every database — it is not gated by `APP_ENV` |
 | Make verification tell the truth: honest regression exit codes, a real 3D readiness signal, visual baselines that capture the scene | Done in substance: `test-a3-exit-codes.ps1`, `engine.isReady`/`data-test-stable` readiness marker, seeded-deterministic visual snapshots + Argos baselines |
 | Enforce coverage thresholds in CI and make the orphaned BDD scenarios executable | Backend 70% gate is enforced in `_core-checks.yml` (`backend-coverage-total.py`); BDD runs via `scripts/run-bdd.cjs` |
 

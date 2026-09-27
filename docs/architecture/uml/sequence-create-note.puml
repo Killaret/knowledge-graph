@@ -7,7 +7,7 @@ participant "Frontend" as FE
 participant "Note Handler" as API
 participant "Note Service" as Service
 participant "Note Repository" as Repo
-participant "Events Publisher" as EventBus
+participant "Graph Outbox (таблица)" as EventBus
 participant "Asynq Queue" as Queue
 participant "NLP Client" as NLP
 participant "Asynq Worker" as Worker
@@ -26,14 +26,11 @@ Service -> Service : валидация (Value Objects)
 
 Service -> Repo : Save(note)
 activate Repo
+note right: декоратор outbox в той же транзакции\nпишет строку graph_outbox (SYNC-1 A2);\nрелей в worker сливает её в graph:events
+Repo -> EventBus : INSERT graph_outbox (NoteCreated)
+EventBus --> Repo : ok
 Repo --> Service : ok
 deactivate Repo
-
-Service -> EventBus : PublishNoteCreated(noteID, userID)
-activate EventBus
-note right: канал graph:events — инвалидация\nкэша graph-service (SYNC-1)
-EventBus --> Service : ok
-deactivate EventBus
 
 ' Асинхронные вызовы (не блокируют ответ)
 Service ->> Queue : EnqueueExtractKeywords(noteID, 10)

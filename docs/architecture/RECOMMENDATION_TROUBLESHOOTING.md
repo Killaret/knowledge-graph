@@ -57,7 +57,7 @@ systemctl start knowledge-graph-worker
 
 2. **Add rate limiting in CLI:**
    ```bash
-   ./bin/recommendation-cli --batch-delay=60
+   cd backend && go run ./cmd/cli -batch-delay=60
    ```
 
 3. **Increase task delay (more deduplication):**
@@ -174,11 +174,11 @@ export RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED=true
 
 ### Solutions
 
-1. **Dry-run first:** `./bin/recommendation-cli --dry-run` prints tasks without enqueuing.
+1. **Dry-run first:** `cd backend && go run ./cmd/cli -dry-run` prints tasks without enqueuing.
 
 2. **Increase delay between batches:**
    ```bash
-   ./bin/recommendation-cli --batch-delay=120
+   cd backend && go run ./cmd/cli -batch-delay=120
    ```
    (The CLI only supports `--dry-run` and `--batch-delay`; there is no `--batch-size` flag — `backend/cmd/cli/main.go`.)
 
@@ -238,7 +238,7 @@ redis-cli DEL asynq:{default} asynq:scheduled asynq:processed asynq:failed
 systemctl start knowledge-graph-worker
 
 # 6. Run initial population
-./bin/recommendation-cli --batch-delay=60
+cd backend && go run ./cmd/cli -batch-delay=60
 ```
 
 ### Disable Recommendations Temporarily

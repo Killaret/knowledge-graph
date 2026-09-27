@@ -68,8 +68,13 @@ tracked in SYNC-1 stage C. Updates currently reach the client via polling. [see 
 | Command | File | Purpose | Port |
 |---------|------|---------|------|
 | `server` | `cmd/server/main.go` | HTTP API server | 8080 |
-| `worker` | `cmd/worker/main.go` | Background job processor | — |
+| `worker` | `cmd/worker/main.go` | Background job processor (Asynq + outbox relayer) | — |
 | `cli` | `cmd/cli/main.go` | Recommendation precomputation CLI | — |
+
+Auxiliary commands (not part of the running system): `seed`, `checkconfig`,
+`checkmigrations`, `rotate-api-keys`, and the recompute batch —
+`embed-recompute`, `keyword-recompute`, `quality-recompute`,
+`nlp-artifacts-recompute`, `gamma-links-regenerate`.
 
 #### 1.2 Domain Layer (`internal/domain/`)
 
@@ -293,7 +298,7 @@ AggregateWeighted(graphScore, semanticScore, keywordScore, alpha, beta, gamma)
 
 **Migrations:**
 - `migrations.go` — Migration runner
-- `../../migrations/` — 68 SQL migration files
+- `../../migrations/` — 72 SQL migration files (36 pairs, up to `036`)
 
 ##### NLP Client (`infrastructure/nlp/`)
 
@@ -404,7 +409,7 @@ single flat folder:
 |-------|----------|-------|
 | `widgets/` | `src/widgets/` | `graph-canvas/` (`GraphCanvas.svelte`, `SmartGraph.svelte`), `graph-3d-viewer/`, `notes/` (`NoteCard.svelte`), `cosmic-cockpit/`, `search/`, `quick-capture/`, `notification/`, `auth/`, `floating-auth-panel/`, `confirm/` |
 | `features/` | `src/features/` | `graph-3d/` (Three.js engine — see 2.6), `home-page/`, `graph-interaction/`, `graph-forms/`, `graph-canvas/`, `graph-ui/`, `cosmic-cockpit/`, `cosmic-ui/`, `preload/` |
-| `entities/` | `src/entities/` | `note/`, `achievement/` (model + UI), `link/`, `user/`, `tag/` |
+| `entities/` | `src/entities/` | `note/`, `achievement/` (model + UI), `link/`, `user/`, `graph/`, `graph-canvas/`, `search/`, `shared/` |
 | `components/` | `src/components/` | Atomic design: `atoms/` (Button, Modal, IconButton, SplashScreen, ApiErrorDisplay…), `molecules/` (TypeSelector, TagSelector, NoteForm, GraphNodeContextMenu…), `organisms/` (NoteEditor, LoginForm, RegisterForm, ProfileEditor, PreloadIndicator…) |
 
 #### 2.3 API Client (`src/shared/api/`)
@@ -550,25 +555,29 @@ users          — Users
 
 #### 4.3 Docker Compose
 
-**Services (dev stack):**
-1. `postgres` — pgvector (port 5432)
-2. `redis` — Redis 7 (port 6379)
-3. `nlp` — Python service (port 5000)
-4. `backend` — Go API (port 8080)
-5. `worker` — Background worker
-6. `frontend` — SvelteKit (port 3000)
+**Services (dev stack, `docker-compose.yml`; host port → container port):**
+1. `postgres` — pgvector (15432→5432)
+2. `redis` — Redis 7 (16379→6379)
+3. `mongo` — MongoDB 7 (27017→27017) — drafts and NLP artifacts
+4. `nlp` — Python service (5000)
+5. `backend` — Go API (9000→8080)
+6. `graph-service` — Graph layout service (9090 gRPC, 9091 HTTP)
+7. `worker` — Background worker
+8. `frontend` — SvelteKit (internal 3000; no direct host port — served via nginx)
+9. `nginx` — Reverse proxy (18080→8080, 18081→8081)
 
-**Services (personal stack):**
-1. `postgres_personal` — pgvector (port 5433)
-2. `redis_personal` — Redis 7 (port 6380)
-3. `mongo_personal` — MongoDB 7 (port 27018) [see ADR 011](decisions/011-drafts-autosave-mongodb.md) — drafts
-4. `nlp` — Python service (port 5001)
-5. `graph-service-personal` — Graph service (port 9092) [see ADR 013](decisions/013-graph-service-isolation.md)
-6. `backend_personal` — Go API (port 8080)
+**Services (personal stack, `docker-compose.personal.yml`; host port → container port):**
+1. `postgres_personal` — pgvector (5433→5432)
+2. `redis_personal` — Redis 7 (16380→6379)
+3. `mongo_personal` — MongoDB 7 (27018→27017) [see ADR 011](decisions/011-drafts-autosave-mongodb.md) — drafts
+4. `nlp` — Python service (5001→5000)
+5. `graph-service-personal` — Graph service (9092→9091) [see ADR 013](decisions/013-graph-service-isolation.md)
+6. `backend_personal` — Go API (18085→8080)
 7. `worker_personal` — Background worker
-8. `nginx_personal` — Reverse proxy (ports 18082, 18084)
-9. `frontend_personal` — SvelteKit (port 3001)
-10. `backup_scheduler` — Automatic backup service
+8. `cli_personal` — Recommendation precomputation CLI
+9. `nginx_personal` — Reverse proxy (ports 18082, 18084)
+10. `frontend_personal` — SvelteKit (3001→3000)
+11. `backup_scheduler` — Automatic backup service
 
 #### 4.4 Backup Service
 
@@ -633,9 +642,10 @@ users          — Users
 
 **Environment Variables:**
 - `BACKUP_CLOUD_ENABLED` — Enable cloud backup
-- `BACKUP_YANDEX_TOKEN` — Yandex.Disk OAuth token
+- `BACKUP_YANDEX_OAUTH_TOKEN` — Yandex.Disk OAuth token
 - `BACKUP_YANDEX_FOLDER` — Folder on Yandex.Disk
-- `BACKUP_DIR` — Local backup folder
+- `BACKUP_DIR` — Local backup folder (container-side path, `/backups`)
+- `KG_BACKUP_DIR` — Host-side backup folder (required by `backup-personal.ps1`)
 - `CLEANUP_OLD_BACKUPS` — Cleanup old backups
 
 **More details:** [`docs/operations/BACKUP.md`](../operations/BACKUP.md)
@@ -739,9 +749,9 @@ github.com/google/uuid          # UUID generation
 
 ```
 svelte                          # Framework
-@threlte/core                   # Three.js for Svelte
 three                           # 3D engine
-d3                              # 2D graph visualization
+d3-force                        # 2D graph layout
+d3-force-3d                     # 3D graph layout
 ky                              # HTTP client
 ```
 
@@ -842,8 +852,8 @@ infrastructure/
 | Component | Files | Complexity |
 |-----------|-------|------------|
 | Domain | 35 | Low (business logic) |
-| Application | 24 | Medium (orchestration) |
-| Infrastructure | 64 | High (technical details) |
+| Application | 23 | Medium (orchestration) |
+| Infrastructure | 69 | High (technical details) |
 | Interfaces | 27 | Medium (HTTP) |
 | Frontend | 89 | Medium (UI) |
 | NLP | 7 | Low (models) |

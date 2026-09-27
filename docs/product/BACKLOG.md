@@ -12,7 +12,7 @@ hypotheses live in [IDEAS.md](IDEAS.md).
 > Manual testing/stabilization and the Cosmic Cockpit UI are shipped — see
 > [CHANGELOG.md](../../CHANGELOG.md). The cockpit design itself is captured in
 > [UI Duplication and Note Creation Analysis](UI_DUPLICATION_AND_NOTE_CREATION_ANALYSIS.md)
-> and the running code under `frontend/src/widgets/cockpit*`.
+> and the running code under `frontend/src/widgets/cosmic-cockpit/`.
 
 ### ⚡ Performance & Resource Optimization
 
@@ -24,10 +24,10 @@ hypotheses live in [IDEAS.md](IDEAS.md).
 
 - **Frontend bundle:** `three` is imported as `import * as THREE from "three"` in 7+ files — full library may end up in the bundle. Bundle analyzer is not configured.
 - **Frontend runtime:** `frontend/src/features/home-page/home-page.svelte.ts` uses `setInterval` for delta polling; the graph animation loop is implemented in `frontend/src/entities/graph-canvas/lib/animation.ts` and consumed by `GraphCanvas.svelte` — both need lifecycle cleanup checks.
-- **Frontend limits:** `max_nodes: 500` on the client, but `graph_service.full_limit: 1000` on the backend — mismatch may cause out-of-memory or timeouts.
+- **Frontend limits:** `max_nodes: 500` on the client and `graph_service.full_limit: 500` on the backend — aligned since DOC-AUDIT-2 (the doc previously claimed a 500 vs 1000 mismatch; verified against `knowledge-graph.config.json`).
 - **Backend search:** `note_repo.go` uses `plainto_tsquery` + `ts_rank` full-text search — indexes and query cost need verification.
 - **Backend cache:** `graph_service` caches full layout with 300s TTL; large graphs may pressure Redis memory.
-- **Docker dev stack:** no memory limits for backend/frontend services (test stack has 512M–2G limits).
+- **Docker stacks:** dev compose now carries `deploy.resources.limits.memory` (512M–2G per service) — the earlier "no limits" finding is resolved; test stack has the same.
 - **Testing:** performance and memory-usage tests are marked as `⏳` in `docs/archive/API_TEST_COVERAGE_PLAN.md`; no CI bundle-size check.
 
 **Action plan:**
@@ -53,9 +53,11 @@ Items 1–5 (event-driven invalidation, auth/user-scoped filtering, API
 unification, analytics API, `note_links_closure` view) are shipped — see
 [CHANGELOG.md](../../CHANGELOG.md) and ADR-013/014. Current-state notes:
 
-- `events.Publisher` **is** wired to handlers: notes/links/import/refetch/
-  link-weight all publish `Note*`/`Link*` events (SYNC-1 stage A added the
-  missing write paths and a `check-graph-write-paths.mjs` guard).
+- Graph events are **transactional** (SYNC-1 stage A2): `infrastructure/outbox`
+  decorators write a `graph_outbox` row in the same transaction as the data
+  write, and a worker relayer drains it to `graph:events` with at-least-once
+  delivery. Manual `Publish*` calls outside the relay are forbidden and guarded
+  by `check-graph-write-paths.mjs`.
 - Deltas are computed against the client's layout snapshot
   (`graph-service:snapshot:*`, TTL 900 s); an unknown `last_hash` answers
   `resync`, not an all-added delta.
@@ -118,7 +120,7 @@ Description: 3D-визуализация графа знаний в виде к�
 □ Динамическое переключение между режимами (2D/3D).
 □ Серверная кластеризация (Louvain) для автоматического выделения смысловых слоёв и центров.
 □ Кэширование кластеров в Redis, инвалидация по событиям.
-□ Knowledge Voyager (Полёт по знаниям) — автопилотный полёт по кластерам по сплайн-траектории (`features/graph-3d/lib/autopilot.ts`), с подсветкой узлов, не открывавшихся N дней. Вау-эффект, требует 3D-режимов и кластеризации.
+□ Knowledge Voyager (Полёт по знаниям) — автопилотный полёт по кластерам по сплайн-траектории (планируемый модуль `features/graph-3d/lib/autopilot.ts` — не существует, DOC-AUDIT-2), с подсветкой узлов, не открывавшихся N дней. Вау-эффект, требует 3D-режимов и кластеризации.
 □ Ghost Notes (Призрачные заметки) — публичные заметки с похожими эмбеддингами появляются как полупрозрачные узлы в пространстве между кластерами (`GET /api/v1/graph/ghost-notes?context=clusterId`); пользователь может «захватить» узел в свой граф. Зависит от Knowledge Voyager и публичных заметок.
 
 ### 🔗 Link Improvements
@@ -346,7 +348,7 @@ Description: Кластеризация графа и визуализация �
 □ 3D Orbital-режим с кластерами — каждый кластер образует свою «солнечную систему», центральная заметка кластера — звезда, остальные — планеты на орбитах.
 □ LOD для дальних кластеров (отображение как единое тело).
 □ Цветовое кодирование и размер кластеров в зависимости от числа заметок и суммарного веса.
-□ Zoomable User Interface (ZUI) — двойной тап/клик по кластеру погружает внутрь (3D: `engine.diveIntoCluster()` / `surfaceToGalacticView()`; 2D: D3 zoom + фильтрация узлов по `cluster_id`), отображая только заметки этого кластера. Зависит от серверной кластеризации.
+□ Zoomable User Interface (ZUI) — двойной тап/клик по кластеру погружает внутрь (3D: планируемые `engine.diveIntoCluster()` / `surfaceToGalacticView()` — не существуют, DOC-AUDIT-2; 2D: D3 zoom + фильтрация узлов по `cluster_id`), отображая только заметки этого кластера. Зависит от серверной кластеризации.
 
 ---
 
@@ -381,7 +383,7 @@ Description: Кластеризация графа и визуализация �
 
 **Priority:** 🟢 Low
 **Status:** ⏸️ Deferred by owner (2026-09-08)
-**Description:** The Content-Security-Policy introduced by CSP-1 carries one concession: `style-src-attr 'unsafe-inline'`, needed by 68 `style="..."` attributes in Svelte markup, 8 `style:` directives that compile to the same, and one in `src/app.html`. Attribute-level styles cannot be covered by a nonce, so the alternative was rewriting 76 places inside a security task.
+**Description:** The Content-Security-Policy introduced by CSP-1 carries one concession: `'unsafe-inline'` on `style-src` as a whole (report-only measurement showed Chromium attributes inline styles to `style-src`, not only `style-src-attr` — see `frontend/svelte.config.js`), needed by 68 `style="..."` attributes in Svelte markup, 8 `style:` directives that compile to the same, and one in `src/app.html`. Attribute-level styles cannot be covered by a nonce, so the alternative was rewriting 76 places inside a security task.
 
 The concession is narrow. A style injection can distort the page and leak through background selectors, but it cannot execute code — `script-src` stays strict and is what the policy is really for.
 
@@ -485,8 +487,8 @@ transport between service instances.
   temporarily fall back to the existing polling/refresh-after-action logic so functionality
   isn't lost when SSE is unavailable (proxy/firewall/old browser).
 - Both nginx gateways (dev/personal) need to support long-lived HTTP connections without
-  buffering (`proxy_buffering off`, increased `proxy_read_timeout`) — verify `docker/nginx/*`
-  configs.
+  buffering (`proxy_buffering off`, increased `proxy_read_timeout`) — verify the root
+  `nginx.conf` / `nginx.personal.conf` (there is no `docker/nginx/` directory — DOC-AUDIT-2).
 
 **MVP:** a single SSE endpoint (`/api/v1/events/stream`) for achievements only
 (`AchievementUnlocked`), reusing the existing Redis Pub/Sub channel; expand to `GraphChanged`

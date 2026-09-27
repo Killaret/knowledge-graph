@@ -82,7 +82,7 @@ The backend `graph-service` HTTP server supports `?layout=3d` on `GET /api/v1/gr
 
 `$shared/api/graph.ts` always attempts the `graph-service` first. If it returns a 5xx, 408, 429, timeout, or network error, `getFullGraphData`/`getGraphData` transparently fall back to the main backend endpoints (`/api/v1/graph/public` and `/api/v1/notes/:id/graph`). The graph-service HTTP server supports `?layout=3d` on `GET /api/v1/graph/note/:id` and invokes `engine.Layout3D` when requested. 2D results are still cached; 3D results bypass the 2D cache key.
 
-`Graph3DEngine` detects when all nodes already carry `x/y/z` coordinates and shortens `warmStartTicks` from the default 80 to 10, preserving the service layout while still allowing a brief physical relaxation.
+`warmStartTicks` (default 80) is declared in `config.ts`/`model/types.ts` but is **not consumed by the engine** — the documented "shorten to 10 when nodes carry `x/y/z`" behaviour is not implemented (DOC-AUDIT-2; awaiting owner decision).
 
 ## Fog and performance presets
 

@@ -81,13 +81,13 @@ When the child note modal opens, the initial type is suggested by `CelestialBody
 | Galaxy      | Star                 |
 | Black Hole  | Star                 |
 | Star        | Planet               |
-| Planet      | Satellite            |
+| Planet      | Moon                 |
 | Nebula      | Star                 |
 | Satellite   | Asteroid             |
 | Comet       | Asteroid             |
 | Asteroid    | Asteroid             |
 | Dust        | Planet               |
-| default     | Planet               |
+| default     | Star                 |
 
 `Moon` is intentionally excluded from the suggestions because it is an auto-assigned detail type.
 

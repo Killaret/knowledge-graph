@@ -20,7 +20,7 @@ The graph canvas supports double-tap zoom functionality for mobile and touch dev
 
 ### Technical Implementation
 
-**Location:** `frontend/src/components/organisms/GraphCanvas.svelte`
+**Location:** `frontend/src/features/graph-interaction/zoom-pan.ts` (wired into the canvas through `event-bridge.ts`; the canvas component is `frontend/src/widgets/graph-canvas/GraphCanvas.svelte`).
 
 **State Variables:**
 ```typescript
@@ -98,7 +98,7 @@ function handleDoubleTap(clientX: number, clientY: number) {
 
 ### Testing
 
-**Unit Tests:** `frontend/src/components/organisms/GraphCanvas.interactions.spec.ts`
+**Unit Tests:** `frontend/src/widgets/graph-canvas/GraphCanvas.interactions.spec.ts` and `frontend/src/features/graph-interaction/zoom-pan.test.ts`
 - Verifies touch handler is attached to canvas
 - Confirms canvas element is rendered correctly
 
@@ -126,25 +126,7 @@ Added global box-sizing for better responsive behavior:
 
 **Location:** `frontend/src/routes/graph/+page.svelte`
 
-**Changes:**
-- Changed `height: 100vh` to `min-height: 100%` for `.graph-page`
-- Changed `height: 100%` to `min-height: 400px` for `.graph-container`
-- Added media queries for tablet breakpoints
-
-**Media Queries:**
-```css
-@media (min-width: 768px) {
-  .graph-page {
-    padding: 1.5rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .graph-container {
-    min-height: 400px;
-  }
-}
-```
+**Note:** the `.graph-page` / `.graph-container` layout described here earlier was superseded by the cosmic-cockpit redesign — the page now renders `GraphPageShell` (`$widgets/graph-page`) with `graph-cockpit-content` / `graph-view-wrapper` blocks, and the old media queries no longer exist.
 
 ### Note Side Panel
 

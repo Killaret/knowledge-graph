@@ -123,7 +123,7 @@ When both `A→B` and `B→A` exist, each link is offset perpendicularly by `BID
   - type icon and label,
   - color line,
   - weight and source/target titles,
-  - `source_type` badge (user / auto / worker),
+  - `source_type` badge (`user` / `gamma` — the DB CHECK constraint; `gamma` marks auto-proposed links),
   - `last_weight_update` date.
 - Edit / delete buttons are shown when `onLinkEdit` / `onLinkDelete` are provided.
 

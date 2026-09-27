@@ -1,6 +1,6 @@
 # SaaS Database Schema
 
-> **STATUS: target-state design, NOT implemented.** The schema below describes the planned multi-tenant SaaS (tenants, RLS policies, `tenant_id` columns, MongoDB audit logs). The current implementation is single-user-per-installation: no `tenants`, `roles`, `tenant_memberships` tables and no RLS policies exist in `backend/migrations/`; MongoDB holds only `drafts` (TTL 7 days). Actual schema = the migration files; see `ARCHITECTURE_EN.md` and ADR 003/008 for the roadmap. Verified during DOC-AUDIT-2.
+> **STATUS: target-state design, NOT implemented.** The schema below describes the planned multi-tenant SaaS (tenants, RLS policies, `tenant_id` columns, MongoDB audit logs). The current implementation is single-user-per-installation: no `tenants` or `tenant_memberships` tables and no RLS policies exist in `backend/migrations/` (the single-user `user_roles`/`role_permissions` tables from migration 016 are a different model); MongoDB holds `drafts` (TTL 7 days), `nlp_artifacts` and `quality_log`. Actual schema = the migration files; see `ARCHITECTURE_EN.md` and ADR 003/008 for the roadmap. Verified during DOC-AUDIT-2.
 >
 > Also note: embeddings are produced by the local NLP service (sentence-transformers), not `text-embedding-ada-002`/1536-dim as sketched below.
 

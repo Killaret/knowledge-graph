@@ -10,6 +10,8 @@ title Sequence — Рекомендации: фактическая цепочк
 '   5. 202 empty + enqueue refresh
 ' Диаграмма ниже — внутренний сценарий уровня 2 (вычисление BFS),
 ' кэш-ключи и α/β/γ уточнены по коду.
+' Примечание (DOC-AUDIT-2): участник «Query Bus» — концептуальный;
+' в коде handler вызывает application-сервис напрямую, шины нет.
 
 actor "Пользователь" as User
 participant "Frontend" as FE

@@ -89,6 +89,9 @@ interface LinkRepository {
 }
 
 ' === Specifications ===
+' Примечание (DOC-AUDIT-2): паттерн Specification в коде отсутствует —
+' в domain/note/repository.go только отложенный TODO «FindBySpecification»;
+' метод из интерфейса NoteRepository выше тоже не реализован.
 interface Specification {
     + IsSatisfiedBy(entity) bool
     + ToSQL() (string, []interface{})
