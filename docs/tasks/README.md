@@ -141,6 +141,7 @@ Do not edit it manually; run the generator after changing the task directory.
 | NOTE-QUALITY-1 | NOTE-QUALITY-1: цикл проверки, нормализации и обогащения заметки | [NOTE-QUALITY-1-quality-loop.md](NOTE-QUALITY-1-quality-loop.md) | **бэклог** — Devin; после NOTE-QUALITY-1-TAIL (решение 77) | 2026-09-27 |
 | NOTE-QUALITY-1 | NOTE-QUALITY-1, этап 1 — разбор ревью | [NOTE-QUALITY-1-review-findings.md](NOTE-QUALITY-1-review-findings.md) | **бэклог** — Devin; первой из NOTE-QUALITY | 2026-09-27 |
 | NOTE-TYPE-TAXONOMY | NOTE-TYPE-TAXONOMY: таксономия типов заметок | [NOTE-TYPE-TAXONOMY.md](NOTE-TYPE-TAXONOMY.md) | — | 2026-09-15 |
+| NOTE-TYPES-1 | NOTE-TYPES-1. Типы заметок: пересечения и оси | [NOTE-TYPES-1-type-taxonomy-review.md](NOTE-TYPES-1-type-taxonomy-review.md) | **бэклог** — ждёт владельца: отложено 27.09 | 2026-09-27 |
 | ORIGIN-1 | ORIGIN-1. Происхождение заметки: «рождена из» | [ORIGIN-1-born-from-relation.md](ORIGIN-1-born-from-relation.md) | **бэклог** — Devin; ждёт владельца: 1.0 или после, судьба `related` (решение 75) | 2026-09-27 |
 | P11-1 | P11-1. Кластеризация графа — журнал проектирования | [P11-1-clustering-design-notes.md](P11-1-clustering-design-notes.md) | **бэклог** — 1.0 · ждёт Claude Code: постановки P11-3 и P11-4; запуск после MODEL-2 (решение 67) | 2026-09-22 |
 | P11-2 | P11-2 — живая верификация и зачистка старой модели (отчёт для ревью) | [P11-2-live-verification.md](P11-2-live-verification.md) | — | 2026-09-22 |
