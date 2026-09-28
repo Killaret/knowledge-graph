@@ -172,6 +172,7 @@ token.json
 *.html
 !frontend/**/*.html
 !backend/**/testdata/**/*.html
+!docs/product/mockups/*.html
 *.bat
 !start-personal.bat
 *.ps1

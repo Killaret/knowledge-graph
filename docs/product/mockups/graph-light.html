@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Граф светом</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500&family=Unbounded:wght@400;500&display=swap">
+<style>
+:root{color-scheme:dark;--ink:#05070f;--line:#1b2238;--line-2:#2a3452;--text:#e4e9f6;--muted:#8d96ae;--faint:#6a7390;--accent:#aebcff;--accent-ink:#0a0f1f;--gold:#f2c46d;--ui:"Onest","Segoe UI",system-ui,sans-serif;--display:"Unbounded","Onest","Segoe UI",system-ui,sans-serif}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{background:var(--ink);color:var(--text);font:14px/1.45 var(--ui);display:flex;flex-direction:column;gap:10px;padding-inline:16px;padding-block:12px;box-sizing:border-box}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.brand{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin-right:auto}
+h1{font:500 17px/1.2 var(--display);letter-spacing:.02em;margin:0}
+.cap{color:var(--muted);font-size:12.5px}
+button{font:500 13px/1 var(--ui);color:var(--text);background:transparent;border:1px solid var(--line-2);border-radius:8px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:#3d4a70;background:#0e1427}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--line-2);border-radius:10px}
+.seg button{border:0;border-radius:8px;padding:7px 13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+.tog[aria-pressed="false"]{color:var(--faint);border-style:dashed}
+.stage{position:relative;flex:1;min-height:440px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#04060d}
+canvas{position:absolute;inset:0;display:block;touch-action:none;cursor:grab}
+.tag{position:absolute;top:12px;padding:6px 9px;border-radius:6px;background:rgba(8,11,22,.82);border:1px solid var(--line-2);color:var(--text);font:500 11px/1 var(--display);letter-spacing:.06em;pointer-events:none}
+.tag-l{left:12px}.tag-r{right:12px}
+.chip{position:absolute;top:12px;left:50%;transform:translateX(-50%);padding:5px 10px;border-radius:999px;background:rgba(8,11,22,.8);border:1px solid var(--line-2);color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;pointer-events:none}
+.tip{position:absolute;left:0;top:0;max-width:270px;display:flex;flex-direction:column;gap:2px;padding:9px 11px;border-radius:9px;background:rgba(9,12,24,.95);border:1px solid var(--line-2);font-size:12.5px;line-height:1.4;pointer-events:none}
+.tip b{font-weight:500;font-size:13px;color:var(--text)}
+.tip span{color:var(--muted)}
+.tip .when{color:var(--gold)}
+.legend{position:absolute;left:12px;bottom:12px;max-width:min(340px,calc(100% - 24px));padding:8px 12px;border-radius:10px;background:rgba(8,11,22,.86);border:1px solid var(--line);color:var(--muted);font-size:12px}
+.legend summary{cursor:pointer;color:var(--text);font:500 11px/1.8 var(--display);letter-spacing:.06em}
+.lg{display:grid;gap:5px;margin:6px 0 2px}
+.lg-h{color:var(--text);font-weight:500;margin-top:4px}
+.lg-r{display:flex;align-items:center;gap:9px}
+.lg-r svg{flex:none}
+.hint{position:absolute;right:12px;bottom:12px;padding:6px 10px;border-radius:8px;background:rgba(8,11,22,.72);color:var(--faint);font-size:12px;pointer-events:none}
+@media (max-width:900px){.hint{display:none}}
+</style>
+
+<header class="bar">
+  <div class="brand">
+    <h1>Граф светом</h1>
+    <span class="cap">макет 2D · 100 заметок · 5 кластеров · вид «сейчас» — по снимкам стенда</span>
+  </div>
+  <div class="seg" role="group" aria-label="Вид графа">
+    <button id="st-now" type="button" aria-pressed="false">Сейчас</button>
+    <button id="st-light" type="button" aria-pressed="true">Светом</button>
+    <button id="st-cmp" type="button" aria-pressed="false">Сравнить</button>
+  </div>
+  <div class="tools">
+    <button id="tg-auto" class="tog" type="button" aria-pressed="true">Автосвязи</button>
+    <button id="tg-clu" class="tog" type="button" aria-pressed="true">Кластеры</button>
+    <button id="bt-list" type="button">Список</button>
+    <button id="bt-reveal" type="button">Проявить заново</button>
+  </div>
+</header>
+
+<main class="stage" id="stage">
+  <canvas id="cv" role="img" aria-label="Граф из ста заметок в пяти кластерах: наведение подсвечивает окрестность, клик приближает заметку"></canvas>
+  <div class="tag tag-l" id="tag-now" hidden>Сейчас</div>
+  <div class="tag tag-r" id="tag-light" hidden>Светом</div>
+  <div class="chip" id="chip" hidden></div>
+  <div class="tip" id="tip" hidden></div>
+  <details class="legend" id="legend" open>
+    <summary>Легенда</summary>
+    <div class="lg">
+      <div class="lg-h">Заметки</div>
+      <div class="lg-r"><svg width="46" height="16" viewBox="0 0 46 16" aria-hidden="true"><defs><radialGradient id="gI"><stop offset="0" stop-color="#f4f7ff"/><stop offset=".35" stop-color="#9fc0ff" stop-opacity=".55"/><stop offset="1" stop-color="#9fc0ff" stop-opacity="0"/></radialGradient></defs><circle cx="7" cy="8" r="7" fill="url(#gI)"/><circle cx="20" cy="8" r="5.4" fill="url(#gI)"/><circle cx="31" cy="8" r="4.2" fill="url(#gI)"/><circle cx="40" cy="8" r="3" fill="url(#gI)"/></svg><span>важность яркостью: галактика, звезда, планета, луна</span></div>
+      <div class="lg-r"><svg width="46" height="16" viewBox="0 0 46 16" aria-hidden="true"><defs><linearGradient id="gC" x1="0" x2="1"><stop offset="0" stop-color="#ffd9bf" stop-opacity=".9"/><stop offset="1" stop-color="#ffb482" stop-opacity="0"/></linearGradient></defs><path d="M9 5.2 L42 8 L9 10.8 Z" fill="url(#gC)"/><circle cx="9" cy="8" r="2.8" fill="#fff3ea"/></svg><span>комета — дело: чем ближе срок, тем длиннее хвост</span></div>
+      <div class="lg-r"><svg width="46" height="16" viewBox="0 0 46 16" aria-hidden="true"><defs><radialGradient id="gN"><stop offset="0" stop-color="#ffb3cf" stop-opacity=".8"/><stop offset="1" stop-color="#ff93b8" stop-opacity="0"/></radialGradient></defs><circle cx="20" cy="8" r="7.5" fill="url(#gN)"/><circle cx="27" cy="7" r="6" fill="url(#gN)"/><circle cx="23" cy="8" r="1.2" fill="#fff"/></svg><span>туманность — идея</span></div>
+      <div class="lg-r"><svg width="46" height="16" viewBox="0 0 46 16" aria-hidden="true"><circle cx="23" cy="8" r="6" fill="none" stroke="#d7c9ff" stroke-width="1.3"/><circle cx="23" cy="8" r="4.6" fill="#030409"/></svg><span>чёрная дыра — открытый вопрос</span></div>
+      <div class="lg-r"><svg width="46" height="16" viewBox="0 0 46 16" aria-hidden="true"><circle cx="18" cy="6" r="1.1" fill="#cfd8ee"/><circle cx="23" cy="10" r=".9" fill="#cfd8ee"/><circle cx="27" cy="5" r=".8" fill="#cfd8ee"/><circle cx="29" cy="11" r="1" fill="#cfd8ee"/></svg><span>пыль — не разобрано</span></div>
+      <div class="lg-h">Связи</div>
+      <div class="lg-r"><svg width="46" height="16" viewBox="0 0 46 16" aria-hidden="true"><defs><linearGradient id="gL" x1="0" x2="1"><stop offset="0" stop-color="#a9ccff"/><stop offset="1" stop-color="#95e6d6"/></linearGradient></defs><path d="M3 11 Q23 3 43 9" fill="none" stroke="url(#gL)" stroke-width="1.4"/></svg><span>ручная</span></div>
+      <div class="lg-r"><svg width="46" height="16" viewBox="0 0 46 16" aria-hidden="true"><path d="M3 8 L43 8" stroke="#f2c46d" stroke-width="1.4"/><circle cx="14" cy="8" r="2" fill="#fff0cd"/><circle cx="27" cy="8" r="2" fill="#fff0cd"/><circle cx="40" cy="8" r="2" fill="#fff0cd"/></svg><span>зависимость: при наведении бегут точки</span></div>
+      <div class="lg-r"><svg width="46" height="16" viewBox="0 0 46 16" aria-hidden="true"><path d="M3 8 L43 8" stroke="#c2d3f5" stroke-width="1.6" stroke-linecap="round" stroke-dasharray=".5 4.5"/></svg><span>автосвязь модели</span></div>
+      <div class="lg-r"><svg width="46" height="16" viewBox="0 0 46 16" aria-hidden="true"><path d="M3 8 L43 8" stroke="#dfe7ff" stroke-width="1.2" stroke-dasharray="3.5 3"/></svg><span>рекомендация — только при наведении</span></div>
+      <div class="lg-h">Кластеры</div>
+      <div class="lg-r"><svg width="46" height="16" viewBox="0 0 46 16" aria-hidden="true"><defs><radialGradient id="gK"><stop offset="0" stop-color="#7fb2ff" stop-opacity=".45"/><stop offset="1" stop-color="#7fb2ff" stop-opacity="0"/></radialGradient></defs><ellipse cx="23" cy="8" rx="20" ry="8" fill="url(#gK)"/></svg><span>облака под заметками, имена видны издалека</span></div>
+    </div>
+  </details>
+  <div class="hint">клик — подлететь · колесо — масштаб · тянуть — сдвиг · Esc — назад</div>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const TAU = Math.PI * 2;
+  const RM = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const easeIO = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+  const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const R = rng(20260928);
+  const gauss = () => { let u = 0, v = 0; while (!u) u = R(); while (!v) v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v); };
+  const pick = (arr) => arr[Math.floor(R() * arr.length)];
+  const hex = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const rgba = (c, a) => "rgba(" + (c[0] | 0) + "," + (c[1] | 0) + "," + (c[2] | 0) + "," + clamp(a, 0, 1).toFixed(3) + ")";
+  const WHITE = [255, 255, 255], GOLD = hex("#f2c46d"), REC = hex("#dfe7ff");
+
+  const CLUSTERS = [
+    { name: "go · горутины · gin", hue: hex("#7fb2ff") },
+    { name: "postgres · индексы · миграции", hue: hex("#5fd4c0") },
+    { name: "svelte · canvas · анимации", hue: hex("#b59cff") },
+    { name: "эмбеддинги · поиск · модели", hue: hex("#ff93b8") },
+    { name: "книги · здоровье · поездки", hue: hex("#ffb482") },
+  ];
+  const RAW = [
+    [["galaxy","Go"],["star","Конкурентность в Go","Go"],["star","HTTP-сервисы на Gin","Go"],["planet","Горутины и каналы","Конкурентность в Go"],["planet","context: отмена и дедлайны","Конкурентность в Go"],["planet","Middleware в Gin","HTTP-сервисы на Gin"],["planet","Обработка ошибок","HTTP-сервисы на Gin"],["planet","Тесты с testify","Go"],["moon","errgroup","Горутины и каналы"],["moon","sync.Once","Горутины и каналы"],["moon","Таймауты клиента","context: отмена и дедлайны"],["moon","Табличные тесты","Тесты с testify"],["asteroid","Цитата Роба Пайка","Конкурентность в Go"],["asteroid","Статья про select","Горутины и каналы"],["asteroid","Шпаргалка по pprof","Go"],["nebula","Идея: свой планировщик задач","Конкурентность в Go"],["comet","Обновить Go до 1.25","Go",12],["satellite","Шаблон сервиса","HTTP-сервисы на Gin"],["blackhole","Почему растёт память воркера?","Шпаргалка по pprof"],["dust","Закладка от 12.09",null]],
+    [["galaxy","Базы данных"],["star","PostgreSQL","Базы данных"],["star","Redis","Базы данных"],["planet","Индексы","PostgreSQL"],["planet","Уровни изоляции","PostgreSQL"],["planet","pgvector","PostgreSQL"],["planet","Миграции без простоя","PostgreSQL"],["planet","Redis Streams","Redis"],["moon","HNSW","pgvector"],["moon","EXPLAIN ANALYZE","Индексы"],["moon","Частичные индексы","Индексы"],["moon","Consumer groups","Redis Streams"],["asteroid","Статья про MVCC","Уровни изоляции"],["asteroid","Доклад про VACUUM","PostgreSQL"],["asteroid","Схема WAL","PostgreSQL"],["nebula","Идея: граф прямо в Postgres","Базы данных"],["comet","Бэкап перед миграцией","Миграции без простоя",2],["satellite","Чек-лист миграции","Миграции без простоя"],["debris","Старые заметки по MySQL","Базы данных"],["dust","Закладка про pg_stat_statements",null]],
+    [["galaxy","Фронтенд"],["star","Svelte 5","Фронтенд"],["star","Графика в браузере","Фронтенд"],["planet","Руны и реактивность","Svelte 5"],["planet","SvelteKit: загрузка данных","Svelte 5"],["planet","Canvas 2D","Графика в браузере"],["planet","d3-force","Графика в браузере"],["planet","Доступность","Фронтенд"],["moon","$derived","Руны и реактивность"],["moon","requestAnimationFrame","Canvas 2D"],["moon","Контраст WCAG","Доступность"],["moon","Easing-функции","Графика в браузере"],["asteroid","Статья про FLIP-анимации","Графика в браузере"],["asteroid","Палитра в OKLCH","Доступность"],["asteroid","Видео про WebGL","Графика в браузере"],["nebula","Идея: граф из света","Графика в браузере"],["comet","Разобрать отзывы по интерфейсу","Фронтенд",6],["satellite","Шаблон компонента","Svelte 5"],["blackhole","Почему дёргается панель?","Svelte 5"],["dust","Закладка про CSS",null]],
+    [["galaxy","Поиск и смыслы"],["star","Эмбеддинги","Поиск и смыслы"],["star","Ключевые слова","Поиск и смыслы"],["planet","Модели e5","Эмбеддинги"],["planet","Косинусная близость","Эмбеддинги"],["planet","KeyBERT","Ключевые слова"],["planet","Лемматизация","Ключевые слова"],["planet","Кластеризация","Поиск и смыслы"],["moon","Чанкинг","Эмбеддинги"],["moon","pymorphy3","Лемматизация"],["moon","Louvain","Кластеризация"],["moon","TF-IDF","Ключевые слова"],["asteroid","Бенчмарк MTEB","Модели e5"],["asteroid","Статья про RAG","Эмбеддинги"],["asteroid","Цитата про поиск","Поиск и смыслы"],["nebula","Идея: подсказки связей","Кластеризация"],["comet","Замер моделей","Модели e5",4],["satellite","Скрипт замера","Модели e5"],["blackhole","Как оценивать без разметки?","Кластеризация"],["debris","Старый YAKE","Ключевые слова"]],
+    [["galaxy","Жизнь"],["star","Чтение","Жизнь"],["star","Здоровье","Жизнь"],["planet","Книги на осень","Чтение"],["planet","Бег","Здоровье"],["planet","Английский","Жизнь"],["planet","Путешествия","Жизнь"],["moon","Список фильмов","Чтение"],["moon","Кроссовки","Бег"],["moon","Фразовые глаголы","Английский"],["asteroid","Цитата Сенеки","Чтение"],["asteroid","Заметка из поездки","Путешествия"],["nebula","Идея: статья о графах знаний","Чтение"],["comet","Визит к врачу","Здоровье",1],["comet","Сходить в кино","Жизнь",5],["comet","Продлить паспорт","Путешествия",21],["comet","Записаться на курс","Английский",-3],["satellite","Чек-лист поездки","Путешествия"],["satellite","Шаблон недели","Жизнь"],["dust","Мысль в метро",null]],
+  ];
+  const EXTRA = [["pgvector","Эмбеддинги"],["d3-force","Кластеризация"],["Идея: граф из света","Идея: подсказки связей"],["Идея: статья о графах знаний","Идея: граф прямо в Postgres"],["Redis Streams","Горутины и каналы"],["Скрипт замера","Тесты с testify"]];
+  const CHAINS = [["Чек-лист миграции","Бэкап перед миграцией","Миграции без простоя","pgvector","Замер моделей","Модели e5"],["Продлить паспорт","Чек-лист поездки","Путешествия"]];
+  const BRIDGES = [["HNSW","Косинусная близость"],["Статья про RAG","pgvector"],["Идея: граф прямо в Postgres","pgvector"],["Идея: подсказки связей","Косинусная близость"],["Easing-функции","Статья про FLIP-анимации"],["Canvas 2D","Идея: граф из света"],["Контраст WCAG","Палитра в OKLCH"],["Кластеризация","Louvain"],["Книги на осень","Список фильмов"],["Английский","Фразовые глаголы"],["Бег","Кроссовки"],["Обработка ошибок","Почему растёт память воркера?"],["Почему дёргается панель?","requestAnimationFrame"],["Как оценивать без разметки?","Бенчмарк MTEB"]];
+  const TYPE_RU = { galaxy: "галактика", star: "звезда", planet: "планета", moon: "луна", asteroid: "астероид", nebula: "туманность", comet: "комета", satellite: "спутник", blackhole: "чёрная дыра", dust: "пыль", debris: "обломки" };
+  const RANK = { dust: 0, debris: 1, asteroid: 2, moon: 3, satellite: 4, comet: 5, nebula: 6, planet: 7, blackhole: 8, star: 9, galaxy: 10 };
+  const LIST_ORDER = { galaxy: 0, star: 1, planet: 2, moon: 3, nebula: 4, comet: 5, satellite: 6, asteroid: 7, blackhole: 8, dust: 9, debris: 10 };
+  const BASE_R = { galaxy: 4.6, star: 3.6, planet: 3.1, moon: 2.0, asteroid: 1.9, nebula: 2.8, comet: 2.5, satellite: 2.1, blackhole: 2.9, dust: 1.7, debris: 1.8 };
+  const NOW_R = { galaxy: 10, star: 9, planet: 8, moon: 6, asteroid: 6.5, nebula: 10, comet: 5.5, satellite: 5, blackhole: 9, dust: 3, debris: 4 };
+  const TIER1 = new Set(["planet", "comet", "blackhole", "nebula", "satellite"]);
+  const CONFETTI = ["#ff3cac","#2de2e6","#ff9f1c","#9b5de5","#f15bb5","#00bbf9","#fee440","#ffffff","#e63946","#06d6a0","#ff6b35","#c77dff"].map(hex);
+  const NOW_COLORS = { star: ["#ffd23f","#ff9f1c","#ffffff","#ff6b9a"].map(hex), blackhole: ["#e63946","#2de2e6","#9b5de5"].map(hex), nebula: ["#ff3cac","#2de2e6","#c77dff"].map(hex), galaxy: ["#9b5de5","#c9c9d6"].map(hex) };
+
+  const nodes = [], byTitle = new Map();
+  RAW.forEach((rows, c) => rows.forEach(([type, title, parent, days]) => {
+    const n = { id: nodes.length, c, type, title, parent: parent || null, days: days === undefined ? null : days, x: 0, y: 0, vx: 0, vy: 0, deg: 0, recs: [], alpha: 1, vis: 1, appear: 0, seed: R(), rot: R() * TAU };
+    n.shape = Array.from({ length: 6 }, () => 0.75 + R() * 0.45);
+    n.blobs = Array.from({ length: 3 }, () => [gauss() * 0.9, gauss() * 0.6, 0.7 + R() * 0.6]);
+    n.specks = Array.from({ length: 4 }, () => [gauss() * 0.8, gauss() * 0.8, 0.6 + R() * 0.8]);
+    n.nowColor = pick(NOW_COLORS[type] || CONFETTI);
+    n.nowSize = 0.7 + R() * 0.8;
+    nodes.push(n); byTitle.set(title, n);
+  }));
+  const T = (s) => { const n = byTitle.get(s); if (!n) throw new Error("Нет заметки: " + s); return n; };
+  const N = nodes.length;
+
+  const links = [], linkMap = new Map();
+  const key = (a, b) => (a < b ? a + ":" + b : b + ":" + a);
+  const LEGACY = ["#bec4d4","#bec4d4","#bec4d4","#bec4d4","#bec4d4","#4d8dff","#4d8dff","#2ec4b6","#9b5de5","#ff5d8f"].map(hex);
+  function addLink(a, b, kind) {
+    if (a === b) return null;
+    const k = key(a.id, b.id), ex = linkMap.get(k);
+    if (ex) { if (kind === "dep" && ex.kind !== "dep") { ex.kind = "dep"; ex.s = a; ex.t = b; } return ex; }
+    const l = { s: a, t: b, kind, vis: 1, fa: 1, boost: 0, bend: (R() < 0.5 ? 1 : -1) * (0.06 + R() * 0.09), legacy: pick(LEGACY) };
+    links.push(l); linkMap.set(k, l); return l;
+  }
+  nodes.forEach((n) => { if (n.parent) addLink(T(n.parent), n, "rel"); });
+  EXTRA.forEach(([a, b]) => addLink(T(a), T(b), "rel"));
+  CHAINS.forEach((ch) => { for (let i = 0; i < ch.length - 1; i++) addLink(T(ch[i]), T(ch[i + 1]), "dep"); });
+
+  const DIM = 10;
+  const unit = (v) => { const m = Math.hypot(...v) || 1; return v.map((x) => x / m); };
+  const rvec = () => unit(Array.from({ length: DIM }, gauss));
+  const cvec = CLUSTERS.map(rvec), avec = new Map();
+  const anchorOf = (n) => { let cur = n; while (cur.parent && cur.type !== "star" && cur.type !== "galaxy") cur = T(cur.parent); return cur; };
+  nodes.forEach((n) => { const a = anchorOf(n); if (!avec.has(a.id)) avec.set(a.id, rvec()); });
+  nodes.forEach((n) => { const cv = cvec[n.c], av = avec.get(anchorOf(n).id); n.vec = unit(cv.map((x, i) => x + av[i] * 0.55 + gauss() * 0.2)); });
+  BRIDGES.forEach(([a, b]) => { const A = T(a), B = T(b); A.vec = unit(A.vec.map((x, i) => x + B.vec[i] * 0.9)); });
+  const cos = (a, b) => { let s = 0; for (let i = 0; i < DIM; i++) s += a[i] * b[i]; return s; };
+
+  const manual = nodes.map(() => new Set());
+  links.forEach((l) => { manual[l.s.id].add(l.t.id); manual[l.t.id].add(l.s.id); });
+  nodes.forEach((n) => {
+    const cand = nodes.filter((m) => m !== n && !manual[n.id].has(m.id)).map((m) => [m, cos(n.vec, m.vec)]).sort((a, b) => b[1] - a[1]);
+    for (let i = 0; i < 2; i++) { const [m, s] = cand[i]; if (s >= 0.55) { const l = addLink(n, m, "auto"); if (l) l.sim = s; } }
+  });
+  const adj = nodes.map(() => new Set());
+  links.forEach((l) => { adj[l.s.id].add(l.t.id); adj[l.t.id].add(l.s.id); });
+  nodes.forEach((n) => {
+    n.deg = adj[n.id].size;
+    n.recs = nodes.filter((m) => m !== n && !adj[n.id].has(m.id)).map((m) => ({ m, s: cos(n.vec, m.vec) })).sort((a, b) => b.s - a.s).slice(0, 4);
+  });
+  nodes.slice().sort((a, b) => b.deg - a.deg || a.id - b.id).forEach((n, i) => { n.topNow = i < 20; });
+
+  const centers = CLUSTERS.map((_, i) => { const a = -Math.PI / 2 + (i * TAU) / CLUSTERS.length; return [Math.cos(a) * 390, Math.sin(a) * 285]; });
+  nodes.forEach((n) => { const [cx, cy] = centers[n.c]; if (n.type === "galaxy") { n.x = cx; n.y = cy; } else { n.x = cx + gauss() * 55; n.y = cy + gauss() * 55; } });
+  const restLen = (l) => { const a = l.s.type, b = l.t.type; if (a === "galaxy" || b === "galaxy") return 82; if (a === "star" || b === "star") return 56; if (l.kind === "auto") return 58; return 36; };
+  (function layout() {
+    let alpha = 1;
+    for (let it = 0; it < 540; it++) {
+      for (let i = 0; i < N; i++) {
+        const a = nodes[i];
+        for (let j = i + 1; j < N; j++) {
+          const b = nodes[j];
+          let dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy;
+          if (d2 < 0.01) { dx = R() - 0.5; dy = R() - 0.5; d2 = dx * dx + dy * dy; }
+          const d = Math.sqrt(d2), f = ((a.c === b.c ? 950 : 2100) * alpha) / d2;
+          const fx = (dx / d) * f, fy = (dy / d) * f;
+          a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+          if (d < 17) { const p = ((17 - d) / d) * 0.5; a.vx -= dx * p; a.vy -= dy * p; b.vx += dx * p; b.vy += dy * p; }
+        }
+      }
+      for (const l of links) {
+        const a = l.s, b = l.t, dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+        const k = l.kind === "auto" ? 0.03 : l.kind === "dep" ? 0.05 : 0.09;
+        const f = ((d - restLen(l)) / d) * k * alpha * (a.c === b.c ? 1 : 0.2);
+        a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+      }
+      for (const n of nodes) {
+        const [cx, cy] = centers[n.c];
+        n.vx += (cx - n.x) * 0.014 * alpha - n.x * 0.002 * alpha;
+        n.vy += (cy - n.y) * 0.014 * alpha - n.y * 0.002 * alpha;
+      }
+      for (const n of nodes) { n.vx *= 0.55; n.vy *= 0.55; n.x += n.vx; n.y += n.vy; }
+      alpha = Math.max(0.03, alpha * 0.992);
+    }
+  })();
+  const B = nodes.reduce((b, n) => ({ x0: Math.min(b.x0, n.x), y0: Math.min(b.y0, n.y), x1: Math.max(b.x1, n.x), y1: Math.max(b.y1, n.y) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
+  const WC = [(B.x0 + B.x1) / 2, (B.y0 + B.y1) / 2];
+  nodes.forEach((n) => { const dx = n.x - WC[0], dy = n.y - WC[1], m = Math.hypot(dx, dy) || 1; n.dir = [dx / m, dy / m]; });
+  CLUSTERS.forEach((cl, i) => { const ms = nodes.filter((n) => n.c === i); cl.cx = ms.reduce((s, n) => s + n.x, 0) / ms.length; cl.top = Math.min(...ms.map((n) => n.y)); cl.count = ms.length; });
+  const order = nodes.slice().sort((a, b) => RANK[a.type] - RANK[b.type]);
+
+  const stage = document.getElementById("stage"), cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  const tip = document.getElementById("tip"), chip = document.getElementById("chip");
+  const px = new Float32Array(N), py = new Float32Array(N), pm = new Float32Array(N);
+  let W = 800, H = 500, DPR = 1, fitK = 1, camTouched = false, stars = [], listCols = [], last = performance.now();
+  const cam = { x: WC[0], y: WC[1], k: 1 };
+  const state = { style: "light", split: 0.5, showAuto: true, showClusters: true, hover: null, selected: null, camAnim: null, listT: 0, listTarget: 0, listHover: null, rowH: 22, listTop: 70, revealStart: 0, revealEnd: 0, mouse: [0, 0] };
+  const focus = { node: null, set: new Set(), rec: new Set(), recList: [], chain: new Map(), chainLinks: [], linkSet: new Set() };
+
+  function fitView() {
+    const pad = 64, k = Math.min((W - pad * 2) / (B.x1 - B.x0), (H - pad * 2) / (B.y1 - B.y0));
+    return { x: WC[0], y: WC[1], k: Math.max(0.2, k) };
+  }
+  function makeStars() {
+    const r2 = rng(7), n = Math.round((W * H) / 3600), out = [];
+    for (let i = 0; i < n; i++) {
+      const L = r2() < 0.62 ? 0 : r2() < 0.72 ? 1 : 2;
+      out.push({ x: r2(), y: r2(), f: [0.04, 0.1, 0.2][L], r: [0.7, 1.0, 1.5][L] * (0.7 + r2() * 0.6), a: [0.22, 0.34, 0.52][L] * (0.5 + r2() * 0.5), tw: r2() < 0.12 ? 0.6 + r2() * 1.4 : 0, ph: r2() * TAU });
+    }
+    return out;
+  }
+  function listLayout() {
+    const top = 72, bottom = 30, padX = 22, colW = (W - padX * 2) / CLUSTERS.length;
+    state.rowH = clamp((H - top - bottom) / 20, 15, 26); state.listTop = top;
+    listCols = CLUSTERS.map((cl, i) => ({ x: padX + i * colW + 8, w: colW - 18, c: i }));
+    CLUSTERS.forEach((cl, ci) => {
+      nodes.filter((n) => n.c === ci).sort((a, b) => LIST_ORDER[a.type] - LIST_ORDER[b.type] || a.title.localeCompare(b.title, "ru")).forEach((n, ri) => { n.lx = listCols[ci].x + 5; n.ly = top + ri * state.rowH + state.rowH / 2; n.row = ri; });
+    });
+  }
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    W = Math.max(320, r.width); H = Math.max(300, r.height); DPR = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); cv.style.width = W + "px"; cv.style.height = H + "px";
+    const f = fitView(); fitK = f.k;
+    if (!camTouched) { cam.x = f.x; cam.y = f.y; cam.k = f.k; }
+    stars = makeStars(); listLayout();
+  }
+  function startReveal(now) {
+    nodes.slice().sort((a, b) => b.deg - a.deg || a.id - b.id).forEach((n, i) => { const batch = i < 25 ? 0 : 1 + Math.floor((i - 25) / 12); n.appear = now + batch * 120 + (i % 12) * 7; });
+    state.revealStart = now; state.revealEnd = now + 25 + Math.ceil((N - 25) / 12) * 120 + 700;
+  }
+
+  function computeFocus() {
+    const f = state.listTarget > 0 ? null : state.hover || state.selected;
+    focus.node = f; focus.set.clear(); focus.rec.clear(); focus.recList = []; focus.chain = new Map(); focus.chainLinks = []; focus.linkSet.clear();
+    if (!f) return;
+    for (const l of links) {
+      if (l.kind === "auto" && !state.showAuto) continue;
+      if (l.s === f || l.t === f) { focus.linkSet.add(l); focus.set.add((l.s === f ? l.t : l.s).id); }
+    }
+    for (const r of f.recs) if (!focus.set.has(r.m.id)) { focus.rec.add(r.m.id); focus.recList.push(r); }
+    const dep = links.filter((l) => l.kind === "dep");
+    if (!dep.some((l) => l.s === f || l.t === f)) return;
+    const dist = new Map([[f.id, 0]]), q = [f];
+    while (q.length) {
+      const cur = q.shift(), d = dist.get(cur.id);
+      if (d >= 10) continue;
+      for (const l of dep) { const o = l.s === cur ? l.t : l.t === cur ? l.s : null; if (o && !dist.has(o.id)) { dist.set(o.id, d + 1); q.push(o); } }
+    }
+    focus.chain = dist;
+    const idx = new Map();
+    const pos = (n) => { if (idx.has(n.id)) return idx.get(n.id); idx.set(n.id, 0); const inc = dep.find((l) => l.t === n && dist.has(l.s.id)); const v = inc ? pos(inc.s) + 1 : 0; idx.set(n.id, v); return v; };
+    for (const l of dep) if (dist.has(l.s.id) && dist.has(l.t.id)) { focus.chainLinks.push({ l, i: pos(l.s), d: Math.min(dist.get(l.s.id), dist.get(l.t.id)) }); focus.linkSet.add(l); }
+  }
+
+  function flyTo(v, dur) {
+    if (RM) { cam.x = v.x; cam.y = v.y; cam.k = v.k; return; }
+    state.camAnim = { from: { x: cam.x, y: cam.y, k: cam.k }, to: v, t0: performance.now(), dur: dur || 650 };
+  }
+  function updateCam(now) {
+    const a = state.camAnim; if (!a) return;
+    const u = clamp((now - a.t0) / a.dur, 0, 1), e = easeIO(u);
+    cam.x = lerp(a.from.x, a.to.x, e); cam.y = lerp(a.from.y, a.to.y, e); cam.k = Math.exp(lerp(Math.log(a.from.k), Math.log(a.to.k), e));
+    if (u >= 1) state.camAnim = null;
+  }
+  function updateMorph(dt) {
+    const d = state.listTarget - state.listT;
+    state.listT = RM ? state.listTarget : state.listT + Math.sign(d) * Math.min(Math.abs(d), dt / 1.15);
+    for (const n of nodes) {
+      const delay = 0.38 * ((n.row || 0) / 20) + 0.08 * (n.c / 5);
+      pm[n.id] = easeIO(clamp((state.listT - delay) / 0.54, 0, 1));
+    }
+  }
+  function updateVis(now) {
+    for (const n of nodes) n.vis = RM ? 1 : easeOut(clamp((now - n.appear) / 650, 0, 1));
+    for (const l of links) l.vis = Math.min(l.s.vis, l.t.vis) * (1 - Math.max(pm[l.s.id], pm[l.t.id]));
+  }
+  function updateAlpha(dt) {
+    const k = RM ? 1 : 1 - Math.exp(-dt * 11), f = focus.node;
+    for (const n of nodes) {
+      let tg = 1;
+      if (f && n !== f) tg = focus.chain.has(n.id) ? Math.max(0.5, 1 - 0.08 * focus.chain.get(n.id)) : focus.set.has(n.id) ? 1 : focus.rec.has(n.id) ? 0.8 : 0.13;
+      n.alpha += (tg - n.alpha) * k;
+    }
+    for (const l of links) {
+      const on = f && focus.linkSet.has(l);
+      l.fa += ((f ? (on ? 1 : 0.12) : 1) - l.fa) * k;
+      l.boost += ((on ? 1 : 0) - l.boost) * k;
+    }
+  }
+  function positions() {
+    for (const n of nodes) {
+      const gx = (n.x - cam.x) * cam.k + W / 2, gy = (n.y - cam.y) * cam.k + H / 2, m = pm[n.id];
+      px[n.id] = m > 0 ? lerp(gx, n.lx, m) : gx;
+      py[n.id] = m > 0 ? lerp(gy, n.ly, m) : gy;
+    }
+  }
+
+  function halo(x, y, r, c, a) {
+    if (a <= 0.003 || r <= 0.2) return;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, rgba(c, a)); g.addColorStop(0.28, rgba(c, a * 0.32)); g.addColorStop(1, rgba(c, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+  }
+  function disc(x, y, r, c, a) { if (a <= 0.003 || r <= 0) return; ctx.fillStyle = rgba(c, a); ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
+  function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  function fit(text, w) {
+    if (ctx.measureText(text).width <= w) return text;
+    let lo = 0, hi = text.length;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (ctx.measureText(text.slice(0, mid) + "…").width <= w) lo = mid; else hi = mid - 1; }
+    return text.slice(0, lo) + "…";
+  }
+  const when = (n) => (n.days < 0 ? "просрочено" : n.days === 1 ? "завтра" : "через " + n.days + " дн.");
+
+  const GL = {
+    galaxy(n, x, y, r, c, a, br) {
+      ctx.globalCompositeOperation = "lighter";
+      halo(x, y, r * 8, c, 0.2 * a * br);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(n.rot); ctx.scale(1, 0.34); halo(0, 0, r * 5.2, mix(c, WHITE, 0.25), 0.34 * a); ctx.restore();
+      halo(x, y, r * 2.4, mix(c, WHITE, 0.45), 0.75 * a);
+      disc(x, y, r * 0.7, mix(c, WHITE, 0.85), a);
+      ctx.globalCompositeOperation = "source-over";
+    },
+    star(n, x, y, r, c, a, br) {
+      ctx.globalCompositeOperation = "lighter";
+      halo(x, y, r * 5.5, c, 0.26 * a * br);
+      const L = r * 4 * br;
+      ctx.lineWidth = 0.8; ctx.strokeStyle = rgba(mix(c, WHITE, 0.55), 0.32 * a);
+      ctx.beginPath(); ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.stroke();
+      halo(x, y, r * 1.9, mix(c, WHITE, 0.5), 0.8 * a);
+      disc(x, y, r * 0.62, mix(c, WHITE, 0.9), a);
+      ctx.globalCompositeOperation = "source-over";
+    },
+    planet(n, x, y, r, c, a) {
+      ctx.globalCompositeOperation = "lighter"; halo(x, y, r * 2.8, c, 0.16 * a); ctx.globalCompositeOperation = "source-over";
+      const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r);
+      g.addColorStop(0, rgba(mix(c, WHITE, 0.55), a)); g.addColorStop(0.7, rgba(c, a * 0.95)); g.addColorStop(1, rgba(mix(c, [8, 10, 24], 0.45), a));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    },
+    moon(n, x, y, r, c, a) {
+      ctx.globalCompositeOperation = "lighter"; halo(x, y, r * 2.2, c, 0.1 * a); ctx.globalCompositeOperation = "source-over";
+      disc(x, y, r * 0.85, mix(c, [206, 214, 230], 0.6), 0.85 * a);
+    },
+    asteroid(n, x, y, r, c, a) {
+      ctx.fillStyle = rgba(mix(c, [140, 148, 168], 0.62), 0.85 * a); ctx.beginPath();
+      n.shape.forEach((k, i) => { const an = n.rot + (i / n.shape.length) * TAU, X = x + Math.cos(an) * r * k, Y = y + Math.sin(an) * r * k; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); });
+      ctx.closePath(); ctx.fill();
+    },
+    nebula(n, x, y, r, c, a, br) {
+      ctx.globalCompositeOperation = "lighter";
+      n.blobs.forEach(([ox, oy, s]) => halo(x + ox * r, y + oy * r, r * 3 * s, c, 0.22 * a * br));
+      disc(x, y, r * 0.35, mix(c, WHITE, 0.8), 0.9 * a);
+      ctx.globalCompositeOperation = "source-over";
+    },
+    comet(n, x, y, r, c, a, br) {
+      const past = n.days < 0, u = past ? 0 : clamp(1 - (n.days - 1) / 20, 0.12, 1), cc = past ? [120, 128, 146] : c, aa = past ? a * 0.45 : a;
+      ctx.globalCompositeOperation = "lighter";
+      if (!past) {
+        const len = r * (3 + 12 * u), w = r * 0.95, dx = n.dir[0], dy = n.dir[1], tx = x + dx * len, ty = y + dy * len;
+        const g = ctx.createLinearGradient(x, y, tx, ty);
+        g.addColorStop(0, rgba(mix(cc, WHITE, 0.4), (0.25 + 0.5 * u) * aa)); g.addColorStop(1, rgba(cc, 0));
+        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x - dy * w, y + dx * w); ctx.lineTo(tx, ty); ctx.lineTo(x + dy * w, y - dx * w); ctx.closePath(); ctx.fill();
+      }
+      halo(x, y, r * (2.2 + 2 * u), cc, (0.2 + 0.35 * u) * aa * br);
+      disc(x, y, r * 0.6, mix(cc, WHITE, past ? 0.2 : 0.85), aa);
+      ctx.globalCompositeOperation = "source-over";
+    },
+    satellite(n, x, y, r, c, a) {
+      ctx.globalCompositeOperation = "lighter"; halo(x, y, r * 2.2, c, 0.25 * a); disc(x, y, r * 0.6, mix(c, WHITE, 0.75), a); ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = rgba(mix(c, WHITE, 0.3), 0.45 * a); ctx.lineWidth = 0.8; ctx.beginPath(); ctx.ellipse(x, y, r * 2.6, r * 1.1, n.rot, 0, TAU); ctx.stroke();
+    },
+    blackhole(n, x, y, r, c, a) {
+      ctx.globalCompositeOperation = "lighter";
+      halo(x, y, r * 3.6, c, 0.12 * a);
+      ctx.strokeStyle = rgba(mix(c, WHITE, 0.35), 0.85 * a); ctx.lineWidth = 1.3; ctx.beginPath(); ctx.arc(x, y, r * 1.45, 0, TAU); ctx.stroke();
+      ctx.globalCompositeOperation = "source-over";
+      disc(x, y, r * 1.15, [3, 4, 9], 0.95 * a);
+      ctx.strokeStyle = rgba(c, 0.35 * a); ctx.lineWidth = 0.6; ctx.beginPath(); ctx.arc(x, y, r * 0.8, 0, TAU); ctx.stroke();
+    },
+    dust(n, x, y, r, c, a) {
+      ctx.globalCompositeOperation = "lighter";
+      n.specks.forEach(([ox, oy, s]) => disc(x + ox * r * 1.7, y + oy * r * 1.7, r * 0.34 * s, mix(c, WHITE, 0.35), 0.55 * a));
+      ctx.globalCompositeOperation = "source-over";
+    },
+    debris(n, x, y, r, c, a) {
+      ctx.fillStyle = rgba([124, 132, 150], 0.5 * a); ctx.beginPath();
+      ctx.moveTo(x + Math.cos(n.rot) * r * 1.2, y + Math.sin(n.rot) * r * 1.2);
+      ctx.lineTo(x + Math.cos(n.rot + 2.3) * r, y + Math.sin(n.rot + 2.3) * r);
+      ctx.lineTo(x + Math.cos(n.rot + 4.1) * r * 0.9, y + Math.sin(n.rot + 4.1) * r * 0.9);
+      ctx.closePath(); ctx.fill();
+    },
+  };
+  const GN = {
+    star(n, x, y, r, c, a) {
+      ctx.save(); ctx.shadowColor = rgba(c, 0.9 * a); ctx.shadowBlur = 10; ctx.fillStyle = rgba(c, a); ctx.strokeStyle = rgba(mix(c, [0, 0, 0], 0.3), a); ctx.lineWidth = 1; ctx.beginPath();
+      for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * 0.45 : r, an = -Math.PI / 2 + (i * Math.PI) / 5, X = x + Math.cos(an) * rr, Y = y + Math.sin(an) * rr; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); }
+      ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+    },
+    planet(n, x, y, r, c, a) { disc(x, y, r, c, a); ctx.strokeStyle = rgba(WHITE, 0.55 * a); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.ellipse(x, y, r * 1.6, r * 0.42, -0.35, 0, TAU); ctx.stroke(); },
+    galaxy(n, x, y, r, c, a) {
+      ctx.strokeStyle = rgba(c, a); ctx.lineWidth = 2;
+      for (let k = 0; k < 2; k++) { ctx.beginPath(); for (let i = 0; i <= 24; i++) { const tt = i / 24, an = n.rot + k * Math.PI + tt * 3.4, rr = r * (0.15 + tt * 0.95), X = x + Math.cos(an) * rr, Y = y + Math.sin(an) * rr; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); } ctx.stroke(); }
+      disc(x, y, r * 0.25, WHITE, a);
+    },
+    blackhole(n, x, y, r, c, a) { disc(x, y, r, [0, 0, 0], a); ctx.strokeStyle = rgba(c, a); ctx.lineWidth = 2.6; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke(); },
+    nebula(n, x, y, r, c, a) { ctx.fillStyle = rgba(c, 0.55 * a); ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.5, n.rot, 0, TAU); ctx.fill(); },
+    comet(n, x, y, r, c, a) { ctx.strokeStyle = rgba(c, 0.6 * a); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + n.dir[0] * r * 3, y + n.dir[1] * r * 3); ctx.stroke(); disc(x, y, r, c, a); },
+    asteroid(n, x, y, r, c, a) { ctx.fillStyle = rgba(c, a); ctx.beginPath(); for (let i = 0; i < 8; i++) { const an = Math.PI / 8 + (i * TAU) / 8, X = x + Math.cos(an) * r, Y = y + Math.sin(an) * r; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); } ctx.closePath(); ctx.fill(); },
+    moon(n, x, y, r, c, a) { disc(x, y, r, [236, 238, 244], a); },
+    satellite(n, x, y, r, c, a) { ctx.fillStyle = rgba([150, 170, 190], a); ctx.fillRect(x - r * 2.2, y - r * 0.35, r * 1.2, r * 0.7); ctx.fillRect(x + r, y - r * 0.35, r * 1.2, r * 0.7); disc(x, y, r, c, a); },
+    dust(n, x, y, r, c, a) { disc(x, y, r, c, 0.85 * a); },
+    debris(n, x, y, r, c, a) { ctx.fillStyle = rgba([120, 120, 128], a); ctx.fillRect(x - r, y - r, r * 2, r * 2); },
+  };
+
+  function bgLight(t) {
+    ctx.fillStyle = "#04060d"; ctx.fillRect(0, 0, W, H);
+    const g = ctx.createRadialGradient(W * 0.5, H * 0.45, 0, W * 0.5, H * 0.45, Math.max(W, H) * 0.75);
+    g.addColorStop(0, "rgba(22,30,58,0.55)"); g.addColorStop(0.55, "rgba(10,14,30,0.3)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const ox = -cam.x * cam.k, oy = -cam.y * cam.k;
+    for (const s of stars) {
+      let x = (s.x * W + ox * s.f) % W; if (x < 0) x += W;
+      let y = (s.y * H + oy * s.f) % H; if (y < 0) y += H;
+      const a = s.tw && !RM ? s.a * (0.65 + 0.35 * Math.sin(t * s.tw + s.ph)) : s.a;
+      ctx.fillStyle = "rgba(210,222,255," + a.toFixed(3) + ")"; ctx.fillRect(x, y, s.r, s.r);
+    }
+  }
+  function nebulae() {
+    const z = cam.k / fitK, m = (state.showClusters ? 1 : 0) * (1 - state.listT) * clamp((3.2 - z) / 2.2, 0.12, 1) * (focus.node ? 0.55 : 1);
+    if (m <= 0.01) return;
+    ctx.save(); ctx.globalCompositeOperation = "lighter";
+    const base = Math.min(62 * cam.k, 240);
+    for (const n of nodes) {
+      const x = px[n.id], y = py[n.id], w = base * (n.type === "galaxy" ? 1.9 : n.type === "star" ? 1.35 : 1);
+      if (x < -w || x > W + w || y < -w || y > H + w) continue;
+      const hue = CLUSTERS[n.c].hue, a = 0.04 * m * n.vis;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, w);
+      g.addColorStop(0, rgba(hue, a)); g.addColorStop(0.55, rgba(hue, a * 0.45)); g.addColorStop(1, rgba(hue, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, w, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+  function clusterNames() {
+    if (!state.showClusters) return;
+    const z = cam.k / fitK;
+    let a = clamp((1.32 - z) / 0.42, 0, 1) * 0.8 * (1 - state.listT);
+    if (focus.node) a *= 0.3;
+    if (a <= 0.01) return;
+    ctx.save(); ctx.font = '500 12px "Unbounded", "Onest", sans-serif'; if ("letterSpacing" in ctx) ctx.letterSpacing = "1px";
+    ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    for (const cl of CLUSTERS) { ctx.fillStyle = rgba(mix(cl.hue, WHITE, 0.3), a); ctx.fillText(cl.name, (cl.cx - cam.x) * cam.k + W / 2, (cl.top - cam.y) * cam.k + H / 2 - 18); }
+    ctx.restore();
+  }
+  function linksLight(t) {
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.lineCap = "round";
+    const lw = clamp(Math.pow(cam.k / fitK, 0.45), 0.7, 1.9);
+    for (const l of links) {
+      if ((l.kind === "auto" && !state.showAuto) || l.vis <= 0.01) continue;
+      const s = l.s, e = l.t, x1 = px[s.id], y1 = py[s.id], x2 = px[e.id], y2 = py[e.id];
+      const base = l.kind === "auto" ? 0.15 : l.kind === "dep" ? 0.45 : 0.28, hot = l.kind === "auto" ? 0.55 : l.kind === "dep" ? 0.95 : 0.85;
+      const a = (base * l.fa + (hot - base) * l.boost) * l.vis;
+      if (a <= 0.004) continue;
+      const dx = x2 - x1, dy = y2 - y1, cx = (x1 + x2) / 2 - dy * l.bend, cy = (y1 + y2) / 2 + dx * l.bend;
+      if (l.kind === "dep") ctx.strokeStyle = rgba(GOLD, a);
+      else { const k2 = l.kind === "auto" ? 0.4 : 0.22, g = ctx.createLinearGradient(x1, y1, x2, y2); g.addColorStop(0, rgba(mix(CLUSTERS[s.c].hue, WHITE, k2), a)); g.addColorStop(1, rgba(mix(CLUSTERS[e.c].hue, WHITE, k2), a)); ctx.strokeStyle = g; }
+      ctx.lineWidth = (l.kind === "auto" ? 0.95 : l.kind === "dep" ? 1.35 : 1.05) * lw * (1 + 0.3 * l.boost);
+      ctx.setLineDash(l.kind === "auto" ? [0.5, 4.2 * lw] : []);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(cx, cy, x2, y2); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    const f = focus.node;
+    if (f && state.listT < 0.02) {
+      for (const r of focus.recList) {
+        const m = r.m, q = clamp((r.s - 0.35) / 0.5, 0, 1);
+        ctx.strokeStyle = rgba(REC, 0.75 * m.alpha * m.vis); ctx.lineWidth = 1.1 * lw;
+        ctx.setLineDash([3.2 * lw, (2.5 + (1 - q) * 9) * lw]);
+        ctx.beginPath(); ctx.moveTo(px[f.id], py[f.id]); ctx.lineTo(px[m.id], py[m.id]); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      if (!RM) for (const c of focus.chainLinks) {
+        const l = c.l, x1 = px[l.s.id], y1 = py[l.s.id], x2 = px[l.t.id], y2 = py[l.t.id];
+        const dx = x2 - x1, dy = y2 - y1, cx = (x1 + x2) / 2 - dy * l.bend, cy = (y1 + y2) / 2 + dx * l.bend, fade = Math.max(0.35, 1 - 0.12 * c.d) * l.boost;
+        for (let k = 0; k < 3; k++) {
+          const u = (((t * 0.5 - c.i * 0.34 + k / 3) % 1) + 1) % 1, iu = 1 - u;
+          const X = iu * iu * x1 + 2 * iu * u * cx + u * u * x2, Y = iu * iu * y1 + 2 * iu * u * cy + u * u * y2;
+          halo(X, Y, 5 * lw, GOLD, 0.55 * fade); disc(X, Y, 1.3 * lw, [255, 240, 205], 0.95 * fade);
+        }
+      }
+    }
+    ctx.restore();
+  }
+  function nodesLight(t) {
+    const sc = clamp(Math.pow(cam.k / fitK, 0.5), 0.6, 2.4);
+    for (const n of order) {
+      if (n.vis <= 0.01) continue;
+      const x = px[n.id], y = py[n.id];
+      if (x < -60 || x > W + 60 || y < -60 || y > H + 60) { n._r = 0; continue; }
+      const r = BASE_R[n.type] * sc * (1 + Math.min(n.deg, 10) * 0.025) * (0.55 + 0.45 * n.vis) * (1 - 0.2 * pm[n.id]);
+      n._r = r;
+      const br = RM ? 1 : 1 + 0.08 * Math.sin(t * 0.9 + n.seed * TAU);
+      GL[n.type](n, x, y, r, CLUSTERS[n.c].hue, n.alpha * n.vis, br);
+      if (pm[n.id] < 0.05) {
+        const rr = Math.max(r * 2.3, 8);
+        if (n === focus.node) { ctx.strokeStyle = rgba(WHITE, 0.5 * n.vis); ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, rr, 0, TAU); ctx.stroke(); }
+        if (n === state.selected) { const ph = RM ? 0.35 : (t * 0.55) % 1; ctx.strokeStyle = rgba(mix(CLUSTERS[n.c].hue, WHITE, 0.5), (1 - ph) * 0.7 * n.vis); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x, y, rr + ph * 16, 0, TAU); ctx.stroke(); }
+      }
+    }
+  }
+  function labelsLight() {
+    const z = cam.k / fitK, f = focus.node, cands = [];
+    for (const n of nodes) {
+      if (n.vis < 0.3 || pm[n.id] > 0.45 || !n._r) continue;
+      let pri = -1;
+      if (f) pri = n === f ? 100 : focus.chain.has(n.id) ? 70 : focus.set.has(n.id) ? 60 : focus.rec.has(n.id) ? 50 : -1;
+      else if (n === state.selected) pri = 100;
+      else if (n.type === "galaxy") pri = 90;
+      else if (n.type === "star" && z >= 0.8) pri = 80;
+      else if (z >= 1.35 && TIER1.has(n.type)) pri = 40 + Math.min(n.deg, 10);
+      else if (z >= 2) pri = 10 + Math.min(n.deg, 10);
+      if (pri >= 0) cands.push([pri, n]);
+    }
+    cands.sort((a, b) => b[0] - a[0]);
+    const placed = [];
+    const hit = (x, y, w, h) => placed.some((p) => x < p[0] + p[2] && x + w > p[0] && y < p[1] + p[3] && y + h > p[1]);
+    ctx.save(); ctx.textBaseline = "middle"; ctx.shadowColor = "rgba(2,3,9,0.95)"; ctx.shadowBlur = 6;
+    for (const [, n] of cands) {
+      const big = n.type === "galaxy" || n.type === "star";
+      ctx.font = n.type === "galaxy" ? '500 13px "Onest", sans-serif' : big ? '500 12px "Onest", sans-serif' : '400 11.5px "Onest", sans-serif';
+      const suf = n.type === "comet" ? " · " + when(n) : "";
+      const wt = ctx.measureText(n.title).width, w = wt + (suf ? ctx.measureText(suf).width : 0), h = 15;
+      const x = px[n.id], y = py[n.id], off = n._r * (n.type === "galaxy" ? 2.4 : 1.6) + 6;
+      let bx = x + off;
+      if (hit(bx - 2, y - h / 2, w + 4, h)) { bx = x - off - w; if (hit(bx - 2, y - h / 2, w + 4, h)) continue; }
+      placed.push([bx - 2, y - h / 2, w + 4, h]);
+      const a = (f ? 1 : big ? 0.95 : 0.8) * Math.min(1, n.alpha * 1.1) * n.vis * (1 - pm[n.id] * 2);
+      ctx.fillStyle = n.type === "galaxy" ? rgba(mix(CLUSTERS[n.c].hue, WHITE, 0.55), a) : rgba([228, 234, 247], a);
+      ctx.fillText(n.title, bx, y);
+      if (suf) { ctx.fillStyle = rgba(n.days < 0 ? [150, 156, 172] : GOLD, a * 0.95); ctx.fillText(suf, bx + wt, y); }
+    }
+    ctx.restore();
+  }
+  function fog(now) {
+    const pr = RM ? 1 : clamp((now - state.revealStart) / 1700, 0, 1);
+    if (pr >= 1) return;
+    const e = easeOut(pr), maxR = Math.hypot(W, H) / 2, inner = maxR * (0.05 + e), outer = inner + maxR * 0.45;
+    const g = ctx.createRadialGradient(W / 2, H / 2, inner * 0.5, W / 2, H / 2, outer);
+    g.addColorStop(0, "rgba(4,6,13,0)"); g.addColorStop(1, "rgba(4,6,13," + (0.92 * (1 - e)).toFixed(3) + ")");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+
+  function bgNow() {
+    ctx.fillStyle = "#07080d"; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(120,140,180,0.05)"; ctx.lineWidth = 1; ctx.beginPath();
+    for (let x = 0.5; x < W; x += 40) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let y = 0.5; y < H; y += 40) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    ctx.stroke();
+    const g = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.min(W, H) * 0.48);
+    g.addColorStop(0, "rgba(0,0,0,0.55)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  function linksNow() {
+    ctx.save();
+    for (const l of links) {
+      if ((l.kind === "auto" && !state.showAuto) || l.vis <= 0.01) continue;
+      const hot = focus.node && (l.s === focus.node || l.t === focus.node), v = l.vis;
+      if (l.kind === "dep") { ctx.strokeStyle = rgba([255, 140, 26], 0.8 * v); ctx.lineWidth = 1.6; ctx.setLineDash([]); }
+      else if (l.kind === "auto") { ctx.strokeStyle = rgba([190, 150, 255], (hot ? 0.6 : 0.28) * v); ctx.lineWidth = 0.7; ctx.setLineDash([2, 3]); }
+      else { ctx.strokeStyle = rgba(l.legacy, (hot ? 0.8 : 0.34) * v); ctx.lineWidth = hot ? 1.6 : 1; ctx.setLineDash([]); }
+      ctx.beginPath(); ctx.moveTo(px[l.s.id], py[l.s.id]); ctx.lineTo(px[l.t.id], py[l.t.id]); ctx.stroke();
+    }
+    ctx.setLineDash([]); ctx.restore();
+  }
+  function nodesNow() {
+    const z = clamp(cam.k / fitK, 0.5, 3);
+    for (const n of order) {
+      if (n.vis <= 0.01) continue;
+      const x = px[n.id], y = py[n.id];
+      let r = NOW_R[n.type] * n.nowSize * z * (0.5 + 0.5 * n.vis) * (1 - 0.35 * pm[n.id]);
+      if (n === focus.node) r *= 1.25;
+      n._rn = r;
+      GN[n.type](n, x, y, r, n.nowColor, n.vis);
+    }
+  }
+  function labelsNow() {
+    ctx.save(); ctx.font = '700 11px Arial, "Segoe UI", sans-serif'; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.lineJoin = "round";
+    for (const n of nodes) {
+      if (n.vis < 0.4 || pm[n.id] > 0.45 || !(n.topNow || n === focus.node)) continue;
+      const t = n.title.length > 12 ? n.title.slice(0, 12) + "…" : n.title, x = px[n.id], y = py[n.id] + (n._rn || 6) + 4, a = n.vis * (1 - pm[n.id] * 2);
+      ctx.strokeStyle = rgba([0, 0, 0], 0.9 * a); ctx.lineWidth = 3; ctx.strokeText(t, x, y);
+      ctx.fillStyle = rgba(WHITE, a); ctx.fillText(t, x, y);
+    }
+    ctx.restore();
+  }
+  function listLayer(style) {
+    const P = state.listT;
+    if (P <= 0.01) return;
+    ctx.save(); ctx.textBaseline = "middle";
+    const ha = smooth(0.45, 1, P);
+    listCols.forEach((col) => {
+      const cl = CLUSTERS[col.c], y = state.listTop - 28;
+      ctx.textAlign = "left";
+      if (style === "light") { ctx.font = '500 11.5px "Unbounded", "Onest", sans-serif'; ctx.fillStyle = rgba(mix(cl.hue, WHITE, 0.35), ha); }
+      else { ctx.font = '700 12px Arial, sans-serif'; ctx.fillStyle = rgba(WHITE, ha); }
+      ctx.fillText(fit(cl.name, col.w - 26), col.x, y);
+      ctx.font = '400 11px "Onest", sans-serif'; ctx.fillStyle = rgba([140, 150, 175], ha * 0.85); ctx.textAlign = "right"; ctx.fillText(String(cl.count), col.x + col.w, y);
+      ctx.fillStyle = style === "light" ? rgba(cl.hue, 0.3 * ha) : rgba([90, 96, 110], 0.5 * ha); ctx.fillRect(col.x, state.listTop - 15, col.w, 1);
+    });
+    ctx.textAlign = "left";
+    const hv = state.listHover;
+    if (hv && P > 0.95) { const col = listCols[hv.c]; ctx.fillStyle = "rgba(170,190,255,0.09)"; roundRect(col.x - 6, hv.ly - state.rowH / 2 + 1, col.w + 10, state.rowH - 2, 6); ctx.fill(); }
+    for (const n of nodes) {
+      const p = pm[n.id];
+      if (p < 0.55) continue;
+      const a = smooth(0.55, 1, p), col = listCols[n.c];
+      if (style === "light") { ctx.font = (n.type === "galaxy" || n.type === "star" ? "500 " : "400 ") + '12px "Onest", sans-serif'; ctx.fillStyle = rgba([222, 229, 245], a * (n.type === "dust" || n.type === "debris" ? 0.6 : 0.92)); }
+      else { ctx.font = '700 11px Arial, sans-serif'; ctx.fillStyle = rgba(WHITE, a); }
+      ctx.fillText(fit(n.title, col.w - 20), n.lx + 12, py[n.id]);
+    }
+    ctx.restore();
+  }
+  function divider(sx) {
+    ctx.save();
+    ctx.fillStyle = "rgba(230,236,255,0.55)"; ctx.fillRect(sx - 0.5, 0, 1, H);
+    ctx.fillStyle = "rgba(9,12,24,0.92)"; ctx.strokeStyle = "rgba(230,236,255,0.6)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(sx, H / 2, 15, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "rgba(230,236,255,0.9)";
+    ctx.beginPath(); ctx.moveTo(sx - 4, H / 2 - 5); ctx.lineTo(sx - 9, H / 2); ctx.lineTo(sx - 4, H / 2 + 5); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(sx + 4, H / 2 - 5); ctx.lineTo(sx + 9, H / 2); ctx.lineTo(sx + 4, H / 2 + 5); ctx.fill();
+    ctx.restore();
+  }
+  function scene(style, t, now) {
+    if (style === "light") { bgLight(t); nebulae(); clusterNames(); linksLight(t); nodesLight(t); labelsLight(); listLayer("light"); fog(now); }
+    else { bgNow(); linksNow(); nodesNow(); labelsNow(); listLayer("now"); }
+  }
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    const t = now / 1000;
+    updateCam(now); updateMorph(dt); updateVis(now); updateAlpha(dt); positions();
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    if (state.style === "compare") {
+      const sx = Math.round(state.split * W);
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, sx, H); ctx.clip(); scene("now", t, now); ctx.restore();
+      ctx.save(); ctx.beginPath(); ctx.rect(sx, 0, W - sx, H); ctx.clip(); scene("light", t, now); ctx.restore();
+      divider(sx);
+    } else scene(state.style, t, now);
+    const shown = nodes.reduce((s, n) => s + (now >= n.appear ? 1 : 0), 0);
+    if (!RM && now < state.revealEnd) { chip.hidden = false; chip.textContent = shown + " из " + N; } else if (!chip.hidden) chip.hidden = true;
+    requestAnimationFrame(frame);
+  }
+
+  const esc = (s) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
+  function showTip(n, mx, my) {
+    tip.innerHTML = "<b>" + esc(n.title) + "</b><span>" + TYPE_RU[n.type] + " · кластер «" + esc(CLUSTERS[n.c].name) + "»</span>" + (n.type === "comet" ? '<span class="when">' + when(n) + "</span>" : "") + "<span>связей " + n.deg + " · рекомендаций " + n.recs.length + "</span>";
+    tip.hidden = false;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let x = mx + 16, y = my + 18;
+    if (x + tw > W - 8) x = mx - tw - 16;
+    if (y + th > H - 8) y = my - th - 14;
+    tip.style.transform = "translate(" + Math.round(x) + "px," + Math.round(y) + "px)";
+  }
+  const hideTip = () => { tip.hidden = true; };
+  function listHit(mx, my) {
+    for (const n of nodes) { const col = listCols[n.c]; if (mx >= col.x - 6 && mx <= col.x + col.w + 4 && Math.abs(my - n.ly) <= state.rowH / 2) return n; }
+    return null;
+  }
+  function hoverAt(mx, my) {
+    if (state.listTarget > 0 || state.listT > 0.02) {
+      state.listHover = state.listT > 0.95 ? listHit(mx, my) : null; hideTip();
+      cv.style.cursor = state.listHover ? "pointer" : "default"; return;
+    }
+    const side = state.style === "compare" ? (mx < state.split * W ? "now" : "light") : state.style;
+    let best = null, bd = Infinity;
+    for (const n of nodes) {
+      if (n.vis < 0.5) continue;
+      const d = Math.hypot(px[n.id] - mx, py[n.id] - my), rr = side === "now" ? n._rn || 6 : n._r || 3, lim = Math.max(10, side === "now" ? rr * 1.2 : rr * 2.4);
+      if (d < lim && d < bd) { bd = d; best = n; }
+    }
+    if (best !== state.hover) { state.hover = best; computeFocus(); }
+    if (best) showTip(best, mx, my); else hideTip();
+    cv.style.cursor = state.style === "compare" && Math.abs(mx - state.split * W) < 14 ? "ew-resize" : best ? "pointer" : "grab";
+  }
+  function clickAt(mx, my) {
+    if (state.listT > 0.5) {
+      const n = listHit(mx, my);
+      if (!n) return;
+      state.camAnim = null; cam.x = n.x; cam.y = n.y; cam.k = fitK * 2.3; camTouched = true;
+      state.selected = n; setList(0); return;
+    }
+    const n = state.hover;
+    if (n) { state.selected = n; computeFocus(); camTouched = true; flyTo({ x: n.x, y: n.y, k: Math.max(cam.k, fitK * 2.2) }); }
+    else { state.selected = null; computeFocus(); camTouched = false; flyTo(fitView()); }
+  }
+  const mouse = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  let drag = null;
+  cv.addEventListener("pointerdown", (e) => {
+    const [mx, my] = mouse(e);
+    drag = state.style === "compare" && Math.abs(mx - state.split * W) < 14 ? { kind: "split" } : { kind: "pan", x: mx, y: my, cx: cam.x, cy: cam.y, moved: false };
+    cv.setPointerCapture(e.pointerId);
+    if (drag.kind === "pan" && state.listT < 0.02) cv.style.cursor = "grabbing";
+  });
+  cv.addEventListener("pointermove", (e) => {
+    const [mx, my] = mouse(e); state.mouse = [mx, my];
+    if (drag && drag.kind === "split") { state.split = clamp(mx / W, 0.08, 0.92); return; }
+    if (drag && drag.kind === "pan") {
+      const dx = mx - drag.x, dy = my - drag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+      if (drag.moved && state.listT < 0.02) { state.camAnim = null; cam.x = drag.cx - dx / cam.k; cam.y = drag.cy - dy / cam.k; camTouched = true; hideTip(); }
+      return;
+    }
+    hoverAt(mx, my);
+  });
+  cv.addEventListener("pointerup", () => { const d = drag; drag = null; if (d && d.kind === "pan" && !d.moved) clickAt(state.mouse[0], state.mouse[1]); hoverAt(state.mouse[0], state.mouse[1]); });
+  cv.addEventListener("pointerleave", () => { if (!drag) { if (state.hover) { state.hover = null; computeFocus(); } state.listHover = null; hideTip(); } });
+  cv.addEventListener("wheel", (e) => {
+    if (state.listT > 0.02) return;
+    e.preventDefault(); state.camAnim = null;
+    const [mx, my] = mouse(e), k2 = clamp(cam.k * Math.exp(-e.deltaY * 0.0015), fitK * 0.45, fitK * 7);
+    const wx = (mx - W / 2) / cam.k + cam.x, wy = (my - H / 2) / cam.k + cam.y;
+    cam.k = k2; cam.x = wx - (mx - W / 2) / k2; cam.y = wy - (my - H / 2) / k2; camTouched = true;
+  }, { passive: false });
+  cv.addEventListener("dblclick", () => { state.selected = null; computeFocus(); camTouched = false; flyTo(fitView()); });
+  window.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (state.listTarget) { setList(0); return; }
+    state.selected = null; computeFocus(); camTouched = false; flyTo(fitView());
+  });
+
+  const $ = (id) => document.getElementById(id);
+  function setStyle(s) {
+    state.style = s;
+    $("st-now").setAttribute("aria-pressed", String(s === "now"));
+    $("st-light").setAttribute("aria-pressed", String(s === "light"));
+    $("st-cmp").setAttribute("aria-pressed", String(s === "compare"));
+    $("tag-now").hidden = s !== "compare"; $("tag-light").hidden = s !== "compare"; $("legend").hidden = s === "now";
+  }
+  function setList(v) {
+    state.listTarget = v; state.hover = null; state.listHover = null; hideTip(); computeFocus();
+    $("bt-list").textContent = v ? "Граф" : "Список";
+  }
+  $("st-now").addEventListener("click", () => setStyle("now"));
+  $("st-light").addEventListener("click", () => setStyle("light"));
+  $("st-cmp").addEventListener("click", () => setStyle("compare"));
+  $("tg-auto").addEventListener("click", (e) => { state.showAuto = !state.showAuto; e.currentTarget.setAttribute("aria-pressed", String(state.showAuto)); computeFocus(); });
+  $("tg-clu").addEventListener("click", (e) => { state.showClusters = !state.showClusters; e.currentTarget.setAttribute("aria-pressed", String(state.showClusters)); });
+  $("bt-list").addEventListener("click", () => setList(state.listTarget ? 0 : 1));
+  $("bt-reveal").addEventListener("click", () => startReveal(performance.now()));
+
+  new ResizeObserver(resize).observe(stage);
+  resize();
+  startReveal(performance.now());
+  if (document.fonts && document.fonts.load) { document.fonts.load('500 12px "Onest"'); document.fonts.load('500 12px "Unbounded"'); }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</html>
