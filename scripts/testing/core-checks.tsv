@@ -16,6 +16,7 @@ frontend-types	Frontend TypeScript	frontend-checks	Check TypeScript	frontend	npm
 frontend-config	Generated config sync	frontend-checks	Verify generated config is in sync	.	@config-sync	npm run build-config && git diff --exit-code knowledge-graph.config.json	0	npm
 docs-links	Documentation links	frontend-checks	Check documentation links	.	node scripts/testing/check-docs-links.mjs .	node scripts/testing/check-docs-links.mjs .	0	node
 tasks-index	Task index guard	frontend-checks	Check task index	.	node scripts/testing/check-tasks-index.mjs .	node scripts/testing/check-tasks-index.mjs .	0	node
+doc-audit-2-register	DOC-AUDIT-2 register guard	frontend-checks	Check DOC-AUDIT-2 register	.	node scripts/testing/check-doc-audit-2-register.mjs .	node scripts/testing/check-doc-audit-2-register.mjs .	0	node
 decisions	Decision index guard	frontend-checks	Check decision index	.	node scripts/testing/check-decisions.mjs .	node scripts/testing/check-decisions.mjs .	0	node
 handoff-size	Board size guard	frontend-checks	Check board size	.	node scripts/testing/check-board-size.mjs .	node scripts/testing/check-board-size.mjs .	0	node
 board-limits	Board limits guard	frontend-checks	Check board limits	.	node scripts/testing/check-board-limits.mjs .	node scripts/testing/check-board-limits.mjs .	0	node

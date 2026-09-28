@@ -71,13 +71,19 @@ const baseOpacity = 0.4 + (weight ?? 0.5) * 0.4;
 
 ### Direct vs Recommended
 
-| Feature | Direct link | Recommendation |
+> **Implementation status (DOC-AUDIT-2, 2026-09-28):** recommendations live in
+> `note_recommendations` and are **not drawn on the graph** — the canvas renders
+> only `links` rows (user links and confirmed/promoted gamma links, which are
+> already a different entity). Drawing recommendations as a third line kind is
+> planned work (owner decision 81, LINK-TYPES-1: pale dashed lines on hover).
+
+| Feature | Direct link | Recommendation (not rendered today) |
 |---------|-------------|----------------|
 | **Source** | `links` table | `note_recommendations` table |
 | **Creation** | Manual via UI/API | Worker / NLP service |
 | **Type** | Explicit (`reference`/`dependency`/`related`/`custom`/`parent`/`child`) | Usually `related` |
 | **Weight** | User-defined (0.0–1.0) | Computed (α×graph + β×semantic + γ×keyword) |
-| **Visual** | Type color and dash | Paler, weight-based dash |
+| **Visual** | Type color and dash | Planned: pale, weight-based dash |
 
 ## 4. Rendering
 

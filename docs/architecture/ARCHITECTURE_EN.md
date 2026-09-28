@@ -654,41 +654,52 @@ users          — Users
 
 ## 🔄 Data Flow
 
-### Creating note with recommendations
+### Creating a note
 
 ```
 1. User creates note (Frontend)
-   ↓ POST /notes
-2. HTTP Handler receives request
+   ↓ POST /api/v1/notes
+2. Handler: notehandler.Create (interfaces/api/notehandler)
+   ├─ Validate input, build note.Note aggregate
+   └─ noteRepo.Save — wrapped by the transactional outbox decorator
+      ├─ INSERT INTO notes
+      └─ INSERT INTO graph_outbox (NoteCreated) — same transaction
    ↓
-3. Application Service: CreateNote
-   ├─ Validate input
-   ├─ Create Note aggregate
-   ├─ Save to PostgreSQL (note_repo)
-   └─ Enqueue task: recommendation:refresh
+3. Handler enqueues Asynq tasks (fire-and-forget):
+   ├─ extract_keywords   → NLP /extract_keywords → note_keywords
+   ├─ compute_embedding  → NLP /embed → note_embeddings (pgvector)
+   ├─ normalize_note     → NLP /normalize (quality guardrails)
+   ├─ recalculate_link_weights (delayed)
+   └─ refresh_recommendations for affected notes (delayed)
+   Plus: backup-on-change enqueue, graph cache invalidation
    ↓
 4. Response: 201 Created
    ↓
-5. Worker picks up task (async)
-   ├─ Call NLP: /extract_keywords
-   ├─ Call NLP: /embed
-   ├─ Save embedding to pgvector
-   ├─ Calculate recommendations
-   │  ├─ Vector similarity search
-   │  ├─ Keyword matching
-   │  └─ Graph traversal (BFS)
-   └─ Save recommendations
+5. Worker (infrastructure/queue/worker.go) executes the tasks;
+   embedding writes feed:
+   ├─ recommendation refresh → note_recommendations table
+   └─ gamma link generation → links (source_type='gamma')
+6. Relayer (infrastructure/outbox/relay.go) drains graph_outbox
+   → Redis Pub/Sub channel graph:events
+   → graph-service subscriber invalidates its caches
 ```
 
 ### Requesting recommendations
 
 ```
-GET /notes/:id/suggestions
+GET /api/v1/notes/:id/suggestions
    ↓
-Query Handler: GetSuggestions
-   ├─ Check precomputed recommendations
-   ├─ If stale/empty → trigger refresh
-   └─ Return top-N suggestions
+Handler: notehandler.GetSuggestions — ordered fallbacks,
+X-Recommendations-Source header reports which one answered:
+   1. note_recommendations table (source: table);
+      stale rows → background refresh enqueued
+   2. graph-service live suggestions (source: graph-service)
+   3. semantic neighbors via pgvector (source: semantic,
+      flag RecommendationFallbackSemanticEnabled)
+   4. Redis cache recommendations:<note_id> (source: redis,
+      flag RecommendationFallbackEnabled)
+   ↓ none → empty list
+Every step resolves the target note and skips deleted entries.
 ```
 
 ### Graph search

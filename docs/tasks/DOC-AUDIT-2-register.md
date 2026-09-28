@@ -89,12 +89,12 @@
 | 26 | nlp_utils: deferred singleton, preload в lifespan | :509-517 | верно | `nlp-service/app/nlp_utils.py` (`get_embedding_model`, `ensure_model_loaded`) | нет |
 | 27 | NLP tests | :518-524 | верно | `ls nlp-service/tests/` | нет |
 | 28 | PostgreSQL: таблицы (notes, links, note_embeddings, note_keywords, note_recommendations, link_suppressions…), 68 миграций, pgvector/pg_trgm | :527-549 | расхождение → верно | `ls backend/migrations/*.sql | wc` = 68; имена таблиц в миграциях | исправлено — `47797c9` |
-| 29 | Redis: очереди asynq, кеши, pub/sub `graph:events` | :550-555 | верно | `queue/asynq.go`, `cache/redis_cache.go`, `subscriber/pubsub.go` | нет |
+| 29 | Redis: очереди asynq, кеши, pub/sub `graph:events` | :550-555 | верно | `infrastructure/queue/asynq_client.go`, `services/graph-service/internal/cache/redis_cache.go`, `services/graph-service/internal/subscriber/pubsub.go` | нет |
 | 30 | Dev compose: 9 сервисов, порты 15432/16379/27017/5000/9000/9090-91/18080-81 | :556-566 | верно | `docker-compose.yml` ports | нет |
 | 31 | Personal compose: 11 сервисов, порты 5433/16380/27018/5001/9092/18085/3001/18082-84 | :567-580 | расхождение → верно | `docker-compose.personal.yml` ports | исправлено — `47797c9` |
 | 32 | Backup service: `scripts/devops/backup-personal.*`, `backup-policy.env`, retention | :582-654 | расхождение → верно | `scripts/devops/backup-personal.ps1`, `backup-policy.env`, compose `backup_scheduler` | исправлено — `47797c9` |
-| 33 | Data flow: создание заметки → embedding → gamma links → события | :657-682 | верно | `notehandler`, `queue/tasks/compute_embedding.go`, `application/recommendation/gamma*` | нет |
-| 34 | Data flow: запрос рекомендаций (5-уровневый фолбэк) | :683-693 | верно | `application/recommendation/service.go` цепочка | нет |
+| 33 | Data flow: создание заметки → outbox → Asynq-задачи → gamma/рекомендации → graph:events | :657-685 | расхождение → верно | `note_handler.go:243-341` (Create+enqueue), `outbox/note_repo.go:41-53`, `queue/asynq_client.go:74-125`, `queue/worker.go:238` (gamma) | документ переписан — этот коммит |
+| 34 | Data flow: запрос рекомендаций — фолбэк table→graph-service→semantic→redis→empty | :687-703 | расхождение → верно | `note_handler.go:1494-1640` (цепочка + X-Recommendations-Source), фильтрация удалённых NOTE-DELETE-1 | документ переписан — этот коммит |
 | 35 | Data flow: graph search | :694-708 | верно | `graphHandler`, pg_trgm в миграциях | нет |
 | 36 | Testing strategy: backend/frontend/NLP команды | :709-735 | верно | `go test ./...`, `npm run test:unit`, `pytest` | нет |
 | 37 | Dependencies: go.mod/package.json/requirements.txt ключевые версии | :736-768 | верно | `backend/go.mod`, `frontend/package.json`, `nlp-service/requirements.txt` | нет |
@@ -124,7 +124,7 @@
 | 7 | JWT claims: `sub/iss/user_id/login/role/token_type/jti/iat/nbf/exp`, нет tenant_id | :162-181 | расхождение → верно | `internal/auth/jwt.go` `TokenClaims` | исправлено — `47797c9` |
 | 8 | Soft delete flow: `gorm.DeletedAt`, транзакционный sweep связей, `deleted_via_note_id`, purge 90 дн., события | :184-210 | верно | `note_repo.go:130-227`, `note_model.go:24`, NOTE-DELETE-1 | уточнено этим коммитом |
 | 9 | Draft sync: Mongo autosave, TTL-индекс 7 дней | :211-226 | верно | `infrastructure/mongo/draft_repo.go` TTL 604800 | нет |
-| 10 | Performance characteristics | :227-236 | верно | — | нет |
+| 10 | Performance characteristics (целевые значения + механизмы) | :227-236 | верно (реализация; латентность не замерялась) | `infrastructure/mongo/draft_repo.go` (draft write), `note_repo.go` транзакция, `auth/jwt.go` claims без БД, `queue/worker.go` async | нет |
 | 11 | Gamma links: maxOutDegree=2, GAMMA_LINK_MIN_SCORE=0.6, three states LINKS-2, suppressions, closure 033 | :237-255 | верно | `application/recommendation/gamma_link_generator.go`, migration 033, `link_suppressions` | нет |
 | 12 | CHUNK-1 pipeline: chunking.py, EMBED_CHUNKING=off default | :256-275 | верно | `nlp-service/app/core/chunking.py`, compose env | нет |
 | 13 | NOTE-QUALITY-1/NLP-4 секции | :276-330 | верно | `cmd/quality-recompute`, keyword pipeline | нет |
@@ -135,7 +135,7 @@
 | # | Утверждение | Место | Вердикт | Доказательство | Действие |
 |---|---|---|---|---|---|
 | 1 | Парадигмы: Clean Architecture, DDD, CQRS-lite, outbox | :5-9 | верно | слои backend, `infrastructure/outbox/` | нет |
-| 2 | Частые паттерны: repository, decorator, specification | :10-17 | верно | `domain/*/specification.go`, `outbox` декораторы | нет |
+| 2 | Частые паттерны: repository, strategy fallback, observer (документ не называет specification — в реестре была моя неточная перефразировка) | :10-17 | верно | `domain/note/repository.go`, `domain/link/repository.go`, `infrastructure/outbox/` декораторы, `note_handler.go` фолбэки рекомендаций | нет |
 | 3 | Техпрактики и code conventions | :18-35 | верно | .windsurfrules | нет |
 | 4 | §6-7 исторический обзор + «следующие шаги» | :36-42 | устарело (частично) | RLS/permissions-claims/gobreaker помечены «не реализовано» | пометки — `47797c9` |
 
@@ -173,7 +173,7 @@
 |---|---|---|---|---|---|
 | 1 | User-facing behavior, FSD-архитектура lib/ | :5-46 | верно | `features/graph-3d/lib/{engine,scene,simulation,fog,labels}.ts` | нет |
 | 2 | Domain alignment, shared graph state | :47-56 | верно | `entities/shared/model/celestial-body.ts`, `shared/stores/graph.svelte.ts` | нет |
-| 3 | Graph API unification (3D использует те же эндпоинты) | :57-67 | верно | `layout-provider.ts` → те же `/graph/*` | нет |
+| 3 | Graph API unification (3D использует те же эндпоинты) | :57-67 | верно | `features/graph-3d/model/layout-provider.ts` → те же graph-эндпоинты | нет |
 | 4 | Layout providers + backend fallback | :68-86 | верно | `model/layout-provider.ts`, `D3ForceLayoutProvider` | нет |
 | 5 | Fog presets: birth/nebula/deep-space, `applyFogPreset`, конфиг `frontend.graph.3d` | :87-115 | верно | `lib/fog.ts`, `knowledge-graph.config.json` → `frontend.graph.3d.fog` | нет |
 | 6 | Performance: ~30fps cap (frameInterval=33ms), остановка d3-force-3d таймера | :111-119 | верно | `lib/engine.ts` (`frameInterval`, остановка симуляции) | нет |
@@ -200,7 +200,7 @@
 |---|---|---|---|---|---|
 | 1 | Precomputed `note_recommendations` table | :28-42 | верно | миграция + `infrastructure/db/postgres/recommendation_repo.go` | нет |
 | 2 | RefreshService, Asynq tasks, event logic, affected-notes | :43-86 | верно | `application/recommendation/refresh_service.go`, `queue/tasks/` | нет |
-| 3 | Performance comparison, optimizations | :87-100 | верно | — | нет |
+| 3 | Performance comparison, optimizations | :87-100 | верно (реализация; числа нормативные) | `application/graph/*_loader.go` GetNeighborsBatch, `queue/tasks/recommendation.go:38` TaskID dedup, `affected_notes.go:11` reverseCascadeDepth=1, `recommendation_repo.go:52,86` SaveBatch+DeleteNotInBatch | нет |
 | 4 | API response headers `X-Recommendations-Source` значения | :101-115 | расхождение → верно | реальные значения `table`/`graph-service`/`semantic`/`redis`/`empty` в handler | исправлено — `47797c9` |
 | 5 | Migration to pure precomputed (transition/target) | :116-200 | верно (помечено target) | раздел ясно про целевое | нет |
 | 6 | 5-й уровень фолбэка graph-service, раздельные флаги | прочее | расхождение → верно | `service.go` цепочка фолбэков | исправлено — `47797c9` |
@@ -249,7 +249,7 @@
 | 1 | Core Idea — через NLP keyword extraction, не TF-IDF | опр. Core Idea | расхождение → верно | `nlp-service` extract_keywords | исправлено — `93c06bc` |
 | 2 | Outbox — реализованный транзакционный механизм, не «future work» | опр. Outbox | расхождение → верно | `infrastructure/outbox/`, `49c2de3` | исправлено — `93c06bc` |
 | 3 | Link Type включая `parent`/`child` | опр. Link Type | расхождение → верно | `link-type.ts` — 6 типов | исправлено — `47797c9` |
-| 4 | Остальные термины | остаток | верно | код | нет |
+| 4 | Остальные термины | остаток | верно | `domain/note/value_objects.go` (Title/Content), `domain/graph/bfs.go` (λ=0.5, propagation), `infrastructure/queue/worker.go` (Asynq), `domain/note/repository.go` | нет |
 
 ## A.15 `decisions/` — ADR 001-018
 
@@ -283,10 +283,10 @@
 | 3 | component.puml: нет Command/Query Bus; Event Bus = `graph:events` publisher | c4/component.puml:13-23 | верно (пометка в файле) | комментарий DOC-AUDIT-2 в файле | пометка — `47797c9` |
 | 4 | er-diagram.puml: таблицы | uml/er-diagram.puml | верно | список всех таблиц добавлен комментарием | `47797c9` |
 | 5 | sequence-create-note: outbox-путь, имена задач, `POST /api/v1/notes` | uml/sequence-create-note.puml | расхождение → верно | `notehandler`, outbox decorators, `queue/tasks/` | исправлено этим коммитом |
-| 6 | sequence-suggestions: 5-уровневая цепочка, ключ `recommendations:*`, α/β/γ | uml/sequence-suggestions.puml | расхождение → верно | `service.go`, redis keys, config seeds | исправлено этим коммитом |
+| 6 | sequence-suggestions: 5-уровневая цепочка, ключ `recommendations:*`, α/β/γ | uml/sequence-suggestions.puml | расхождение → верно | `note_handler.go:1494-1640` (цепочка фолбэков), ключ `recommendations:<id>` :1607, `config/backend.json` seeds | исправлено этим коммитом |
 | 7 | deployment-local: worker=kg-worker, mongo, graph-service, backend 9000→8080 | uml/deployment-local.puml | расхождение → верно | `docker-compose.yml` | исправлено — `47797c9` |
 | 8 | deployment-k8s | uml/deployment-k8s.puml | нет в коде → помечено | k8s-манифестов нет в репо | пометка target — `d93f4d7` |
-| 9 | class-domain: LinkType +parent/+child, сигнатуры NewNote, без `FindBySpecification` | uml/class-domain.puml | расхождение → верно | `domain/link/entity.go`, `domain/note/note.go`, реальные интерфейсы | исправлено этим коммитом |
+| 9 | class-domain: LinkType +parent/+child, сигнатуры NewNote, без `FindBySpecification` | uml/class-domain.puml | расхождение → верно | `domain/link/entity.go`, `domain/note/entity.go`, `domain/note/repository.go` | исправлено этим коммитом |
 
 ---
 
@@ -345,7 +345,7 @@
 |---|---|---|---|---|---|
 | 1 | Таблица типов + `link-type.ts` интерфейс (icon/label/color/lineDash/getColor/creatable) | :3-22 | верно | `link-type.ts` | нет |
 | 2 | Weight calc: default 0.5, α/β/γ=0.5/0.5/0.2, `last_weight_update` | :24-50 | верно | config seeds, `refresh_service.go` | нет |
-| 3 | Visual encoding: width/opacity формулы, direct vs recommended | :51-81 | верно | `link-renderers.ts:150`, `link-type.ts:72` | нет |
+| 3 | Visual encoding: width/opacity формулы, direct vs recommended | :51-95 | частично: формулы верно; «recommended» на графе — **нет в коде** → помечено | `link-renderers.ts:150`, `link-type.ts:72`; канвас читает только `links`, рекомендации из `note_recommendations` не отрисовываются | пометка в документе — этот коммит; отрисовка = решение 81 (LINK-TYPES-1) |
 | 4 | Rendering: `drawLink`, `linkOpacity`, `dyingLinks`, `BIDIRECTIONAL_LINK_OFFSET=24` | :82-117 | верно | `link-renderers.ts:12`, `incremental.ts` | нет |
 | 5 | `source_type` badge: `user`/`auto`/`worker` | :126 | расхождение → верно | DB CHECK `('user','gamma')` — migration 024 | исправлено этим коммитом |
 | 6 | Legend/filtering: `hiddenLinkTypes`, `minLinkWeight`, `visibleLinks` | :130-136 | верно | `shared/stores/graph.svelte.*` | нет |
@@ -390,7 +390,7 @@
 
 | # | Утверждение | Место | Вердикт | Доказательство | Действие |
 |---|---|---|---|---|---|
-| 1 | Баннер актуализации DOC-AUDIT-2 (2026-09-26): имена относятся к июльскому состоянию | :5 | верно | `GraphTopBar.svelte`, `CockpitNoteDetails.svelte` существуют; `FloatingControls.svelte` нет | нет |
+| 1 | Баннер актуализации DOC-AUDIT-2 (2026-09-26): имена относятся к июльскому состоянию | :5 | верно | `GraphTopBar.svelte`, `CockpitNoteDetails.svelte` существуют; FloatingControls.svelte — нет (поиск по `frontend/src` пуст) | нет |
 | 2 | Содержательные находки (два потока создания, два поиска, FSD-нарушение) | весь | верно как историческая фиксация | GraphCanvas переехал в `widgets/` (§4.3 закрыт переездом); остальное помечено датой | нет |
 
 ## B.11 `docs/product/NOTE_ERROR_CORRECTION_PLAN.md`

@@ -240,6 +240,10 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-tasks-index.mjs .
 
+      - name: Check DOC-AUDIT-2 register
+        working-directory: .
+        run: node scripts/testing/check-doc-audit-2-register.mjs .
+
       - name: Check board size
         working-directory: .
         run: node scripts/testing/check-board-size.mjs .
