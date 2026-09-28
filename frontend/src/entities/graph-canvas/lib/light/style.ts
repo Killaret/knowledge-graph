@@ -46,6 +46,11 @@ export interface LightFrame {
   /** Recommendations of the hovered note (decision 81), loaded by the canvas. */
   recommendationsFor: string | null;
   recommendations: ReadonlyArray<{ id: string; score: number }>;
+  /**
+   * While the graph turns into the list: how much of each note's threads is
+   * left, by note id (1 = fully shown). Null outside the morph.
+   */
+  threadFade: ReadonlyMap<string, number> | null;
 }
 
 export const lightFrame: LightFrame = {
@@ -57,7 +62,12 @@ export const lightFrame: LightFrame = {
   selectedId: null,
   recommendationsFor: null,
   recommendations: [],
+  threadFade: null,
 };
+
+export function setLightThreadFade(fade: ReadonlyMap<string, number> | null): void {
+  lightFrame.threadFade = fade;
+}
 
 export function setLightSelection(id: string | null): void {
   lightFrame.selectedId = id;

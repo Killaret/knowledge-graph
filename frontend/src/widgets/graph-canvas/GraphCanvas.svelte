@@ -50,10 +50,21 @@
     setLightFocusMix,
     setLightRecommendations,
     setLightSelection,
+    setLightThreadFade,
   } from "$entities/graph-canvas/lib/light/style";
+  import {
+    createMorph,
+    morphFinished,
+    morphNoteOpacity,
+    morphNodes,
+    morphThreadFade,
+    morphTowardList,
+    type GraphListMorph,
+    type ListMorphRequest,
+  } from "$entities/graph-canvas/lib/light/morph";
   import { getSuggestions } from "$shared/api/notes";
   import { graphRecommendationsOnHover } from "$shared/config";
-  import { createCameraFlight } from "$entities/graph-canvas/lib/camera";
+  import { createCameraFlight, type Camera } from "$entities/graph-canvas/lib/camera";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
 
@@ -118,6 +129,7 @@
     readonly = false,
     showLinkTypeLegend = true,
     progressiveReveal = false,
+    underList = false,
     className = "",
     controller = $bindable<
       | {
@@ -189,6 +201,8 @@
     showLinkTypeLegend?: boolean;
     /** UI-LOAD-1: reveal large graphs in batches instead of all at once. */
     progressiveReveal?: boolean;
+    /** GRAPH-LIGHT-1: the canvas waits under the list view for the way back. */
+    underList?: boolean;
     className?: string;
     controller?: {
       focusMode: boolean;
@@ -197,6 +211,8 @@
       toggleFocus: () => void;
       fogEnabled: boolean;
       toggleFog: () => void;
+      /** GRAPH-LIGHT-1: fly notes to the list cards and back; calls onDone when finished. */
+      startMorph?: (request: ListMorphRequest) => void;
     };
   } = $props();
   /* eslint-enable prefer-const */
@@ -316,6 +332,26 @@
     );
   }
 
+  // GRAPH-LIGHT-1: graph <-> list morph; parked at the list after "to-list".
+  // `camera` holds the view around the clicked card's note on the way back; it
+  // is re-applied every frame so a side panel opening mid-way keeps it centred.
+  let listMorph: {
+    morph: GraphListMorph;
+    onDone: () => void;
+    finished: boolean;
+    camera: Camera | null;
+  } | null = null;
+
+  // Back on the graph without the morph (a store reset, a view switch from
+  // elsewhere): drop the parked morph, or the canvas would stay blank.
+  $effect(() => {
+    if (!underList && listMorph?.finished) {
+      listMorph = null;
+      setLightThreadFade(null);
+      scheduleRedraw();
+    }
+  });
+
   const cameraFlight = createCameraFlight(
     transform,
     () => ({ width, height }),
@@ -351,12 +387,18 @@
     return hit?.items ?? [];
   }
 
-  function flyToNode(id: string) {
+  /** The view a click on a note flies to: the note in the middle, closer in. */
+  function cameraOnNode(id: string): Camera | null {
     const node = getSimulationNodes(simState).find((n) => n.id === id);
-    if (!node || node.x == null || node.y == null) return;
+    if (!node || node.x == null || node.y == null) return null;
     const baseK = autoFitTransform?.k ?? transform.k;
-    const k = Math.min(Math.max(transform.k, baseK * 2.2), 4);
-    cameraFlight.flyTo({ cx: node.x, cy: node.y, k });
+    return { cx: node.x, cy: node.y, k: Math.min(Math.max(transform.k, baseK * 2.2), 4) };
+  }
+
+  function flyToNode(id: string) {
+    const camera = cameraOnNode(id);
+    if (!camera) return;
+    cameraFlight.flyTo(camera);
     scheduleRedraw();
   }
 
@@ -456,6 +498,24 @@
         fogState.toggle();
         scheduleRedraw();
       },
+      startMorph: ({ rows, visible, direction, focusId, onDone }) => {
+        const camera = direction === "to-graph" && focusId ? cameraOnNode(focusId) : null;
+        if (camera) cameraFlight.jumpTo(camera);
+        if (prefersReducedMotion() || !isLightStyle()) {
+          listMorph = null;
+          setLightThreadFade(null);
+          onDone();
+          scheduleRedraw();
+          return;
+        }
+        listMorph = {
+          morph: createMorph(rows, visible, direction, performance.now()),
+          onDone,
+          finished: false,
+          camera,
+        };
+        scheduleRedraw();
+      },
     };
   });
 
@@ -518,6 +578,9 @@
       // accurate for the adaptive fog system.
       fogState.tick(timestamp);
 
+      // GRAPH-LIGHT-1: parked under the list the canvas is hidden — nothing to draw.
+      if (listMorph?.finished) return;
+
       const light = isLightStyle();
       const dtSec = lastLoopTimestamp ? Math.min(0.1, (timestamp - lastLoopTimestamp) / 1000) : 0;
       lastLoopTimestamp = timestamp;
@@ -538,9 +601,13 @@
         focusNodeId = null;
       }
       const focusFading = light && focusMix > 0 && focusMix < 0.999;
-      const effectiveHoverId = light
-        ? (canvasState.hoveredNodeId ?? (focusMix > 0 ? focusNodeId : null))
-        : canvasState.hoveredNodeId;
+      const morphing = listMorph !== null && !listMorph.finished;
+      const effectiveHoverId =
+        listMorph !== null
+          ? null
+          : light
+            ? (canvasState.hoveredNodeId ?? (focusMix > 0 ? focusNodeId : null))
+            : canvasState.hoveredNodeId;
 
       // Throttle drawing: render at full 60 fps while the graph is moving or
       // the user is interacting; otherwise fall back to idle_fps to save CPU.
@@ -551,7 +618,7 @@
         !!dragDropState.linkPreviewTarget ||
         !!canvasState.focusMode ||
         dragState.dragging;
-      const busy = !graphStable || isInteracting || flying || focusFading;
+      const busy = !graphStable || isInteracting || flying || focusFading || morphing;
       const elapsed = timestamp - lastDrawTimestamp;
       const idleFrameInterval = 1000 / IDLE_FPS;
       const shouldDraw = busy || needsRedraw || elapsed >= idleFrameInterval;
@@ -626,9 +693,40 @@
 
       needsRedraw = true;
       setLightFocusMix(light ? focusMix : 1);
-      setLightSelection(light ? canvasState.selectedNodeId : null);
+      setLightSelection(light && !listMorph ? canvasState.selectedNodeId : null);
       setLightRecommendations(effectiveHoverId, recommendationsFor(effectiveHoverId));
-      doRedraw(simNodes, hoveredNeighborIds, depChain, effectiveHoverId);
+      if (listMorph) {
+        const { morph, camera } = listMorph;
+        if (camera) cameraFlight.jumpTo(camera);
+        const towardList = morphTowardList(morph, timestamp);
+        const nodeOpacity = new Map(simState.nodeOpacity);
+        for (const n of simNodes) {
+          const fade = morphNoteOpacity(morph, n.id, towardList);
+          if (fade < 1) nodeOpacity.set(n.id, (simState.nodeOpacity.get(n.id) ?? 1) * fade);
+        }
+        setLightThreadFade(morphThreadFade(morph, simNodes, towardList));
+        // Only notes and threads travel: no fog (it would hide and cull them on
+        // the way to the cards) and none of the canvas tools.
+        doRedraw(morphNodes(simNodes, morph, towardList, transform), new Set(), null, null, {
+          nodeOpacity,
+          labeled: new Set(),
+          fog: { ...fogState.snapshot, enabled: false, mode: "off" },
+          bare: true,
+        });
+        if (morphFinished(morph, timestamp)) {
+          const done = listMorph.onDone;
+          if (morph.direction === "to-graph") {
+            listMorph = null;
+            setLightThreadFade(null);
+          } else {
+            listMorph.finished = true;
+          }
+          done();
+        }
+      } else {
+        setLightThreadFade(null);
+        doRedraw(simNodes, hoveredNeighborIds, depChain, effectiveHoverId);
+      }
     });
 
     mounted = true; // triggers $effect re-run since it's $state
@@ -846,6 +944,7 @@
       !canvasState.focusMode &&
       !canvasState.hoveredNodeId &&
       !cameraFlight.isFlying() &&
+      listMorph === null &&
       focusMix === 0 &&
       !dragDropState.draggedNodeId &&
       !dragDropState.isDraggingForLink &&
@@ -877,7 +976,14 @@
     simNodes: SimulationNode[],
     hoveredNeighborIds: Set<string>,
     depChain: ReturnType<typeof computeDependencyChain> = null,
-    hoverId: string | null = canvasState.hoveredNodeId
+    hoverId: string | null = canvasState.hoveredNodeId,
+    overrides: {
+      nodeOpacity?: Map<string, number>;
+      labeled?: Set<string>;
+      fog?: typeof fogState.snapshot;
+      /** Notes and threads only: no black hole, ghost node, particles or gravity. */
+      bare?: boolean;
+    } = {}
   ) {
     if (!needsRedraw || !ctx) return;
     needsRedraw = false;
@@ -906,33 +1012,34 @@
       simNodes,
       angles,
       transform,
-      simState.nodeOpacity,
+      overrides.nodeOpacity ?? simState.nodeOpacity,
       simState.linkOpacity,
       simState.dyingLinks,
       simState.dyingLinkOpacity,
       stableRender,
       animationTime,
       hoverId,
-      particleSystem,
-      blackHole,
-      ghostNode,
-      gravitySystem,
+      overrides.bare ? undefined : particleSystem,
+      overrides.bare ? null : blackHole,
+      overrides.bare ? null : ghostNode,
+      overrides.bare ? undefined : gravitySystem,
       canvasState.focusMode,
       hotkeysState.searchMatchIds,
       canvasState.highlightedLinkId,
       dragDropState.linkPreviewTarget,
       linkMousePos,
-      fogState.snapshot,
+      overrides.fog ?? fogState.snapshot,
       hoveredNeighborIds,
-      computeLabeledNodeIds(simNodes, simState.simLinks, {
-        hoveredId: hoverId,
-        selectedId: canvasState.selectedNodeId,
-        searchMatchIds: hotkeysState.searchMatchIds,
-        zoomK: transform.k,
-      }),
+      overrides.labeled ??
+        computeLabeledNodeIds(simNodes, simState.simLinks, {
+          hoveredId: hoverId,
+          selectedId: canvasState.selectedNodeId,
+          searchMatchIds: hotkeysState.searchMatchIds,
+          zoomK: transform.k,
+        }),
       depChain
     );
-    drawFog(targetCtx, width, height, fogState.snapshot);
+    drawFog(targetCtx, width, height, overrides.fog ?? fogState.snapshot);
 
     if (cacheKey) {
       lastCacheKey = cacheKey;

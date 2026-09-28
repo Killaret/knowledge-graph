@@ -51,6 +51,12 @@ export interface CameraFlight {
   /** Fly to a camera; remembers where the first flight started. */
   flyTo(to: Camera, duration?: number): void;
   /**
+   * Put the camera on `to` at once — for when something else carries the
+   * motion (the list morph). Remembers the start like `flyTo`, so `flyBack`
+   * still returns there.
+   */
+  jumpTo(to: Camera): void;
+  /**
    * Fly back to where the flights started — only while still flying or when
    * the user has not moved the camera since landing. Forgets the start either way.
    */
@@ -80,7 +86,7 @@ export function createCameraFlight(
   function start(to: Camera, dur: number) {
     landed = null;
     const { width, height } = size();
-    if (reducedMotion()) {
+    if (reducedMotion() || dur <= 0) {
       applyCamera(transform, to, width, height);
       tween = null;
       landed = snapshot();
@@ -90,13 +96,20 @@ export function createCameraFlight(
     lastApplied = snapshot();
   }
 
+  function rememberOrigin() {
+    if (origin) return;
+    const { width, height } = size();
+    origin = cameraFromTransform(transform, width, height);
+  }
+
   return {
     flyTo(to, duration = 650) {
-      if (!origin) {
-        const { width, height } = size();
-        origin = cameraFromTransform(transform, width, height);
-      }
+      rememberOrigin();
       start(to, duration);
+    },
+    jumpTo(to) {
+      rememberOrigin();
+      start(to, 0);
     },
     flyBack(duration = 650) {
       const back = origin;

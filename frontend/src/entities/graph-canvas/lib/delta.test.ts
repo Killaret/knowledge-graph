@@ -194,6 +194,12 @@ describe("types link helpers", () => {
     expect(resolveLinkEndpoint(ref, nodes)).toBe(ref);
   });
 
+  it("follows a moved copy from the node map instead of the linked object", () => {
+    const moved = { ...nodes[0], x: 500, y: 500 };
+    expect(resolveLinkEndpoint(nodes[0], nodes, new Map([["a", moved]]))).toBe(moved);
+    expect(resolveLinkEndpoint(nodes[1], nodes, new Map([["a", moved]]))).toBe(nodes[1]);
+  });
+
   it("resolves a numeric index", () => {
     expect(resolveLinkEndpoint(1, nodes)).toBe(nodes[1]);
   });

@@ -62,7 +62,14 @@ export function lightThreadAlpha(link: SimulationLink, state: LightThreadState):
   }
   const mix = lightFrame.focusMix;
   const alpha = mix >= 1 ? focused : plain + (focused - plain) * mix;
-  return alpha * state.fadeOpacity;
+  return alpha * state.fadeOpacity * threadLeft(sourceId, targetId);
+}
+
+/** During the list morph a thread fades with whichever end has gone further. */
+function threadLeft(sourceId: string, targetId: string): number {
+  const fade = lightFrame.threadFade;
+  if (!fade) return 1;
+  return Math.min(fade.get(sourceId) ?? 1, fade.get(targetId) ?? 1);
 }
 
 export function drawLightLink(

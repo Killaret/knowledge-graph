@@ -88,6 +88,17 @@ describe("camera flight", () => {
     expect(transform).toEqual(moved);
   });
 
+  it("jumps at once and still flies back to where it started", () => {
+    const { transform, flight, at } = setup();
+    const start = { ...transform };
+    flight.jumpTo({ cx: 100, cy: 100, k: 2 });
+    expect(flight.isFlying()).toBe(false);
+    expect(cameraFromTransform(transform, 800, 600)).toEqual({ cx: 100, cy: 100, k: 2 });
+    flight.flyBack(600);
+    at(600);
+    expect(sameTransform(transform, start)).toBe(true);
+  });
+
   it("jumps without animation when the system asks to reduce motion", () => {
     const { transform, flight } = setup(true);
     flight.flyTo({ cx: 100, cy: 100, k: 2 });

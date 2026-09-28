@@ -13,6 +13,7 @@ import {
   lightFrame,
   setGraphStyle,
   setLightFocusMix,
+  setLightThreadFade,
 } from "./style";
 import { hexToRgb, lightCoreRadius, lightTypeColor, mixRgb, rgba } from "./palette";
 import { drawLightLink, lightThreadAlpha, LIGHT_DIMMED_THREAD_ALPHA } from "./threads";
@@ -40,6 +41,7 @@ beforeEach(() => {
 
 afterEach(() => {
   setLightFocusMix(1);
+  setLightThreadFade(null);
   setGraphStyle(initialStyle);
   ensureCelestialBodyDrawers();
 });
@@ -158,6 +160,18 @@ describe("light threads", () => {
     expect(lightThreadAlpha(manual, { fadeOpacity: 1, hoveredNodeId: "a" })).toBeCloseTo(
       (0.28 + 0.85) / 2
     );
+  });
+
+  it("fades a thread with whichever end has gone further toward the list", () => {
+    setLightThreadFade(new Map([["a", 0.25]]));
+    expect(lightThreadAlpha(manual, { fadeOpacity: 1 })).toBeCloseTo(0.28 * 0.25);
+    setLightThreadFade(
+      new Map([
+        ["a", 0.6],
+        ["b", 0.1],
+      ])
+    );
+    expect(lightThreadAlpha(manual, { fadeOpacity: 1 })).toBeCloseTo(0.28 * 0.1);
   });
 
   it("draws threads as curves, model links as dots and dependencies in gold", () => {
