@@ -346,3 +346,175 @@ func TestOutbox_PurgeSentBefore(t *testing.T) {
 	require.Len(t, rows, 2)
 	assert.Nil(t, rows[1].SentAt)
 }
+
+// SaveUserLink is the most frequent write path (POST /links). Its outbox row
+// must carry the saved link — a manual link's creator is the event owner.
+func TestOutbox_SaveUserLinkRecordsEvent(t *testing.T) {
+	f, cleanup := setup(t)
+	defer cleanup()
+
+	user := f.createUser(t)
+	src := f.mustNote(t, "src", &user)
+	dst := f.mustNote(t, "dst", &user)
+	require.NoError(t, f.noteRepo.Save(f.ctx, src))
+	require.NoError(t, f.noteRepo.Save(f.ctx, dst))
+	require.NoError(t, f.db.Exec("TRUNCATE TABLE graph_outbox").Error)
+
+	l := mustLink(t, src.ID(), dst.ID(), &user)
+	saved, created, err := f.linkRepo.SaveUserLink(f.ctx, l)
+	require.NoError(t, err)
+	require.True(t, created)
+
+	rows := f.unsent(t)
+	require.Len(t, rows, 1)
+	assert.Equal(t, EventLinkCreated, rows[0].EventType)
+	assert.Equal(t, saved.ID(), rows[0].EntityID)
+	s, tgt, uid := linkPayloadOf(t, rows[0])
+	assert.Equal(t, src.ID().String(), s)
+	assert.Equal(t, dst.ID().String(), tgt)
+	assert.Equal(t, user.String(), uid)
+}
+
+// DeleteAndSuppress removes the link and records the rejection in one
+// transaction — the event fires on the deleted link's pair.
+func TestOutbox_DeleteAndSuppressRecordsEvent(t *testing.T) {
+	f, cleanup := setup(t)
+	defer cleanup()
+
+	user := f.createUser(t)
+	src := f.mustNote(t, "src", &user)
+	dst := f.mustNote(t, "dst", &user)
+	require.NoError(t, f.noteRepo.Save(f.ctx, src))
+	require.NoError(t, f.noteRepo.Save(f.ctx, dst))
+	gamma := link.NewGammaLink(src.ID(), dst.ID(), mustLinkType(t), mustWeight(t, 0.6), mustLinkMetadata(t))
+	require.NoError(t, f.linkRepo.Save(f.ctx, gamma))
+	require.NoError(t, f.db.Exec("TRUNCATE TABLE graph_outbox").Error)
+
+	s := link.NewSuppression(src.ID(), dst.ID(), nil, &user)
+	require.NoError(t, f.linkRepo.DeleteAndSuppress(f.ctx, gamma, s))
+
+	rows := f.unsent(t)
+	require.Len(t, rows, 1)
+	assert.Equal(t, EventLinkDeleted, rows[0].EventType)
+	assert.Equal(t, gamma.ID(), rows[0].EntityID)
+	lSrc, lTgt, uid := linkPayloadOf(t, rows[0])
+	assert.Equal(t, src.ID().String(), lSrc)
+	assert.Equal(t, dst.ID().String(), lTgt)
+	assert.Equal(t, user.String(), uid)
+
+	var supCount int64
+	require.NoError(t, f.db.Model(&postgres.LinkSuppressionModel{}).Where("id = ?", s.ID()).Count(&supCount).Error)
+	assert.Equal(t, int64(1), supCount)
+}
+
+// DeleteBySource emits one LinkDeleted per removed row — the note deletion
+// path relies on it to tell every subscriber which edges vanished.
+func TestOutbox_DeleteBySourceRecordsEvents(t *testing.T) {
+	f, cleanup := setup(t)
+	defer cleanup()
+
+	user := f.createUser(t)
+	src := f.mustNote(t, "src", &user)
+	a := f.mustNote(t, "a", &user)
+	b := f.mustNote(t, "b", &user)
+	require.NoError(t, f.noteRepo.Save(f.ctx, src))
+	require.NoError(t, f.noteRepo.Save(f.ctx, a))
+	require.NoError(t, f.noteRepo.Save(f.ctx, b))
+
+	l1 := mustLink(t, src.ID(), a.ID(), &user)
+	l2 := mustLink(t, src.ID(), b.ID(), &user)
+	other := mustLink(t, a.ID(), b.ID(), &user)
+	require.NoError(t, f.linkRepo.Save(f.ctx, l1))
+	require.NoError(t, f.linkRepo.Save(f.ctx, l2))
+	require.NoError(t, f.linkRepo.Save(f.ctx, other))
+	require.NoError(t, f.db.Exec("TRUNCATE TABLE graph_outbox").Error)
+
+	require.NoError(t, f.linkRepo.DeleteBySource(f.ctx, src.ID()))
+
+	rows := f.unsent(t)
+	require.Len(t, rows, 2)
+	targets := map[string]bool{}
+	for _, r := range rows {
+		assert.Equal(t, EventLinkDeleted, r.EventType)
+		_, tgt, uid := linkPayloadOf(t, r)
+		targets[tgt] = true
+		assert.Equal(t, user.String(), uid)
+	}
+	assert.True(t, targets[a.ID().String()])
+	assert.True(t, targets[b.ID().String()])
+
+	// The unrelated link survives untouched — and silent.
+	var cnt int64
+	require.NoError(t, f.db.Model(&postgres.LinkModel{}).Where("id = ? AND deleted_at IS NULL", other.ID()).Count(&cnt).Error)
+	assert.Equal(t, int64(1), cnt)
+}
+
+// DeleteBySourceType wipes gamma links on regeneration — every wiped row must
+// still publish LinkDeleted so subscribers drop it.
+func TestOutbox_DeleteBySourceTypeRecordsEvents(t *testing.T) {
+	f, cleanup := setup(t)
+	defer cleanup()
+
+	user := f.createUser(t)
+	src := f.mustNote(t, "src", &user)
+	dst := f.mustNote(t, "dst", &user)
+	require.NoError(t, f.noteRepo.Save(f.ctx, src))
+	require.NoError(t, f.noteRepo.Save(f.ctx, dst))
+
+	gamma := link.NewGammaLink(src.ID(), dst.ID(), mustLinkType(t), mustWeight(t, 0.6), mustLinkMetadata(t))
+	require.NoError(t, f.linkRepo.Save(f.ctx, gamma))
+	manual := mustLink(t, dst.ID(), src.ID(), &user)
+	require.NoError(t, f.linkRepo.Save(f.ctx, manual))
+	require.NoError(t, f.db.Exec("TRUNCATE TABLE graph_outbox").Error)
+
+	count, err := f.linkRepo.DeleteBySourceType(f.ctx, "gamma")
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), count)
+
+	rows := f.unsent(t)
+	require.Len(t, rows, 1)
+	assert.Equal(t, EventLinkDeleted, rows[0].EventType)
+	assert.Equal(t, gamma.ID(), rows[0].EntityID)
+	// The gamma link has no creator; the owner falls back to the source note.
+	_, _, uid := linkPayloadOf(t, rows[0])
+	assert.Equal(t, user.String(), uid)
+}
+
+// PurgeDeletedBefore hard-deletes notes past retention — each purged row still
+// needs a NoteDeleted event for subscribers that cached it.
+func TestOutbox_PurgeDeletedBeforeRecordsEvents(t *testing.T) {
+	f, cleanup := setup(t)
+	defer cleanup()
+
+	user := f.createUser(t)
+	n := f.mustNote(t, "purge me", &user)
+	require.NoError(t, f.noteRepo.Save(f.ctx, n))
+	require.NoError(t, f.noteRepo.Delete(f.ctx, n.ID()))
+	require.NoError(t, f.db.Exec("TRUNCATE TABLE graph_outbox").Error)
+
+	purged, err := f.noteRepo.PurgeDeletedBefore(f.ctx, time.Now().Add(time.Hour))
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), purged)
+
+	rows := f.unsent(t)
+	require.Len(t, rows, 1)
+	assert.Equal(t, EventNoteDeleted, rows[0].EventType)
+	assert.Equal(t, n.ID(), rows[0].EntityID)
+	id, uid := notePayloadOf(t, rows[0])
+	assert.Equal(t, n.ID().String(), id)
+	assert.Equal(t, user.String(), uid)
+}
+
+func mustLinkType(t *testing.T) link.LinkType {
+	t.Helper()
+	lt, err := link.NewLinkType("related")
+	require.NoError(t, err)
+	return lt
+}
+
+func mustLinkMetadata(t *testing.T) link.Metadata {
+	t.Helper()
+	md, err := link.NewMetadata(map[string]interface{}{})
+	require.NoError(t, err)
+	return md
+}

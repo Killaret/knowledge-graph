@@ -10,6 +10,7 @@
 
 | Дата | Агент | Задача | Статус | Коммит |
 |---|---|---|---|---|
+| 2026-09-28 | Devin | SYNC-1 этап A2: пять методов записи получили тест на событие (SaveUserLink, DeleteAndSuppress, DeleteBySource, DeleteBySourceType, PurgeDeletedBefore); мутации без insertEvents — все красные; пакет outbox зелёный | на ревью | [`tasks/SYNC-1-review-findings.md`](tasks/SYNC-1-review-findings.md) |
 | 2026-09-28 | Devin | WORKTREE-1 ревью `423fa1c`: карта/команды/источники проверены исполнением; отклонено — ветка `ai-agents` записана отцеплённой (переходное состояние ребейза), пост-ребейзный список сторожей без `check-spec-audit-1-register` | отклонено | [`tasks/WORKTREE-1-review-findings.md`](tasks/WORKTREE-1-review-findings.md) |
 | 2026-09-28 | Devin | SPEC-AUDIT-1 этапы 0 и A: полнота реестра повторяемым сторожем `check-spec-audit-1-register.mjs` (183 файла), этап A построчно — 32 есть+тест / 1 сделано иначе / 5 не сделано (отсрочки по решениям 67/69 + живой дефект F-1); находки ревьюера внесены как F-1..F-3, F-1 расширен до трёх сценариев | на ревью | [`tasks/SPEC-AUDIT-1-register.md`](tasks/SPEC-AUDIT-1-register.md) |
 | 2026-09-28 | Devin | LINK-HIT-1: `findLinkAtPosition` выбирает ближайшую связь в допуске вместо первой по массиву; два регрессионных теста на пересекающиеся связи (красные до фикса), 20/20 + graph-interaction 56/56 зелёные; очередь ревью полна — строка «в работе» до слота | в работе | этот коммит |
