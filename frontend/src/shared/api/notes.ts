@@ -78,9 +78,15 @@ export async function unpublishNote(id: string): Promise<Note> {
   return api.post(`v1/notes/${id}/unpublish`).json<Note>();
 }
 
-// Получить рекомендации для заметки (похожие по явным связям и эмбеддингам)
+// Получить рекомендации для заметки (похожие по явным связям и эмбеддингам).
+// The API answers { suggestions, generated_at } (note_handler.go
+// SuggestionsResponse); a bare array is accepted too.
 export async function getSuggestions(id: string, limit = 10): Promise<Suggestion[]> {
-  return api.get(`v1/notes/${id}/suggestions`, { searchParams: { limit } }).json();
+  const body = await api
+    .get(`v1/notes/${id}/suggestions`, { searchParams: { limit } })
+    .json<{ suggestions?: Suggestion[] | null } | Suggestion[]>();
+  if (Array.isArray(body)) return body;
+  return body?.suggestions ?? [];
 }
 
 // Search response type

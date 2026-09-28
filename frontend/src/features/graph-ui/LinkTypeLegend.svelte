@@ -1,5 +1,6 @@
 <script lang="ts">
   import { LinkType, AUTO_LINK_COLOR } from "$entities";
+  import { isLightStyle } from "$entities/graph-canvas/lib/light/style";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
@@ -127,12 +128,30 @@
             <span class="legend-label">{t("linkLegend.auto")}</span>
           </div>
         </div>
+        {#if isLightStyle()}
+          <!-- GRAPH-LIGHT-1, decision 81: recommendations appear only on hover. -->
+          <div class="legend-list-item" role="listitem">
+            <div class="legend-item legend-item-auto" data-testid="legend-recommendation">
+              <span class="legend-line legend-line-dashed"></span>
+              <span class="legend-icon">⋯</span>
+              <span class="legend-label">{t("linkLegend.recommendation")}</span>
+            </div>
+          </div>
+        {/if}
       </div>
     </div>
   {/if}
 </div>
 
 <style>
+  .legend-line-dashed {
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(223, 231, 255, 0.85) 0 4px,
+      transparent 4px 7px
+    );
+  }
+
   .link-type-legend {
     position: absolute;
     bottom: 16px;

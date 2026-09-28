@@ -41,6 +41,11 @@ export interface LightFrame {
    * animate leave it at 1 (instant focus).
    */
   focusMix: number;
+  /** Selected note: drawn with a ring and a slow pulse. */
+  selectedId: string | null;
+  /** Recommendations of the hovered note (decision 81), loaded by the canvas. */
+  recommendationsFor: string | null;
+  recommendations: ReadonlyArray<{ id: string; score: number }>;
 }
 
 export const lightFrame: LightFrame = {
@@ -49,7 +54,22 @@ export const lightFrame: LightFrame = {
   stable: false,
   labelBoxes: [],
   focusMix: 1,
+  selectedId: null,
+  recommendationsFor: null,
+  recommendations: [],
 };
+
+export function setLightSelection(id: string | null): void {
+  lightFrame.selectedId = id;
+}
+
+export function setLightRecommendations(
+  forId: string | null,
+  items: ReadonlyArray<{ id: string; score: number }>
+): void {
+  lightFrame.recommendationsFor = forId;
+  lightFrame.recommendations = items;
+}
 
 export function setLightFocusMix(mix: number): void {
   lightFrame.focusMix = Math.min(1, Math.max(0, mix));

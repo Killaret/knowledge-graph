@@ -146,6 +146,31 @@ describe("notes API", () => {
   });
 
   describe("getSuggestions", () => {
+    it("unwraps the { suggestions } envelope the API actually returns", async () => {
+      server.use(
+        http.get("http://localhost:8080/api/v1/notes/1/suggestions", () =>
+          HttpResponse.json({
+            suggestions: [{ note_id: "2", title: "Related Note", score: 0.85 }],
+            generated_at: "2026-09-28T12:00:00Z",
+          })
+        )
+      );
+
+      const result = await getSuggestions("1", 5);
+
+      expect(result).toEqual([{ note_id: "2", title: "Related Note", score: 0.85 }]);
+    });
+
+    it("treats a null list in the envelope as no suggestions", async () => {
+      server.use(
+        http.get("http://localhost:8080/api/v1/notes/1/suggestions", () =>
+          HttpResponse.json({ suggestions: null })
+        )
+      );
+
+      expect(await getSuggestions("1", 5)).toEqual([]);
+    });
+
     it("should return suggestions array", async () => {
       const mockSuggestions: Suggestion[] = [
         { note_id: "2", title: "Related Note", score: 0.85 },

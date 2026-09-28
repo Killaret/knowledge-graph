@@ -28,6 +28,11 @@ import { captionPriority, drawLightCaptions, type LightCaption } from "./light/l
 import { lightCoreRadius, lightTypeColor, rgba } from "./light/palette";
 import { zoomCompensation } from "./light/glyphs";
 import {
+  activeRecommendationIds,
+  drawLightRecommendations,
+  drawSelectionRing,
+} from "./light/recommendations";
+import {
   drawAnimatedLink,
   drawLink,
   drawPreviewLink,
@@ -330,6 +335,8 @@ export function drawAllNodes(
   const nodeCount = nodes.length;
   const light = isLightStyle();
   const captions: LightCaption[] = [];
+  // Decision 81: recommendations of the hovered note stay lit (not dimmed).
+  const recommendedIds = light ? activeRecommendationIds(hoveredNodeId) : new Set<string>();
 
   if (disableVariation) {
     for (const node of nodes) {
@@ -365,7 +372,7 @@ export function drawAllNodes(
     const isSearchMatch = searchMatchIds?.has(node.id) ?? false;
     // GRAPH-LIGHT-1: in the light style the neighbourhood burns at full
     // brightness and everything else fades to about 15 %.
-    const dimmed = light ? 0.15 : 0.3;
+    const dimmed = light ? (recommendedIds.has(node.id) ? 0.8 : 0.15) : 0.3;
     let finalOpacity = hoveredNodeId
       ? isHovered
         ? 1
@@ -404,13 +411,27 @@ export function drawAllNodes(
       nodeSimplified
     );
 
+    if (light && node.id === lightFrame.selectedId) {
+      const body = CelestialBody.fromString(node.type);
+      drawSelectionRing(
+        ctx,
+        node,
+        lightCoreRadius(body.type, r * body.baseRadius) * zoomCompensation()
+      );
+    }
+
     // UI-GRAPH-1: labels are selective — only the ids in labeledNodeIds get a
     // caption (hubs, hovered/selected, search matches). Snapshot mode
     // (disableVariation) keeps every label for deterministic captures.
-    if (!nodeSimplified && (disableVariation || !labeledNodeIds || labeledNodeIds.has(node.id))) {
+    const captioned =
+      disableVariation ||
+      !labeledNodeIds ||
+      labeledNodeIds.has(node.id) ||
+      recommendedIds.has(node.id);
+    if (!nodeSimplified && captioned) {
       const outsideFocus =
         lightFrame.focusMix > 0.5 &&
-        ((hoveredNodeId != null && !isHovered && !isNeighbor) ||
+        ((hoveredNodeId != null && !isHovered && !isNeighbor && !recommendedIds.has(node.id)) ||
           (depChain != null && !depChain.nodeDepth.has(node.id)));
       if (light && !outsideFocus) {
         captions.push({
@@ -586,6 +607,12 @@ export function draw(
     hoveredNeighborIds,
     depChain
   );
+
+  // Decision 81: recommendations of the hovered note, only while hovering.
+  if (isLightStyle() && hoveredNodeId) {
+    const hovered = nodeMap.get(hoveredNodeId);
+    if (hovered) drawLightRecommendations(ctx, hovered, nodeMap, hoveredNeighborIds);
+  }
 
   // Draw link preview if dragging for link creation
   if (linkPreviewTarget) {

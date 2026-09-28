@@ -48,7 +48,11 @@
     isLightStyle,
     setGraphStyle,
     setLightFocusMix,
+    setLightRecommendations,
+    setLightSelection,
   } from "$entities/graph-canvas/lib/light/style";
+  import { getSuggestions } from "$shared/api/notes";
+  import { graphRecommendationsOnHover } from "$shared/config";
   import { createCameraFlight } from "$entities/graph-canvas/lib/camera";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
@@ -318,6 +322,34 @@
     () => performance.now(),
     prefersReducedMotion
   );
+
+  // Decision 81: recommendations of the hovered note, loaded once a minute at most.
+  const RECOMMENDATIONS_TTL_MS = 60_000;
+  const recommendationCache = new Map<
+    string,
+    { at: number; items: Array<{ id: string; score: number }> }
+  >();
+  let recommendationsLoading: string | null = null;
+
+  function recommendationsFor(id: string | null): Array<{ id: string; score: number }> {
+    if (!id || readonly || !isLightStyle()) return [];
+    const hit = recommendationCache.get(id);
+    if (hit && Date.now() - hit.at < RECOMMENDATIONS_TTL_MS) return hit.items;
+    if (recommendationsLoading !== id) {
+      recommendationsLoading = id;
+      getSuggestions(id, graphRecommendationsOnHover)
+        .then((list) => {
+          const items = (list ?? []).map((s) => ({ id: s.note_id, score: s.score }));
+          recommendationCache.set(id, { at: Date.now(), items });
+          scheduleRedraw();
+        })
+        .catch(() => recommendationCache.set(id, { at: Date.now(), items: [] }))
+        .finally(() => {
+          if (recommendationsLoading === id) recommendationsLoading = null;
+        });
+    }
+    return hit?.items ?? [];
+  }
 
   function flyToNode(id: string) {
     const node = getSimulationNodes(simState).find((n) => n.id === id);
@@ -594,6 +626,8 @@
 
       needsRedraw = true;
       setLightFocusMix(light ? focusMix : 1);
+      setLightSelection(light ? canvasState.selectedNodeId : null);
+      setLightRecommendations(effectiveHoverId, recommendationsFor(effectiveHoverId));
       doRedraw(simNodes, hoveredNeighborIds, depChain, effectiveHoverId);
     });
 
