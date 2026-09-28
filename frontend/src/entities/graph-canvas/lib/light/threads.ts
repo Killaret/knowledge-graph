@@ -47,18 +47,21 @@ export function lightThreadAlpha(link: SimulationLink, state: LightThreadState):
   const kind = threadKind(link);
   const sourceId = getLinkEndpointId(link.source);
   const targetId = getLinkEndpointId(link.target);
-  let alpha: number = BASE_ALPHA[kind];
+  const plain: number = BASE_ALPHA[kind];
+  let focused = plain;
   if (state.hoveredNodeId) {
     const touches = sourceId === state.hoveredNodeId || targetId === state.hoveredNodeId;
-    alpha = touches ? HOT_ALPHA[kind] : LIGHT_DIMMED_THREAD_ALPHA;
+    focused = touches ? HOT_ALPHA[kind] : LIGHT_DIMMED_THREAD_ALPHA;
   }
   if (state.depChain) {
     const depth = state.depChain.linkDepth.get(dependencyLinkKey(sourceId, targetId));
-    alpha =
+    focused =
       depth === undefined
         ? LIGHT_DIMMED_THREAD_ALPHA
         : HOT_ALPHA[kind] * Math.max(0.35, 1 - 0.12 * depth);
   }
+  const mix = lightFrame.focusMix;
+  const alpha = mix >= 1 ? focused : plain + (focused - plain) * mix;
   return alpha * state.fadeOpacity;
 }
 

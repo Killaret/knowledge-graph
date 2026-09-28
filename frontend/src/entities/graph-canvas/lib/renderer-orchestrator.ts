@@ -21,7 +21,7 @@ import type { GhostNodeState } from "./ghost-node";
 import { drawDistortedBackgroundGrid } from "./gravity-system";
 import { drawBackground } from "./background";
 import { ensureCelestialBodyDrawers } from "./node-registration";
-import { beginLightFrame, isLightStyle } from "./light/style";
+import { beginLightFrame, isLightStyle, lightFrame } from "./light/style";
 import { drawLightBackground } from "./light/background";
 import { drawLightLink } from "./light/threads";
 import { captionPriority, drawLightCaptions, type LightCaption } from "./light/labels";
@@ -381,6 +381,10 @@ export function drawAllNodes(
       finalOpacity =
         depth === undefined ? (light ? 0.15 : 0.2) : depth === 0 ? 1 : chainDepthOpacity(depth);
     }
+    if (light && (hoveredNodeId || depChain) && lightFrame.focusMix < 1) {
+      // GRAPH-LIGHT-1: the canvas fades the focus in and out.
+      finalOpacity = opacity + (finalOpacity - opacity) * lightFrame.focusMix;
+    }
     const nodeSimplified = simplified && !isHovered && !isNeighbor;
 
     const previousAlpha = ctx.globalAlpha;
@@ -405,8 +409,9 @@ export function drawAllNodes(
     // (disableVariation) keeps every label for deterministic captures.
     if (!nodeSimplified && (disableVariation || !labeledNodeIds || labeledNodeIds.has(node.id))) {
       const outsideFocus =
-        (hoveredNodeId != null && !isHovered && !isNeighbor) ||
-        (depChain != null && !depChain.nodeDepth.has(node.id));
+        lightFrame.focusMix > 0.5 &&
+        ((hoveredNodeId != null && !isHovered && !isNeighbor) ||
+          (depChain != null && !depChain.nodeDepth.has(node.id)));
       if (light && !outsideFocus) {
         captions.push({
           node,

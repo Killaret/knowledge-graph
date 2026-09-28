@@ -35,9 +35,25 @@ export interface LightFrame {
   time: number;
   stable: boolean;
   labelBoxes: Array<[number, number, number, number]>;
+  /**
+   * How far the hover focus has faded in, 0..1. The canvas animates it so the
+   * neighbourhood lights up and the rest dims smoothly; callers that do not
+   * animate leave it at 1 (instant focus).
+   */
+  focusMix: number;
 }
 
-export const lightFrame: LightFrame = { k: 1, time: 0, stable: false, labelBoxes: [] };
+export const lightFrame: LightFrame = {
+  k: 1,
+  time: 0,
+  stable: false,
+  labelBoxes: [],
+  focusMix: 1,
+};
+
+export function setLightFocusMix(mix: number): void {
+  lightFrame.focusMix = Math.min(1, Math.max(0, mix));
+}
 
 export function beginLightFrame(k: number, time: number, stable: boolean): void {
   lightFrame.k = k > 0 && Number.isFinite(k) ? k : 1;

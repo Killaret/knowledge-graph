@@ -7,7 +7,13 @@ import { createMockCanvasContext } from "../test-canvas-mock";
 import { drawAllNodes, draw } from "../renderer";
 import { ensureCelestialBodyDrawers } from "../node-registration";
 import type { SimulationLink, SimulationNode } from "../types";
-import { beginLightFrame, getGraphStyle, lightFrame, setGraphStyle } from "./style";
+import {
+  beginLightFrame,
+  getGraphStyle,
+  lightFrame,
+  setGraphStyle,
+  setLightFocusMix,
+} from "./style";
 import { hexToRgb, lightCoreRadius, lightTypeColor, mixRgb, rgba } from "./palette";
 import { drawLightLink, lightThreadAlpha, LIGHT_DIMMED_THREAD_ALPHA } from "./threads";
 import { captionPriority, drawLightCaptions } from "./labels";
@@ -33,6 +39,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setLightFocusMix(1);
   setGraphStyle(initialStyle);
   ensureCelestialBodyDrawers();
 });
@@ -143,6 +150,13 @@ describe("light threads", () => {
     expect(lightThreadAlpha(manual, { fadeOpacity: 1, hoveredNodeId: "a" })).toBeCloseTo(0.85);
     expect(lightThreadAlpha(unrelated, { fadeOpacity: 1, hoveredNodeId: "a" })).toBe(
       LIGHT_DIMMED_THREAD_ALPHA
+    );
+  });
+
+  it("fades the focus in between plain and focused brightness", () => {
+    setLightFocusMix(0.5);
+    expect(lightThreadAlpha(manual, { fadeOpacity: 1, hoveredNodeId: "a" })).toBeCloseTo(
+      (0.28 + 0.85) / 2
     );
   });
 
@@ -257,6 +271,17 @@ describe("light style in the draw pipeline", () => {
     const alphas = ctx.getGlobalAlphas();
     expect(alphas).toContain(0.15);
     expect(alphas.filter((v) => v === 1).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("dims the rest gradually while the focus fades in", () => {
+    setLightFocusMix(0.5);
+    const ctx = createMockCanvasContext();
+    const nodes: SimulationNode[] = [
+      { id: "h", title: "h", type: "star", x: 0, y: 0 },
+      { id: "far", title: "far", type: "planet", x: 200, y: 0 },
+    ];
+    drawAllNodes(ctx, nodes, new Map(), false, undefined, false, 0, "h", null, false);
+    expect(ctx.getGlobalAlphas().some((a) => Math.abs(a - 0.575) < 1e-9)).toBe(true);
   });
 
   it("paints the deep-ink sky instead of the classic background", () => {

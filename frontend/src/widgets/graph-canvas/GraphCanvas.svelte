@@ -44,7 +44,12 @@
   import { getLinkEndpointId } from "$entities/graph-canvas/lib/types";
   import { computeDependencyChain } from "$entities/graph-canvas/lib/dependency-chain";
   import { computeLabeledNodeIds } from "$entities/graph-canvas/lib/labels";
-  import { setGraphStyle } from "$entities/graph-canvas/lib/light/style";
+  import {
+    isLightStyle,
+    setGraphStyle,
+    setLightFocusMix,
+  } from "$entities/graph-canvas/lib/light/style";
+  import { createCameraFlight } from "$entities/graph-canvas/lib/camera";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
 
@@ -295,6 +300,34 @@
     }
   }
 
+  // GRAPH-LIGHT-1: the hover focus fades in and out, and the camera flies to
+  // a clicked note and back to where it was on a click into empty space.
+  let focusMix = 0;
+  let focusNodeId: string | null = null;
+  let lastLoopTimestamp = 0;
+  function prefersReducedMotion(): boolean {
+    return (
+      typeof window !== "undefined" &&
+      !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+    );
+  }
+
+  const cameraFlight = createCameraFlight(
+    transform,
+    () => ({ width, height }),
+    () => performance.now(),
+    prefersReducedMotion
+  );
+
+  function flyToNode(id: string) {
+    const node = getSimulationNodes(simState).find((n) => n.id === id);
+    if (!node || node.x == null || node.y == null) return;
+    const baseK = autoFitTransform?.k ?? transform.k;
+    const k = Math.min(Math.max(transform.k, baseK * 2.2), 4);
+    cameraFlight.flyTo({ cx: node.x, cy: node.y, k });
+    scheduleRedraw();
+  }
+
   function stopReveal() {
     if (revealTimer !== null) {
       clearInterval(revealTimer);
@@ -453,6 +486,30 @@
       // accurate for the adaptive fog system.
       fogState.tick(timestamp);
 
+      const light = isLightStyle();
+      const dtSec = lastLoopTimestamp ? Math.min(0.1, (timestamp - lastLoopTimestamp) / 1000) : 0;
+      lastLoopTimestamp = timestamp;
+      const flying = cameraFlight.step(timestamp);
+      if (light) {
+        const hovered = canvasState.hoveredNodeId;
+        if (hovered) focusNodeId = hovered;
+        const target = hovered ? 1 : 0;
+        focusMix = prefersReducedMotion()
+          ? target
+          : focusMix + (target - focusMix) * (1 - Math.exp(-dtSec * 12));
+        if (!hovered && focusMix < 0.01) {
+          focusMix = 0;
+          focusNodeId = null;
+        }
+      } else {
+        focusMix = 0;
+        focusNodeId = null;
+      }
+      const focusFading = light && focusMix > 0 && focusMix < 0.999;
+      const effectiveHoverId = light
+        ? (canvasState.hoveredNodeId ?? (focusMix > 0 ? focusNodeId : null))
+        : canvasState.hoveredNodeId;
+
       // Throttle drawing: render at full 60 fps while the graph is moving or
       // the user is interacting; otherwise fall back to idle_fps to save CPU.
       const isInteracting =
@@ -462,7 +519,7 @@
         !!dragDropState.linkPreviewTarget ||
         !!canvasState.focusMode ||
         dragState.dragging;
-      const busy = !graphStable || isInteracting;
+      const busy = !graphStable || isInteracting || flying || focusFading;
       const elapsed = timestamp - lastDrawTimestamp;
       const idleFrameInterval = 1000 / IDLE_FPS;
       const shouldDraw = busy || needsRedraw || elapsed >= idleFrameInterval;
@@ -506,15 +563,12 @@
       const hoveredNode = canvasState.hoveredNodeId
         ? (nodeMap.get(canvasState.hoveredNodeId) ?? null)
         : null;
-      const hoveredNeighborIds = getHoveredNeighborIds(
-        canvasState.hoveredNodeId,
-        simState.simLinks
-      );
+      const hoveredNeighborIds = getHoveredNeighborIds(effectiveHoverId, simState.simLinks);
       // LINK-TYPES-1: hovering a node with dependency links highlights the
       // whole chain through it (both directions, bounded depth); when there
       // is no chain, regular neighbour highlighting applies.
       const depChain = computeDependencyChain(
-        canvasState.hoveredNodeId,
+        effectiveHoverId,
         simState.simLinks,
         graphDependencyHighlightDepth
       );
@@ -539,7 +593,8 @@
       );
 
       needsRedraw = true;
-      doRedraw(simNodes, hoveredNeighborIds, depChain);
+      setLightFocusMix(light ? focusMix : 1);
+      doRedraw(simNodes, hoveredNeighborIds, depChain, effectiveHoverId);
     });
 
     mounted = true; // triggers $effect re-run since it's $state
@@ -756,6 +811,8 @@
       graphStable &&
       !canvasState.focusMode &&
       !canvasState.hoveredNodeId &&
+      !cameraFlight.isFlying() &&
+      focusMix === 0 &&
       !dragDropState.draggedNodeId &&
       !dragDropState.isDraggingForLink &&
       !dragDropState.linkPreviewTarget &&
@@ -785,7 +842,8 @@
   function doRedraw(
     simNodes: SimulationNode[],
     hoveredNeighborIds: Set<string>,
-    depChain: ReturnType<typeof computeDependencyChain> = null
+    depChain: ReturnType<typeof computeDependencyChain> = null,
+    hoverId: string | null = canvasState.hoveredNodeId
   ) {
     if (!needsRedraw || !ctx) return;
     needsRedraw = false;
@@ -820,7 +878,7 @@
       simState.dyingLinkOpacity,
       stableRender,
       animationTime,
-      canvasState.hoveredNodeId,
+      hoverId,
       particleSystem,
       blackHole,
       ghostNode,
@@ -833,7 +891,7 @@
       fogState.snapshot,
       hoveredNeighborIds,
       computeLabeledNodeIds(simNodes, simState.simLinks, {
-        hoveredId: canvasState.hoveredNodeId,
+        hoveredId: hoverId,
         selectedId: canvasState.selectedNodeId,
         searchMatchIds: hotkeysState.searchMatchIds,
         zoomK: transform.k,
@@ -918,10 +976,19 @@
       ghostNode = node;
     },
     get onNodeClick() {
-      return onNodeClick;
+      return (node: { id: string; title: string; type?: string }) => {
+        if (isLightStyle()) flyToNode(node.id);
+        onNodeClick?.(node);
+      };
     },
     get onBackgroundClick() {
-      return onBackgroundClick;
+      return () => {
+        if (isLightStyle()) {
+          cameraFlight.flyBack();
+          scheduleRedraw();
+        }
+        onBackgroundClick?.();
+      };
     },
     get onNodeContextMenu() {
       return (node: { id: string; title: string; type?: string }, x: number, y: number) => {
