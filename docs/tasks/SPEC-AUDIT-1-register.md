@@ -1,7 +1,9 @@
 # SPEC-AUDIT-1. Реестр: постановки против кода
 
 Этап 0 (полнота + распределение) и этап A (вердикты по требованиям), Devin, 2026-09-28;
-доработан после отклонения 27.09: добавлены 11 пропущенных файлов и повторяемая проверка полноты.
+доработан после отклонения 27.09: добавлены 11 пропущенных файлов и повторяемая проверка полноты;
+доработан после второго отклонения 27.09: каждая строка «есть+тест» называет тест файлом и именем,
+требования без теста по природе получили вердикт «есть, проверяется конфигурацией».
 Распределение всех файлов `docs/tasks/` по этапам постановки.
 Полнота сверяется с [`README.md`](README.md) (генерируемый индекс, в реестр не входит).
 Файлы разборов (`*-review-findings.md`, `*-findings.md`) едут в этап своей постановки; у каждого проверяется,
@@ -16,7 +18,10 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 Скрипт сравнивает `docs/tasks/*.md` (минус `README.md` и сам реестр) с первой колонкой таблиц
 этапов и краснит при расхождении в любую сторону.
 
-Вердикты: `есть+тест` / `есть, без теста` / `сделано иначе` / `потеряно` / `не сделано`.
+Вердикты: `есть+тест` / `есть, без теста` / `есть, проверяется конфигурацией` / `сделано иначе` / `потеряно` / `не сделано`.
+«есть+тест» обязан называть тест: файл и имя — ревьюер ломает код и смотрит, краснеет ли названный
+тест (метод постановки, критерий 3). «есть, проверяется конфигурацией» — для требований без теста
+по природе (версия зависимости, строка CI, порог): доказательство — место в конфиге.
 
 ---
 
@@ -24,7 +29,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 
 | Файл | Статус разбора |
 |---|---|
-| A-1-3d-readiness-signal.md | разобран 2026-09-28 — принято, все требования есть+тест |
+| A-1-3d-readiness-signal.md | разобран 2026-09-28 — принято; 5 есть+тест, 1 есть без теста (A-1.6), 1 конфигурация (A-1.7) |
 | E2E-CANVAS-1-cockpit-canvas-controls-real-auth.md | разобран — принято |
 | FE-COVERAGE-1-frontend-vitest5.md | разобран — принято |
 | FE-DEPS-106-frontend-toolchain-update.md | разобран — принято |
@@ -51,52 +56,52 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 
 | # | Требование | Вердикт | Доказательство |
 |---|---|---|---|
-| A-1.1 | Одиночный рендер без запроса кадра | есть+тест | `features/graph-3d/lib/engine.ts:244` `renderOnce()`; визуальный спек ждёт `data-test-stable` |
-| A-1.2 | В `disableAnimation`-ветке рендер после `simulateToStable`, затем `finishLoading` | есть+тест | `engine.ts:150-156` |
-| A-1.3 | `finishLoading` после рендера кадра, а не до | есть+тест | `engine.ts:212-228` (renderOnce :223 → finishLoading :228) |
-| A-1.4 | Признак теста — URL-параметр `stableRender`, не `process.env.VITEST` | есть+тест | `widgets/graph-3d-viewer/Graph3DViewer.svelte:49` |
-| A-1.5 | Маркер `data-test-stable` | есть+тест | `Graph3DViewer.svelte:89` |
-| A-1.6 | `OrbitControls.enableDamping` off при stableRender | есть+тест | `features/graph-3d/lib/scene.ts:56` |
-| A-1.7 | Детерминизм: сид `Math.random`, reducedMotion, связи в публичном сидере | есть+тест | `tests/visual/*` `beforeEach`; `scripts/testing/seed-test-data.*` — 20% публичных |
+| A-1.1 | Одиночный рендер без запроса кадра | есть+тест | `features/graph-3d/lib/engine.ts:244` `renderOnce()`; тест `renders exactly once when animation is disabled, before onReady fires` в `features/graph-3d/lib/engine.performance.test.ts:166` |
+| A-1.2 | В `disableAnimation`-ветке рендер после `simulateToStable`, затем `finishLoading` | есть+тест | `engine.ts:150-156`; тот же тест `renders exactly once when animation is disabled…` (`engine.performance.test.ts:166`) — onReady вызывается один раз после покраски |
+| A-1.3 | `finishLoading` после рендера кадра, а не до | есть+тест | `engine.ts:212-228` (renderOnce :223 → finishLoading :228); тот же тест `engine.performance.test.ts:166` — комментарий :178 фиксирует контракт «onReady = кадр покрашен» |
+| A-1.4 | Признак теста — URL-параметр `stableRender`, не `process.env.VITEST` | есть+тест | `widgets/graph-3d-viewer/Graph3DViewer.svelte:49`; спек `3D Graph - renders 3D view` (`tests/visual/visual-authenticated.spec.ts:144`) ходит по `?stableRender=true`. Оговорка: склейка параметра с query сломана в трёх сценариях — дефект F-1 |
+| A-1.5 | Маркер `data-test-stable` | есть+тест | `Graph3DViewer.svelte:89`; спеки ждут `[data-testid="graph-canvas"][data-test-stable="true"]` (`visual-anonymous.spec.ts:40`, тест `Public 2D graph` :62 и др.) |
+| A-1.6 | `OrbitControls.enableDamping` off при stableRender | есть, без теста | `features/graph-3d/lib/scene.ts:56` — строка есть, именованного теста на неё нет; косвенно держится визуальными спеками |
+| A-1.7 | Детерминизм: сид `Math.random`, reducedMotion, связи в публичном сидере | есть, проверяется конфигурацией | `tests/visual/visual-anonymous.spec.ts:25-31` (seeded `Math.random` в `beforeEach`), `scripts/testing/seed-test-data.*` — 20% публичных |
 
 ### E2E-CANVAS-1-cockpit-canvas-controls-real-auth.md — принято (архив доски 2026-09-21)
 
 | # | Требование | Вердикт | Доказательство |
 |---|---|---|---|
-| E2E-C.1 | readonly = интерактивен: pan/zoom/dblclick не отсекаются | есть+тест | `features/graph-interaction/event-bridge.ts`, `drag-and-drop.ts` (параметр readonly); юнит `zooms on wheel in readonly mode` — мутация красная (разбор в архиве доски) |
-| E2E-C.2 | `GraphTopBar` вариант `floating` с canvas-контролами анониму | есть+тест | `features/graph-ui/GraphTopBar.svelte`; 7/7 real-auth на живом стеке |
-| E2E-C.3 | Гард `dataKey === lastDataKey` без `simState.isRunning` | есть+тест | `widgets/graph-canvas/GraphCanvas.svelte` |
-| E2E-C.4 | `data-testid="graph-empty-state"` | есть+тест | `routes/+page.svelte`; adversarial-тест пустого графа в `cockpit-canvas-controls.spec.ts` |
+| E2E-C.1 | readonly = интерактивен: pan/zoom/dblclick не отсекаются | есть+тест | `features/graph-interaction/event-bridge.ts`, `drag-and-drop.ts` (параметр readonly); юнит `zooms on wheel in readonly mode` в `features/graph-interaction/event-bridge.test.ts` + e2e `readonly public graph allows zoom and pan but not node drag` (`tests/cockpit-canvas-controls.spec.ts:267`) — мутация красная (разбор в архиве доски) |
+| E2E-C.2 | `GraphTopBar` вариант `floating` с canvas-контролами анониму | есть+тест | `features/graph-ui/GraphTopBar.svelte`; e2e `public graph top bar exposes canvas controls and fog toggle` (`tests/cockpit-canvas-controls.spec.ts:72`); 7/7 real-auth на живом стеке |
+| E2E-C.3 | Гард `dataKey === lastDataKey` без `simState.isRunning` | есть, без теста | `widgets/graph-canvas/GraphCanvas.svelte:548-553` — гард на месте, именованного теста на него нет |
+| E2E-C.4 | `data-testid="graph-empty-state"` | есть+тест | `routes/+page.svelte`; e2e `empty public graph shows empty state and no canvas controls` (`tests/cockpit-canvas-controls.spec.ts:211`) |
 
 ### FE-COVERAGE-1-frontend-vitest5.md — принято (AI_LOG 2026-09-12)
 
 | # | Требование | Вердикт | Доказательство |
 |---|---|---|---|
-| FE-C.1 | Vitest 5 | есть+тест | `frontend/package.json`: `vitest ^5.0.0`, `@vitest/coverage-v8 ^5.0.0` |
-| FE-C.2 | Порог 70% по всем четырём метрикам | есть+тест | `vitest.config.ts:92-96` (lines/functions/branches/statements = 70); прогон 1381/1381 зафиксирован в журнале |
+| FE-C.1 | Vitest 5 | есть, проверяется конфигурацией | `frontend/package.json`: `vitest ^5.0.0`, `@vitest/coverage-v8 ^5.0.0` — версия зависимости, теста нет по природе |
+| FE-C.2 | Порог 70% по всем четырём метрикам | есть, проверяется конфигурацией | `vitest.config.ts:92-96` (lines/functions/branches/statements = 70); сторож `backend-coverage-total.py`/CI-шаг падает ниже порога; прогон 1381/1381 в журнале |
 
 ### FE-DEPS-106-frontend-toolchain-update.md — принято (AI_LOG, PR #110 смержен)
 
 | # | Требование | Вердикт | Доказательство |
 |---|---|---|---|
-| FE-D.1 | Совместимое обновление тулчейна | есть+тест | `package.json`: `vite ^8.3.0`, `kit ^2.70.3`; CI зелёный на PR #110 |
+| FE-D.1 | Совместимое обновление тулчейна | есть, проверяется конфигурацией | `package.json`: `vite ^8.3.0`, `kit ^2.70.3`; CI зелёный на PR #110 |
 | FE-D.2 | TS 7 / ESLint 10 отложены осознанно | сделано иначе | `typescript ^5.9.3`, `eslint ^9.39.5` — отложено по peer-конфликтам, зафиксировано в постановке |
 
 ### PUB-2-graph-view-mode.md — принято (AI_LOG 2026-09-14, живой прогон 5 своих / 2 публичных)
 
 | # | Требование | Вердикт | Доказательство |
 |---|---|---|---|
-| PUB-2.1-7 | Семь критериев: переключатель personal/community, умолчание по сессии, localStorage, запрос по режиму, мутация | есть+тест | `shared/stores/graph-view.svelte.ts:4-25`; мутация роняет 3 теста `shared/api/graph.test.ts`; живой прогон — `PUB-2-review-findings.md` |
+| PUB-2.1-7 | Семь критериев: переключатель personal/community, умолчание по сессии, localStorage, запрос по режиму, мутация | есть+тест | `shared/stores/graph-view.svelte.ts:4-25`; тесты `shared/stores/graph-view.svelte.test.ts`: `default is community when anonymous` :52, `setter has no effect while anonymous` :57, `authenticated switch persists only selected mode` :69, `stored personal is ignored while anonymous` :99; живой прогон — `PUB-2-review-findings.md` |
 
 ### SYNC-1-graph-loading-and-sync-review.md — этап A принят, A2 на ревью, B/C в бэклоге
 
 | # | Требование | Вердикт | Доказательство |
 |---|---|---|---|
-| SYNC-A.1 | Дельта от снимка клиента, `resync` без снимка | есть+тест | `graph-service` snapshot-ключи `snapshot:{user}:{hash}`; интеграционные `http_server_test.go`; живой прогон ревьюера — `SYNC-1-review-findings.md` |
-| SYNC-A.2 | `removed_links` в дельте | есть+тест | `ComputeDelta`; мутация красная (findings) |
-| SYNC-A.3 | События на всех путях записи + сторож | есть+тест | этап A: ручные `Publish*` + `check-graph-write-paths.mjs`; этап A2 заменил механизм на outbox |
-| SYNC-A.4 | resync заменяет граф | есть+тест | `PreloadService` `seedGraph`; `real.test.ts` 31/31 |
-| SYNC-A2.1-5 | outbox-таблица, декораторы, ретранслятор, запрет ручной публикации, манифест+CI | есть+тест | миграция `036_graph_outbox`, `infrastructure/outbox/`, `49c2de3`; **на ревью — приёмка не состоялась** |
+| SYNC-A.1 | Дельта от снимка клиента, `resync` без снимка | есть+тест | `graph-service` snapshot-ключи `snapshot:{user}:{hash}`; тесты `internal/api/http_server_test.go`: `TestGetDeltaHandler_UsesClientSnapshotNotCurrentCache` :261, `TestGetDeltaHandler_UnknownSnapshotAnswersResync` :368; живой прогон ревьюера — `SYNC-1-review-findings.md` |
+| SYNC-A.2 | `removed_links` в дельте | есть+тест | `ComputeDelta`; тест `TestGetDeltaHandler_RemovedLinkReachesClient` (`http_server_test.go:315`); мутация красная (findings) |
+| SYNC-A.3 | События на всех путях записи + сторож | есть+тест | этап A: ручные `Publish*` + сторож `scripts/testing/check-graph-write-paths.mjs` с тестами `check-graph-write-paths.test.mjs`; этап A2 заменил механизм на outbox |
+| SYNC-A.4 | resync заменяет граф | есть+тест | `PreloadService` `seedGraph`; тест `seeds graph data from an external source` (`shared/services/PreloadService.real.test.ts:68`) + ещё 30 тестов файла |
+| SYNC-A2.1-5 | outbox-таблица, декораторы, ретранслятор, запрет ручной публикации, манифест+CI | есть+тест | миграция `036_graph_outbox`, `infrastructure/outbox/`; интеграционные `outbox_integration_test.go`: `TestOutbox_NoteWritesRecordEvents`, `TestOutbox_LinkWritesRecordEvents`, `TestOutbox_SaveUserLinkRecordsEvent`, `TestOutbox_DeleteAndSuppressRecordsEvent`, `TestOutbox_DeleteBySourceRecordsEvents`, `TestOutbox_DeleteBySourceTypeRecordsEvents`, `TestOutbox_PurgeDeletedBeforeRecordsEvents`, `TestOutbox_RollbackRemovesWriteAndEvent`, `TestOutbox_RelayDeliversAfterCrash`, `TestOutbox_RelayRetriesAfterPublishFailure` — все мутации красные; **на ревью — приёмка не состоялась** |
 | SYNC-B | Применение дельты по месту 2D/3D без перезапуска | не сделано | бэклог (решение 69 — в 1.0 вместе с SSE) |
 | SYNC-C | SSE-доставка + переподключение | не сделано | бэклог (решение 69) |
 
@@ -110,10 +115,10 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 
 | # | Требование | Вердикт | Доказательство |
 |---|---|---|---|
-| UI-D.1 | UI-PANELS-1 | есть+тест | принято 09-26, три мутации красные (`UI-DESIGN-1-review-findings.md`) |
-| UI-D.2 | UI-QUICK-1 | есть+тест | принято 09-26, контраст 4,67:1 |
-| UI-D.3 | UI-GRAPH-1 | есть+тест | принято 09-27 (подписи у топ-15 по связности, одно правило 2D/3D) |
-| UI-D.4 | UI-LOAD-1 | есть+тест (2D) / не сделано (3D) | 2D принято 09-26; 3D-часть — бэклог после SYNC-1 (решение 69) — **открытый хвост** |
+| UI-D.1 | UI-PANELS-1 | есть+тест | принято 09-26, три мутации красные (`UI-DESIGN-1-review-findings.md`); тесты геометрии кромок `features/cosmic-cockpit/lib/panel-geometry.test.ts`: `detects pointer inside the top edge` :8, `rejects pointer outside the top edge band` :12 и др. |
+| UI-D.2 | UI-QUICK-1 | есть, без теста | принято 09-26, контраст 4,67:1 измерен ревьюером вручную — именованного теста контраста нет |
+| UI-D.3 | UI-GRAPH-1 | есть+тест | принято 09-27 (подписи у топ-15 по связности, одно правило 2D/3D); тесты `caps labels at the configured hub count on a dense graph` — `entities/graph-canvas/lib/labels.test.ts:47` и `features/graph-3d/lib/labels.test.ts:84` (мутация «без ограничения» красная оба) |
+| UI-D.4 | UI-LOAD-1 | есть+тест (2D) / не сделано (3D) | 2D принято 09-26; тесты `entities/graph-canvas/lib/incremental.test.ts`: `appends nodes and links to the live simulation without rebuilding it` :43, `reheats instead of restarting: alpha is lowered, simulation kept running` :75; 3D-часть — бэклог после SYNC-1 (решение 69) — **открытый хвост** |
 
 ### UI-DESIGN-1-review-findings.md — разбор; хвост = UI-LOAD-1 3D (выше)
 
@@ -127,9 +132,9 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 
 | # | Требование | Вердикт | Доказательство |
 |---|---|---|---|
-| UX-2.1 | `+error.svelte` full-viewport, i18n, иллюстрация 5xx | есть+тест | `routes/+error.svelte`; `error-page.spec.ts` 4/4 (разбор `UX-2-review-findings.md`) |
-| UX-2.2 | Баг `startsWith("/")` — все маршруты публичны | есть+тест | `shared/utils/route-match.ts`; мутация красная (findings) |
-| UX-2.3 | Playwright-регрессия на 500 | есть+тест | `tests/error-500-page.spec.ts` + `routes/test/500/+page.server.ts` — **но см. F-2**: тестовый маршрут без гейта окружения |
+| UX-2.1 | `+error.svelte` full-viewport, i18n, иллюстрация 5xx | есть+тест | `routes/+error.svelte`; e2e `500 error page covers the full viewport` (`tests/error-500-page.spec.ts:8`) — разбор `UX-2-review-findings.md` |
+| UX-2.2 | Баг `startsWith("/")` — все маршруты публичны | есть+тест | `shared/utils/route-match.ts`; тест `does NOT treat every path as public because of '/'` (`shared/utils/route-match.test.ts:19`) + `does NOT match partial path segments` :27 — мутация красная (findings) |
+| UX-2.3 | Playwright-регрессия на 500 | есть+тест | тест `500 error page covers the full viewport` (`tests/error-500-page.spec.ts:8`) + `routes/test/500/+page.server.ts` — **но см. F-2**: тестовый маршрут без гейта окружения |
 
 ### UX-2-review-findings.md — разбор закрыт, хвостов нет (F-2 — новая находка, не из этого разбора)
 
@@ -137,13 +142,13 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 
 | # | Требование | Вердикт | Доказательство |
 |---|---|---|---|
-| VIS-1.1 | Разделение спек на anonymous/authenticated проекты | есть+тест | `playwright.config.ts:111-130` (`visual`, `visual-real-auth`); `tests/visual/visual-{anonymous,authenticated}.spec.ts` |
-| VIS-1.2 | `SKIP_AUTH: "false"` в джобе visual-regression | есть+тест | `.github/workflows/main.yml:349` |
-| VIS-1.3 | Оба проекта в прогоне | есть+тест | `main.yml:382` `--project=visual --project=visual-real-auth` |
-| VIS-1.4 | Фикстура `PUBLIC_PERCENT` | есть+тест | `main.yml` seed-шаг; `seed-test-data.*` |
-| VIS-1.5 | Блокер round2 «авторизованный проект без сессии» | есть+тест (структура) | `visual-real-auth`: `storageState` + dependency `setup-auth` (`playwright.config.ts:122-130`); живой прогон после round2 не зафиксирован |
+| VIS-1.1 | Разделение спек на anonymous/authenticated проекты | есть, проверяется конфигурацией | `playwright.config.ts:111-130` (`visual`, `visual-real-auth`); файлы `tests/visual/visual-anonymous.spec.ts`, `tests/visual/visual-authenticated.spec.ts` |
+| VIS-1.2 | `SKIP_AUTH: "false"` в джобе visual-regression | есть, проверяется конфигурацией | `.github/workflows/main.yml:349` — строка CI, теста нет по природе |
+| VIS-1.3 | Оба проекта в прогоне | есть, проверяется конфигурацией | `main.yml:382` `--project=visual --project=visual-real-auth` — строка CI |
+| VIS-1.4 | Фикстура `PUBLIC_PERCENT` | есть, проверяется конфигурацией | `main.yml` seed-шаг; `scripts/testing/seed-test-data.*` |
+| VIS-1.5 | Блокер round2 «авторизованный проект без сессии» | есть, проверяется конфигурацией (структура) | `visual-real-auth`: `storageState` + dependency `setup-auth` (`playwright.config.ts:122-130`); живой прогон после round2 не зафиксирован |
 | VIS-1.6 | Блокер round2 «`stableRender` портит query» | **не сделано** | `visual-anonymous.spec.ts:75`, `visual-authenticated.spec.ts:128,139` — дефект F-1 жив |
-| VIS-1.7 | Блокер round2 «anon search 401 в эталоне» | есть+тест (устранён PUB-1) | `/api/v1/notes/search` в `SkipGETPaths` (`middleware/jwt.go:66`); `Handler.Search` — `uuid.Nil` → поиск по публичным (`note_handler.go:1713`); эталон надо переснять — старый содержит плашку ошибки |
+| VIS-1.7 | Блокер round2 «anon search 401 в эталоне» | есть+тест (устранён PUB-1) | `/api/v1/notes/search` в `SkipGETPaths` (`middleware/jwt.go:66`); `Handler.Search` — `uuid.Nil` → поиск по публичным (`note_handler.go:1713`); тест `TestJWTAuthSkipGETPaths` (`middleware/jwt_test.go:329`); эталон надо переснять — старый содержит плашку ошибки |
 | FREEZE-3D-1-hide-3d-view.md | не начат |
 | GRAPH-LIGHT-1-light-graph-and-list.md | не начат |
 | PERF-3D-1-3d-rendering-cost.md | не начат |

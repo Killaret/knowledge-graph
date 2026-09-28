@@ -10,6 +10,7 @@
 
 | Дата | Агент | Задача | Статус | Коммит |
 |---|---|---|---|---|
+| 2026-09-28 | Devin | SPEC-AUDIT-1 доработка этапа A: каждая строка «есть+тест» называет тест файлом и именем (119 тестов в 9 файлах зелёные, проба мутации route-match красная); новый вердикт «есть, проверяется конфигурацией» для версий/порогов/строк CI; A-1.6 и E2E-C.3 — «есть, без теста»; SYNC-A2 — имена десяти outbox-тестов | ждёт слота ревью | [`tasks/SPEC-AUDIT-1-review-findings.md`](tasks/SPEC-AUDIT-1-review-findings.md) |
 | 2026-09-28 | Devin | DOC-AUDIT-2 доработка этапов A/B: промахи A.1 #33/#34, A.14 #4, B.6 #3 исправлены; ARCHITECTURE_EN data-flow переписан по реальному коду; глоссарий «рекомендации на графе» помечен нереализованным (решение 81); новый сторож check-doc-audit-2-register в манифесте и CI, мутация красная | ждёт слота ревью | [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) |
 | 2026-09-28 | Devin | SYNC-1 этап A2: пять методов записи получили тест на событие (SaveUserLink, DeleteAndSuppress, DeleteBySource, DeleteBySourceType, PurgeDeletedBefore); мутации без insertEvents — все красные; пакет outbox зелёный | на ревью | [`tasks/SYNC-1-review-findings.md`](tasks/SYNC-1-review-findings.md) |
 | 2026-09-28 | Devin | WORKTREE-1 ревью `423fa1c`: карта/команды/источники проверены исполнением; отклонено — ветка `ai-agents` записана отцеплённой (переходное состояние ребейза), пост-ребейзный список сторожей без `check-spec-audit-1-register` | отклонено | [`tasks/WORKTREE-1-review-findings.md`](tasks/WORKTREE-1-review-findings.md) |
