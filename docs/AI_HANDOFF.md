@@ -32,6 +32,7 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 | **WORKTREE-1:** каноническая карта трёх worktree, startup freshness и merge policy | [`tasks/WORKTREE-1-agent-worktrees.md`](tasks/WORKTREE-1-agent-worktrees.md) | **на ревью** — Devin: обе находки и замечание исправлены — строка карты, список сторожей, хеш `HEAD` в «Прочитано». [`tasks/WORKTREE-1-review-findings.md`](tasks/WORKTREE-1-review-findings.md) | 2026-09-28 |
+| **GRAPH-LIGHT-1:** 2D-граф «светом» по макету владельца и превращение графа в список | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **в работе** — Claude Code: сначала светила, нити, фон и подписи за настройкой `frontend.graph.style`; ревью — Devin (решение 83) | 2026-09-28 |
 | **RELEASE-1:** рамки версии 1.0 — что входит в выпуск, что откладываем, критерии готовности; бэклог разросся, без рамки 1.0 не выпустить | — | **в работе** — состав утверждён (решение 67); дальше очередь ревью, постановки P11-3, P11-4, COMET-1 и сценарии прогона | 2026-09-26 |
 
 ## На человеке
@@ -61,7 +62,6 @@
 | **NOTE-QUALITY-1 (этап 1б):** выход из `enrich`: 3 попытки, сырая заметка, одна загрузка для ссылки без текста, первичная версия, сокращённая по бюджету — `create` | [`tasks/NOTE-QUALITY-1-quality-loop.md`](tasks/NOTE-QUALITY-1-quality-loop.md) | **бэклог** — Devin; после NOTE-QUALITY-1-TAIL (решение 77) | 2026-09-27 |
 | **NOTE-HEALTH-1:** здоровье заметки: техническое и пользовательское раздельно; этап 0 — скрыть «HEALTH», «Качество» → «Обработка» | [`tasks/NOTE-HEALTH-1-technical-and-user-health.md`](tasks/NOTE-HEALTH-1-technical-and-user-health.md) | **бэклог** — 1.0 · Devin: этап 0; этапы 1–2 — после NOTE-QUALITY-1 этап 2 (решение 80) | 2026-09-27 |
 | **FREEZE-3D-1:** 3D заморожен до готовности 2D: переключатель 3D выключен настройкой, код и тесты остаются | [`tasks/FREEZE-3D-1-hide-3d-view.md`](tasks/FREEZE-3D-1-hide-3d-view.md) | **бэклог** — 1.0 · Devin; маленькая, после порядка владельца (решение 82) | 2026-09-28 |
-| **GRAPH-LIGHT-1:** 2D-граф «светом» по макету владельца и превращение графа в список | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **бэклог** — 1.0 · Claude Code, ревью Devin; старт после ревью очереди (решение 83) | 2026-09-28 |
 | **CHUNK-PERF-1:** чанкер квадратичен на длинном абзаце: на каждой точке копирует абзац от начала — проза в 400 КБ режется 11,6 с, «www.» — 94 с | [`tasks/CHUNK-PERF-1-long-paragraph.md`](tasks/CHUNK-PERF-1-long-paragraph.md) | **бэклог** — Devin; до JAVA-HANDOVER-1 | 2026-09-26 |
 | **P11-3:** нормализация ключевых слов закрыта NLP-2; остаток — два пустых набора ключевых слов дают полное сходство во всех четырёх метриках | [`tasks/P11-3-keyword-normalization.md`](tasks/P11-3-keyword-normalization.md) | **бэклог** — 1.0 · Devin; маленькая | 2026-09-27 |
 | **P11-4:** кластеризация графа: гибрид векторов и связей, два уровня с семантическим масштабом, цветные области, имена по леммам | [`tasks/P11-4-graph-clustering.md`](tasks/P11-4-graph-clustering.md) | **бэклог** — 1.0 · Devin; после MODEL-2 (решения 28, 79) | 2026-09-27 |
