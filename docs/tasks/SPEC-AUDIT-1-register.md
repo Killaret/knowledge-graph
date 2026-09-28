@@ -143,6 +143,8 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | VIS-1.5 | Блокер round2 «авторизованный проект без сессии» | есть+тест (структура) | `visual-real-auth`: `storageState` + dependency `setup-auth` (`playwright.config.ts:122-130`); живой прогон после round2 не зафиксирован |
 | VIS-1.6 | Блокер round2 «`stableRender` портит query» | **не сделано** | `visual-anonymous.spec.ts:75`, `visual-authenticated.spec.ts:128,139` — дефект F-1 жив |
 | VIS-1.7 | Блокер round2 «anon search 401 в эталоне» | есть+тест (устранён PUB-1) | `/api/v1/notes/search` в `SkipGETPaths` (`middleware/jwt.go:66`); `Handler.Search` — `uuid.Nil` → поиск по публичным (`note_handler.go:1713`); эталон надо переснять — старый содержит плашку ошибки |
+| FREEZE-3D-1-hide-3d-view.md | не начат |
+| GRAPH-LIGHT-1-light-graph-and-list.md | не начат |
 
 Итог по файлу: разделение сделано и держится; открытый дефект один — F-1 (`stableRender` мёртв в трёх сценариях), эталоны после его починки переснять. Повторной сдачи этапа не было.
 
@@ -199,6 +201,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | JAVA-HANDOVER-1-chunking-and-text-know-how.md | не начат |
 | LINK-NEXT-1-automatic-and-own-link-types.md | не начат |
 | LINK-TYPES-1-link-types-and-visuals.md | не начат |
+| LINK-TYPES-1-review-findings.md | не начат |
 | LINKS-1-findings.md | не начат |
 | LINKS-1-review-findings.md | не начат |
 | LINKS-1-wire-gamma-links.md | не начат |

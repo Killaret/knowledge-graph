@@ -10,8 +10,11 @@
 | Путь | Владелец | Назначение | Ветка |
 |---|---|---|---|
 | `D:\knowledge-graph` | человек | основной клон; слияние `ai-agents → main` | `main` |
-| `D:\knowledge-graph-ai-agents` | Devin | реализация | `ai-agents`; пока идёт перенос коммитов (`git rebase`), `HEAD` отцеплён |
+| `D:\knowledge-graph-ai-agents` | Devin | реализация | `ai-agents` |
 | `D:\knowledge-graph-review` | Claude Code | ревью, постановки, документы | отцеплённый `HEAD` на `origin/ai-agents` |
+
+Во время переноса коммитов (`git rebase`) `HEAD` любого каталога переходно отцеплён, и `git worktree list`
+показывает `(detached HEAD)` — это норма переноса, а не поломка.
 
 Временные каталоги для проб — в `D:\kg-build-cache\` (решение 57). Создаются
 `git worktree add --detach <путь> <коммит>` и удаляются `git worktree remove <путь>` сразу после работы.
@@ -39,7 +42,7 @@ git log --oneline -1 origin/ai-agents
 1. Дерево чистое — иначе сессия не начинается (`kg-work`, шаг 0).
 2. `git status -sb` показывает ветку и отставание от `origin`.
 3. `git worktree list` совпадает с картой выше; расхождение — сообщить владельцу.
-4. Хеш `origin/ai-agents` идёт в строку «Прочитано» на доске.
+4. Хеш `HEAD` идёт в строку «Прочитано» на доске; при синхронном дереве он равен `origin/ai-agents`.
 
 Каталог Claude Code дополнительно: `git log --oneline origin/ai-agents..HEAD` пуст — незапушенных
 коммитов нет, — затем `git checkout --detach origin/ai-agents`.
@@ -49,7 +52,7 @@ git log --oneline -1 origin/ai-agents
 | Случай | Что делать |
 |---|---|
 | ветка отстала, своих незапушенных коммитов нет | обновиться только перемоткой: `git merge --ff-only origin/ai-agents` (в отцеплённом каталоге — `git checkout --detach origin/ai-agents`) |
-| пуш отклонён: `origin` ушёл вперёд, свои коммиты не запушены | перенести свои коммиты поверх: `git fetch`, `git rebase origin/ai-agents`; конфликт в документах доски — сохранить обе стороны (правило протокола); сторожа `check-decisions`, `check-tasks-index`, `check-board-limits`, `check-docs-links`; затем пуш |
+| пуш отклонён: `origin` ушёл вперёд, свои коммиты не запушены | перенести свои коммиты поверх: `git fetch`, `git rebase origin/ai-agents`; конфликт в документах доски — сохранить обе стороны (правило протокола); сторожа `check-decisions`, `check-tasks-index`, `check-board-limits`, `check-board-size`, `check-docs-links`, `check-spec-audit-1-register`; затем пуш |
 | конфликт в коде, а не в документах доски, или чужая история переписана | остановиться и сообщить владельцу; молча не сливать и не переносить |
 
 ## Слияние `main` и `ai-agents`
