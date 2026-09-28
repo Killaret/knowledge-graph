@@ -59,7 +59,7 @@ Note: edit the source files in `config/*.json` and regenerate `knowledge-graph.c
   "graph_service": { ... },
   "frontend": {
     "test": { ... },
-    "graph": { "label_hub_count": 15, "dependency_highlight_depth": 10, "2d": { ... }, "3d": { ... } },
+    "graph": { "label_hub_count": 15, "dependency_highlight_depth": 10, "style": "classic", "2d": { ... }, "3d": { ... } },
     "api": { ... },
     "achievements": { ... }
   },
@@ -90,6 +90,7 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 |-----------|------|---------|---------|-------------|
 | `label_hub_count` | integer | `15` | `entities/graph-canvas/lib/labels.ts` — shared by 2D canvas and 3D engine | Maximum number of hub labels drawn at low zoom: the top-N nodes by link degree. Relative selection — an absolute degree threshold captions almost every node on a dense graph |
 | `dependency_highlight_depth` | integer | `10` | `entities/graph-canvas/lib/dependency-chain.ts` — shared by 2D canvas and 3D engine | Maximum BFS depth of the dependency-chain hover highlight (LINK-TYPES-1): how many hops from the hovered node the chain walk covers in both directions |
+| `style` | string | `"classic"` | `entities/graph-canvas/lib/light/style.ts` — 2D canvas | Look of the 2D graph: `"classic"` icons or `"light"` — notes as sources of light (GRAPH-LIGHT-1, decision 83). A page can preview the other look with `?graphStyle=light` or `?graphStyle=classic` in the address |
 
 ## Frontend Graph 2D Parameters (`frontend.graph.2d`)
 

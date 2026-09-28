@@ -44,6 +44,7 @@
   import { getLinkEndpointId } from "$entities/graph-canvas/lib/types";
   import { computeDependencyChain } from "$entities/graph-canvas/lib/dependency-chain";
   import { computeLabeledNodeIds } from "$entities/graph-canvas/lib/labels";
+  import { setGraphStyle } from "$entities/graph-canvas/lib/light/style";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
 
@@ -274,6 +275,26 @@
   let revealTotal = $state(0);
   let revealing = $state(false);
 
+  // GRAPH-LIGHT-1: the automatic fit follows the layout until the user moves
+  // the camera — the layout keeps spreading after the first fit, and progressive
+  // reveal adds nodes after it.
+  let autoFitTransform: { x: number; y: number; k: number } | null = null;
+
+  function autoFit() {
+    const simNodes = getSimulationNodes(simState);
+    if (!ctx || simNodes.length === 0) return;
+    resetView(ctx, width, height, simNodes, transform);
+    autoFitTransform = { x: transform.x, y: transform.y, k: transform.k };
+  }
+
+  function refitIfUntouched() {
+    const fit = autoFitTransform;
+    if (fit && transform.x === fit.x && transform.y === fit.y && transform.k === fit.k) {
+      autoFit();
+      scheduleRedraw();
+    }
+  }
+
   function stopReveal() {
     if (revealTimer !== null) {
       clearInterval(revealTimer);
@@ -375,6 +396,13 @@
 
   onMount(() => {
     if (!browser || !canvas) return;
+
+    // GRAPH-LIGHT-1: preview a graph style through the address,
+    // e.g. /?graphStyle=light, before it becomes the default.
+    const requestedStyle = new URLSearchParams(window.location.search).get("graphStyle");
+    if (requestedStyle === "light" || requestedStyle === "classic") {
+      setGraphStyle(requestedStyle);
+    }
 
     // Expose for debugging
     window.__graphCanvas = {
@@ -618,13 +646,11 @@
         redraw();
       },
       () => {
-        const simNodes = getSimulationNodes(simState);
-        if (ctx && simNodes.length > 0) {
-          resetView(ctx, width, height, simNodes, transform);
-        }
+        autoFit();
       },
       () => {
         graphStable = true;
+        refitIfUntouched();
       }
     );
 
@@ -656,6 +682,7 @@
         }
         addNodesToSimulation(simState, batch, batchLinks, width, height, () => {
           graphStable = true;
+          refitIfUntouched();
         });
         revealShown = revealedIds.size;
         redraw();

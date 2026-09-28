@@ -45,6 +45,8 @@ export interface Config {
       label_hub_count: number;
       /** Max BFS depth of the dependency-chain highlight (LINK-TYPES-1), shared 2D/3D */
       dependency_highlight_depth: number;
+      /** 2D graph look: "classic" icons or "light" (GRAPH-LIGHT-1, decision 83) */
+      style?: "classic" | "light";
       "2d": {
         max_nodes: number;
         /** Node count below which CSS drop-shadows are rendered (performance) */
@@ -158,6 +160,8 @@ export const config: Config = configData as Config;
 export const graphConfig2D = config.frontend.graph["2d"];
 export const graphLabelHubCount = config.frontend.graph.label_hub_count;
 export const graphDependencyHighlightDepth = config.frontend.graph.dependency_highlight_depth;
+export const graphStyle: "classic" | "light" =
+  config.frontend.graph.style === "light" ? "light" : "classic";
 export const graphConfig3D = config.frontend.graph["3d"];
 export const graphPerformanceConfig = config.frontend.graph["3d"].performance;
 export const anomalyConfig = config.frontend.graph.anomaly;
