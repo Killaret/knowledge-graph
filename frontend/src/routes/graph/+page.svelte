@@ -16,6 +16,10 @@
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import { CelestialBody } from "$entities";
+  import {
+    linkDeleteConfirmKey,
+    needsLinkDeleteConfirm,
+  } from "$entities/graph-canvas/lib/link-delete";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -38,7 +42,7 @@
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
   let showLinkDeleteConfirm = $state(false);
-  let linkToDelete: { id: string; source_type?: string } | null = $state(null);
+  let linkToDelete: { id: string; confirmKey: string } | null = $state(null);
   let canvasController:
     | {
         focusMode: boolean;
@@ -317,8 +321,8 @@
     // Rejecting a gamma proposal — or deleting a link the model once proposed
     // (gamma_origin survives promotion) — is a decision, not cleanup: the pair
     // is recorded as "not related" and will not be suggested again — explain it.
-    if (link.source_type === "gamma" || link.gamma_origin) {
-      linkToDelete = { id: link.id, source_type: link.source_type };
+    if (needsLinkDeleteConfirm(link)) {
+      linkToDelete = { id: link.id, confirmKey: linkDeleteConfirmKey(link) };
       showLinkDeleteConfirm = true;
       return;
     }
@@ -487,7 +491,7 @@
   <ConfirmModal
     bind:open={showLinkDeleteConfirm}
     title={t("confirmModal.title")}
-    message={t("link.deleteConfirmSuppress")}
+    message={t(linkToDelete?.confirmKey ?? "link.deleteConfirmSuppress")}
     danger={true}
     onConfirm={handleConfirmLinkDelete}
     onCancel={() => {

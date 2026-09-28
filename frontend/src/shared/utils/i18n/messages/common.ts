@@ -11,6 +11,8 @@ export const en: Record<string, string> = {
   "link.deleted": "Link deleted.",
   "link.deleteConfirmSuppress":
     "Remove this suggested link? The pair will be marked as not related and will not be suggested again.",
+  "link.deleteConfirmPromoted":
+    "This link was suggested by the model and confirmed by you. Deleting it will mark the pair as not related and it will not be suggested again.",
   "settings.saved": "Settings saved.",
   "login.success": "Login successful.",
   "logout.success": "Logout successful.",
@@ -114,6 +116,8 @@ export const ru: Record<string, string> = {
   "link.deleted": "Связь удалена.",
   "link.deleteConfirmSuppress":
     "Убрать предложенную связь? Пара будет помечена как несвязанная и больше не будет предлагаться.",
+  "link.deleteConfirmPromoted":
+    "Эту связь предложила модель, и вы её подтвердили. При удалении пара будет помечена как несвязанная и больше не будет предлагаться.",
   "settings.saved": "Настройки сохранены.",
   "login.success": "Вход выполнен успешно.",
   "logout.success": "Выход выполнен успешно.",
