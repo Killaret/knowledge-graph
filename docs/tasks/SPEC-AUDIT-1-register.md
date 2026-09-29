@@ -258,6 +258,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | AUD-2-review-findings.md | не начат |
 | AUD-2-seeder-issue.md | не начат |
 | ISOLATION-1-similar-notes-owner-scope.md | не начат |
+| DEPENDABOT-2-open-prs-2026-09.md | не начат |
 | AUD-3-token-transport.md | не начат |
 | AUD-4-yandex-oauth-contract.md | не начат |
 | AUD-5-perimeter-separation.md | не начат |
