@@ -2807,7 +2807,6 @@ components:
       required:
         - source_note_id
         - target_note_id
-        - link_type
       properties:
         source_note_id:
           type: string
@@ -2818,10 +2817,11 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          default: related
           description: >-
-            Link type. `reference` and `custom` are DEPRECATED legacy values:
-            still accepted for backward compatibility, but persisted as
-            `related` (LINK-TYPES-1). `parent`/`child` are origin links
+            Link type; optional, defaults to `related` (LINK-TYPES-1).
+            `reference` and `custom` are DEPRECATED legacy values: still
+            accepted for backward compatibility, but persisted as `related`. `parent`/`child` are origin links
             managed by the system, not selectable in the UI (ORIGIN-1).
         weight:
           type: number
@@ -2928,7 +2928,6 @@ components:
       required:
         - source_note_id
         - target_note_id
-        - link_type
       properties:
         source_note_id:
           type: string
@@ -2939,10 +2938,11 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          default: related
           description: >-
-            Link type. `reference` and `custom` are DEPRECATED legacy values:
-            still accepted for backward compatibility, but persisted as
-            `related` (LINK-TYPES-1). `parent`/`child` are origin links
+            Link type; optional, defaults to `related` (LINK-TYPES-1).
+            `reference` and `custom` are DEPRECATED legacy values: still
+            accepted for backward compatibility, but persisted as `related`. `parent`/`child` are origin links
             managed by the system, not selectable in the UI (ORIGIN-1).
         weight:
           type: number

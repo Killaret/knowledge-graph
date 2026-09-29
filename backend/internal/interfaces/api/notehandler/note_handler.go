@@ -173,7 +173,7 @@ type importBatchNoteItem struct {
 type importBatchLinkItem struct {
 	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
 	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
-	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom parent child"`
+	LinkType     string                 `json:"link_type" binding:"omitempty,oneof=reference dependency related custom parent child"`
 	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
 	Metadata     map[string]interface{} `json:"metadata"`
 }
@@ -660,7 +660,11 @@ func (h *Handler) ImportBatch(c *gin.Context) {
 				}
 			}
 
-			linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(item.LinkType))
+			rawType := item.LinkType
+			if rawType == "" {
+				rawType = "related"
+			}
+			linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(rawType))
 			if err != nil {
 				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "link_type", Reason: string(apicommon.ReasonInvalidValue), Message: err.Error()})
 				continue

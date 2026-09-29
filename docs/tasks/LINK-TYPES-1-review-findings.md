@@ -110,3 +110,51 @@ ROLLBACK;
 Остаётся мелочь: `resize.ts` при нулевом размере родителя берёт высоту `window.innerHeight - 80`, в
 скрытом окне это −80, и вписывание даёт отрицательный масштаб. В видимой вкладке не проявляется;
 учтено в GRAPH-LIGHT-1.
+
+## Доработка Devin, 2026-09-29 — миграция 037 переписана
+
+Все шесть воспроизведённых случаев закрыты в `037_link_types_merge_related.up.sql`,
+каждый под отдельным тестом в `migration_037_integration_test.go`. На старой версии
+миграции все шесть тестов красные, на новой — зелёные (12/12 сьют).
+
+- **A — ручная против gamma.** Пара (gamma `related` 0.62 + user `reference` 0.9):
+  survivor — строка `user` с повышением в `related`, вес модели уходит в
+  `metadata.gamma` (`score` + `generated_at`) — как `SaveUserLink`/`PromoteToUser`.
+  Тест `TestManualReferenceBeatsGammaRelated`.
+- **B — вес `dependency` не смешивается.** Максимум считается только по живым
+  сливаемым строкам (`related`/`reference`/`custom`); `dependency` не входит в группу.
+  Тест `TestDependencyWeightDoesNotContaminate`.
+- **C — удалённый `parent` не даёт вес.** Негeneric-типы и удалённые строки исключены
+  из группы и из максимума. Тест `TestDeletedParentWeightDoesNotContaminate`.
+- **D — отклонённая gamma не воскресает.** Порядок survivor: живые → `user` → вес;
+  удалённая строка выбирается только когда живых в группе нет, а живые удалённые
+  `related` без маркера в поглощение не входят — остаются удалёнными.
+  Тест `TestRejectedGammaStaysDeleted`.
+- **E — восстановление заметки.** Поглощённые строки, удалённые через заметку,
+  отцепляются от `deleted_via_note_id` (значение сохранено в
+  `metadata.deleted_via_note_id_before`): `note_repo.Restore` больше не может
+  вернуть вторую живую legacy-связь. Тест `TestNoteDeletedRowStaysDetachedOnRestore`
+  прогоняет сам `UPDATE` восстановления.
+- **F — встречное направление.** Группировка по `LEAST/GREATEST(source,target)` —
+  `related` A→B и `reference` B→A схлопываются в одну строку, направление survivor'а
+  сохраняется. Тест `TestReverseDirectionPairCollapses`.
+
+UNIQUE `(source,target,link_type)` покрывает и удалённые строки, поэтому поглощённые
+`related` переводятся в сентиментальный тип `absorbed_related` (освобождает ключ до
+конвертации survivor'а); настоящий тип — в `metadata.link_type_before`, down его
+возвращает.
+
+### API: `link_type` необязателен
+
+`createLinkRequest` и `importBatchLinkItem`: `binding:"required"` → `omitempty`,
+пустое значение нормализуется в `related`. Тест `TestCreateLinkDefaultsToRelated`
+(201 и `related` при отсутствии поля). `openAPI.yaml`: поле убрано из `required`,
+добавлено `default: related`.
+
+### Down-миграция
+
+`037...down.sql` переписан по `was_deleted`: поглощённые-живые возвращают тип и
+воскресают, поглощённые-удалённые возвращают тип и `deleted_via_note_id`, оставаясь
+удалёнными; survivor возвращает свой тип. Вес survivor'а — объединённый максимум,
+исходные веса по строкам невосстановимы — это зафиксировано в комментарии файла.
+Тест `TestDownMigrationRestoresTypes` зелёный на новой паре up/down.

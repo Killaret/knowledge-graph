@@ -37,7 +37,7 @@ func New(linkRepo link.Repository, noteRepo note.Repository, achievementService 
 type createLinkRequest struct {
 	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
 	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
-	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom parent child"`
+	LinkType     string                 `json:"link_type" binding:"omitempty,oneof=reference dependency related custom parent child"`
 	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
 	Metadata     map[string]interface{} `json:"metadata"`
 }
@@ -118,7 +118,11 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(req.LinkType))
+	rawType := req.LinkType
+	if rawType == "" {
+		rawType = "related"
+	}
+	linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(rawType))
 	if err != nil {
 		apicommon.BadRequest(c, []apicommon.FieldError{
 			apicommon.NewFieldErrorWithValue("link_type", apicommon.ReasonInvalidValue, err.Error(), req.LinkType),
