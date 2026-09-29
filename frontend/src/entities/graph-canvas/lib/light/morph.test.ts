@@ -5,7 +5,9 @@ import { describe, expect, it } from "vitest";
 import type { SimulationNode } from "../types";
 import {
   createMorph,
+  liftFog,
   morphFinished,
+  morphFogLift,
   morphNoteOpacity,
   morphNodes,
   morphThreadFade,
@@ -106,5 +108,40 @@ describe("graph to list morph", () => {
     expect([...landed.values()].every((v) => v === 0)).toBe(true);
     const start = morphThreadFade(morph, nodes, 0);
     expect([...start.values()].every((v) => v === 1)).toBe(true);
+  });
+});
+
+describe("fog during the morph (decision 85)", () => {
+  const adaptive = {
+    enabled: true,
+    mode: "adaptive" as const,
+    centerX: 800,
+    centerY: 450,
+    radius: 220,
+    feather: 160,
+    color: "rgba(10, 10, 20, 0.82)",
+  };
+
+  it("opens over the first part of the way and stays open", () => {
+    expect(morphFogLift(0)).toBe(0);
+    expect(morphFogLift(0.1)).toBeGreaterThan(0);
+    expect(morphFogLift(0.1)).toBeLessThan(morphFogLift(0.2));
+    expect(morphFogLift(0.35)).toBe(1);
+    expect(morphFogLift(1)).toBe(1);
+  });
+
+  it("widens the clear circle past the farthest corner instead of switching the fog off", () => {
+    expect(liftFog(adaptive, 0, 1600, 900).radius).toBe(220);
+    const half = liftFog(adaptive, 0.5, 1600, 900);
+    expect(half.radius).toBeGreaterThan(220);
+    expect(half.mode).toBe("adaptive");
+    expect(liftFog(adaptive, 1, 1600, 900).radius).toBeGreaterThanOrEqual(Math.hypot(1600, 900));
+  });
+
+  it("leaves a fog that hides nothing as it is", () => {
+    const off = { ...adaptive, mode: "off" as const };
+    expect(liftFog(off, 1, 1600, 900)).toBe(off);
+    const wide = { ...adaptive, mode: "atmospheric" as const, radius: 3000 };
+    expect(liftFog(wide, 1, 1600, 900)).toBe(wide);
   });
 });

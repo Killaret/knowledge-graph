@@ -56,7 +56,9 @@
   } from "$entities/graph-canvas/lib/light/style";
   import {
     createMorph,
+    liftFog,
     morphFinished,
+    morphFogLift,
     morphNoteOpacity,
     morphNodes,
     morphThreadFade,
@@ -721,12 +723,12 @@
           if (fade < 1) nodeOpacity.set(n.id, (simState.nodeOpacity.get(n.id) ?? 1) * fade);
         }
         setLightThreadFade(morphThreadFade(morph, simNodes, towardList));
-        // Only notes and threads travel: no fog (it would hide and cull them on
-        // the way to the cards) and none of the canvas tools.
+        // Only notes and threads travel: the fog opens instead of culling them on
+        // the way to the cards (decision 85), and the canvas tools are not drawn.
         doRedraw(morphNodes(simNodes, morph, towardList, transform), new Set(), null, null, {
           nodeOpacity,
           labeled: new Set(),
-          fog: { ...fogState.snapshot, enabled: false, mode: "off" },
+          fog: liftFog(fogState.snapshot, morphFogLift(towardList), width, height),
           bare: true,
         });
         if (morphFinished(morph, timestamp)) {

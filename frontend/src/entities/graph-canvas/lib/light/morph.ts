@@ -10,8 +10,14 @@
  * list) fade where they are. Threads fade with whichever end has gone further. Positions are
  * interpolated in world space, so the camera transform of the frame converts
  * the screen targets.
+ *
+ * The fog (decision 85) is not switched off for the flight: its clear circle
+ * opens from the middle over the first part of the way and closes over the
+ * last part of the way back, so notes it hid come out gradually instead of
+ * all at once.
  */
 import { easeInOutCubic } from "../camera";
+import type { FogRenderParams } from "../fog";
 import type { SimulationNode } from "../types";
 
 export type MorphDirection = "to-list" | "to-graph";
@@ -63,6 +69,9 @@ const STAGGER = 0.35;
 
 /** How far past the visible edge a note travels before it is gone. */
 const EDGE_OVERSHOOT = 36;
+
+/** Share of the way toward the list over which the fog opens. */
+const FOG_LIFT_SHARE = 0.35;
 
 export function createMorph(
   rows: readonly ListRow[],
@@ -135,6 +144,28 @@ export function morphThreadFade(
     fade.set(node.id, 1 - gone);
   }
   return fade;
+}
+
+/** How far the fog has lifted: 0 = as it is on the graph, 1 = gone. */
+export function morphFogLift(towardList: number): number {
+  return easeInOutCubic(Math.min(1, Math.max(0, towardList / FOG_LIFT_SHARE)));
+}
+
+/**
+ * The fog with its clear circle opened by `lift`, up to past the farthest
+ * corner of the canvas. A fog that hides nothing (off, focus mode, or already
+ * wider than the canvas) is returned as it is.
+ */
+export function liftFog<T extends FogRenderParams>(
+  fog: T,
+  lift: number,
+  width: number,
+  height: number
+): T {
+  if (!fog.enabled || fog.mode === "off" || fog.mode === "first-person" || lift <= 0) return fog;
+  const clear = Math.hypot(width, height) + fog.feather;
+  if (fog.radius >= clear) return fog;
+  return { ...fog, radius: fog.radius + (clear - fog.radius) * Math.min(1, lift) };
 }
 
 /**
