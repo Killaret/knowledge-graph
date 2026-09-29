@@ -39,7 +39,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **LICENSE-1:** лицензия репозитория — пользоваться для себя можно, продавать нельзя; сейчас в публичном репозитории MIT | [`tasks/LICENSE-1-repository-license.md`](tasks/LICENSE-1-repository-license.md) | **решает владелец** — ответы 29.09 записаны: только частное использование, без перехода в открытую; подтвердить PolyForm Noncommercial и версию | 2026-09-29 |
 | **MODEL-1:** замер пяти вариантов модели эмбеддингов на 113 реальных заметках владельца: поиск, близость пар, ключевые слова, скорость, память | [`tasks/MODEL-1-embedding-model-measurement.md`](tasks/MODEL-1-embedding-model-measurement.md), [`tasks/MODEL-1-review-findings.md`](tasks/MODEL-1-review-findings.md), `nlp-service/scripts/measure_models.py` | **решает владелец** — 1.0 · решения 58 и 60: выбор после повторного замера в финале D (e5-small, e5-base). [`tasks/MODEL-1B-review-findings.md`](tasks/MODEL-1B-review-findings.md) | 2026-09-24 |
 
 ---
