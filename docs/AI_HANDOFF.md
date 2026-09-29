@@ -39,7 +39,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **MODEL-1:** замер пяти вариантов модели эмбеддингов на 113 реальных заметках владельца: поиск, близость пар, ключевые слова, скорость, память | [`tasks/MODEL-1-embedding-model-measurement.md`](tasks/MODEL-1-embedding-model-measurement.md), [`tasks/MODEL-1-review-findings.md`](tasks/MODEL-1-review-findings.md), `nlp-service/scripts/measure_models.py` | **решает владелец** — 1.0 · решения 58 и 60: выбор после повторного замера в финале D (e5-small, e5-base). [`tasks/MODEL-1B-review-findings.md`](tasks/MODEL-1B-review-findings.md) | 2026-09-24 |
 
 ---
 
@@ -49,7 +48,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **MODEL-2:** финальный замер D, e5-small, e5-base на готовом конвейере, выбор владельца, смена модели и пересчёт | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **бэклог** — 1.0 · Devin: второй по порядку владельца 27.09; условия выполнены (решения 58, 60) | 2026-09-27 |
+| **MODEL-2:** включить конвейер на текущей модели (чанки, нормализация), один пересчёт, контрольный замер D против A, разметка владельца | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **бэклог** — 1.0 · Devin: решение 88 — модель не меняется | 2026-09-29 |
 | **NOTES-LIMIT-1:** больше 300 заметок — список и граф молча показывают 300: бэкенд урезает `limit` до 300, граф фильтруется по списку | [`tasks/NOTES-LIMIT-1-notes-list-cap.md`](tasks/NOTES-LIMIT-1-notes-list-cap.md) | **бэклог** — 1.0 · Devin: решение 84 | 2026-09-29 |
 | **CONFIG-AUDIT-1:** каждая настройка читается и переопределяется как задумано; четыре столкновения уже найдены | [`tasks/CONFIG-AUDIT-1-config-precedence.md`](tasks/CONFIG-AUDIT-1-config-precedence.md) | **бэклог** — Devin: решение 86; место в очереди — за владельцем | 2026-09-29 |
 | **TEST-AUDIT-1:** все тесты — на смысл, а не покрытие: ловит ли тест поломку, соответствует ли нормам и скиллам, оправдан ли | [`tasks/TEST-AUDIT-1-tests-that-matter.md`](tasks/TEST-AUDIT-1-tests-that-matter.md) | **бэклог** — Devin, большая, по этапам: решение 86 | 2026-09-29 |
@@ -98,6 +97,7 @@
 | **WSL-SWAP:** swap-файл WSL2 на `D:\` | `C:\Users\89209\.wslconfig` | **бэклог** — владелец с Devin разберутся; файл оставляем | 2026-09-21 |
 | **MATCH-1:** люди со схожими интересами — подбор по темам, только по согласию | [`tasks/MATCH-1-interest-matching.md`](tasks/MATCH-1-interest-matching.md) | **бэклог** — после 1.0; ждёт владельца | 2026-09-29 |
 | **PERF-3D-1:** анимации 3D без пересчёта на процессоре: одинаковые тела одним вызовом, пульсация в шейдере | [`tasks/PERF-3D-1-3d-rendering-cost.md`](tasks/PERF-3D-1-3d-rendering-cost.md) | **бэклог** — после 1.0, с возвращением 3D (решение 82); в 2D — GRAPH-LIGHT-1 | 2026-09-29 |
+| **MODEL-3:** выбор модели эмбеддингов на большем массиве данных, возможно не только на заметках владельца | [`tasks/MODEL-3-model-choice-on-larger-corpus.md`](tasks/MODEL-3-model-choice-on-larger-corpus.md) | **бэклог** — после 1.0: решение 88 | 2026-09-29 |
 
 ---
 
@@ -106,6 +106,8 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Claude → Devin, 2026-09-29, MODEL-2 и данные.** Решение 88: модель в 1.0 не меняется — MODEL-2 теперь включает конвейер, делает один пересчёт, контрольный замер D против A и разметку владельца; постановка переписана. `work-w1/dataset.json` убран из git по решению 47 — после слияния верни его локально: `git show 97ed560:work-w1/dataset.json > work-w1/dataset.json`, он в `.gitignore`. [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md)
 
 **Claude → Devin, 2026-09-29, GRAPH-LIGHT-1 на ревью.** Светлый 2D-граф по макету владельца — теперь вид по умолчанию, классический остаётся (`?graphStyle=classic`). Проверять исполнением: `scripts/testing/measure-graph-frames.cjs` для скорости, превращение в список — кнопкой «Список» и кликом по карточке; тесты классического рисования закреплены за своим стилем явно. [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md)
 

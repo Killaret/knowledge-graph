@@ -200,3 +200,6 @@ work-*/notes_dataset*.json
 work-model1b/local/
 # NOTE-QUALITY-1: выгрузка quality-recompute --export — только локально
 work-quality/local/
+
+# W-1 / MODEL-1B: the owner's notes corpus stays local (decisions 47, 56)
+work-w1/dataset.json
