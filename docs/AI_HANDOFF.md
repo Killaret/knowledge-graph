@@ -32,13 +32,14 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 | **WORKTREE-1:** каноническая карта трёх worktree, startup freshness и merge policy | [`tasks/WORKTREE-1-agent-worktrees.md`](tasks/WORKTREE-1-agent-worktrees.md) | **на ревью** — Devin: обе находки и замечание исправлены — строка карты, список сторожей, хеш `HEAD` в «Прочитано». [`tasks/WORKTREE-1-review-findings.md`](tasks/WORKTREE-1-review-findings.md) | 2026-09-28 |
-| **GRAPH-LIGHT-1:** 2D-граф «светом» по макету владельца и превращение графа в список | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **в работе** — Claude Code: светила, нити, наведение, камера, рекомендации и превращение в список готовы за настройкой `frontend.graph.style` (`?graphStyle=light`); дальше скорость и светлый стиль по умолчанию; ревью — Devin (решение 83) | 2026-09-29 |
+| **GRAPH-LIGHT-1:** 2D-граф «светом» по макету владельца и превращение графа в список | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **в работе** — Claude Code: светила, нити, наведение, камера, рекомендации, превращение в список и скорость (замер в постановке) готовы за настройкой `frontend.graph.style` (`?graphStyle=light`); дальше светлый стиль по умолчанию и эталоны VIS-1; ревью — Devin (решение 83) | 2026-09-29 |
 | **RELEASE-1:** рамки версии 1.0 — что входит в выпуск, что откладываем, критерии готовности; бэклог разросся, без рамки 1.0 не выпустить | — | **в работе** — состав утверждён (решение 67); дальше очередь ревью, постановки P11-3, P11-4, COMET-1 и сценарии прогона | 2026-09-26 |
 
 ## На человеке
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
+| **LICENSE-1:** лицензия репозитория — пользоваться для себя можно, продавать нельзя; сейчас в публичном репозитории MIT | [`tasks/LICENSE-1-repository-license.md`](tasks/LICENSE-1-repository-license.md) | **решает владелец** — первоочередное по его слову; обсуждение после скорости GRAPH-LIGHT-1 | 2026-09-29 |
 | **MODEL-1:** замер пяти вариантов модели эмбеддингов на 113 реальных заметках владельца: поиск, близость пар, ключевые слова, скорость, память | [`tasks/MODEL-1-embedding-model-measurement.md`](tasks/MODEL-1-embedding-model-measurement.md), [`tasks/MODEL-1-review-findings.md`](tasks/MODEL-1-review-findings.md), `nlp-service/scripts/measure_models.py` | **решает владелец** — 1.0 · решения 58 и 60: выбор после повторного замера в финале D (e5-small, e5-base). [`tasks/MODEL-1B-review-findings.md`](tasks/MODEL-1B-review-findings.md) | 2026-09-24 |
 
 ---
@@ -49,6 +50,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
+| **NOTES-LIMIT-1:** больше 300 заметок — список и граф молча показывают 300: бэкенд урезает `limit` до 300, граф фильтруется по списку | [`tasks/NOTES-LIMIT-1-notes-list-cap.md`](tasks/NOTES-LIMIT-1-notes-list-cap.md) | **бэклог** — Devin; ждёт владельца: 1.0 или после, место в очереди | 2026-09-29 |
 | **MODEL-2:** финальный замер D, e5-small, e5-base на готовом конвейере, выбор владельца, смена модели и пересчёт | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **бэклог** — 1.0 · Devin: второй по порядку владельца 27.09; условия выполнены (решения 58, 60) | 2026-09-27 |
 | **UI-LOAD-1:** загрузка не закрывает граф: оверлей снят, заметки до графа, узлы порциями без перезапуска раскладки, чип «N из M» | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — 1.0 · Devin: 2D принято 26.09; 3D — после 1.0 (решение 82) | 2026-09-26 |
 | **DOC-AUDIT-2:** документация против кода: утверждения сверить с кодом, «нет в коде» — владельцу | [`tasks/DOC-AUDIT-2-docs-vs-code.md`](tasks/DOC-AUDIT-2-docs-vs-code.md) | **бэклог** — 1.0 · Devin: A и B отклонены 27.09 — 3 из 10 «верно» не подтвердились; после текущих. [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) | 2026-09-27 |
@@ -93,6 +95,8 @@
 | **DEPENDABOT-1:** решение по 15 Dependabot PR (#21–#32, #38–#40) | `PROJECT_REVIEW_AI_AGENTS.md` §20 | **бэклог** — ждёт владельца: группировка по риску в §20 | 2026-09-21 |
 | **GORDON-1:** три внешних документа Gordon | [`tasks/GORDON-1-gordon-documents-review.md`](tasks/GORDON-1-gordon-documents-review.md) | **бэклог** — ждёт владельца: встроить, отклонить или оставить в `docs/archive/gordon/` | 2026-09-21 |
 | **WSL-SWAP:** swap-файл WSL2 на `D:\` | `C:\Users\89209\.wslconfig` | **бэклог** — владелец с Devin разберутся; файл оставляем | 2026-09-21 |
+| **MATCH-1:** люди со схожими интересами — подбор по темам, только по согласию | [`tasks/MATCH-1-interest-matching.md`](tasks/MATCH-1-interest-matching.md) | **бэклог** — после 1.0; ждёт владельца | 2026-09-29 |
+| **PERF-3D-1:** анимации 3D без пересчёта на процессоре: одинаковые тела одним вызовом, пульсация в шейдере | [`tasks/PERF-3D-1-3d-rendering-cost.md`](tasks/PERF-3D-1-3d-rendering-cost.md) | **бэклог** — после 1.0, с возвращением 3D (решение 82); в 2D — GRAPH-LIGHT-1 | 2026-09-29 |
 
 ---
 

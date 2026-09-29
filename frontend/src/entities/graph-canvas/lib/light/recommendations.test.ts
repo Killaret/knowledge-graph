@@ -9,6 +9,7 @@ import {
   beginLightFrame,
   getGraphStyle,
   setGraphStyle,
+  setLightAmbient,
   setLightFocusMix,
   setLightRecommendations,
   setLightSelection,
@@ -42,6 +43,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setLightAmbient(true);
   setLightRecommendations(null, []);
   setLightSelection(null);
   setGraphStyle(initialStyle);
@@ -147,13 +149,19 @@ describe("captions of recommendations", () => {
 });
 
 describe("selection ring", () => {
-  it("rings the selected note", () => {
+  const ringStrokes = () => {
     setLightSelection("far");
     const ctx = createMockCanvasContext();
     drawAllNodes(ctx, nodes, new Map(), false);
-    const ringStrokes = ctx
-      .getStrokeStyles()
-      .filter((s) => String(s).startsWith("rgba(220,227,240,"));
-    expect(ringStrokes.length).toBeGreaterThanOrEqual(1);
+    return ctx.getStrokeStyles().filter((s) => String(s).startsWith("rgba(220,227,240,")).length;
+  };
+
+  it("rings the selected note and sends a slow pulse outward", () => {
+    expect(ringStrokes()).toBe(2);
+  });
+
+  it("keeps the ring but stops the pulse when background motion is off", () => {
+    setLightAmbient(false);
+    expect(ringStrokes()).toBe(1);
   });
 });

@@ -2,8 +2,14 @@
  * GRAPH-LIGHT-1: the light-style sky — deep ink, a soft vignette and a
  * starfield in three layers that shift with panning at different speeds,
  * which gives depth without 3D. Drawn in screen coordinates.
+ *
+ * «Скорость»: while the camera stands still the sky is kept in a layer of its
+ * own and stamped; while it moves (or the stars twinkle to the next step) the
+ * sky changes every frame, so it is painted straight into the frame — keeping
+ * it would only add a copy. Twinkling changes the sky at most ten times a second.
  */
 import { seededRand } from "../renderer-utils";
+import { createCanvas } from "./sprites";
 
 interface BackgroundStar {
   x: number;
@@ -47,13 +53,85 @@ function starsFor(width: number, height: number): BackgroundStar[] {
   return stars;
 }
 
+/** Twinkling repaints the sky at most this often. */
+const TWINKLE_STEP_MS = 100;
+
+interface SkyLayer {
+  canvas: HTMLCanvasElement | OffscreenCanvas;
+  ctx: CanvasRenderingContext2D;
+  /** The sky the layer holds. */
+  key: string;
+  /** The sky of the previous frame. */
+  seen: string;
+}
+
+/** One layer per device pixel ratio: the page and the frame cache draw at different ones. */
+const layers = new Map<number, SkyLayer | null>();
+
+function skyLayer(width: number, height: number, scale: number): SkyLayer | null {
+  let layer = layers.get(scale);
+  if (layer === undefined) {
+    const canvas = createCanvas(1, 1);
+    const ctx = canvas?.getContext("2d") as CanvasRenderingContext2D | null | undefined;
+    layer = canvas && ctx ? { canvas, ctx, key: "", seen: "" } : null;
+    layers.set(scale, layer);
+  }
+  if (!layer) return null;
+  const w = Math.max(1, Math.round(width * scale));
+  const h = Math.max(1, Math.round(height * scale));
+  if (layer.canvas.width !== w || layer.canvas.height !== h) {
+    layer.canvas.width = w;
+    layer.canvas.height = h;
+    layer.key = "";
+  }
+  return layer;
+}
+
+/** Device pixels per CSS pixel of the target, read from its current transform. */
+function deviceScale(ctx: CanvasRenderingContext2D): number {
+  const a = typeof ctx.getTransform === "function" ? ctx.getTransform().a : 1;
+  return a > 0 && Number.isFinite(a) ? a : 1;
+}
+
 export function drawLightBackground(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   transform: { x: number; y: number },
   time: number,
-  stable: boolean
+  twinkle: boolean
+): void {
+  const scale = deviceScale(ctx);
+  const layer = skyLayer(width, height, scale);
+  if (!layer) {
+    paintLightSky(ctx, width, height, transform, time, twinkle);
+    return;
+  }
+  const step = twinkle ? Math.floor(time / TWINKLE_STEP_MS) : -1;
+  const skyTime = step * TWINKLE_STEP_MS;
+  const key = [width, height, Math.round(transform.x), Math.round(transform.y), step].join(":");
+  if (layer.key !== key) {
+    if (layer.seen !== key) {
+      layer.seen = key;
+      paintLightSky(ctx, width, height, transform, skyTime, twinkle);
+      return;
+    }
+    if (typeof layer.ctx.setTransform === "function")
+      layer.ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    paintLightSky(layer.ctx, width, height, transform, skyTime, twinkle);
+    layer.key = key;
+  }
+  ctx.drawImage(layer.canvas, 0, 0, width, height);
+}
+
+/** Paint the sky itself; drawLightBackground caches it. */
+export function paintLightSky(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  transform: { x: number; y: number },
+  time: number,
+  twinkle: boolean
 ): void {
   ctx.fillStyle = "#04060d";
   ctx.fillRect(0, 0, width, height);
@@ -79,7 +157,7 @@ export function drawLightBackground(
     let y = (star.y * height + transform.y * star.parallax) % height;
     if (y < 0) y += height;
     const alpha =
-      star.twinkle && !stable
+      star.twinkle && twinkle
         ? star.alpha * (0.65 + 0.35 * Math.sin(seconds * star.twinkle + star.phase))
         : star.alpha;
     ctx.fillStyle = `rgba(210,222,255,${alpha.toFixed(3)})`;

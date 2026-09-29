@@ -12,6 +12,7 @@ import { CelestialBody, type CelestialBodyDrawContext } from "$entities";
 import { seededRand } from "../renderer-utils";
 import { lightFrame } from "./style";
 import { lightCoreRadius, lightTypeColor, mixRgb, rgba, WHITE, type Rgb } from "./palette";
+import { haloSprite, paintHalo, sphereSprite } from "./sprites";
 
 const TAU = Math.PI * 2;
 const DARK_CORE: Rgb = [3, 4, 9];
@@ -27,6 +28,7 @@ type LightGlyph = (
   core: number
 ) => void;
 
+/** Soft glow stamped from a sprite of its colour (see sprites.ts). */
 export function halo(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -36,14 +38,23 @@ export function halo(
   alpha: number
 ): void {
   if (alpha <= 0.003 || radius <= 0.2) return;
-  const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
-  g.addColorStop(0, rgba(color, alpha));
-  g.addColorStop(0.28, rgba(color, alpha * 0.32));
-  g.addColorStop(1, rgba(color, 0));
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(x, y, radius, 0, TAU);
-  ctx.fill();
+  const sprite = haloSprite(color);
+  if (sprite) stamp(ctx, sprite, x, y, radius, alpha);
+  else paintHalo(ctx, x, y, radius, color, alpha);
+}
+
+function stamp(
+  ctx: CanvasRenderingContext2D,
+  sprite: CanvasImageSource,
+  x: number,
+  y: number,
+  radius: number,
+  alpha: number
+): void {
+  const previous = ctx.globalAlpha;
+  ctx.globalAlpha = previous * Math.min(1, alpha);
+  ctx.drawImage(sprite, x - radius, y - radius, radius * 2, radius * 2);
+  ctx.globalAlpha = previous;
 }
 
 export function disc(
@@ -71,9 +82,9 @@ function withLighter(ctx: CanvasRenderingContext2D, draw: () => void): void {
   }
 }
 
-/** Slow breathing of the halo; off in snapshot and focus modes. */
+/** Slow breathing of the halo; off without background motion and in focus mode. */
 function breath(c: CelestialBodyDrawContext): number {
-  if (lightFrame.stable || c.disableVariation || c.focusMode) return 1;
+  if (!lightFrame.ambient || lightFrame.stable || c.disableVariation || c.focusMode) return 1;
   const phase = seededRand(c.nodeId, 7) * TAU;
   return 1 + 0.08 * Math.sin((lightFrame.time / 1000) * 0.9 + phase);
 }
@@ -127,21 +138,8 @@ const star: LightGlyph = (ctx, c, color, core) => {
 
 const planet: LightGlyph = (ctx, c, color, core) => {
   withLighter(ctx, () => halo(ctx, c.x, c.y, core * 2.8, color, 0.22));
-  const g = ctx.createRadialGradient(
-    c.x - core * 0.35,
-    c.y - core * 0.35,
-    core * 0.1,
-    c.x,
-    c.y,
-    core
-  );
-  g.addColorStop(0, rgba(mixRgb(color, WHITE, 0.55), 1));
-  g.addColorStop(0.7, rgba(color, 0.95));
-  g.addColorStop(1, rgba(mixRgb(color, [8, 10, 24], 0.45), 1));
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(c.x, c.y, core, 0, TAU);
-  ctx.fill();
+  const sphere = sphereSprite(color);
+  if (sphere) stamp(ctx, sphere, c.x, c.y, core, 1);
 };
 
 const moon: LightGlyph = (ctx, c, color, core) => {

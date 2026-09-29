@@ -51,6 +51,12 @@ export interface LightFrame {
    * left, by note id (1 = fully shown). Null outside the morph.
    */
   threadFade: ReadonlyMap<string, number> | null;
+  /**
+   * Background motion — breathing halos, twinkling stars, the pulse around
+   * the selected note. Off under prefers-reduced-motion, in snapshot mode and
+   * on large graphs (see lightAmbient).
+   */
+  ambient: boolean;
 }
 
 export const lightFrame: LightFrame = {
@@ -63,6 +69,7 @@ export const lightFrame: LightFrame = {
   recommendationsFor: null,
   recommendations: [],
   threadFade: null,
+  ambient: true,
 };
 
 export function setLightThreadFade(fade: ReadonlyMap<string, number> | null): void {
@@ -79,6 +86,24 @@ export function setLightRecommendations(
 ): void {
   lightFrame.recommendationsFor = forId;
   lightFrame.recommendations = items;
+}
+
+export function setLightAmbient(on: boolean): void {
+  lightFrame.ambient = on;
+}
+
+/**
+ * Whether background motion runs: not when the system asks to reduce motion,
+ * not in snapshot mode, and not on graphs larger than the configured limit
+ * (`frontend.graph.ambient_max_nodes`), where every frame costs too much.
+ */
+export function lightAmbient(options: {
+  reducedMotion: boolean;
+  snapshot: boolean;
+  nodeCount: number;
+  maxNodes: number;
+}): boolean {
+  return !options.reducedMotion && !options.snapshot && options.nodeCount <= options.maxNodes;
 }
 
 export function setLightFocusMix(mix: number): void {

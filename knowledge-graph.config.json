@@ -155,6 +155,7 @@
       "dependency_highlight_depth": 10,
       "style": "classic",
       "recommendations_on_hover": 4,
+      "ambient_max_nodes": 500,
       "2d": {
         "max_nodes": 500,
         "shadows_threshold": 100,

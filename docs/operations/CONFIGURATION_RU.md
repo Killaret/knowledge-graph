@@ -91,6 +91,8 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 | `label_hub_count` | integer | `15` | `entities/graph-canvas/lib/labels.ts` — общий для 2D-канваса и 3D-движка | Максимум подписей хабов при отдалении: top-N узлов по связности. Отбор относительный — абсолютный порог подписывал почти все узлы на плотном графе |
 | `dependency_highlight_depth` | integer | `10` | `entities/graph-canvas/lib/dependency-chain.ts` — общий для 2D-канваса и 3D-движка | Глубина подсветки цепочки `dependency` при наведении (LINK-TYPES-1): сколько шагов от заметки под курсором покрывает обход в обе стороны |
 | `style` | string | `"classic"` | `entities/graph-canvas/lib/light/style.ts` — 2D-канвас | Вид 2D-графа: `"classic"` — значки, `"light"` — заметки как источники света (GRAPH-LIGHT-1, решение 83). Другой вид можно посмотреть, добавив к адресу `?graphStyle=light` или `?graphStyle=classic` |
+| `recommendations_on_hover` | integer | `4` | `widgets/graph-canvas/GraphCanvas.svelte` — 2D-канвас, светлый вид | Сколько рекомендаций заметки под курсором светлый вид рисует бледным пунктиром (решение 81); загружаются при наведении, хранятся минуту |
+| `ambient_max_nodes` | integer | `500` | `entities/graph-canvas/lib/light/style.ts` — 2D-канвас, светлый вид | Фоновое движение — «дыхание» ореолов, мерцание звёзд, пульс вокруг выбранной заметки — идёт только до этого числа заметок; выше, а также при `prefers-reduced-motion`, кадр рисуется только при изменениях (GRAPH-LIGHT-1) |
 
 ## Параметры 2D-графа (`frontend.graph.2d`)
 

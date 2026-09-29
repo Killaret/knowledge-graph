@@ -544,7 +544,14 @@ export function draw(
       ctx.fillStyle = "#04060d";
       ctx.fillRect(0, 0, width, height);
     } else {
-      drawLightBackground(ctx, width, height, transform, animationTime, disableVariation);
+      drawLightBackground(
+        ctx,
+        width,
+        height,
+        transform,
+        animationTime,
+        lightFrame.ambient && !disableVariation
+      );
     }
   } else if (!focusMode) {
     // Draw background with gravity lens distortion (skipped in focus mode)
@@ -697,7 +704,8 @@ export function resetView(
   nodes: SimulationNode[],
   transform: { x: number; y: number; k: number }
 ): void {
-  if (nodes.length === 0) return;
+  // Nothing to fit into: a hidden or collapsed canvas has no size.
+  if (nodes.length === 0 || !(width > 0) || !(height > 0)) return;
 
   // Find graph bounds
   let minX = Infinity,

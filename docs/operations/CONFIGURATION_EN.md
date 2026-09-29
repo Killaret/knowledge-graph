@@ -91,6 +91,8 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 | `label_hub_count` | integer | `15` | `entities/graph-canvas/lib/labels.ts` — shared by 2D canvas and 3D engine | Maximum number of hub labels drawn at low zoom: the top-N nodes by link degree. Relative selection — an absolute degree threshold captions almost every node on a dense graph |
 | `dependency_highlight_depth` | integer | `10` | `entities/graph-canvas/lib/dependency-chain.ts` — shared by 2D canvas and 3D engine | Maximum BFS depth of the dependency-chain hover highlight (LINK-TYPES-1): how many hops from the hovered node the chain walk covers in both directions |
 | `style` | string | `"classic"` | `entities/graph-canvas/lib/light/style.ts` — 2D canvas | Look of the 2D graph: `"classic"` icons or `"light"` — notes as sources of light (GRAPH-LIGHT-1, decision 83). A page can preview the other look with `?graphStyle=light` or `?graphStyle=classic` in the address |
+| `recommendations_on_hover` | integer | `4` | `widgets/graph-canvas/GraphCanvas.svelte` — 2D canvas, light style | How many recommendations of the hovered note the light style draws as pale dashes (decision 81); they are loaded on hover and cached for a minute |
+| `ambient_max_nodes` | integer | `500` | `entities/graph-canvas/lib/light/style.ts` — 2D canvas, light style | Background motion — breathing halos, twinkling stars, the pulse around the selected note — runs only up to this many notes; above it, and under `prefers-reduced-motion`, a frame is drawn only when something changes (GRAPH-LIGHT-1) |
 
 ## Frontend Graph 2D Parameters (`frontend.graph.2d`)
 

@@ -47,6 +47,8 @@
   import {
     isLightStyle,
     setGraphStyle,
+    lightAmbient,
+    setLightAmbient,
     setLightFocusMix,
     setLightRecommendations,
     setLightSelection,
@@ -63,7 +65,7 @@
     type ListMorphRequest,
   } from "$entities/graph-canvas/lib/light/morph";
   import { getSuggestions } from "$shared/api/notes";
-  import { graphRecommendationsOnHover } from "$shared/config";
+  import { graphAmbientMaxNodes, graphRecommendationsOnHover } from "$shared/config";
   import { createCameraFlight, type Camera } from "$entities/graph-canvas/lib/camera";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
@@ -557,6 +559,7 @@
       resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
+      cameraFlight.resized();
       scheduleRedraw();
     });
 
@@ -565,6 +568,7 @@
       resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
+      cameraFlight.resized();
       scheduleRedraw();
     }, 100);
 
@@ -621,7 +625,18 @@
       const busy = !graphStable || isInteracting || flying || focusFading || morphing;
       const elapsed = timestamp - lastDrawTimestamp;
       const idleFrameInterval = 1000 / IDLE_FPS;
-      const shouldDraw = busy || needsRedraw || elapsed >= idleFrameInterval;
+      // GRAPH-LIGHT-1: without background motion (reduced motion, snapshot mode,
+      // a large graph) an idle light graph is drawn only when something changes.
+      const ambient =
+        light &&
+        lightAmbient({
+          reducedMotion: prefersReducedMotion(),
+          snapshot: stableRender,
+          nodeCount: nodes.length,
+          maxNodes: graphAmbientMaxNodes,
+        });
+      const idleMotion = !light || ambient || hasFadingOpacity() || simState.dyingLinks.length > 0;
+      const shouldDraw = busy || needsRedraw || (idleMotion && elapsed >= idleFrameInterval);
       if (!(shouldDraw && elapsed >= (busy ? 1000 / 60 : idleFrameInterval))) {
         return;
       }
@@ -693,6 +708,7 @@
 
       needsRedraw = true;
       setLightFocusMix(light ? focusMix : 1);
+      setLightAmbient(ambient);
       setLightSelection(light && !listMorph ? canvasState.selectedNodeId : null);
       setLightRecommendations(effectiveHoverId, recommendationsFor(effectiveHoverId));
       if (listMorph) {

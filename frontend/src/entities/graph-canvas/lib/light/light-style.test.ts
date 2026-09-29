@@ -10,22 +10,28 @@ import type { SimulationLink, SimulationNode } from "../types";
 import {
   beginLightFrame,
   getGraphStyle,
+  lightAmbient,
   lightFrame,
   setGraphStyle,
+  setLightAmbient,
   setLightFocusMix,
   setLightThreadFade,
 } from "./style";
+import { drawLightBackground, paintLightSky } from "./background";
+import { spriteColor } from "./sprites";
 import { hexToRgb, lightCoreRadius, lightTypeColor, mixRgb, rgba } from "./palette";
 import { drawLightLink, lightThreadAlpha, LIGHT_DIMMED_THREAD_ALPHA } from "./threads";
 import { captionPriority, drawLightCaptions } from "./labels";
 
 const initialStyle = getGraphStyle();
 
-function gradientColors(ctx: ReturnType<typeof createMockCanvasContext>): string[] {
-  const calls = (ctx.createRadialGradient as ReturnType<typeof vi.fn>).mock.results;
-  return calls.flatMap((r) =>
-    (r.value.getColorStops() as Array<{ color: string }>).map((s) => s.color)
-  );
+/** Colours of the light stamped from sprites (halos, spheres), as rgba() strings. */
+function stampedColors(ctx: ReturnType<typeof createMockCanvasContext>): string[] {
+  const calls = (ctx.drawImage as unknown as ReturnType<typeof vi.fn>).mock.calls;
+  return calls
+    .map((call) => spriteColor(call[0]))
+    .filter((c): c is [number, number, number] => !!c)
+    .map((c) => rgba(c, 1));
 }
 
 function withIdentityTransform(ctx: ReturnType<typeof createMockCanvasContext>) {
@@ -42,6 +48,7 @@ beforeEach(() => {
 afterEach(() => {
   setLightFocusMix(1);
   setLightThreadFade(null);
+  setLightAmbient(true);
   setGraphStyle(initialStyle);
   ensureCelestialBodyDrawers();
 });
@@ -100,8 +107,9 @@ describe("light glyphs", () => {
       } as never,
     });
     expect(composites).toContain("lighter");
-    expect(ctx.createRadialGradient).toHaveBeenCalled();
-    const all = [...gradientColors(ctx), ...ctx.getFillStyles(), ...ctx.getStrokeStyles()];
+    expect(ctx.drawImage).toHaveBeenCalled();
+    const all = [...stampedColors(ctx), ...ctx.getFillStyles(), ...ctx.getStrokeStyles()];
+    expect(stampedColors(ctx).length).toBeGreaterThan(0);
     expect(all.some((c) => String(c).startsWith("rgba(255,0,0"))).toBe(false);
   });
 
@@ -126,10 +134,38 @@ describe("light glyphs", () => {
       beginLightFrame(1, time, stable);
       const ctx = createMockCanvasContext();
       CelestialBody.STAR.drawFunction!(ctx, { x: 0, y: 0, r: 16, angle: 0, nodeId: "s" });
-      return gradientColors(ctx)[0];
+      return ctx.getGlobalAlphas()[0];
     };
+    expect(drawAt(0, true)).toBeDefined();
     expect(drawAt(0, true)).toBe(drawAt(1700, true));
     expect(drawAt(0, false)).not.toBe(drawAt(1700, false));
+  });
+
+  it("stops breathing when background motion is off", () => {
+    ensureCelestialBodyDrawers();
+    setLightAmbient(false);
+    const drawAt = (time: number) => {
+      beginLightFrame(1, time, false);
+      const ctx = createMockCanvasContext();
+      CelestialBody.STAR.drawFunction!(ctx, { x: 0, y: 0, r: 16, angle: 0, nodeId: "s" });
+      return ctx.getGlobalAlphas()[0];
+    };
+    expect(drawAt(0)).toBeDefined();
+    expect(drawAt(0)).toBe(drawAt(1700));
+  });
+
+  it("stamps each halo from one sprite per colour", () => {
+    ensureCelestialBodyDrawers();
+    const ctx = createMockCanvasContext();
+    for (const id of ["p1", "p2", "p3"]) {
+      CelestialBody.PLANET.drawFunction!(ctx, { x: 0, y: 0, r: 16, angle: 0, nodeId: id });
+    }
+    const images = (ctx.drawImage as unknown as ReturnType<typeof vi.fn>).mock.calls.map(
+      (call) => call[0]
+    );
+    expect(images.length).toBe(6);
+    expect(new Set(images).size).toBe(2);
+    expect(ctx.createRadialGradient).not.toHaveBeenCalled();
   });
 });
 
@@ -200,12 +236,12 @@ describe("light threads", () => {
     };
     const moving = createMockCanvasContext();
     drawLightLink(moving, dependency, a, b, { fadeOpacity: 1, depChain: chain as never });
-    expect(moving.createRadialGradient).toHaveBeenCalled();
+    expect(moving.drawImage).toHaveBeenCalled();
 
     beginLightFrame(1, 0, true);
     const still = createMockCanvasContext();
     drawLightLink(still, dependency, a, b, { fadeOpacity: 1, depChain: chain as never });
-    expect(still.createRadialGradient).not.toHaveBeenCalled();
+    expect(still.drawImage).not.toHaveBeenCalled();
   });
 });
 
@@ -304,5 +340,85 @@ describe("light style in the draw pipeline", () => {
     // The light sky's vignette is centred slightly above the middle.
     expect(ctx.createRadialGradient).toHaveBeenCalledWith(200, 135, 0, 200, 135, 300);
     expect(lightFrame.k).toBe(2);
+  });
+
+  it("keeps the sky in a layer while the camera stands still and paints it straight while it moves", () => {
+    // Every DOM canvas here shares the mocked context of vitest-setup, so the
+    // sky layer's paint calls land on one shared fillRect; the frame's own
+    // paint calls land on the frame's fillRect.
+    const layerPaint = (
+      document.createElement("canvas").getContext("2d") as unknown as {
+        fillRect: ReturnType<typeof vi.fn>;
+      }
+    ).fillRect;
+    const ctx = createMockCanvasContext();
+    const frameFill = ctx.fillRect as unknown as ReturnType<typeof vi.fn>;
+    const direct = () => frameFill.mock.calls.length;
+    const layered = () => layerPaint.mock.calls.length;
+    const stamps = () => (ctx.drawImage as unknown as ReturnType<typeof vi.fn>).mock.calls.length;
+    const sky = (x: number, time: number, twinkle: boolean) =>
+      drawLightBackground(ctx, 333, 222, { x, y: 5 }, time, twinkle);
+
+    sky(5, 0, false); // the camera has just arrived: straight into the frame
+    const d1 = direct();
+    const l1 = layered();
+    expect(d1).toBeGreaterThan(0);
+    expect(stamps()).toBe(0);
+
+    sky(5, 900, false); // it stands still: kept in the layer
+    const l2 = layered();
+    expect(l2).toBeGreaterThan(l1);
+    expect(direct()).toBe(d1);
+    expect(stamps()).toBe(1);
+
+    sky(5, 1800, false); // still: the layer is reused as is
+    expect(layered()).toBe(l2);
+    expect(direct()).toBe(d1);
+    expect(stamps()).toBe(2);
+
+    sky(60, 1800, false); // moving: straight into the frame, the layer untouched
+    expect(direct()).toBeGreaterThan(d1);
+    expect(layered()).toBe(l2);
+    expect(stamps()).toBe(2);
+
+    sky(60, 1000, true); // twinkling to a new step: straight into the frame
+    sky(60, 1050, true); // same step: into the layer
+    const l3 = layered();
+    expect(l3).toBeGreaterThan(l2);
+    sky(60, 1090, true); // same step again: reused
+    expect(layered()).toBe(l3);
+    expect(stamps()).toBe(4);
+  });
+
+  it("twinkles the stars only while background motion runs", () => {
+    const starStyles = (time: number, twinkle: boolean) => {
+      const sky = createMockCanvasContext();
+      const styles: string[] = [];
+      Object.defineProperty(sky, "fillStyle", {
+        set: (v: string) => styles.push(v),
+        get: () => styles[styles.length - 1] ?? "",
+        configurable: true,
+      });
+      paintLightSky(sky, 400, 300, { x: 0, y: 0 }, time, twinkle);
+      return styles.filter((v) => String(v).startsWith("rgba(210,222,255")).join("|");
+    };
+    expect(starStyles(0, false)).not.toBe("");
+    expect(starStyles(0, false)).toBe(starStyles(1700, false));
+    expect(starStyles(0, true)).not.toBe(starStyles(1700, true));
+  });
+});
+
+describe("background motion switch", () => {
+  const base = { reducedMotion: false, snapshot: false, nodeCount: 100, maxNodes: 400 };
+
+  it("runs on an ordinary graph", () => {
+    expect(lightAmbient(base)).toBe(true);
+    expect(lightAmbient({ ...base, nodeCount: 400 })).toBe(true);
+  });
+
+  it("stops when the system asks to reduce motion, in snapshot mode and on large graphs", () => {
+    expect(lightAmbient({ ...base, reducedMotion: true })).toBe(false);
+    expect(lightAmbient({ ...base, snapshot: true })).toBe(false);
+    expect(lightAmbient({ ...base, nodeCount: 401 })).toBe(false);
   });
 });

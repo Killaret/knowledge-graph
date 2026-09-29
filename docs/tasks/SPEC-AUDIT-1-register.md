@@ -145,6 +145,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | VIS-1.7 | Блокер round2 «anon search 401 в эталоне» | есть+тест (устранён PUB-1) | `/api/v1/notes/search` в `SkipGETPaths` (`middleware/jwt.go:66`); `Handler.Search` — `uuid.Nil` → поиск по публичным (`note_handler.go:1713`); эталон надо переснять — старый содержит плашку ошибки |
 | FREEZE-3D-1-hide-3d-view.md | не начат |
 | GRAPH-LIGHT-1-light-graph-and-list.md | не начат |
+| PERF-3D-1-3d-rendering-cost.md | не начат |
 
 Итог по файлу: разделение сделано и держится; открытый дефект один — F-1 (`stableRender` мёртв в трёх сценариях), эталоны после его починки переснять. Повторной сдачи этапа не было.
 
@@ -183,6 +184,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | NOTE-HEALTH-1-technical-and-user-health.md | не начат |
 | NOTE-QUALITY-1-quality-loop.md | не начат |
 | NOTE-QUALITY-1-review-findings.md | не начат |
+| NOTES-LIMIT-1-notes-list-cap.md | не начат |
 | NOTE-TYPES-1-type-taxonomy-review.md | не начат |
 | NOTE-TYPE-TAXONOMY.md | не начат |
 | PROMISES-1-user-promises.md | не начат |
@@ -210,6 +212,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | LINKS-3-batch-similarity-order.md | не начат |
 | LINKS-3-review-findings.md | не начат |
 | ORIGIN-1-born-from-relation.md | не начат |
+| MATCH-1-interest-matching.md | не начат |
 | MODEL-1-embedding-model-measurement.md | не начат |
 | MODEL-1-findings-raw.md | не начат |
 | MODEL-1-review-findings.md | не начат |
@@ -334,6 +337,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | GORDON-1-gordon-documents-review.md | не начат |
 | GORDON-2-deployment-package-analysis.md | не начат |
 | HOUSEKEEPING-1-review-findings.md | не начат |
+| LICENSE-1-repository-license.md | не начат |
 | PROJECT-SKILLS-1-review-findings.md | не начат |
 | PROTO-CRITERIA-1-review-findings.md | не начат |
 | RELEASE-1-scope-1.0.md | не начат |

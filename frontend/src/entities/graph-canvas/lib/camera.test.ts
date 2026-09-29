@@ -99,6 +99,38 @@ describe("camera flight", () => {
     expect(sameTransform(transform, start)).toBe(true);
   });
 
+  it("keeps a landed camera on its target when the canvas is resized", () => {
+    const transform = { x: 0, y: 0, k: 1 };
+    let view = { width: 800, height: 600 };
+    const flight = createCameraFlight(
+      transform,
+      () => view,
+      () => 0,
+      () => false
+    );
+    flight.jumpTo({ cx: 100, cy: 100, k: 2 });
+    view = { width: 500, height: 600 };
+    flight.resized();
+    expect(cameraFromTransform(transform, 500, 600)).toEqual({ cx: 100, cy: 100, k: 2 });
+  });
+
+  it("leaves a camera the user moved alone when the canvas is resized", () => {
+    const transform = { x: 0, y: 0, k: 1 };
+    let view = { width: 800, height: 600 };
+    const flight = createCameraFlight(
+      transform,
+      () => view,
+      () => 0,
+      () => false
+    );
+    flight.jumpTo({ cx: 100, cy: 100, k: 2 });
+    transform.x += 40;
+    const moved = { ...transform };
+    view = { width: 500, height: 600 };
+    flight.resized();
+    expect(transform).toEqual(moved);
+  });
+
   it("jumps without animation when the system asks to reduce motion", () => {
     const { transform, flight } = setup(true);
     flight.flyTo({ cx: 100, cy: 100, k: 2 });

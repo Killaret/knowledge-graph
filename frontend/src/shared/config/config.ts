@@ -49,6 +49,8 @@ export interface Config {
       style?: "classic" | "light";
       /** How many recommendations the light style draws on hover (decision 81) */
       recommendations_on_hover?: number;
+      /** Light style: background motion only up to this many notes (GRAPH-LIGHT-1) */
+      ambient_max_nodes?: number;
       "2d": {
         max_nodes: number;
         /** Node count below which CSS drop-shadows are rendered (performance) */
@@ -165,6 +167,7 @@ export const graphDependencyHighlightDepth = config.frontend.graph.dependency_hi
 export const graphStyle: "classic" | "light" =
   config.frontend.graph.style === "light" ? "light" : "classic";
 export const graphRecommendationsOnHover = config.frontend.graph.recommendations_on_hover ?? 4;
+export const graphAmbientMaxNodes = config.frontend.graph.ambient_max_nodes ?? 500;
 export const graphConfig3D = config.frontend.graph["3d"];
 export const graphPerformanceConfig = config.frontend.graph["3d"].performance;
 export const anomalyConfig = config.frontend.graph.anomaly;

@@ -69,7 +69,7 @@ export function drawSelectionRing(
   ctx.beginPath();
   ctx.arc(node.x, node.y, ring, 0, Math.PI * 2);
   ctx.stroke();
-  if (!lightFrame.stable) {
+  if (lightFrame.ambient && !lightFrame.stable) {
     const phase = ((lightFrame.time / 1000) * 0.55) % 1;
     ctx.strokeStyle = rgba(color, (1 - phase) * 0.7);
     ctx.beginPath();

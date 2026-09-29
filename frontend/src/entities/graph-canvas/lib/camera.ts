@@ -64,6 +64,11 @@ export interface CameraFlight {
   /** Advance the flight to `now`; returns true while the camera is moving. */
   step(now: number): boolean;
   isFlying(): boolean;
+  /**
+   * The canvas changed size (a side panel opened): a camera that has landed
+   * and was not moved since stays on its target instead of drifting off centre.
+   */
+  resized(): void;
 }
 
 /**
@@ -80,11 +85,13 @@ export function createCameraFlight(
   let lastApplied: ScreenTransform | null = null;
   let origin: Camera | null = null;
   let landed: ScreenTransform | null = null;
+  let target: Camera | null = null;
 
   const snapshot = (): ScreenTransform => ({ x: transform.x, y: transform.y, k: transform.k });
 
   function start(to: Camera, dur: number) {
     landed = null;
+    target = to;
     const { width, height } = size();
     if (reducedMotion() || dur <= 0) {
       applyCamera(transform, to, width, height);
@@ -139,6 +146,12 @@ export function createCameraFlight(
     },
     isFlying() {
       return tween !== null;
+    },
+    resized() {
+      if (tween || !target || !landed || !sameTransform(transform, landed)) return;
+      const { width, height } = size();
+      applyCamera(transform, target, width, height);
+      landed = snapshot();
     },
   };
 }

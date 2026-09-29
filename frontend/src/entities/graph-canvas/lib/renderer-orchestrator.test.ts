@@ -441,6 +441,22 @@ describe("renderer-orchestrator performance regressions", () => {
     expect(transform.y).toBeDefined();
   });
 
+  it("resetView leaves the camera alone when the canvas has no size", () => {
+    const ctx = createMockCanvasContext();
+    const nodes = [
+      { id: "a", title: "A", x: 0, y: 0 },
+      { id: "b", title: "B", x: 100, y: 100 },
+    ];
+    for (const [w, h] of [
+      [400, -80],
+      [0, 300],
+    ]) {
+      const transform = { x: 7, y: 9, k: 1.5 };
+      resetView(ctx, w, h, nodes, transform);
+      expect(transform).toEqual({ x: 7, y: 9, k: 1.5 });
+    }
+  });
+
   it("resetView does nothing when there are no nodes", () => {
     const ctx = createMockCanvasContext();
     const transform = { x: 0, y: 0, k: 1 };
