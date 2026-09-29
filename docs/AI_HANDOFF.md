@@ -39,7 +39,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **LICENSE-1:** лицензия репозитория — пользоваться для себя можно, продавать нельзя; сейчас в публичном репозитории MIT | [`tasks/LICENSE-1-repository-license.md`](tasks/LICENSE-1-repository-license.md) | **решает владелец** — первоочередное по его слову; обсуждение после скорости GRAPH-LIGHT-1 | 2026-09-29 |
+| **LICENSE-1:** лицензия репозитория — пользоваться для себя можно, продавать нельзя; сейчас в публичном репозитории MIT | [`tasks/LICENSE-1-repository-license.md`](tasks/LICENSE-1-repository-license.md) | **решает владелец** — ответы 29.09 записаны: только частное использование, без перехода в открытую; подтвердить PolyForm Noncommercial и версию | 2026-09-29 |
 | **MODEL-1:** замер пяти вариантов модели эмбеддингов на 113 реальных заметках владельца: поиск, близость пар, ключевые слова, скорость, память | [`tasks/MODEL-1-embedding-model-measurement.md`](tasks/MODEL-1-embedding-model-measurement.md), [`tasks/MODEL-1-review-findings.md`](tasks/MODEL-1-review-findings.md), `nlp-service/scripts/measure_models.py` | **решает владелец** — 1.0 · решения 58 и 60: выбор после повторного замера в финале D (e5-small, e5-base). [`tasks/MODEL-1B-review-findings.md`](tasks/MODEL-1B-review-findings.md) | 2026-09-24 |
 
 ---
@@ -50,8 +50,10 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **NOTES-LIMIT-1:** больше 300 заметок — список и граф молча показывают 300: бэкенд урезает `limit` до 300, граф фильтруется по списку | [`tasks/NOTES-LIMIT-1-notes-list-cap.md`](tasks/NOTES-LIMIT-1-notes-list-cap.md) | **бэклог** — Devin; ждёт владельца: 1.0 или после, место в очереди | 2026-09-29 |
 | **MODEL-2:** финальный замер D, e5-small, e5-base на готовом конвейере, выбор владельца, смена модели и пересчёт | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **бэклог** — 1.0 · Devin: второй по порядку владельца 27.09; условия выполнены (решения 58, 60) | 2026-09-27 |
+| **NOTES-LIMIT-1:** больше 300 заметок — список и граф молча показывают 300: бэкенд урезает `limit` до 300, граф фильтруется по списку | [`tasks/NOTES-LIMIT-1-notes-list-cap.md`](tasks/NOTES-LIMIT-1-notes-list-cap.md) | **бэклог** — 1.0 · Devin: решение 84 | 2026-09-29 |
+| **CONFIG-AUDIT-1:** каждая настройка читается и переопределяется как задумано; четыре столкновения уже найдены | [`tasks/CONFIG-AUDIT-1-config-precedence.md`](tasks/CONFIG-AUDIT-1-config-precedence.md) | **бэклог** — Devin: решение 86; место в очереди — за владельцем | 2026-09-29 |
+| **TEST-AUDIT-1:** все тесты — на смысл, а не покрытие: ловит ли тест поломку, соответствует ли нормам и скиллам, оправдан ли | [`tasks/TEST-AUDIT-1-tests-that-matter.md`](tasks/TEST-AUDIT-1-tests-that-matter.md) | **бэклог** — Devin, большая, по этапам: решение 86 | 2026-09-29 |
 | **UI-LOAD-1:** загрузка не закрывает граф: оверлей снят, заметки до графа, узлы порциями без перезапуска раскладки, чип «N из M» | [`tasks/UI-DESIGN-1-app-design-review.md`](tasks/UI-DESIGN-1-app-design-review.md) | **бэклог** — 1.0 · Devin: 2D принято 26.09; 3D — после 1.0 (решение 82) | 2026-09-26 |
 | **DOC-AUDIT-2:** документация против кода: утверждения сверить с кодом, «нет в коде» — владельцу | [`tasks/DOC-AUDIT-2-docs-vs-code.md`](tasks/DOC-AUDIT-2-docs-vs-code.md) | **бэклог** — 1.0 · Devin: A и B отклонены 27.09 — 3 из 10 «верно» не подтвердились; после текущих. [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) | 2026-09-27 |
 | **SPEC-AUDIT-1:** все постановки против кода: вердикт с доказательством на каждое требование | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md) | **бэклог** — 1.0 · Devin: этап 0 принят, A отклонён 27.09 — тест не назван; после текущих. [`tasks/SPEC-AUDIT-1-review-findings.md`](tasks/SPEC-AUDIT-1-review-findings.md) | 2026-09-27 |
