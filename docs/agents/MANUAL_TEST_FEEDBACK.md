@@ -606,3 +606,22 @@ Create a new bullet under the right section with:
 - **Unit/integration:** new middleware tests (`WriteIncludeDeleted`, unsupported-repo → 404), repo tests, SQLMock recommendations join test, payload test on `NewCleanupSoftDeletedTask`; mutations verified red: `days 90→1` fails the payload test, removing the trash-aware middleware branch fails the owner-restore test.
 - **Screenshot / Logs:** transcript above; stack stopped via `stop-test.ps1` after the run.
 - **Result:** all three review blockers reproduced-fixed-verified on a live stack with real auth.
+
+### NOTE-DELETE-1 — восстановление с авторизацией, ревью доработки
+
+- **Scope:** доработка `27ca46e`: восстановление из корзины при включённой авторизации, удалённые заметки в
+  подсказках; критерий 4 — кнопка «Восстановить» в интерфейсе.
+- **Date:** 2026-09-29
+- **Agent:** Claude Code
+- **Environment:** тест-стенд из `a53571a` через `start-test.ps1` с `SKIP_AUTH=false`, сид `seed-test-data.ps1`;
+  второй пользователь — одноразовый, создан скриптом.
+- **Observed:**
+  - API, 18/18: удаление — 204, чтение удалённой — 404, в списке её нет, связь скрыта; восстановление чужим — 404,
+    анонимом — 401, владельцем — 204; заметка и та же связь вернулись; удалённая заметка ушла из подсказок, пустых
+    названий нет.
+  - Браузер, 7/7: удаление из списка → «Note deleted. Restore» → `POST /notes/:id/restore` 204 → карточка снова в
+    списке, заметка снова на графе, ошибок на странице нет.
+- **Screenshot / Logs:** вывод обоих скриптов — в разборе `docs/tasks/NOTE-DELETE-1-review-findings.md`;
+  снимки уведомления и списка — в рабочем каталоге ревьюера, данные сида синтетические.
+- **Result:** принято; хвост — NOTE-DELETE-1-TAIL.
+

@@ -105,3 +105,19 @@
   раз», как в решении 71.
 - Отправленные строки чистятся через 30 дней той же ежедневной задачей.
 - Ручные `Publish*` и порт `application/events` убраны.
+
+## Ревью доработки этапа A2 — Claude Code, 2026-09-29
+
+Доработка: Devin, `72d235b`. **Вердикт: этап A2 принят.** Пять новых тестов — на `SaveUserLink`,
+`DeleteAndSuppress`, `DeleteBySource`, `DeleteBySourceType` и `PurgeDeletedBefore` — проверяют строку outbox: тип
+события, сущность, владельца и концы связи.
+
+Мутации: в каждом из пяти методов запись события заменена пустой функцией — все пять тестов красные
+(`TestOutbox_SaveUserLinkRecordsEvent`, `TestOutbox_DeleteAndSuppressRecordsEvent`,
+`TestOutbox_DeleteBySourceRecordsEvents`, `TestOutbox_DeleteBySourceTypeRecordsEvents`,
+`TestOutbox_PurgeDeletedBeforeRecordsEvents`). Без мутаций набор `TestOutbox_` — 13/13.
+
+Принято без замечаний: тест `DeleteBySource` проверяет и то, что чужая связь не тронута и события не даёт; тест
+`DeleteAndSuppress` — что отказ записан в той же транзакции.
+
+Этапы B и C — дальше, строка SYNC-1 остаётся в бэклоге 1.0. `check-all.ps1` на `a53571a`: 32 из 33 зелёные, упавших нет; пропущен `golangci-lint` — локально не установлен (в CI он есть).
