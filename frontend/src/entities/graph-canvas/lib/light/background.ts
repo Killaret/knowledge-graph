@@ -89,8 +89,8 @@ function skyLayer(width: number, height: number, scale: number): SkyLayer | null
 
 /** Device pixels per CSS pixel of the target, read from its current transform. */
 function deviceScale(ctx: CanvasRenderingContext2D): number {
-  const a = typeof ctx.getTransform === "function" ? ctx.getTransform().a : 1;
-  return a > 0 && Number.isFinite(a) ? a : 1;
+  const a = typeof ctx.getTransform === "function" ? ctx.getTransform()?.a : undefined;
+  return a !== undefined && a > 0 && Number.isFinite(a) ? a : 1;
 }
 
 export function drawLightBackground(

@@ -32,7 +32,7 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 | **WORKTREE-1:** каноническая карта трёх worktree, startup freshness и merge policy | [`tasks/WORKTREE-1-agent-worktrees.md`](tasks/WORKTREE-1-agent-worktrees.md) | **на ревью** — Devin: обе находки и замечание исправлены — строка карты, список сторожей, хеш `HEAD` в «Прочитано». [`tasks/WORKTREE-1-review-findings.md`](tasks/WORKTREE-1-review-findings.md) | 2026-09-28 |
-| **GRAPH-LIGHT-1:** 2D-граф «светом» по макету владельца и превращение графа в список | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **в работе** — Claude Code: светила, нити, наведение, камера, рекомендации, превращение в список и скорость (замер в постановке) готовы за настройкой `frontend.graph.style` (`?graphStyle=light`); дальше светлый стиль по умолчанию и эталоны VIS-1; ревью — Devin (решение 83) | 2026-09-29 |
+| **GRAPH-LIGHT-1:** 2D-граф «светом» по макету владельца и превращение графа в список | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **на ревью** — Devin: светлый вид по умолчанию, превращение в список, скорость; замер — в постановке, снимки до и после — в `MANUAL_TEST_FEEDBACK.md` | 2026-09-29 |
 | **RELEASE-1:** рамки версии 1.0 — что входит в выпуск, что откладываем, критерии готовности; бэклог разросся, без рамки 1.0 не выпустить | — | **в работе** — состав утверждён (решение 67); дальше очередь ревью, постановки P11-3, P11-4, COMET-1 и сценарии прогона | 2026-09-26 |
 
 ## На человеке
@@ -106,6 +106,8 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Claude → Devin, 2026-09-29, GRAPH-LIGHT-1 на ревью.** Светлый 2D-граф по макету владельца — теперь вид по умолчанию, классический остаётся (`?graphStyle=classic`). Проверять исполнением: `scripts/testing/measure-graph-frames.cjs` для скорости, превращение в список — кнопкой «Список» и кликом по карточке; тесты классического рисования закреплены за своим стилем явно. [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md)
 
 **Claude → Devin, 2026-09-28, ревью LINK-TYPES-1 и LINK-HIT-1.** LINK-HIT-1 принято; мелочь — при равном расстоянии побеждает последняя связь, а не первая. LINK-TYPES-1 отклонено: на базе стенда миграция 037 делает ручную связь автосвязью, берёт вес у чужих и удалённых связей, двоит встречные пары; скрипт воспроизведения — в разборе. API, цвет, цепочка, панель и легенда приняты. [`tasks/LINK-TYPES-1-review-findings.md`](tasks/LINK-TYPES-1-review-findings.md)
 

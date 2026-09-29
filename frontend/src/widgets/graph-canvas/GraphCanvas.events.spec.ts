@@ -1,8 +1,17 @@
-import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, cleanup, fireEvent } from "@testing-library/svelte";
 import { tick } from "svelte";
 import type { GraphDeltaData, GraphNode, GraphLink } from "$shared/api/graph";
 import { transformRawGraph } from "$shared/services/graphLoader";
+
+import { getGraphStyle, setGraphStyle } from "$entities/graph-canvas/lib/light/style";
+
+// Classic look: these tests describe the classic renderer and its geometry
+// (fit capped at 1:1, icon drawers). The light style (GRAPH-LIGHT-1) has its
+// own tests in entities/graph-canvas/lib/light.
+const styleBefore = getGraphStyle();
+beforeAll(() => setGraphStyle("classic"));
+afterAll(() => setGraphStyle(styleBefore));
 
 // Shared state for the d3-force mock
 const mockState = {

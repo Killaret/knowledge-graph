@@ -3,9 +3,18 @@
  * Verifies that links actually connect the correct source and target nodes
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import * as renderer from "$entities/graph-canvas/lib/renderer";
 import type { SimulationNode, SimulationLink } from "$entities/graph-canvas/lib/types";
+
+import { getGraphStyle, setGraphStyle } from "$entities/graph-canvas/lib/light/style";
+
+// Classic look: these tests describe the classic renderer and its geometry
+// (fit capped at 1:1, icon drawers). The light style (GRAPH-LIGHT-1) has its
+// own tests in entities/graph-canvas/lib/light.
+const styleBefore = getGraphStyle();
+beforeAll(() => setGraphStyle("classic"));
+afterAll(() => setGraphStyle(styleBefore));
 
 describe("GraphCanvas - Link Connection Correctness", () => {
   describe("Link coordinate verification", () => {

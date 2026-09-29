@@ -56,7 +56,9 @@ export function drawLightCaptions(
   iconRadius: number
 ): void {
   const k = lightFrame.k;
-  const canMeasureScreen = typeof ctx.getTransform === "function";
+  // The transform is the same for every caption of the frame; a context
+  // without one (tests) places captions without the overlap check.
+  const m = typeof ctx.getTransform === "function" ? ctx.getTransform() : undefined;
   const sorted = [...captions].sort((a, b) => b.priority - a.priority);
 
   ctx.save();
@@ -77,8 +79,7 @@ export function drawLightCaptions(
 
     let x = node.x + gap;
     const y = node.y;
-    if (canMeasureScreen) {
-      const m = ctx.getTransform();
+    if (m) {
       const toScreen = (wx: number, wy: number): [number, number] => [
         m.a * wx + m.c * wy + m.e,
         m.b * wx + m.d * wy + m.f,

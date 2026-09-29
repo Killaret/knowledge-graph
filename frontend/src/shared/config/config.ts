@@ -165,7 +165,7 @@ export const graphConfig2D = config.frontend.graph["2d"];
 export const graphLabelHubCount = config.frontend.graph.label_hub_count;
 export const graphDependencyHighlightDepth = config.frontend.graph.dependency_highlight_depth;
 export const graphStyle: "classic" | "light" =
-  config.frontend.graph.style === "light" ? "light" : "classic";
+  config.frontend.graph.style === "classic" ? "classic" : "light";
 export const graphRecommendationsOnHover = config.frontend.graph.recommendations_on_hover ?? 4;
 export const graphAmbientMaxNodes = config.frontend.graph.ambient_max_nodes ?? 500;
 export const graphConfig3D = config.frontend.graph["3d"];

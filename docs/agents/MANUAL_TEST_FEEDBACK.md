@@ -575,3 +575,19 @@ Create a new bullet under the right section with:
 - **Not covered live:** dependency-chain hover highlight and red cycle marking (covered by `dependency-chain.test.ts` 13/13 and `link-renderers.test.ts` 15/15; live hover targeting is not automatable reliably).
 - **Screenshot / Logs:** `docs/agents/screenshots/link-types-1/` — `2d-graph.png`, `2d-legend.png`, `3d-graph.png`, `3d-legend.png`, `note-panel.png`, `2d-cockpit-details.png`.
 - **Result:** migration, normalization, legends and panel dependency sections verified live end-to-end.
+
+### GRAPH-LIGHT-1 — the light style becomes the default, before and after
+
+- **Scope:** criterion 6 of `docs/tasks/GRAPH-LIGHT-1-light-graph-and-list.md` — the default look switches to `"light"`; before/after pictures; criteria 3 and 4 re-checked live.
+- **Date:** 2026-09-29
+- **Agent:** Claude Code
+- **Environment:** isolated test stack (`start-test.ps1`, `SKIP_AUTH=false`), frontend built from this tree with `frontend.graph.style = "light"`; seed 20 notes / 10 links (`-Seed 42 -PublicPercent 50`) plus notes left by the real-auth suite, 27 in all; Playwright, headless Chromium, 1600×900. "Before" is the same build opened with `?graphStyle=classic`. Both series have the fog switched off with the top-bar button: headless draws below 25 frames per second, and the adaptive fog would hide most notes. Decision 85 keeps the fog; it is off here only to compare the looks.
+- **Observed:**
+  - Graph at rest: classic icons with captions cut to "…" → lights with halos, star spikes, comet tails, thin threads, whole captions.
+  - Hover: the neighbourhood lights up and the rest dims in both looks; recommendations show as pale dashes in the light one.
+  - Click on a lone note: the light look flies the camera in and rings the note; the details panel opens in both.
+  - `prefers-reduced-motion: reduce`: no redraws in 3 s at rest; list and the way back switch at once; the note clicked in the list lands in the middle (dx 0, dy 0).
+  - `chromium-real-auth` 31/31 with the light default; `visual` + `visual-real-auth` 18/20 — the two failures are the known one-shot session (A-1) and pass alone.
+- **Not covered:** Argos baselines — CI compares them against `main`, so the graph screens will differ there and need approving after the merge. Two old defects show in both looks: hovering a note at the end of a thread also shows that link's tooltip; the drag-to-delete black hole sits under the legend and grows out from behind it after the camera flies in.
+- **Screenshot / Logs:** `docs/agents/screenshots/graph-light-1/` — `before-graph.png`, `after-graph.png`, `before-hover.png`, `after-hover.png`, `before-selected.png`, `after-selected.png`.
+- **Result:** the light style is the default; the classic look stays available through `frontend.graph.style` and `?graphStyle=classic`.
