@@ -37,6 +37,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | UX-1-link-creation-and-canvas-refresh.md | разобран — не сделано, ждёт обсуждения UX (решение 67) |
 | UX-2-500-error-page.md | разобран — принято; новая находка F-2 |
 | UX-2-review-findings.md | разобран — хвостов нет |
+| UX-3-canvas-hover-and-black-hole.md | не начат |
 | VIS-1-split-visual-baselines.md | разобран — разделение есть; открыт дефект F-1 |
 | VIS-1-review-findings.md | разобран — находки закрыты в `2eb3216` |
 | VIS-1-round2-review-findings.md | разобран — блокеры 1 и 3 устранены, блокер 2 жив (F-1) |
@@ -237,6 +238,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | P11-3-keyword-normalization.md | не начат |
 | P11-4-graph-clustering.md | не начат |
 | RECO-1-recommendation-formula.md | не начат |
+| RECO-1-review-findings.md | не начат |
 | W-1-eval-findings.md | не начат |
 | W-1-link-weight-formula-validation.md | не начат |
 
@@ -249,6 +251,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | AUD-2-data-isolation.md | не начат |
 | AUD-2-review-findings.md | не начат |
 | AUD-2-seeder-issue.md | не начат |
+| ISOLATION-1-similar-notes-owner-scope.md | не начат |
 | AUD-3-token-transport.md | не начат |
 | AUD-4-yandex-oauth-contract.md | не начат |
 | AUD-5-perimeter-separation.md | не начат |
