@@ -1,4 +1,5 @@
 <script lang="ts">
+  /* eslint-disable prefer-const -- Svelte 5 $props() with $bindable requires let */
   import { LinkType, AUTO_LINK_COLOR } from "$entities";
   import { isLightStyle } from "$entities/graph-canvas/lib/light/style";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
@@ -7,13 +8,14 @@
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
 
-  const {
+  let {
     hiddenTypes = [],
     onToggle,
     onMinWeightChange,
     minWeight = 0,
     showMinWeight = false,
     collapsible = true,
+    collapsed = $bindable(false),
   }: {
     hiddenTypes?: string[];
     onToggle?: (type: string) => void;
@@ -21,9 +23,16 @@
     minWeight?: number;
     showMinWeight?: boolean;
     collapsible?: boolean;
+    collapsed?: boolean;
   } = $props();
+  /* eslint-enable prefer-const */
 
-  let collapsed = $state(false);
+  let legendContainer: HTMLDivElement | null = $state(null);
+
+  /** Expose the rendered container so the parent can measure footprint. */
+  export function getContainer(): HTMLDivElement | null {
+    return legendContainer;
+  }
   // LINK-TYPES-1: manual (UI-visible) types only — legacy `reference`/`custom`
   // and system `parent`/`child` never appear here. Automatic model-suggested
   // links get a separate, non-toggleable row below.
@@ -57,7 +66,7 @@
   }
 </script>
 
-<div class="link-type-legend" class:collapsed>
+<div class="link-type-legend" class:collapsed bind:this={legendContainer}>
   <button
     type="button"
     class="legend-header"

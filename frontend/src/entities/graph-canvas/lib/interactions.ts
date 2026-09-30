@@ -65,7 +65,8 @@ export function findLinkAtPosition(
   links: SimulationLink[],
   nodes: SimulationNode[],
   transform: TransformState,
-  tolerance: number = 8
+  tolerance: number = 8,
+  nodeHitRadius: number = 30
 ): SimulationLink | null {
   const nodeMap = new Map<string, SimulationNode>();
   for (const node of nodes) {
@@ -89,6 +90,19 @@ export function findLinkAtPosition(
       targetNode.y == null
     )
       continue;
+
+    // UX-3: a node under the cursor wins over its links, so skip a link
+    // if the cursor is inside either endpoint's hit radius.
+    const sdx = mouseX - sourceNode.x;
+    const sdy = mouseY - sourceNode.y;
+    const tdx = mouseX - targetNode.x;
+    const tdy = mouseY - targetNode.y;
+    if (
+      Math.sqrt(sdx * sdx + sdy * sdy) < nodeHitRadius ||
+      Math.sqrt(tdx * tdx + tdy * tdy) < nodeHitRadius
+    ) {
+      continue;
+    }
 
     const distance = pointToLineDistance(
       mouseX,

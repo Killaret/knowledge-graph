@@ -143,7 +143,7 @@
         <div class="nc-tooltip-content">${contentPreview}</div>
         <div class="nc-tooltip-meta">
           <span class="nc-tooltip-links">${t("noteCard.links", { count: linkCount })}</span>
-          <span class="nc-tooltip-date">${formatDate(note.created_at)}</span>
+          ${note.created_at ? `<span class="nc-tooltip-date">${formatDate(note.created_at)}</span>` : ""}
           ${keywordChips ? `<div class="nc-tooltip-keywords">${keywordChips}</div>` : ""}
         </div>
         <div class="nc-tooltip-actions">
@@ -272,9 +272,11 @@
     </div>
 
     <div class="note-card__footer">
-      <span class="note-card__date" data-testid="note-date" data-visual-test="transparent">
-        {t("noteCard.created", { date: formatDate(note.created_at) })}
-      </span>
+      {#if note.created_at}
+        <span class="note-card__date" data-testid="note-date" data-visual-test="transparent">
+          {t("noteCard.created", { date: formatDate(note.created_at) })}
+        </span>
+      {/if}
       {#if isRecentlyUpdated()}
         <span
           class="note-card__date note-card__date--updated"

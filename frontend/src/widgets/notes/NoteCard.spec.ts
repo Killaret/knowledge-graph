@@ -134,6 +134,17 @@ describe("NoteCard", () => {
     expect(indicator).not.toBeInTheDocument();
   });
 
+  it("hides created date when created_at is missing (UX-3)", () => {
+    const note = createNote({
+      created_at: undefined as unknown as string,
+      updated_at: undefined as unknown as string,
+    });
+    render(NoteCard, { props: { note } });
+
+    expect(screen.queryByTestId("note-date")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Created:/)).not.toBeInTheDocument();
+  });
+
   it("renders dust style for quick-capture notes", () => {
     const dustNote = createNote({ type: "dust" });
     const { container } = render(NoteCard, { props: { note: dustNote } });

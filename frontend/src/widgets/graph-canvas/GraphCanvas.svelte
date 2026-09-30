@@ -31,6 +31,8 @@
     updateBlackHolePulse,
     updateBlackHoleZoom,
     isPointOverBlackHole,
+    DEFAULT_LEGEND_WIDTH,
+    DEFAULT_LEGEND_MARGIN,
     type GhostNodeState,
     updateGhostNodePosition,
     updateGhostNodePulse,
@@ -253,6 +255,8 @@
   let resizeCleanup: { clear: () => void } | null = null;
   let observerCleanup: { disconnect: () => void } | null = null;
   let detachEvents: (() => void) | null = null;
+  let legendEl: { getContainer(): HTMLDivElement | null } | null = $state(null);
+  let legendCollapsed = $state(false);
   const angles = new Map<string, number>();
   const speeds = new Map<string, number>();
 
@@ -322,6 +326,20 @@
       autoFit();
       scheduleRedraw();
     }
+  }
+
+  /** UX-3: measure the link-type legend so the black hole can avoid it. */
+  function legendLayout(el: { getContainer(): HTMLDivElement | null } | null, collapsed: boolean) {
+    if (!el) return null;
+    const container = el.getContainer();
+    if (!container) return null;
+    const rect = container.getBoundingClientRect();
+    return {
+      expanded: !collapsed,
+      width: rect.width || DEFAULT_LEGEND_WIDTH,
+      height: rect.height || 40,
+      margin: DEFAULT_LEGEND_MARGIN,
+    };
   }
 
   // GRAPH-LIGHT-1: the hover focus fades in and out, and the camera flies to
@@ -551,6 +569,7 @@
     particleSystem = new ParticleSystem(nodes.length);
     blackHole = createBlackHole(width, height);
     blackHole.label = t("graph.blackHole.tooltip");
+    updateBlackHolePosition(blackHole, width, height, legendLayout(legendEl, legendCollapsed));
     ghostNode = createGhostNode(width, height, nodes);
     gravitySystem = createGravitySystem();
 
@@ -654,7 +673,7 @@
 
       // Update interactive element positions, zoom scale, and pulses
       updateBlackHoleZoom(blackHole, transform.k);
-      updateBlackHolePosition(blackHole, width, height);
+      updateBlackHolePosition(blackHole, width, height, legendLayout(legendEl, legendCollapsed));
       updateBlackHolePulse(blackHole, animationTime);
       updateGhostNodeZoom(ghostNode, transform.k);
       updateGhostNodePosition(ghostNode, width, height, nodes);
@@ -1224,6 +1243,8 @@
 
 {#if showLinkTypeLegend}
   <LinkTypeLegend
+    bind:this={legendEl}
+    bind:collapsed={legendCollapsed}
     hiddenTypes={graphStore.hiddenLinkTypes}
     minWeight={graphStore.minLinkWeight}
     showMinWeight={true}

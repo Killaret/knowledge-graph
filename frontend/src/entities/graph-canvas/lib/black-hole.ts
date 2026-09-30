@@ -23,6 +23,11 @@ export const BLACK_HOLE_RADIUS = BASE_NODE_RADIUS * 3;
 const MIN_ZOOM_SCALE = 0.4;
 const MAX_ZOOM_SCALE = 3;
 
+/** Default legend width used when measuring legend footprint with no real canvas. */
+export const DEFAULT_LEGEND_WIDTH = 260;
+/** Default margin between the legend and the canvas edge. */
+export const DEFAULT_LEGEND_MARGIN = 16;
+
 /** Catch area is 1.5x the visible radius for easier drag-and-drop deletion. */
 export const BLACK_HOLE_CATCH_RADIUS = BLACK_HOLE_RADIUS * 1.5;
 
@@ -39,14 +44,45 @@ export function createBlackHole(width: number, height: number): BlackHoleState {
   };
 }
 
+export interface LegendLayout {
+  /** Whether the link-type legend is currently expanded. */
+  expanded: boolean;
+  /** Legend width in screen pixels. */
+  width: number;
+  /** Legend height in screen pixels. */
+  height: number;
+  /** Margin between the legend and the canvas edge. */
+  margin: number;
+}
+
 export function updateBlackHolePosition(
   state: BlackHoleState,
   width: number,
-  height: number
+  height: number,
+  legend?: LegendLayout | null
 ): void {
   const inset = SERVICE_TOOL_MARGIN + state.radius;
   state.x = width - inset;
   state.y = height - inset;
+
+  // UX-3: keep the black hole clear of the expanded link-type legend in the
+  // same corner. When collapsed, the header still occupies some space.
+  if (legend) {
+    const legendFootprint = legend.expanded ? legend.height : 40;
+    const legendLeft = width - legend.width - legend.margin;
+    const legendTop = height - legendFootprint - legend.margin;
+    const holeLeft = state.x - state.radius;
+    const holeTop = state.y - state.radius;
+    const holeRight = holeLeft + state.radius * 2;
+    const holeBottom = holeTop + state.radius * 2;
+    const overlapX = Math.max(0, holeRight - legendLeft);
+    const overlapY = Math.max(0, holeBottom - legendTop);
+    if (overlapX > 0 && overlapY > 0) {
+      const shift = Math.max(overlapX, overlapY);
+      state.x = legendLeft - shift - state.radius - SERVICE_TOOL_MARGIN / 2;
+      state.y = legendTop - shift - state.radius - SERVICE_TOOL_MARGIN / 2;
+    }
+  }
 }
 
 export function updateBlackHoleZoom(state: BlackHoleState, zoom: number): void {
