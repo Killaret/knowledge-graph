@@ -386,3 +386,57 @@ func TestGetDeltaHandler_UnknownSnapshotAnswersResync(t *testing.T) {
 	// No snapshot, no work: the handler must not even query Postgres.
 	mockDB.AssertNotCalled(t, "GetNotes", mock.Anything, mock.Anything)
 }
+
+// CONFIG-AUDIT-1: an explicit ?limit narrower than the configured cap must not
+// read or overwrite the shared layout cache — a cached full layout used to be
+// served for any limit, and a limited result used to replace the canonical
+// snapshot deltas are computed against.
+func TestGetFullGraphHandler_LimitDoesNotPoisonCache(t *testing.T) {
+	mockDB := &mockPostgresClient{}
+	c, mr := newTestCache(t)
+	defer mr.Close()
+
+	server := NewHTTPServer(mockDB, c, 2, 2)
+
+	three := []*db.Note{
+		{ID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", Title: "A"},
+		{ID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", Title: "B"},
+		{ID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13", Title: "C"},
+	}
+	mockDB.On("GetNotes", mock.Anything, mock.Anything).Return(three, []*db.Link{}, nil)
+
+	// Canonical request fills the cache with the capped layout (2 of 3 nodes).
+	rr := httptest.NewRecorder()
+	server.GetFullGraphHandler(rr, httptest.NewRequest(http.MethodGet, "/api/v1/graph/full", nil))
+	var resp GraphApiResponse
+	require.NoError(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.Len(t, resp.Data.Nodes, 2)
+
+	// ?limit=1 must answer 1 node — not the cached 2-node layout — and must
+	// not touch the canonical cache.
+	rr = httptest.NewRecorder()
+	server.GetFullGraphHandler(rr, httptest.NewRequest(http.MethodGet, "/api/v1/graph/full?limit=1", nil))
+	require.NoError(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.Len(t, resp.Data.Nodes, 1)
+
+	// The canonical cache still holds the full 2-node layout: a cached answer
+	// is served (mock would still return 3, cache wins either way — assert the
+	// node set is the capped pair, proving the narrow page did not overwrite).
+	mr.FastForward(time.Second)
+	rr = httptest.NewRecorder()
+	server.GetFullGraphHandler(rr, httptest.NewRequest(http.MethodGet, "/api/v1/graph/full", nil))
+	require.NoError(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.Len(t, resp.Data.Nodes, 2)
+
+	// ?limit=0 must not bypass the configured cap.
+	rr = httptest.NewRecorder()
+	server.GetFullGraphHandler(rr, httptest.NewRequest(http.MethodGet, "/api/v1/graph/full?limit=0", nil))
+	require.NoError(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.Len(t, resp.Data.Nodes, 2)
+
+	// ?limit above the cap is clamped to the cap, never to the request.
+	rr = httptest.NewRecorder()
+	server.GetFullGraphHandler(rr, httptest.NewRequest(http.MethodGet, "/api/v1/graph/full?limit=9999&nocache=1", nil))
+	require.NoError(t, json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.Len(t, resp.Data.Nodes, 2)
+}

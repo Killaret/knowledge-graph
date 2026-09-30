@@ -94,7 +94,7 @@ func Load() (*Config, error) {
 		PostgresURL:  getEnv("POSTGRES_URL", "postgresql://postgres:postgres@postgres:5432/knowledge_base?sslmode=disable"),
 		RedisURL:     getEnv("REDIS_URL", "redis:6379"),
 		EventChannel: getEnv("EVENT_CHANNEL", getJSONString(jsonCfg, func(j *JSONConfig) string { return j.GraphService.EventChannel }, "graph:events")),
-		FullLimit:    getIntEnv("GRAPH_FULL_LIMIT", getJSONInt(jsonCfg, func(j *JSONConfig) int { return j.GraphService.FullLimit }, 1000)),
+		FullLimit:    getIntEnv("GRAPH_FULL_LIMIT", getJSONInt(jsonCfg, func(j *JSONConfig) int { return j.GraphService.FullLimit }, 500)),
 		DefaultDepth: getJSONInt(jsonCfg, func(j *JSONConfig) int { return j.GraphService.DefaultDepth }, 2),
 
 		// Cache TTLs (env overrides JSON)

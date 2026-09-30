@@ -334,6 +334,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | BOARD-2-review-findings.md | не начат |
 | BOARD-3-board-archive.md | не начат |
 | CONFIG-AUDIT-1-config-precedence.md | не начат |
+| CONFIG-AUDIT-1-review-findings.md | разбор — реестр 189 ключей, лимит графа, 16 мёртвых ключей владельцу |
 | CHECK-ALL-1-runner-cannot-report-failure.md | не начат |
 | CHECK-ALL-2-review-findings.md | не начат |
 | CHECK-DECISIONS-2-review-findings.md | не начат |

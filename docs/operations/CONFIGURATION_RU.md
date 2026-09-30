@@ -29,6 +29,13 @@ npm run build-config
 
 Примечание: редактируйте файлы в `config/*.json` и пересоздавайте `knowledge-graph.config.json` командой `npm run build-config`.
 
+**У фронтенда нет runtime-переменных окружения.** Ключи `frontend.*` и `ci_cd.*` вшиваются в бандл
+при сборке (`npm run build-config` + `npm run build` / сборка Docker-образа): правка `config/*.json`
+не действует на запущенный или уже собранный фронтенд — нужна пересборка. Полная карта ключей
+(кто читает, env-переопределение, compose, мёртвые ключи) — в
+[`CONFIG_REGISTRY.md`](CONFIG_REGISTRY.md): генерируется `scripts/testing/generate-config-registry.mjs`,
+сторож — `check-config-registry.mjs`.
+
 > **Отсутствующие ключи сохраняют дефолты из Go.** Файл десериализуется
 > поверх структуры, засеянной встроенными дефолтами (`defaultJSONConfig`,
 > CONFIG-1): ключ, которого в файле нет, получает дефолт, а заданные значения —
@@ -698,7 +705,7 @@ def get_embedding_model():
   "graph_service": {
     "grpc_port": "9090",
     "http_port": "9091",
-    "full_limit": 1000,
+    "full_limit": 500,
     "default_depth": 2,
     "event_channel": "graph:events",
     "cache": {

@@ -402,6 +402,26 @@ class TestEmbeddingModelHelpers:
             else:
                 os.environ["HF_HUB_OFFLINE"] = prev
 
+    def test_env_precedence_over_defaults(self):
+        # CONFIG-AUDIT-1: nlp-service precedence is env > built-in default.
+        prev_chunk = os.environ.get("EMBED_CHUNKING")
+        prev_cos = os.environ.get("NLP_NORMALIZATION_MIN_COSINE")
+        try:
+            os.environ.pop("EMBED_CHUNKING", None)
+            os.environ.pop("NLP_NORMALIZATION_MIN_COSINE", None)
+            assert nlp_utils._embed_chunking_enabled() is False
+            assert nlp_utils._normalization_min_cosine() == 0.7
+            os.environ["EMBED_CHUNKING"] = "1"
+            os.environ["NLP_NORMALIZATION_MIN_COSINE"] = "0.55"
+            assert nlp_utils._embed_chunking_enabled() is True
+            assert nlp_utils._normalization_min_cosine() == 0.55
+        finally:
+            for key, prev in (("EMBED_CHUNKING", prev_chunk), ("NLP_NORMALIZATION_MIN_COSINE", prev_cos)):
+                if prev is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = prev
+
     def test_configure_hf_env(self):
         nlp_utils._configure_hf_env()
         assert os.environ.get("HF_HUB_DISABLE_TELEMETRY") == "1"

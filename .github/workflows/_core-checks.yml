@@ -248,6 +248,10 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-spec-audit-1-register.mjs .
 
+      - name: Check CONFIG registry
+        working-directory: .
+        run: node scripts/testing/check-config-registry.mjs .
+
       - name: Check board size
         working-directory: .
         run: node scripts/testing/check-board-size.mjs .

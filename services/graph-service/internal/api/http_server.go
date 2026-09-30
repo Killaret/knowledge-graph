@@ -185,27 +185,42 @@ func (s *HTTPServer) GetNoteGraphHandler(w http.ResponseWriter, r *http.Request)
 	s.sendGraphData(w, layout, hash)
 }
 
+// resolveLimit resolves the effective node cap for a full-graph request.
+// The configured limit (GRAPH_FULL_LIMIT / graph_service.full_limit) is the
+// canonical size. Returns (effective limit, canonical):
+//   - absent or non-positive ?limit → the configured cap, canonical
+//   - ?limit below the cap → the requested limit, not canonical (a narrower
+//     answer must not read from or overwrite the shared layout cache)
+//   - ?limit above the cap → clamped to the cap, canonical
+func (s *HTTPServer) resolveLimit(raw string) (int, bool) {
+	if l, err := strconv.Atoi(raw); err == nil && l > 0 {
+		if s.limit > 0 && l > s.limit {
+			l = s.limit
+		}
+		return l, s.limit > 0 && l == s.limit
+	}
+	return s.limit, true
+}
+
 // GetFullGraphHandler handles GET /api/v1/graph/full with chunked transfer
 func (s *HTTPServer) GetFullGraphHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	startTime := time.Now()
 
-	limit := 0
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil {
-			limit = l
-		}
-	} else if s.limit > 0 {
-		limit = s.limit
-	}
+	// CONFIG-AUDIT-1: the configured cap is the canonical size — it is the only
+	// request shape allowed to read or write the shared layout cache. An
+	// explicit narrower limit gets a fresh, truncated answer without touching
+	// the cache (a limited page must not overwrite the snapshot deltas are
+	// computed against); a wider one is clamped to the cap.
+	limit, canonical := s.resolveLimit(r.URL.Query().Get("limit"))
 	nocache := r.URL.Query().Get("nocache") == "1" || r.URL.Query().Get("nocache") == "true"
 
 	filter := s.notesFilter(ctx)
 	cacheUserID := s.cacheUserID(ctx)
 
-	log.Printf("[GraphService] HTTP GetFullGraph: userID=%s, public=%v, limit=%d, nocache=%v", filter.UserID, filter.IsPublic, limit, nocache)
+	log.Printf("[GraphService] HTTP GetFullGraph: userID=%s, public=%v, limit=%d, canonical=%v, nocache=%v", filter.UserID, filter.IsPublic, limit, canonical, nocache)
 
-	if !nocache {
+	if canonical && !nocache {
 		if cached, hash, err := s.cache.LoadFullLayout(ctx, cacheUserID); err == nil && cached != nil {
 			log.Printf("[GraphService] Cache hit for full graph user=%s (took %v)", cacheUserID, time.Since(startTime))
 			s.sendGraphData(w, cached, hash)
@@ -240,13 +255,15 @@ func (s *HTTPServer) GetFullGraphHandler(w http.ResponseWriter, r *http.Request)
 	layout := engine.Layout3D(notes, links)
 	hash := computeDataHash(notes, links)
 
-	if err := s.cache.SaveFullLayout(ctx, cacheUserID, layout, hash); err != nil {
-		log.Printf("[GraphService] Failed to cache full layout: %v", err)
-	}
-	// The served layout becomes the snapshot future deltas are computed
-	// against — keyed by the data hash the client will send as last_hash.
-	if err := s.cache.SaveSnapshot(ctx, cacheUserID, hash, "3d", layout); err != nil {
-		log.Printf("[GraphService] Failed to save layout snapshot: %v", err)
+	if canonical {
+		if err := s.cache.SaveFullLayout(ctx, cacheUserID, layout, hash); err != nil {
+			log.Printf("[GraphService] Failed to cache full layout: %v", err)
+		}
+		// The served layout becomes the snapshot future deltas are computed
+		// against — keyed by the data hash the client will send as last_hash.
+		if err := s.cache.SaveSnapshot(ctx, cacheUserID, hash, "3d", layout); err != nil {
+			log.Printf("[GraphService] Failed to save layout snapshot: %v", err)
+		}
 	}
 
 	log.Printf("[GraphService] GetFullGraph completed in %v", time.Since(startTime))
@@ -258,23 +275,16 @@ func (s *HTTPServer) GetPublicGraphHandler(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	startTime := time.Now()
 
-	limit := 0
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil {
-			limit = l
-		}
-	} else if s.limit > 0 {
-		limit = s.limit
-	}
+	limit, canonical := s.resolveLimit(r.URL.Query().Get("limit"))
 	layoutType := parseLayout(r)
 
 	nocache := r.URL.Query().Get("nocache") == "1" || r.URL.Query().Get("nocache") == "true"
 
 	filter := db.NotesFilter{IsPublic: true}
 
-	log.Printf("[GraphService] HTTP GetPublicGraph: limit=%d, layout=%s", limit, layoutType)
+	log.Printf("[GraphService] HTTP GetPublicGraph: limit=%d, canonical=%v, layout=%s", limit, canonical, layoutType)
 
-	if !nocache {
+	if canonical && !nocache {
 		if cached, hash, err := s.cache.LoadFullLayout(ctx, "public"); err == nil && cached != nil {
 			log.Printf("[GraphService] Cache hit for public graph (took %v)", time.Since(startTime))
 			s.sendGraphData(w, cached, hash)
@@ -314,11 +324,13 @@ func (s *HTTPServer) GetPublicGraphHandler(w http.ResponseWriter, r *http.Reques
 	}
 	hash := computeDataHash(notes, links)
 
-	if err := s.cache.SaveFullLayout(ctx, "public", layout, hash); err != nil {
-		log.Printf("[GraphService] Failed to cache public layout: %v", err)
-	}
-	if err := s.cache.SaveSnapshot(ctx, "public", hash, layoutType, layout); err != nil {
-		log.Printf("[GraphService] Failed to save public layout snapshot: %v", err)
+	if canonical {
+		if err := s.cache.SaveFullLayout(ctx, "public", layout, hash); err != nil {
+			log.Printf("[GraphService] Failed to cache public layout: %v", err)
+		}
+		if err := s.cache.SaveSnapshot(ctx, "public", hash, layoutType, layout); err != nil {
+			log.Printf("[GraphService] Failed to save public layout snapshot: %v", err)
+		}
 	}
 
 	log.Printf("[GraphService] GetPublicGraph completed in %v", time.Since(startTime))

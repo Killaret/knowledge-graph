@@ -122,21 +122,33 @@ func (s *graphService) GetFullLayout(req *graphservice.FullLayoutRequest, stream
 	}
 
 	ctx := stream.Context()
-	limit := req.Limit
 
+	// CONFIG-AUDIT-1: same rule as the HTTP handler — the configured cap is
+	// canonical; a narrower explicit limit bypasses the shared cache (read and
+	// write), a wider one is clamped.
+	limit := req.Limit
+	canonical := true
 	if limit <= 0 {
 		limit = int32(s.fullLimit)
+	} else {
+		if s.fullLimit > 0 && int(limit) > s.fullLimit {
+			limit = int32(s.fullLimit)
+		}
+		canonical = s.fullLimit > 0 && int(limit) == s.fullLimit
 	}
 
 	cacheUserID := s.grpcUserID(ctx, req.UserId)
 	filter := s.grpcFilter(ctx, req.UserId)
 
-	log.Printf("[GraphService] GetFullLayout: userID=%s, limit=%d", cacheUserID, limit)
+	log.Printf("[GraphService] GetFullLayout: userID=%s, limit=%d, canonical=%v", cacheUserID, limit, canonical)
 
-	// Try cache first
-	if cached, hash, err := s.cache.LoadFullLayout(ctx, cacheUserID); err == nil && cached != nil {
-		log.Printf("[GraphService] Cache hit for full layout: user=%s", cacheUserID)
-		return s.streamLayout(cached, hash, stream)
+	// Try cache first — only for the canonical size; a cached full layout would
+	// silently ignore a narrower requested limit.
+	if canonical {
+		if cached, hash, err := s.cache.LoadFullLayout(ctx, cacheUserID); err == nil && cached != nil {
+			log.Printf("[GraphService] Cache hit for full layout: user=%s", cacheUserID)
+			return s.streamLayout(cached, hash, stream)
+		}
 	}
 
 	// Load from database
@@ -155,12 +167,15 @@ func (s *graphService) GetFullLayout(req *graphservice.FullLayoutRequest, stream
 	layout := engine.Layout3D(notes, links)
 	hash := computeDataHash(notes, links)
 
-	// Cache the result
-	if err := s.cache.SaveFullLayout(ctx, cacheUserID, layout, hash); err != nil {
-		log.Printf("[GraphService] Warning: failed to cache full layout: %v", err)
-	}
-	if err := s.cache.SaveSnapshot(ctx, cacheUserID, hash, "3d", layout); err != nil {
-		log.Printf("[GraphService] Warning: failed to save layout snapshot: %v", err)
+	// Cache the result — only the canonical layout; a truncated one would
+	// poison the snapshot future deltas are computed against.
+	if canonical {
+		if err := s.cache.SaveFullLayout(ctx, cacheUserID, layout, hash); err != nil {
+			log.Printf("[GraphService] Warning: failed to cache full layout: %v", err)
+		}
+		if err := s.cache.SaveSnapshot(ctx, cacheUserID, hash, "3d", layout); err != nil {
+			log.Printf("[GraphService] Warning: failed to save layout snapshot: %v", err)
+		}
 	}
 
 	return s.streamLayout(layout, hash, stream)
