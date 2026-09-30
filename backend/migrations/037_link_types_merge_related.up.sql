@@ -10,9 +10,11 @@
 --     (deleted) link stays deleted;
 --   - survivor weight = max(weight) over the LIVE merged rows only
 --     (related/reference/custom in both directions) — never from a
---     `dependency` row or a deleted one;
---   - when a user row wins over live gamma rows, the heaviest gamma's model
---     weight moves into metadata.gamma — the same promotion as SaveUserLink.
+--     `dependency` row or a deleted one — EXCEPT when a user row wins over
+--     live gamma rows: then the survivor keeps the user's own weight and the
+--     heaviest gamma's model weight moves into metadata.gamma — the same
+--     promotion as SaveUserLink (A′ from review: the model's weight must not
+--     become the user's);
 --
 -- Absorbed rows are stamped (merged_by, link_type_before, was_deleted) so
 -- the down migration can undo the merge. Absorbed `related` rows are
@@ -23,8 +25,15 @@
 -- deleted_via_note_id_before — so a note restore cannot resurrect a legacy
 -- type or double the pair.
 --
--- The second pass covers deleted legacy rows on pairs with nothing live:
--- they get the same stamp and detach, the row itself stays deleted.
+-- The second pass covers deleted legacy rows the main loop never reached —
+-- pairs with nothing live. A row deleted together with a note converts to
+-- `related` and KEEPS deleted_via_note_id so "Restore" brings the pair's
+-- only link back as the generic type (E′); when the (src,dst,'related') key
+-- is already taken the row falls through to the final pass, which detaches
+-- the marker — restoring the note then revives nothing extra — or when
+-- another `related` row already sits on the unordered pair, so a restore
+-- cannot double the edge. Rows deleted on their own (rejected) also get the
+-- stamp and stay deleted.
 --
 -- "Pairs merged" is printed via RAISE NOTICE.
 
@@ -101,7 +110,9 @@ BEGIN
 
         UPDATE links
         SET link_type = 'related',
-            weight = max_w,
+            weight = CASE WHEN survivor.source_type = 'user' AND best_gamma.id IS NOT NULL
+                          THEN survivor.weight
+                          ELSE max_w END,
             deleted_at = NULL,
             deleted_via_note_id = NULL,
             metadata = COALESCE(metadata, '{}'::jsonb)
@@ -119,9 +130,47 @@ BEGIN
         RAISE NOTICE 'link-type merge: pair % <-> % collapsed into related (% absorbed)', pair.a, pair.b, absorbed;
     END LOOP;
 
-    -- Second pass: deleted legacy rows on pairs with nothing live — the
-    -- main loop never reached them. Detach the note-restore marker so a
-    -- restore cannot resurrect a legacy type; the row stays deleted.
+    -- Second pass, part 1: a legacy row deleted via a note on a pair with
+    -- nothing live converts to `related` and keeps deleted_via_note_id, so
+    -- restoring the note brings the pair's only link back as the generic
+    -- type. The retype is skipped when another `related` row already exists
+    -- on the unordered pair — a restore would double the edge — and only the
+    -- best candidate per directed key converts: two same-direction legacy
+    -- rows (reference + custom) retyped together would hit UNIQUE
+    -- (source,target,link_type), which covers soft-deleted rows.
+    UPDATE links l
+    SET link_type = 'related',
+        metadata = COALESCE(l.metadata, '{}'::jsonb)
+            || jsonb_build_object('merged_by', '037_link_types_merge',
+                                  'link_type_before', l.link_type,
+                                  'was_deleted', true)
+    WHERE l.link_type IN ('reference', 'custom')
+      AND l.deleted_at IS NOT NULL
+      AND l.deleted_via_note_id IS NOT NULL
+      AND COALESCE(l.metadata->>'merged_by', '') <> '037_link_types_merge'
+      AND NOT EXISTS (
+          SELECT 1 FROM links o
+          WHERE o.id <> l.id
+            AND o.link_type = 'related'
+            AND LEAST(o.source_note_id, o.target_note_id) = LEAST(l.source_note_id, l.target_note_id)
+            AND GREATEST(o.source_note_id, o.target_note_id) = GREATEST(l.source_note_id, l.target_note_id)
+      )
+      AND NOT EXISTS (
+          SELECT 1 FROM links p
+          WHERE p.id <> l.id
+            AND p.link_type IN ('reference', 'custom')
+            AND p.deleted_at IS NOT NULL
+            AND p.deleted_via_note_id IS NOT NULL
+            AND p.source_note_id = l.source_note_id
+            AND p.target_note_id = l.target_note_id
+            AND COALESCE(p.metadata->>'merged_by', '') <> '037_link_types_merge'
+            AND (p.weight, p.id) > (l.weight, l.id)
+      );
+
+    -- Second pass, part 2: every other deleted legacy row — standalone
+    -- (rejected) ones and the collision leftovers above — detaches the
+    -- note-restore marker so a restore cannot resurrect a legacy type or a
+    -- second edge on the pair; the row itself stays deleted.
     UPDATE links
     SET deleted_via_note_id = NULL,
         metadata = COALESCE(metadata, '{}'::jsonb)

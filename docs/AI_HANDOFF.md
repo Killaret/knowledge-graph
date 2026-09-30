@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-30 — 77aef39
-Прочитано: Devin — 2026-09-30 — 2d59d94
+Прочитано: Devin — 2026-10-01 — f52f34a
 ```
 
 ---
@@ -49,7 +49,7 @@
 | **I18N-1:** три ключа есть только в ru — `field.password`, `graphOverlay.fogWarning`, `graphOverlay.fogRecovery`: в английском интерфейсе виден сырой ключ; нужен тест «ключи en и ru совпадают» | `frontend/src/shared/utils/i18n/messages/` | **в работе** — 1.0 · Devin: en-ключи добавлены, тест паритета en/ru; ждёт слот ревью (5/5) | 2026-09-30 |
 | **DEPENDABOT-2:** 14 открытых PR Dependabot: 9 безопасных — проверить, 5 крупных — после 1.0 | [`tasks/DEPENDABOT-2-open-prs-2026-09.md`](tasks/DEPENDABOT-2-open-prs-2026-09.md) | **на ревью** — Devin: 8 смержены, #120 закрыт ботом; main починен (#133,#134); 2 красных флага не от мержей — [`tasks/DEPENDABOT-2-review-findings.md`](tasks/DEPENDABOT-2-review-findings.md) | 2026-09-30 |
 | **NOTE-DELETE-1-TAIL:** тест маршрута восстановления через `setupRouter`; тесты с удалённой заметкой на граф, ключевые слова и векторы | [`tasks/NOTE-DELETE-1-review-findings.md`](tasks/NOTE-DELETE-1-review-findings.md) | **в работе** — 1.0 · Devin: 4 теста, мутации красные; ждёт слот ревью (5/5) | 2026-09-30 |
-| **LINK-TYPES-1-TAIL:** миграция 037: фикстуры A′ и D′ (правила выбора выжившей), вес как в `SaveUserLink`, умолчание в пакетном импорте, E′ | [`tasks/LINK-TYPES-1-review-findings.md`](tasks/LINK-TYPES-1-review-findings.md) | **бэклог** — 1.0 · Devin; маленькая, до перехода данных владельца | 2026-09-30 |
+| **LINK-TYPES-1-TAIL:** миграция 037: фикстуры A′ и D′ (правила выбора выжившей), вес как в `SaveUserLink`, умолчание в пакетном импорте, E′ | [`tasks/LINK-TYPES-1-review-findings.md`](tasks/LINK-TYPES-1-review-findings.md) | **в работе** — 1.0 · Devin: все 4 пункта + UNIQUE-кейс; мутации красные; ждёт слот ревью (5/5) | 2026-10-01 |
 | **DOC-AUDIT-2:** документация против кода: утверждения сверить с кодом, «нет в коде» — владельцу | [`tasks/DOC-AUDIT-2-docs-vs-code.md`](tasks/DOC-AUDIT-2-docs-vs-code.md) | **на ревью** — 1.0 · Devin: все «верно» перепроверены, 5 промахов исправлены. [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) | 2026-09-30 |
 | **SPEC-AUDIT-1:** все постановки против кода: вердикт с доказательством на каждое требование | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md) | **на ревью** — 1.0 · Devin: шаги CI в `core-checks.tsv`, sync 34/34. [`tasks/SPEC-AUDIT-1-review-findings.md`](tasks/SPEC-AUDIT-1-review-findings.md) | 2026-09-30 |
 | **UX-1:** связи из правого меню, связь существующих заметок, пропадание канваса | [`tasks/UX-1-link-creation-and-canvas-refresh.md`](tasks/UX-1-link-creation-and-canvas-refresh.md) | **бэклог** — 1.0 · Devin; постановка владельца (решение 67) | 2026-09-26 |

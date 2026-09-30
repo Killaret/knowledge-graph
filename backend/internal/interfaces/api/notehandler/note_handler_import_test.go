@@ -395,6 +395,42 @@ func TestImportBatch_WithExistingNoteLink(t *testing.T) {
 	assert.Len(t, links, 1)
 }
 
+// LINK-TYPES-1-TAIL: a batch-import link without link_type defaults to
+// `related`, same as POST /links. Mutation "remove the empty-type default"
+// turns this red — link.NewLinkType("") rejects the empty string.
+func TestImportBatch_LinkWithoutTypeDefaultsToRelated(t *testing.T) {
+	r, repo, linkRepo, userID := setupImportRouter()
+	ctx := context.Background()
+
+	title, _ := note.NewTitle("Existing")
+	content, _ := note.NewContent("content")
+	meta, _ := note.NewMetadata(nil)
+	existing := note.NewNoteWithCreator(title, content, note.MustType("star"), meta, userID)
+	require.NoError(t, repo.Save(ctx, existing))
+
+	newID := uuid.New().String()
+	body := fmt.Sprintf(`{
+		"notes": [
+			{"id": "%s", "title": "New Note", "content": "content", "type": "planet"}
+		],
+		"links": [
+			{"source_note_id": "%s", "target_note_id": "%s", "weight": 0.9}
+		]
+	}`, newID, newID, existing.ID().String())
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/import/batch", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	links, err := linkRepo.FindAll(ctx)
+	require.NoError(t, err)
+	require.Len(t, links, 1)
+	assert.Equal(t, "related", links[0].LinkType().String())
+}
+
 func TestImportBatch_ClientIDCollisionWithExisting(t *testing.T) {
 	r, repo, _, userID := setupImportRouter()
 	ctx := context.Background()

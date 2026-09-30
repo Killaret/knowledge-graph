@@ -432,6 +432,144 @@ func (s *Migration037TestSuite) TestReverseDirectionPairCollapses() {
 	s.Equal(a, dst)
 }
 
+// Case A′ (tail): the gamma `related` is HEAVIER than the manual
+// `reference`. Per SaveUserLink the promoted user row keeps the USER's
+// weight; the model's weight moves to metadata.gamma. Mutation "drop
+// (source_type='user') from the survivor ordering" turns this red — the
+// gamma row wins and the pair becomes a model link.
+func (s *Migration037TestSuite) TestA2UserWeightSurvivesOverHeavierGamma() {
+	a := s.makeNote("A13")
+	b := s.makeNote("B13")
+
+	s.insertLinkFull(a, b, "related", "gamma", 0.95, false, uuid.Nil)
+	s.insertLink(a, b, "reference", 0.5, false)
+
+	s.runMigrationFile("037_link_types_merge_related.up.sql")
+
+	live := liveLinks(s.pairLinks(a, b))
+	s.Require().Len(live, 1)
+	s.Equal("related", live[0].LinkType)
+	s.Equal("user", live[0].SourceType, "the user's link wins regardless of weight")
+	s.InDelta(0.5, live[0].Weight, 0.0001, "SaveUserLink promotion keeps the user's weight, not the model's")
+	s.Contains(string(live[0].Metadata), `"gamma"`)
+	s.Contains(string(live[0].Metadata), "0.95", "the model's weight survives in metadata.gamma")
+}
+
+// Case D′ (tail): a deleted merged row heavier than the live one must not
+// resurrect. The pair needs a live legacy row to enter the merge loop, so
+// both rows are `reference`. Mutation "drop (deleted_at IS NULL) from the
+// survivor ordering" turns this red — the dead row wins and is revived.
+func (s *Migration037TestSuite) TestD2LiveRowBeatsHeavierDeleted() {
+	a := s.makeNote("A14")
+	b := s.makeNote("B14")
+
+	s.insertLink(a, b, "reference", 0.3, false)
+	dead := s.insertLink(b, a, "reference", 0.9, true)
+
+	s.runMigrationFile("037_link_types_merge_related.up.sql")
+
+	rows := s.pairLinksUnordered(a, b)
+	live := liveLinks(rows)
+	s.Require().Len(live, 1)
+	s.Equal("related", live[0].LinkType)
+	s.InDelta(0.3, live[0].Weight, 0.0001, "the live row survives; the heavier deleted one stays dead")
+	for _, r := range rows {
+		if r.ID == dead {
+			s.NotNil(r.DeletedAt, "the heavier deleted row must not be revived")
+		}
+	}
+}
+
+// Case E′ (tail): the pair's only link is a `reference` deleted together
+// with a note. The migration converts it to `related` and keeps
+// deleted_via_note_id, so restoring the note brings the link back — a
+// detached marker would leave the pair linkless forever.
+func (s *Migration037TestSuite) TestE2ViaNoteDeletedLegacyReturnsOnRestore() {
+	a := s.makeNote("A15")
+	b := s.makeNote("B15")
+
+	s.insertLinkFull(a, b, "reference", "user", 0.7, true, b)
+
+	s.runMigrationFile("037_link_types_merge_related.up.sql")
+
+	var linkType string
+	var via *uuid.UUID
+	var deletedAt *time.Time
+	s.Require().NoError(s.db.Raw(
+		`SELECT link_type, deleted_via_note_id, deleted_at FROM links
+		 WHERE source_note_id = ? AND target_note_id = ?`, a, b,
+	).Row().Scan(&linkType, &via, &deletedAt))
+	s.Equal("related", linkType, "the note-deleted legacy row converts to related")
+	s.NotNil(deletedAt, "the row stays in the trash until the note is restored")
+	s.Require().NotNil(via, "the note-restore marker survives the migration")
+	s.Equal(b, *via)
+
+	// Simulate note restore.
+	s.Require().NoError(s.db.Exec(
+		`UPDATE links SET deleted_at = NULL, deleted_via_note_id = NULL
+		 WHERE deleted_via_note_id = ?`, b,
+	).Error)
+
+	live := liveLinks(s.pairLinks(a, b))
+	s.Require().Len(live, 1, "restore brings the pair's link back")
+	s.Equal("related", live[0].LinkType)
+	s.InDelta(0.7, live[0].Weight, 0.0001)
+}
+
+// The collision side of E′: a via-note-deleted `reference` on a pair that
+// already has a `related` row detaches instead of retyping — a restore must
+// not produce a second edge.
+func (s *Migration037TestSuite) TestE2CollisionDetachesInsteadOfDuplicating() {
+	a := s.makeNote("A16")
+	b := s.makeNote("B16")
+
+	s.insertLinkFull(a, b, "related", "user", 0.6, true, b)
+	s.insertLinkFull(b, a, "reference", "user", 0.7, true, b)
+
+	s.runMigrationFile("037_link_types_merge_related.up.sql")
+
+	// Simulate note restore.
+	s.Require().NoError(s.db.Exec(
+		`UPDATE links SET deleted_at = NULL, deleted_via_note_id = NULL
+		 WHERE deleted_via_note_id = ?`, b,
+	).Error)
+
+	live := liveLinks(s.pairLinksUnordered(a, b))
+	s.Require().Len(live, 1, "restore brings back the pair's single related edge, not a doubled pair")
+	s.Equal("related", live[0].LinkType)
+}
+
+// E′ adversarial: same-direction `reference` + `custom`, both deleted via
+// the same note, nothing live. Retyping both would duplicate the directed
+// (src,dst,'related') key and abort the migration — only the heaviest
+// converts; the loser detaches.
+func (s *Migration037TestSuite) TestE2SameDirectionDeletedLegacyNoKeyClash() {
+	a := s.makeNote("A17")
+	b := s.makeNote("B17")
+
+	s.insertLinkFull(a, b, "reference", "user", 0.8, true, b)
+	s.insertLinkFull(a, b, "custom", "user", 0.4, true, b)
+
+	s.runMigrationFile("037_link_types_merge_related.up.sql")
+
+	var relatedCount int
+	s.Require().NoError(s.db.Raw(
+		`SELECT count(*) FROM links
+		 WHERE source_note_id = ? AND target_note_id = ? AND link_type = 'related'`, a, b,
+	).Row().Scan(&relatedCount))
+	s.Equal(1, relatedCount, "exactly one directed related — no UNIQUE clash")
+
+	var convertedVia *uuid.UUID
+	var convertedWeight float64
+	s.Require().NoError(s.db.Raw(
+		`SELECT deleted_via_note_id, weight FROM links
+		 WHERE source_note_id = ? AND target_note_id = ? AND link_type = 'related'`, a, b,
+	).Row().Scan(&convertedVia, &convertedWeight))
+	s.Require().NotNil(convertedVia)
+	s.Equal(b, *convertedVia)
+	s.InDelta(0.8, convertedWeight, 0.0001, "the heaviest candidate converts")
+}
+
 func TestMigration037Suite(t *testing.T) {
 	suite.Run(t, new(Migration037TestSuite))
 }
