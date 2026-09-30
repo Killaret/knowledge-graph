@@ -641,3 +641,22 @@ Create a new bullet under the right section with:
 - **Unit/integration:** `TestEmbeddingRepository_OwnerIsolation` (оба запроса, красный на старом SQL — `leaked another user's note`), `TestGetSuggestions_SemanticFallback_OwnerIsolation`, `TestGammaLinkGenerator_OwnerIsolation` — все зелёные на реальной pgvector-БД.
 - **Screenshot / Logs:** транскрипт выше; стек остановлен после прогона.
 - **Result:** утечка не воспроизводится — похожие заметки и кандидаты автосвязей ограничены владельцем.
+
+### ISOLATION-1 и LINK-TYPES-1 — ревью, живая проверка
+
+- **Scope:** ISOLATION-1 (`1584906`) — похожие заметки только своего владельца; LINK-TYPES-1 (`f48aa77`) —
+  миграция 037 на пограничных случаях.
+- **Date:** 2026-09-30
+- **Agent:** Claude Code
+- **Environment:** тест-стенд из `1584906` через `start-test.ps1` с `SKIP_AUTH=false`, сид `seed-test-data.ps1`;
+  пользователи — одноразовые, созданы скриптом.
+- **Observed:**
+  - ISOLATION-1, 9/9: две заметки двух пользователей с косинусом 0,955; в подсказках каждого только свои заметки;
+    живых связей между владельцами на стенде — 0; автосвязь между двумя заметками одного владельца есть; чужая
+    заметка по прямому адресу — 404.
+  - LINK-TYPES-1: сценарий первого раунда плюс A′ и E′ на базе стенда, в транзакции с откатом; случаи A–F
+    исправлены; A′ — вес модели вместо веса пользователя; E′ — после «Восстановить» у пары нет живой связи.
+- **Screenshot / Logs:** таблицы результатов — в `docs/tasks/ISOLATION-1-review-findings.md` и
+  `docs/tasks/LINK-TYPES-1-review-findings.md`.
+- **Result:** ISOLATION-1 принято; LINK-TYPES-1 принято с хвостом LINK-TYPES-1-TAIL.
+
