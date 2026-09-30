@@ -625,3 +625,19 @@ Create a new bullet under the right section with:
   снимки уведомления и списка — в рабочем каталоге ревьюера, данные сида синтетические.
 - **Result:** принято; хвост — NOTE-DELETE-1-TAIL.
 
+
+### ISOLATION-1 — подсказки и автосвязи только среди своих заметок
+
+- **Scope:** критерий 5 постановки — живая проверка утечки похожих заметок между пользователями.
+- **Date:** 2026-09-30
+- **Agent:** Devin
+- **Environment:** изолированный тест-стек (`start-test.ps1`), `SKIP_AUTH=false` (пересозданы backend/frontend/worker), backend :18083, postgres :15434; два реальных пользователя `iso_a` / `iso_b` через `POST /api/v1/auth/register`.
+- **Observed:**
+  - Заметки: у `iso_a` — «Note A about anime» + «Note A2 about music» (другой текст); у `iso_b` — «Note B about anime» с текстом, идентичным заметке A. Векторы записаны конвейером NLP в `note_embeddings` для всех трёх.
+  - `GET /api/v1/notes/{A}/suggestions?limit=5` под `iso_a` → `{"suggestions":[{"note_id":"386e9680-…","title":"Note A2 about music","score":1}]}` — чужая заметка B (семантически ближайшая, текст дословно тот же) отсутствует. Заголовок `X-Recommendations-Source: graph-service`.
+  - `GET /api/v1/notes/{B}/suggestions?limit=5` под `iso_b` → `{"suggestions":[]}` — заметки `iso_a` не просачиваются (`X-Recommendations-Source: empty`).
+  - `GET /api/v1/notes` под `iso_a` — только две свои заметки, заметки B нет.
+  - Чужих автосвязей в базе: `cross_owner_links = 0`, связей всего 0.
+- **Unit/integration:** `TestEmbeddingRepository_OwnerIsolation` (оба запроса, красный на старом SQL — `leaked another user's note`), `TestGetSuggestions_SemanticFallback_OwnerIsolation`, `TestGammaLinkGenerator_OwnerIsolation` — все зелёные на реальной pgvector-БД.
+- **Screenshot / Logs:** транскрипт выше; стек остановлен после прогона.
+- **Result:** утечка не воспроизводится — похожие заметки и кандидаты автосвязей ограничены владельцем.

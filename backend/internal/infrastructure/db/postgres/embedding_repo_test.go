@@ -481,3 +481,93 @@ func TestFindSimilarNotesBatch_MatchesSinglePath(t *testing.T) {
 		t.Errorf("expected [near %v, mid %v], got %v", nearID, midID, got)
 	}
 }
+
+// ISOLATION-1: similar-note search must stay inside the owner's notes.
+// Two users with near-identical vectors — neither query may return the
+// other user's note. Red on the pre-fix query (no creator scoping).
+func TestEmbeddingRepository_OwnerIsolation(t *testing.T) {
+	db, cleanup := testutil.SetupTestVectorDB(t)
+	defer cleanup()
+
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate models: %v", err)
+	}
+
+	repo := NewEmbeddingRepository(db, "all-MiniLM-L6-v2")
+	noteRepo := NewNoteRepository(db, nil)
+	ctx := context.Background()
+
+	userA := uuid.New()
+	userB := uuid.New()
+	for i, u := range []uuid.UUID{userA, userB} {
+		err := db.Exec(`INSERT INTO users (id, login, email, password_hash, created_at)
+			VALUES (?, ?, ?, 'x', now())`, u, "user"+string(rune('a'+i)), "u"+u.String()[:8]+"@t.t").Error
+		if err != nil {
+			t.Fatalf("insert user: %v", err)
+		}
+	}
+
+	makeOwnedNote := func(title string, owner uuid.UUID) uuid.UUID {
+		ti, _ := note.NewTitle(title)
+		c, _ := note.NewContent("content")
+		m, _ := note.NewMetadata(nil)
+		n := note.NewNote(ti, c, note.MustType("star"), m)
+		n.SetCreatorID(owner)
+		if err := noteRepo.Save(ctx, n); err != nil {
+			t.Fatalf("save note: %v", err)
+		}
+		return n.ID()
+	}
+
+	noteA := makeOwnedNote("note of A", userA)
+	noteB := makeOwnedNote("note of B", userB)
+	noteA2 := makeOwnedNote("second note of A", userA)
+
+	// Near-identical vectors: B is the closest neighbour of A by distance.
+	base := make([]float32, 384)
+	for i := range base {
+		base[i] = float32(i) / 384.0
+	}
+	perturbed := make([]float32, 384)
+	copy(perturbed, base)
+	perturbed[0] += 0.0001
+
+	if err := repo.Upsert(ctx, noteA, pgvector.NewVector(base)); err != nil {
+		t.Fatalf("upsert A: %v", err)
+	}
+	if err := repo.Upsert(ctx, noteB, pgvector.NewVector(perturbed)); err != nil {
+		t.Fatalf("upsert B: %v", err)
+	}
+	far := make([]float32, 384)
+	copy(far, base)
+	far[0] += 0.5
+	if err := repo.Upsert(ctx, noteA2, pgvector.NewVector(far)); err != nil {
+		t.Fatalf("upsert A2: %v", err)
+	}
+
+	sim, err := repo.FindSimilarNotes(ctx, noteA, 10)
+	if err != nil {
+		t.Fatalf("FindSimilarNotes: %v", err)
+	}
+	for _, s := range sim {
+		if s.NoteID == noteB {
+			t.Fatalf("FindSimilarNotes leaked another user's note %s", noteB)
+		}
+	}
+
+	batch, err := repo.FindSimilarNotesBatch(ctx, []uuid.UUID{noteA, noteB}, 10)
+	if err != nil {
+		t.Fatalf("FindSimilarNotesBatch: %v", err)
+	}
+	for _, s := range batch[noteA] {
+		if s.NoteID == noteB {
+			t.Fatalf("batch query leaked other user's note %s", noteB)
+		}
+	}
+	for _, s := range batch[noteB] {
+		if s.NoteID == noteA || s.NoteID == noteA2 {
+			t.Fatalf("batch query leaked other user's note %s", s.NoteID)
+		}
+	}
+}

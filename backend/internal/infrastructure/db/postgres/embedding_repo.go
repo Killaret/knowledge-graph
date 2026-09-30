@@ -55,8 +55,10 @@ func (r *EmbeddingRepository) FindSimilarNotes(ctx context.Context, noteID uuid.
 	err := r.db.WithContext(ctx).Raw(`
         SELECT e2.note_id, GREATEST(0.0, LEAST(1.0, 1 - (e1.embedding <=> e2.embedding))) as score
         FROM note_embeddings e1
+        JOIN notes n1 ON n1.id = e1.note_id
         JOIN note_embeddings e2 ON e1.note_id != e2.note_id AND e1.model_name = e2.model_name
         JOIN notes n2 ON n2.id = e2.note_id AND n2.deleted_at IS NULL
+            AND n1.creator_id IS NOT DISTINCT FROM n2.creator_id
         WHERE e1.note_id = ? AND e1.model_name = ? AND e2.model_name = ?
         ORDER BY score DESC
         LIMIT ?
@@ -104,8 +106,10 @@ func (r *EmbeddingRepository) FindSimilarNotesBatch(ctx context.Context, noteIDs
                    row_number() OVER (PARTITION BY e1.note_id
                                       ORDER BY e1.embedding <=> e2.embedding, e2.note_id) AS rn
             FROM note_embeddings e1
+            JOIN notes n1 ON n1.id = e1.note_id
             JOIN note_embeddings e2 ON e1.note_id != e2.note_id AND e1.model_name = e2.model_name
             JOIN notes n2 ON n2.id = e2.note_id AND n2.deleted_at IS NULL
+                AND n1.creator_id IS NOT DISTINCT FROM n2.creator_id
             WHERE e1.note_id = ANY(?) AND e1.model_name = ? AND e2.model_name = ?
         ) t
         WHERE rn <= ?
