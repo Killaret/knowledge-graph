@@ -70,7 +70,8 @@ Do not edit it manually; run the generator after changing the task directory.
 | DB-POOL-1 | DB-POOL-1 — разбор ревью | [DB-POOL-1-review-findings.md](DB-POOL-1-review-findings.md) | **принято (доработка)** — интеграционный тест: `SetMaxOpenConns(25)` → `expected: 7` | 2026-09-21 |
 | DECISIONS-1 | DECISIONS-1. Указатель решений владельца и сторож при нём | [DECISIONS-1-decision-index-and-guard.md](DECISIONS-1-decision-index-and-guard.md) | — | 2026-09-14 |
 | DECISIONS-1 | Ревью DECISIONS-1 и CHECK-ALL-1 (Claude Code, 2026-09-14) | [DECISIONS-1-review-findings.md](DECISIONS-1-review-findings.md) | — | 2026-09-22 |
-| DEPENDABOT-2 | DEPENDABOT-2. Открытые PR Dependabot, сентябрь 2026 | [DEPENDABOT-2-open-prs-2026-09.md](DEPENDABOT-2-open-prs-2026-09.md) | **бэклог** — Devin: безопасные сейчас, сливает владелец (решение 98) | 2026-09-29 |
+| DEPENDABOT-2 | DEPENDABOT-2. Открытые PR Dependabot, сентябрь 2026 | [DEPENDABOT-2-open-prs-2026-09.md](DEPENDABOT-2-open-prs-2026-09.md) | **в работе** — Devin: 9 проверены, «можно сливать» владельцу — [`tasks/DEPENDABOT-2-review-findings.md`](DEPENDABOT-2-review-findings.md) | 2026-09-29 |
+| DEPENDABOT-2 | DEPENDABOT-2 — разбор исполнения | [DEPENDABOT-2-review-findings.md](DEPENDABOT-2-review-findings.md) | **в работе** — Devin: 9 проверены, «можно сливать» владельцу — [`tasks/DEPENDABOT-2-review-findings.md`](DEPENDABOT-2-review-findings.md) | 2026-09-30 |
 | DEPENDABOT-25 | DEPENDABOT-25: `yake` 0.4.8 → 0.7.3 — блокер по лицензии | [DEPENDABOT-25-yake-license.md](DEPENDABOT-25-yake-license.md) | — | 2026-09-15 |
 | DEPENDABOT-79 | DEPENDABOT-79: `nltk` 3.8.1 → 3.10.3 — блокер по уязвимости | [DEPENDABOT-79-nltk-vulnerability.md](DEPENDABOT-79-nltk-vulnerability.md) | — | 2026-09-14 |
 | DEPLOY-2 | Ревью деплой-компоуза и образов на Docker Hub (Claude Code, 2026-09-13) | [DEPLOY-2-deploy-images-from-ci.md](DEPLOY-2-deploy-images-from-ci.md) | **бэклог** — заблокировано: токен Docker Hub, владелец сделает, когда будет время (решение 45) | 2026-09-22 |
@@ -205,7 +206,7 @@ Do not edit it manually; run the generator after changing the task directory.
 | UX-1 | UX-1: создание связей и обновление канваса | [UX-1-link-creation-and-canvas-refresh.md](UX-1-link-creation-and-canvas-refresh.md) | **бэклог** — 1.0 · Devin; постановка владельца (решение 67) | 2026-09-11 |
 | UX-2 | UX-2: нормальная страница 500 ошибки | [UX-2-500-error-page.md](UX-2-500-error-page.md) | — | 2026-09-13 |
 | UX-2 | Ревью UX-2 (Claude Code, 2026-09-13) | [UX-2-review-findings.md](UX-2-review-findings.md) | — | 2026-09-13 |
-| UX-3 | UX-3. Холст 2D: подсказка связи поверх заметки и «чёрная дыра» под легендой | [UX-3-canvas-hover-and-black-hole.md](UX-3-canvas-hover-and-black-hole.md) | **в работе** — 1.0 · Devin: три пункта исправлены, ждёт места «на ревью» | 2026-09-29 |
+| UX-3 | UX-3. Холст 2D: подсказка связи поверх заметки и «чёрная дыра» под легендой | [UX-3-canvas-hover-and-black-hole.md](UX-3-canvas-hover-and-black-hole.md) | **в работе** — 1.0 · Devin: готово (+2 теста event-bridge), ждёт места «на ревью» | 2026-09-29 |
 | VERIFY-FINDING-MIRROR-1 | Ревью: зеркалирование «Verifying a Finding» в `.devin/` (Claude Code, 2026-09-13) | [VERIFY-FINDING-MIRROR-1-review-findings.md](VERIFY-FINDING-MIRROR-1-review-findings.md) | — | 2026-09-15 |
 | VIS-1 | Findings ревью изменения Argos (`11cab1f`) | [VIS-1-review-findings.md](VIS-1-review-findings.md) | — | 2026-09-22 |
 | VIS-1 | VIS-1. Ревью разделения визуальных сценариев | [VIS-1-round2-review-findings.md](VIS-1-round2-review-findings.md) | — | 2026-09-22 |

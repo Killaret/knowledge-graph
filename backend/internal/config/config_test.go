@@ -771,8 +771,9 @@ func TestGammaLinkMinScore_MissingJSONKey(t *testing.T) {
 	}
 }
 
-// NLP-4: pipeline switch defaults to off, history to on, cosine floor to
-// 0.7; env overrides JSON; out-of-range cosine falls back to the default.
+// NLP-4/MODEL-2: pipeline switch defaults to on (MODEL-2), history to on,
+// cosine floor to 0.7; env overrides JSON; out-of-range cosine falls back
+// to the default.
 func TestNLP4Config(t *testing.T) {
 	vars := []string{
 		"DATABASE_URL", "NLP_PIPELINE_ENABLED", "NLP_HISTORY_ENABLED",
@@ -799,7 +800,7 @@ func TestNLP4Config(t *testing.T) {
 
 	cfg, err := Load()
 	require.NoError(t, err)
-	assert.False(t, cfg.NLPPipelineEnabled, "pipeline must default to off")
+	assert.True(t, cfg.NLPPipelineEnabled, "pipeline must default to on (MODEL-2)")
 	assert.True(t, cfg.NLPHistoryEnabled, "history must default to on")
 	assert.Equal(t, 0.7, cfg.NLPNormalizationMinCosine)
 

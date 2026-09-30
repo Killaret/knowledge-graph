@@ -37,7 +37,7 @@ function createMockContext(canvas: HTMLCanvasElement) {
 
   const blackHole = createBlackHole(800, 600);
   const simNodes: SimulationNode[] = [
-    { id: "n2", x: 50, y: 10, title: "B" },
+    { id: "n2", x: 200, y: 10, title: "B" },
     { id: "n1", x: 0, y: 10, title: "A" },
   ];
   const simLinks: SimulationLink[] = [
@@ -143,7 +143,7 @@ describe("event-bridge", () => {
     bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 1, clientY: 11 }));
     expect(context.dragDropState.draggedNodeId).toBe("n1");
 
-    bridge.onMouseUp(new MouseEvent("mouseup", { clientX: 50, clientY: 10 }));
+    bridge.onMouseUp(new MouseEvent("mouseup", { clientX: 200, clientY: 10 }));
     expect(context.linkFormState.showLinkForm).toBe(true);
     expect(context.linkFormState.linkSourceNodeId).toBe("n1");
     expect(context.linkFormState.linkTargetNodeId).toBe("n2");
@@ -165,14 +165,14 @@ describe("event-bridge", () => {
 
   it("drags a node and detects link target", () => {
     bridge.onMouseDown(new MouseEvent("mousedown", { clientX: 1, clientY: 11 }));
-    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 50, clientY: 10 }));
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 200, clientY: 10 }));
 
     expect(context.dragDropState.isDraggingForLink).toBe(true);
     expect(context.dragDropState.linkTargetNodeId).toBe("n2");
   });
 
   it("schedules node hover", () => {
-    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 50, clientY: 10 }));
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 200, clientY: 10 }));
     expect(context.getHoveredNodeId()).toBeNull();
 
     vi.advanceTimersByTime(150);
@@ -180,7 +180,8 @@ describe("event-bridge", () => {
   });
 
   it("schedules link hover", () => {
-    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 25, clientY: 12 }));
+    // (100,10) lies on the link segment but outside both endpoint hit radii (UX-3)
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 100, clientY: 10 }));
     expect(context.getHoveredLink()).toBeNull();
 
     vi.advanceTimersByTime(150);
@@ -188,7 +189,7 @@ describe("event-bridge", () => {
   });
 
   it("carries id and gamma_origin into the hovered link", () => {
-    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 25, clientY: 12 }));
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 100, clientY: 10 }));
     vi.advanceTimersByTime(150);
 
     const link = context.getHoveredLink();
@@ -341,7 +342,7 @@ describe("event-bridge", () => {
   });
 
   it("cleanup cancels hover timeouts", () => {
-    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 50, clientY: 10 }));
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 200, clientY: 10 }));
     bridge.cleanup();
     vi.advanceTimersByTime(1000);
     expect(context.getHoveredNodeId()).toBeNull();

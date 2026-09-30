@@ -261,6 +261,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | ISOLATION-1-similar-notes-owner-scope.md | не начат |
 | ISOLATION-1-review-findings.md | разбор доработки — `creator_id`-scope в обоих запросах |
 | DEPENDABOT-2-open-prs-2026-09.md | не начат |
+| DEPENDABOT-2-review-findings.md | разбор исполнения — 9 безопасных PR проверены, список владельцу |
 | AUD-3-token-transport.md | не начат |
 | AUD-4-yandex-oauth-contract.md | не начат |
 | AUD-5-perimeter-separation.md | не начат |
