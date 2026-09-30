@@ -65,14 +65,10 @@ npm run build-config
   },
   "graph_service": { ... },
   "frontend": {
-    "test": { ... },
     "graph": { "label_hub_count": 15, "dependency_highlight_depth": 10, "style": "classic", "2d": { ... }, "3d": { ... } },
-    "api": { ... },
     "achievements": { ... }
   },
-  "ci_cd": {
-    "integration_test": { ... }
-  },
+  "ci_cd": {},
   "nlp": { ... },
   "backup": { ... }
 }
@@ -81,11 +77,10 @@ npm run build-config
 ### Использование во фронтенде (TypeScript)
 
 ```typescript
-import { graphConfig2D, apiConfig, testConfig, ACHIEVEMENT_POLL_INTERVAL_MS } from '$shared/config/config.ts';
+import { graphConfig2D, ACHIEVEMENT_POLL_INTERVAL_MS } from '$shared/config/config.ts';
 
 // Используем централизованный конфиг
 const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
-const limit = apiConfig.default_limit;
 const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 ```
 
@@ -110,7 +105,6 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
   "frontend": {
     "graph": {
       "2d": {
-        "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
         "gravity_nodes_threshold": 100,
@@ -140,7 +134,6 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 
 | Параметр | Тип | Умолчание | Файл | Описание |
 |----------|-----|-----------|------|----------|
-| `max_nodes` | integer | `500` | `renderer.ts` | Максимальное количество узлов в 2D-графе |
 | `shadows_threshold` | integer | `100` | `renderer.ts` | Количество узлов, **ниже** которого рисуются CSS-тени. Выше порога тени отключаются для производительности |
 | `animated_links_threshold` | integer | `50` | `renderer.ts` | Количество связей, **выше** которого анимированные линии заменяются статическими. Предотвращает лаги на плотных графах |
 | `gravity_nodes_threshold` | integer | `100` | `gravity-system.ts` | Количество узлов, **выше** которого система гравитации отключается полностью. Гравитация O(n²), поэтому пропускается на больших графах |
@@ -273,8 +266,7 @@ cfg := config.Load()
       }
     },
     "schedule": "0 2 * * *",
-    "retention_days": 7,
-    "draft_ttl_hours": 168
+    "retention_days": 7
   }
 }
 ```
@@ -291,7 +283,6 @@ cfg := config.Load()
 | `BACKUP_YANDEX_MAX_BACKUPS` | Максимальное количество хранимых бэкапов | `10` |
 | `BACKUP_SCHEDULE` | Расписание cron | `0 2 * * *` |
 | `BACKUP_RETENTION_DAYS` | Срок хранения бэкапов (дни) | `7` |
-| `BACKUP_DRAFT_TTL_HOURS` | ~~env~~ — только JSON-ключ `backup.draft_ttl_hours`; парсится в структуру конфига, но код его пока не читает (TTL черновиков — фиксированные 7 дней) | `168` |
 
 ### Скрипты резервного копирования
 
@@ -531,7 +522,6 @@ score = α × explicit_score + β × semantic_score
   "backend": {
     "graph": {
       "load_depth": 2,
-      "max_nodes": 500,
       "default_limit": 100,
       "max_limit": 1000,
       "link_default_limit": 500,
@@ -541,7 +531,6 @@ score = α × explicit_score + β × semantic_score
   "frontend": {
     "graph": {
       "2d": {
-        "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
         "gravity_nodes_threshold": 50,
@@ -638,6 +627,8 @@ score = α × explicit_score + β × semantic_score
 
 ## NLP-сервис
 
+Порядок приоритета тот же, что у backend и graph-service: **окружение > `knowledge-graph.config.json` (`nlp.*`) > дефолт в коде** (CONFIG-AUDIT-1, решение 102). При старте `app/config.py` переносит `nlp.*` в переменные окружения через `os.environ.setdefault` — выставленное окружение важнее файла. Файл ищется по `KG_CONFIG_PATH`, затем `/app/knowledge-graph.config.json` (копируется в образ, монтируется в compose), затем корень репозитория для локальных запусков.
+
 ### JSON-конфигурация (`nlp`)
 
 ```json
@@ -648,12 +639,14 @@ score = α × explicit_score + β × semantic_score
     "hf_home": "/root/.cache/huggingface",
     "hf_hub_disable_telemetry": true,
     "hf_hub_offline": true,
-    "embed_chunking": false,
-    "pipeline": { "enabled": false },
+    "pipeline": { "enabled": true },
     "history": { "enabled": true },
     "normalization": { "min_cosine": 0.7 }
   }
 }
+```
+
+Верхнеуровневые ключи `nlp.*` отображаются на env: `model_name` → `NLP_MODEL_NAME`, `max_text_length` → `NLP_MAX_TEXT_LENGTH`, `hf_home` → `HF_HOME`, `hf_hub_disable_telemetry` → `HF_HUB_DISABLE_TELEMETRY`, `hf_hub_offline` → `HF_HUB_OFFLINE`. Вложенные секции (`pipeline`, `history`, `normalization`, `quality`) читает backend, а не Python-сервис.
 ```
 
 ### Переопределение через переменные окружения
@@ -665,8 +658,8 @@ score = α × explicit_score + β × semantic_score
 | `HF_HOME` | Путь к локальному кешу HuggingFace | `/root/.cache/huggingface` |
 | `HF_HUB_OFFLINE` | Работа в оффлайн-режиме (без интернета) | `true` |
 | `HF_HUB_DISABLE_TELEMETRY` | Отключить телеметрию HuggingFace | `true` |
-| `EMBED_CHUNKING` | Структурный чанкер в `/embed` и `_doc_vector` (CHUNK-1): `0/off` — как раньше; `1/on` — чанки → один пакетный encode → среднее + L2, заголовок в каждом чанке, в ответе `chunks` и `no_content`. Включать вместе со сменой модели (MODEL-2) | `0` |
-| `NLP_PIPELINE_ENABLED` | Конвейер нормализации (NLP-4): ставит `nlp:normalize` при создании/правке/импорте заметки — воркер пишет `nlp_artifacts` в MongoDB. Векторы по-прежнему строятся по сырому `notes.content`; включение — вместе с MODEL-2 | `false` |
+| `EMBED_CHUNKING` | Структурный чанкер в `/embed` и `_doc_vector` (CHUNK-1): `0` — прежнее поведение; `1` — чанки → один пакетный encode → среднее + L2, заголовок в каждом чанке, в ответе `chunks` и `no_content`. Включён по умолчанию с MODEL-2; выключать только вместе с `NLP_PIPELINE_ENABLED=false` | `1` |
+| `NLP_PIPELINE_ENABLED` | Конвейер нормализации (NLP-4): ставит `nlp:normalize` при создании/правке/импорте заметки — воркер пишет `nlp_artifacts` в MongoDB. Включён по умолчанию с MODEL-2: векторы `compute:embedding` строятся по нормализованному тексту артефакта | `true` |
 | `NLP_HISTORY_ENABLED` | Хранить superseded-версии `nlp_artifacts`; `false` — прежний документ удаляется вместо пометки `superseded` | `true` |
 | `NLP_NORMALIZATION_MIN_COSINE` | Предохранитель отката `/normalize` по косинусу: результат откатывается к исходнику, если `cos(emb(result), emb(source))` ниже порога. Зависит от шкалы модели (замерено на e5-base); перекалибровка — в MODEL-2. Значения вне `(0, 1]` заменяются умолчанием | `0.7` |
 | `NLP_QUALITY_ENABLED` | Конвейер качества заметки (NOTE-QUALITY-1, этап 1): ставит `quality:assess` после `nlp:normalize` и после задач обогащения; включает `GET /api/v1/notes/{id}/quality` и `POST .../quality/assess`. `false` — задачи не ставятся, API отвечает `{"enabled": false}` | `false` |
@@ -924,23 +917,7 @@ def get_embedding_model():
 
 ## CI/CD конфигурация
 
-### JSON-конфигурация (`ci_cd`)
-
-```json
-{
-  "ci_cd": {
-    "integration_test": {
-      "migrate_all": true,
-      "truncate_list": ["notes", "links", "embeddings", "recommendations"]
-    }
-  }
-}
-```
-
-| Параметр | Описание |
-|----------|----------|
-| `migrate_all` | Применять все миграции перед интеграционными тестами |
-| `truncate_list` | Таблицы, которые очищаются перед каждым тестовым запуском |
+Раздел `ci_cd` в общем конфиге пуст — ключи `integration_test.migrate_all` и `integration_test.truncate_list` убраны как мёртвые (решение 102, CONFIG-AUDIT-1): их никто не читал.
 
 ---
 

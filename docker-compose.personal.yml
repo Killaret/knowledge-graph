@@ -48,7 +48,9 @@ services:
     restart: "no"
 
   nlp-personal:
-    build: ./nlp-service
+    build:
+      context: .
+      dockerfile: ./nlp-service/Dockerfile
     container_name: kg-nlp-personal
     ports:
       - "5001:5000"

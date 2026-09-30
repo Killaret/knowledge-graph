@@ -119,3 +119,45 @@ required». После правки узкий запрос снимок не с
 - Кэш полного графа: канонический размер — сконфигурированный предел; меньший `limit` — свежий ответ без кэша;
   больший — урезается; `limit=0` предел не обходит. Умолчание в коде приведено к 500.
 - Документация конфигурации дополнена.
+
+## Доработка — Devin, 2026-09-30
+
+### Блокер 1 — тест `limit=0` настоящий
+
+`frontend/src/shared/api/graph.test.ts`: «should use default limit when called without parameter» теперь
+проверяет, что без параметра в запросе `limit=0` (и что мок `get` вызван с именно таким URL). Мутация «вернуть
+дефолт 100» — красная, тест ловит регрессию находки 4.
+
+### Блокер 2 — `core-checks.tsv`
+
+Обе CI-строки дописаны: `config-registry` и `spec-audit-1-register`. `Workflow sync OK: 34 local phases match
+34 CI steps` — первая фаза `check-all` снова зелёная (сделано в коммите `cb09899` вместе с правкой SPEC-AUDIT-1).
+
+### Блокер 3 — `TestGetDelta` под новый контракт
+
+`services/graph-service/internal/api/grpc_integration_test.go`: тест запрашивает `GetFullLayout` каноническим
+размером (снимок сохраняется), дельта от его версии возвращает изменения. Добавлена проверка контракта: узкий
+запрос (`Limit: 10`) снимка не создаёт — `GetDelta` от его версии отвечает `resync required`. Мутация «узкий
+запрос снова сохраняет снимок» — красная.
+
+### Решение 102 — исполнено
+
+**NLP читает общий конфиг.** Новый `nlp-service/app/config.py`: при старте читает `knowledge-graph.config.json`
+(поиск — `KG_CONFIG_PATH`, затем `/app/knowledge-graph.config.json`, затем корень репозитория) и переносит `nlp.*`
+в `os.environ.setdefault` — то есть окружение важнее файла, файл важнее дефолта, как у backend и graph-service.
+Тесты `nlp-service/tests/test_config.py` фиксируют порядок: env > файл > дефолт. `nlp-service/Dockerfile` переведён
+на корневой контекст сборки и копирует сгенерированный конфиг в `/app/`; контекст поправлен в `docker-compose.yml`,
+`docker-compose.personal.yml`, `docker-compose.test.yml`, `.github/workflows/main.yml`, `deploy.yml` и
+`.dockerignore`. `pytest` — 79/79 зелёные.
+
+**11 мёртвых ключей убраны** из `config/*.json`, структур `backend/internal/config/config.go` и интерфейса
+`frontend/src/shared/config/config.ts`; `knowledge-graph.config.json` пересобран из источников. Чтобы реестр не
+помечал `nlp.*` мёртвыми, генератор `generate-config-registry.mjs` научился видеть Python-читателя
+(`nlp-service/app/config.py` → `_ENV_MAP`). Итог: `CONFIG-REGISTRY OK: 179 keys registered, no drift, every live
+key names a reader`. `go run cmd/checkconfig` — `✓ Config validation passed`; `svelte-check` — 0 ошибок.
+
+**Документация.** `CONFIGURATION_EN.md` и `CONFIGURATION_RU.md`: убраны описания удалённых ключей
+(`frontend.test.*`, `frontend.api.*`, `backend.graph.max_nodes`, `frontend.graph.2d.max_nodes`,
+`backup.draft_ttl_hours`, `ci_cd.integration_test.*`), раздел `ci_cd` помечен пустым с причиной; в NLP-разделы
+добавлен абзац про трёхступенчатый приоритет и карту `nlp.*` → env, примеры и умолчания приведены к MODEL-2
+(`pipeline.enabled=true`, `EMBED_CHUNKING=1`). `BACKUP.md` — пример и описание `draft_ttl_hours` убраны.

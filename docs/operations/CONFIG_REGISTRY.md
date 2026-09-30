@@ -1,8 +1,8 @@
 # CONFIG_REGISTRY — реестр ключей config/*.json
 
 Сгенерировано `scripts/testing/generate-config-registry.mjs`; проверка дрейфа — `check-config-registry.mjs`.
-Порядок приоритета: **env > knowledge-graph.config.json (или config/*.json) > дефолт в коде** — backend и
-graph-service; NLP-сервис: env > дефолт в коде; фронтенд: `config/*.json` вшиваются при сборке
+Порядок приоритета: **env > knowledge-graph.config.json (или config/*.json) > дефолт в коде** — backend,
+graph-service и NLP (nlp.* → env через `app/config.py` при старте); фронтенд: `config/*.json` вшиваются при сборке
 (`npm run build-config` + `npm run build`), переменных окружения в рантайме нет — смена `config/*.json`
 без пересборки фронтенда не действует.
 
@@ -50,7 +50,6 @@ graph-service; NLP-сервис: env > дефолт в коде; фронтен�
 | `backend.pagination.default_limit` | backend.json | backend config.go → PaginationDefaultLimit | `PAGINATION_DEFAULT_LIMIT` | — | + | ok |
 | `backend.pagination.max_limit` | backend.json | backend config.go → PaginationMaxLimit | `PAGINATION_MAX_LIMIT` | — | + | ok |
 | `backend.graph.load_depth` | backend.json | backend config.go → GraphLoadDepth | `GRAPH_LOAD_DEPTH` | — | + | ok |
-| `backend.graph.max_nodes` | backend.json | backend: поле есть, не читается | — | — | — | мёртвый |
 | `backend.graph.default_limit` | backend.json | backend config.go → GraphDefaultLimit | `GRAPH_DEFAULT_LIMIT` | — | + | ok |
 | `backend.graph.max_limit` | backend.json | backend config.go → GraphMaxLimit | `GRAPH_MAX_LIMIT` | — | + | ok |
 | `backend.graph.link_default_limit` | backend.json | backend config.go → GraphLinkDefaultLimit | `GRAPH_LINK_DEFAULT_LIMIT` | — | + | ok |
@@ -96,19 +95,11 @@ graph-service; NLP-сервис: env > дефолт в коде; фронтен�
 | `backup.cloud.yandex.max_backups` | backup.json | backend config.go → BackupYandexMaxBackups | `BACKUP_YANDEX_MAX_BACKUPS` | — | + | ok |
 | `backup.schedule` | backup.json | backend config.go → BackupSchedule | `BACKUP_SCHEDULE` | — | + | ok |
 | `backup.retention_days` | backup.json | backend config.go → BackupRetentionDays | `BACKUP_RETENTION_DAYS` | — | + | ok |
-| `backup.draft_ttl_hours` | backup.json | backend: поле есть, не читается | — | — | + | мёртвый |
-| `ci_cd.integration_test.migrate_all` | ci_cd.json | — | нет (вшивается при сборке) | — | — | мёртвый |
-| `ci_cd.integration_test.truncate_list` | ci_cd.json | — | нет (вшивается при сборке) | — | — | мёртвый |
-| `frontend.language` | frontend.json | — | нет (вшивается при сборке) | — | — | мёртвый |
-| `frontend.test.debounce_timeout_ms` | frontend.json | — | нет (вшивается при сборке) | — | — | мёртвый |
-| `frontend.test.max_retry_count` | frontend.json | — | нет (вшивается при сборке) | — | — | мёртвый |
-| `frontend.test.mock_goto_delay_ms` | frontend.json | — | нет (вшивается при сборке) | — | — | мёртвый |
 | `frontend.graph.label_hub_count` | frontend.json | src/entities/graph-canvas/lib/labels.test.ts, src/entities/graph-canvas/lib/labels.ts, src/features/graph-3d/lib/labels.test.ts | нет (вшивается при сборке) | — | — | ok |
 | `frontend.graph.dependency_highlight_depth` | frontend.json | src/features/graph-3d/lib/engine.ts, src/widgets/graph-canvas/GraphCanvas.svelte | нет (вшивается при сборке) | — | — | ok |
 | `frontend.graph.style` | frontend.json | src/entities/graph-canvas/lib/light/style.ts | нет (вшивается при сборке) | — | — | ok |
 | `frontend.graph.recommendations_on_hover` | frontend.json | src/widgets/graph-canvas/GraphCanvas.svelte | нет (вшивается при сборке) | — | — | ok |
 | `frontend.graph.ambient_max_nodes` | frontend.json | src/entities/graph-canvas/lib/light/style.ts, src/widgets/graph-canvas/GraphCanvas.svelte | нет (вшивается при сборке) | — | — | ok |
-| `frontend.graph.2d.max_nodes` | frontend.json | — | нет (вшивается при сборке) | — | — | мёртвый |
 | `frontend.graph.2d.shadows_threshold` | frontend.json | src/entities/graph-canvas/lib/node-renderers.ts, src/entities/graph-canvas/lib/node-renderers.ts (через graphConfig2D), src/entities/graph-canvas/lib/renderer-orchestrator.ts, src/entities/graph-canvas/lib/renderer-orchestrator.ts (через graphConfig2D) | нет (вшивается при сборке) | — | — | ok |
 | `frontend.graph.2d.animated_links_threshold` | frontend.json | src/entities/graph-canvas/lib/link-renderers.ts, src/entities/graph-canvas/lib/link-renderers.ts (через graphConfig2D) | нет (вшивается при сборке) | — | — | ok |
 | `frontend.graph.2d.gravity_nodes_threshold` | frontend.json | src/entities/graph-canvas/lib/gravity-system.test.ts, src/entities/graph-canvas/lib/gravity-system.test.ts (через graphConfig2D), src/entities/graph-canvas/lib/gravity-system.ts, src/entities/graph-canvas/lib/gravity-system.ts (через graphConfig2D) | нет (вшивается при сборке) | — | — | ok |
@@ -164,8 +155,6 @@ graph-service; NLP-сервис: env > дефолт в коде; фронтен�
 | `frontend.graph.anomaly.cosmic_abomination.tentacle_count_max` | frontend.json | src/shared/lib/graph/renderer/anomalies/helpers.ts, src/shared/lib/graph/renderer/anomalies/helpers.ts (через anomalyConfig) | нет (вшивается при сборке) | — | — | ok |
 | `frontend.graph.anomaly.cosmic_abomination.crack_count_min` | frontend.json | src/shared/lib/graph/renderer/anomalies/helpers.ts, src/shared/lib/graph/renderer/anomalies/helpers.ts (через anomalyConfig) | нет (вшивается при сборке) | — | — | ok |
 | `frontend.graph.anomaly.cosmic_abomination.crack_count_max` | frontend.json | src/shared/lib/graph/renderer/anomalies/helpers.ts, src/shared/lib/graph/renderer/anomalies/helpers.ts (через anomalyConfig) | нет (вшивается при сборке) | — | — | ok |
-| `frontend.api.default_limit` | frontend.json | — | нет (вшивается при сборке) | — | — | мёртвый |
-| `frontend.api.link_limit` | frontend.json | — | нет (вшивается при сборке) | — | — | мёртвый |
 | `frontend.achievements.poll_interval_ms` | frontend.json | src/entities/achievement/model/store.svelte.test.ts, src/entities/achievement/model/store.svelte.ts | нет (вшивается при сборке) | — | + | ok |
 | `graph_service.grpc_port` | graph_service.json | graph-service config.go → GRPCPort | `GRPC_PORT` | compose.deploy, compose.personal, compose.test, compose | + | ok |
 | `graph_service.http_port` | graph_service.json | graph-service config.go → HTTPPort | `HTTP_PORT` | compose.deploy, compose.personal, compose.test, compose | + | ok |
@@ -185,11 +174,11 @@ graph-service; NLP-сервис: env > дефолт в коде; фронтен�
 | `graph_service.unprocessed_event_check_interval_minutes` | graph_service.json | graph-service config.go → Load | — | — | — | ok |
 | `mongodb.url` | mongodb.json | backend config.go → MongoDBURL | `MONGO_URL` | compose.deploy, compose.personal, compose.test, compose | + | ok |
 | `mongodb.database` | mongodb.json | backend config.go → MongoDBDatabase | `MONGO_DATABASE` | compose.deploy, compose.personal, compose.test, compose | + | ok |
-| `nlp.model_name` | nlp.json | — | — | — | — | мёртвый |
-| `nlp.max_text_length` | nlp.json | — | — | — | — | мёртвый |
-| `nlp.hf_home` | nlp.json | — | — | — | — | мёртвый |
-| `nlp.hf_hub_disable_telemetry` | nlp.json | — | — | — | — | мёртвый |
-| `nlp.hf_hub_offline` | nlp.json | — | — | — | — | мёртвый |
+| `nlp.model_name` | nlp.json | nlp-service app/config.py → NLP_MODEL_NAME | `NLP_MODEL_NAME` | compose.deploy, compose.personal, compose.test, compose | + | ok |
+| `nlp.max_text_length` | nlp.json | nlp-service app/config.py → NLP_MAX_TEXT_LENGTH | `NLP_MAX_TEXT_LENGTH` | — | + | ok |
+| `nlp.hf_home` | nlp.json | nlp-service app/config.py → HF_HOME | `HF_HOME` | compose.deploy, compose.personal, compose.test, compose | + | ok |
+| `nlp.hf_hub_disable_telemetry` | nlp.json | nlp-service app/config.py → HF_HUB_DISABLE_TELEMETRY | `HF_HUB_DISABLE_TELEMETRY` | compose.deploy, compose.personal, compose.test, compose | + | ok |
+| `nlp.hf_hub_offline` | nlp.json | nlp-service app/config.py → HF_HUB_OFFLINE | `HF_HUB_OFFLINE` | compose.deploy, compose.personal, compose.test, compose | + | ok |
 | `nlp.pipeline.enabled` | nlp.json | backend config.go → NLPPipelineEnabled | `NLP_PIPELINE_ENABLED` | compose.deploy, compose.personal, compose.test, compose | + | ok |
 | `nlp.quality.enabled` | nlp.json | backend config.go → NLPQualityEnabled | `NLP_QUALITY_ENABLED` | compose.deploy, compose.personal, compose.test, compose | + | ok |
 | `nlp.quality.collection_prose_share` | nlp.json | backend config.go → NLPQualityCollectionProseShare | `NLP_QUALITY_COLLECTION_PROSE_SHARE` | — | + | ok |

@@ -71,7 +71,6 @@ type JSONConfig struct {
 		} `json:"pagination"`
 		Graph struct {
 			LoadDepth        int `json:"load_depth"`
-			MaxNodes         int `json:"max_nodes"`
 			DefaultLimit     int `json:"default_limit"`
 			MaxLimit         int `json:"max_limit"`
 			LinkDefaultLimit int `json:"link_default_limit"`
@@ -135,7 +134,6 @@ type JSONConfig struct {
 		} `json:"cloud"`
 		Schedule      string `json:"schedule"`
 		RetentionDays int    `json:"retention_days"`
-		DraftTTLHours int    `json:"draft_ttl_hours"`
 	} `json:"backup"`
 	MongoDB struct {
 		URL      string `json:"url"`

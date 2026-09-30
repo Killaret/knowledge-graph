@@ -57,7 +57,9 @@ services:
           memory: 512M
 
   nlp-test:
-    build: ./nlp-service
+    build:
+      context: .
+      dockerfile: ./nlp-service/Dockerfile
     container_name: kg-test-nlp
     ports:
       - "127.0.0.1:15002:5000"

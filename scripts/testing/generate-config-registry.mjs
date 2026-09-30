@@ -177,6 +177,15 @@ function composeHits(env) {
   return hits.length ? hits.map((f) => f.replace("docker-compose", "compose").replace(".yml", "")).join(", ") : "—";
 }
 
+// nlp.* keys consumed by the Python service: app/config.py seeds nlp.* into
+// environment variables (env > file > default) before readers run.
+const nlpSeedPath = join(repoRoot, "nlp-service/app/config.py");
+const nlpSeedMap = new Map();
+if (existsSync(nlpSeedPath)) {
+  const src = readFileSync(nlpSeedPath, "utf8");
+  for (const m of src.matchAll(/"([a-z_]+)":\s*"([A-Z_]+)"/g)) nlpSeedMap.set(m[1], m[2]);
+}
+
 const rows = [];
 for (const { file, key, value } of keys) {
   let reader = "—";
@@ -207,6 +216,11 @@ for (const { file, key, value } of keys) {
       }
     }
     if (c) { reader = `backend config.go → ${c.field}${via ? ` (через ${via})` : ""}`; env = c.env ?? "—"; }
+    else if (key.startsWith("nlp.") && key.split(".").length === 2 && nlpSeedMap.has(key.slice(4))) {
+      const envName = nlpSeedMap.get(key.slice(4));
+      reader = `nlp-service app/config.py → ${envName}`;
+      env = envName;
+    }
     else { status = "мёртвый"; if (goPath) reader = "backend: поле есть, не читается"; }
   }
   const envForDocs = env === "—" || env === BAKE ? null : env;
@@ -224,8 +238,8 @@ const lines = [
   "# CONFIG_REGISTRY — реестр ключей config/*.json",
   "",
   "Сгенерировано `scripts/testing/generate-config-registry.mjs`; проверка дрейфа — `check-config-registry.mjs`.",
-  "Порядок приоритета: **env > knowledge-graph.config.json (или config/*.json) > дефолт в коде** — backend и",
-  "graph-service; NLP-сервис: env > дефолт в коде; фронтенд: `config/*.json` вшиваются при сборке",
+  "Порядок приоритета: **env > knowledge-graph.config.json (или config/*.json) > дефолт в коде** — backend,",
+  "graph-service и NLP (nlp.* → env через `app/config.py` при старте); фронтенд: `config/*.json` вшиваются при сборке",
   "(`npm run build-config` + `npm run build`), переменных окружения в рантайме нет — смена `config/*.json`",
   "без пересборки фронтенда не действует.",
   "",

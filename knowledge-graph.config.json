@@ -67,7 +67,6 @@
     },
     "graph": {
       "load_depth": 2,
-      "max_nodes": 500,
       "default_limit": 100,
       "max_limit": 1000,
       "link_default_limit": 500,
@@ -129,27 +128,10 @@
       }
     },
     "schedule": "0 2 * * *",
-    "retention_days": 7,
-    "draft_ttl_hours": 168
+    "retention_days": 7
   },
-  "ci_cd": {
-    "integration_test": {
-      "migrate_all": true,
-      "truncate_list": [
-        "notes",
-        "links",
-        "embeddings",
-        "recommendations"
-      ]
-    }
-  },
+  "ci_cd": {},
   "frontend": {
-    "language": "en",
-    "test": {
-      "debounce_timeout_ms": 300,
-      "max_retry_count": 3,
-      "mock_goto_delay_ms": 0
-    },
     "graph": {
       "label_hub_count": 15,
       "dependency_highlight_depth": 10,
@@ -157,7 +139,6 @@
       "recommendations_on_hover": 4,
       "ambient_max_nodes": 500,
       "2d": {
-        "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
         "gravity_nodes_threshold": 100,
@@ -242,10 +223,6 @@
           "crack_count_max": 3
         }
       }
-    },
-    "api": {
-      "default_limit": 100,
-      "link_limit": 0
     },
     "achievements": {
       "poll_interval_ms": 0

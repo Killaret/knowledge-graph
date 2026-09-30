@@ -1,11 +1,5 @@
 {
   "frontend": {
-    "language": "en",
-    "test": {
-      "debounce_timeout_ms": 300,
-      "max_retry_count": 3,
-      "mock_goto_delay_ms": 0
-    },
     "graph": {
       "label_hub_count": 15,
       "dependency_highlight_depth": 10,
@@ -13,7 +7,6 @@
       "recommendations_on_hover": 4,
       "ambient_max_nodes": 500,
       "2d": {
-        "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
         "gravity_nodes_threshold": 100,
@@ -85,10 +78,6 @@
           "crack_count_max": 3
         }
       }
-    },
-    "api": {
-      "default_limit": 100,
-      "link_limit": 0
     },
     "achievements": {
       "poll_interval_ms": 0

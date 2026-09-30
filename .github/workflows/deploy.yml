@@ -44,7 +44,7 @@ jobs:
         run: docker build -t killaret/knowledge-graph-frontend:${{ env.KG_IMAGE_TAG }} -f ./frontend/Dockerfile .
 
       - name: Build NLP image
-        run: docker build -t killaret/knowledge-graph-nlp:${{ env.KG_IMAGE_TAG }} ./nlp-service
+        run: docker build -f ./nlp-service/Dockerfile -t killaret/knowledge-graph-nlp:${{ env.KG_IMAGE_TAG }} .
 
       - name: Create deploy env file
         run: |

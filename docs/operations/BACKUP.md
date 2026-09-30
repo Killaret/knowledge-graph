@@ -114,8 +114,7 @@ Retention is per-producer: the worker deletes only `backup-personal-auto-*` olde
       }
     },
     "schedule": "0 2 * * *",
-    "retention_days": 7,
-    "draft_ttl_hours": 168
+    "retention_days": 7
   }
 }
 ```
@@ -131,7 +130,6 @@ Retention is per-producer: the worker deletes only `backup-personal-auto-*` olde
 - `cloud.yandex.max_backups` — maximum number of backups to keep in cloud (currently not enforced; all backups are kept on Yandex.Disk by design)
 - `schedule` — cron schedule (default `0 2 * * *` — daily at 2:00 AM)
 - `retention_days` — number of days to keep local backups
-- `draft_ttl_hours` — draft TTL in MongoDB in hours
 
 ### Step 2: Get Yandex.Disk OAuth Token
 

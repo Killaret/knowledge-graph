@@ -10,6 +10,17 @@ from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
+try:
+    from . import config as _config
+except ImportError:  # direct module import outside the package
+    try:
+        import config as _config  # type: ignore
+    except ImportError:
+        _config = None
+
+if _config is not None:
+    _config.seed_env_from_config()
+
 MODEL_NAME = os.environ.get("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2")
 HF_HOME = os.environ.get("HF_HOME", "/root/.cache/huggingface")
 HF_CACHE = os.environ.get("HF_HUB_CACHE") or os.path.join(HF_HOME, "hub")

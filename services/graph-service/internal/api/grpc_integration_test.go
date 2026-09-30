@@ -172,10 +172,11 @@ func (s *GRPCIntegrationTestSuite) TestGetDelta() {
 
 	userID := "test-user-delta"
 
-	// First, ensure we have a cached layout
+	// Canonical request (limit 0 = configured cap): caches the layout and
+	// saves the snapshot deltas are computed against (CONFIG-AUDIT-1).
 	req := &graphservice.FullLayoutRequest{
 		UserId: userID,
-		Limit:  10,
+		Limit:  0,
 	}
 	stream, err := s.client.GetFullLayout(ctx, req)
 	s.Require().NoError(err)
@@ -203,6 +204,42 @@ func (s *GRPCIntegrationTestSuite) TestGetDelta() {
 	s.Require().NoError(err)
 	s.NotNil(deltaResp)
 	s.NotEmpty(deltaResp.CurrentHash)
+}
+
+// CONFIG-AUDIT-1: a narrower explicit limit bypasses the cache and does NOT
+// save a snapshot — a truncated layout must not poison the delta base. The
+// stream still ends with a hash chunk, but GetDelta on it answers NotFound
+// (resync), never a delta computed against nothing.
+func (s *GRPCIntegrationTestSuite) TestGetDelta_NarrowLimitResync() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	userID := "test-user-delta-narrow"
+
+	stream, err := s.client.GetFullLayout(ctx, &graphservice.FullLayoutRequest{
+		UserId: userID,
+		Limit:  10,
+	})
+	s.Require().NoError(err)
+
+	var servedHash string
+	for {
+		chunk, err := stream.Recv()
+		if err != nil {
+			break
+		}
+		if len(chunk.ChunkId) > 5 && chunk.ChunkId[:5] == "hash:" {
+			servedHash = chunk.ChunkId[5:]
+		}
+	}
+	s.NotEmpty(servedHash, "narrow stream still ends with a hash chunk")
+
+	_, err = s.client.GetDelta(ctx, &graphservice.DeltaRequest{
+		UserId:   userID,
+		LastHash: servedHash,
+	})
+	s.Require().Error(err)
+	s.Equal(codes.NotFound, status.Code(err), "narrow limit saves no snapshot: delta must answer resync")
 }
 
 func (s *GRPCIntegrationTestSuite) TestInvalidRequest() {

@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH" VIRTUAL_ENV=/app/.venv
 
-COPY requirements.txt .
+COPY nlp-service/requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
@@ -40,7 +40,7 @@ RUN python -c "import nltk; nltk.download('punkt', download_dir='/root/nltk_data
 # the HF cache mounted at runtime (${HF_CACHE_DIR} -> /root/.cache/huggingface).
 # entrypoint.sh fails fast with instructions when the cache is empty.
 
-COPY . .
+COPY nlp-service/ .
 
 # Runtime stage
 FROM python:3.11-slim
@@ -65,6 +65,9 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /root/nltk_data /root/nltk_data
 COPY --from=builder /app/app /app/app
 COPY --from=builder /app/entrypoint.sh /app/entrypoint.sh
+# Shared runtime config — the service seeds nlp.* into the environment at
+# startup (CONFIG-AUDIT-1, решение 102): env > file > code default.
+COPY knowledge-graph.config.json /app/knowledge-graph.config.json
 
 RUN chmod +x /app/entrypoint.sh && dos2unix /app/entrypoint.sh
 

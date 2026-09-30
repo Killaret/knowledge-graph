@@ -65,14 +65,10 @@ and guarded by `check-config-registry.mjs`.
   },
   "graph_service": { ... },
   "frontend": {
-    "test": { ... },
     "graph": { "label_hub_count": 15, "dependency_highlight_depth": 10, "style": "classic", "2d": { ... }, "3d": { ... } },
-    "api": { ... },
     "achievements": { ... }
   },
-  "ci_cd": {
-    "integration_test": { ... }
-  },
+  "ci_cd": {},
   "nlp": { ... },
   "backup": { ... }
 }
@@ -81,11 +77,10 @@ and guarded by `check-config-registry.mjs`.
 ### Frontend Usage (TypeScript)
 
 ```typescript
-import { graphConfig2D, apiConfig, testConfig, ACHIEVEMENT_POLL_INTERVAL_MS } from '$shared/config';
+import { graphConfig2D, ACHIEVEMENT_POLL_INTERVAL_MS } from '$shared/config';
 
 // Use centralized config
 const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
-const limit = apiConfig.default_limit;
 const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 ```
 
@@ -110,7 +105,6 @@ All parameters are consumed by `$shared/config → graphConfig2D` and must not b
   "frontend": {
     "graph": {
       "2d": {
-        "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
         "gravity_nodes_threshold": 100,
@@ -140,7 +134,6 @@ All parameters are consumed by `$shared/config → graphConfig2D` and must not b
 
 | Parameter | Type | Default | Used in | Description |
 |-----------|------|---------|---------|-------------|
-| `max_nodes` | integer | `500` | `renderer.ts` | Maximum nodes loaded into the 2D graph canvas |
 | `shadows_threshold` | integer | `100` | `renderer.ts` | Node count **below** which CSS drop-shadows are rendered. Above this threshold shadows are disabled for performance |
 | `animated_links_threshold` | integer | `50` | `renderer.ts` | Link count **above** which animated link drawing falls back to static straight lines. Prevents jank on dense graphs |
 | `gravity_nodes_threshold` | integer | `100` | `gravity-system.ts` | Node count **above** which the gravity attraction system is disabled entirely. Gravity is O(n²), so it is skipped on large graphs |
@@ -273,8 +266,7 @@ Achievements use JSON-based conditions stored in the `condition_json` field:
       }
     },
     "schedule": "0 2 * * *",
-    "retention_days": 7,
-    "draft_ttl_hours": 168
+    "retention_days": 7
   }
 }
 ```
@@ -292,7 +284,6 @@ Achievements use JSON-based conditions stored in the `condition_json` field:
 | `BACKUP_YANDEX_MAX_BACKUPS` | Maximum number of backups to keep | `10` |
 | `BACKUP_SCHEDULE` | Cron schedule for backups | `0 2 * * *` |
 | `BACKUP_RETENTION_DAYS` | Backup retention period | `7` |
-| `BACKUP_DRAFT_TTL_HOURS` | ~~env~~ — JSON-only key `backup.draft_ttl_hours`; parsed into the config struct but **not consumed by any code yet** (draft TTL currently uses a fixed 7-day constant) | `168` |
 
 ### Backup Scripts
 
@@ -532,7 +523,6 @@ See also: [RECOMMENDATION_ARCHITECTURE.md](../architecture/RECOMMENDATION_ARCHIT
   "backend": {
     "graph": {
       "load_depth": 2,
-      "max_nodes": 500,
       "default_limit": 100,
       "max_limit": 1000,
       "link_default_limit": 500,
@@ -541,7 +531,7 @@ See also: [RECOMMENDATION_ARCHITECTURE.md](../architecture/RECOMMENDATION_ARCHIT
   },
   "frontend": {
     "graph": {
-      "2d": { "max_nodes": 500, "shadows_threshold": 100 },
+      "2d": { "shadows_threshold": 100 },
       "3d": { "max_nodes": 500 }
     }
   }
@@ -618,6 +608,8 @@ Used by `List` and `Search` endpoints for note pagination.
 
 ## NLP Service
 
+The service follows the same precedence as backend and graph-service: **environment > `knowledge-graph.config.json` (`nlp.*`) > code default** (CONFIG-AUDIT-1, решение 102). At startup `app/config.py` maps `nlp.*` onto environment variables via `os.environ.setdefault` — anything already exported wins. The file is located via `KG_CONFIG_PATH`, then `/app/knowledge-graph.config.json` (copied into the image and mountable in compose), then the repository root for local runs.
+
 ### JSON Configuration (`nlp`)
 
 ```json
@@ -625,19 +617,25 @@ Used by `List` and `Search` endpoints for note pagination.
   "nlp": {
     "model_name": "paraphrase-multilingual-MiniLM-L12-v2",
     "max_text_length": 10000,
-    "embed_chunking": false,
-    "pipeline": { "enabled": false },
+    "hf_home": "/root/.cache/huggingface",
+    "hf_hub_disable_telemetry": true,
+    "hf_hub_offline": true,
+    "pipeline": { "enabled": true },
     "history": { "enabled": true },
     "normalization": { "min_cosine": 0.7 }
   }
 }
 ```
 
+Top-level `nlp.*` keys map to env vars: `model_name` → `NLP_MODEL_NAME`, `max_text_length` → `NLP_MAX_TEXT_LENGTH`, `hf_home` → `HF_HOME`, `hf_hub_disable_telemetry` → `HF_HUB_DISABLE_TELEMETRY`, `hf_hub_offline` → `HF_HUB_OFFLINE`. Nested sections (`pipeline`, `history`, `normalization`, `quality`) are consumed by the backend, not the Python service.
+
 ### Environment Variable Overrides
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `KG_CONFIG_PATH` | Path to `knowledge-graph.config.json` for the NLP service; unset → `/app/knowledge-graph.config.json`, then repo root | - |
 | `NLP_MODEL_NAME` | HuggingFace model name | `paraphrase-multilingual-MiniLM-L12-v2` |
+| `NLP_MAX_TEXT_LENGTH` | Max accepted text length in request models (`Field(max_length=...)`) | `10000` |
 | `EMBED_CHUNKING` | Structural chunker in `/embed` and `_doc_vector` (CHUNK-1): `0` — legacy behaviour; `1` — chunks → one batched encode → mean + L2, note title injected into every chunk, response adds `chunks`/`no_content`. On by default since MODEL-2; turn off only together with `NLP_PIPELINE_ENABLED=false` | `1` |
 | `NLP_PIPELINE_ENABLED` | Normalization pipeline (NLP-4): enqueue `nlp:normalize` on note create/update/import so workers write `nlp_artifacts` to MongoDB. On by default since MODEL-2: `compute:embedding` vectors use the artifact normalized text | `true` |
 | `NLP_HISTORY_ENABLED` | Keep superseded `nlp_artifacts` versions; `false` deletes the previous document instead of marking it `superseded` | `true` |
