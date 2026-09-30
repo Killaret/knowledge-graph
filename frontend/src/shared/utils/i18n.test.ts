@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { formatMessage, getCurrentLocale, setLocale } from "./i18n";
+import { messages } from "./i18n/messages";
 
 describe("i18n", () => {
   beforeEach(() => {
@@ -122,6 +123,15 @@ describe("i18n", () => {
 
       expect(locale1).toBe("ru");
       expect(locale2).toBe("ru");
+    });
+  });
+
+  describe("locale parity", () => {
+    it("en and ru expose exactly the same keys", () => {
+      const enKeys = Object.keys(messages.en).sort();
+      const ruKeys = Object.keys(messages.ru).sort();
+      expect(ruKeys.filter((k) => !(k in messages.en))).toEqual([]);
+      expect(enKeys.filter((k) => !(k in messages.ru))).toEqual([]);
     });
   });
 });

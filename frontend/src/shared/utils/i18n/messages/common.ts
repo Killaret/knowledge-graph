@@ -18,6 +18,7 @@ export const en: Record<string, string> = {
   "logout.success": "Logout successful.",
   // Error messages
   "validation.error": 'Invalid value in field "{{field}}".',
+  "field.password": "password",
   "duplicate.link": "This link already exists.",
   "note.notFound": "Note not found.",
   "link.notFound": "Link not found.",

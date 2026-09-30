@@ -118,7 +118,7 @@ describe("GraphOverlay Component", () => {
       },
     });
     await tick();
-    expect(getByText(/fog/i)).toBeTruthy();
+    expect(getByText(/load decreased/i)).toBeTruthy();
   });
 
   it("shows fog danger warning", async () => {
@@ -133,7 +133,7 @@ describe("GraphOverlay Component", () => {
       },
     });
     await tick();
-    expect(getByText(/fog/i)).toBeTruthy();
+    expect(getByText(/dangerous load/i)).toBeTruthy();
   });
 
   it("shows undo toast with restore option", async () => {

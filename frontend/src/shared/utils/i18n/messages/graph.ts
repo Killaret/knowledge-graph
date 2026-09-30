@@ -220,6 +220,8 @@ export const en: Record<string, string> = {
   "graphOverlay.tip": "Tip",
   "graphOverlay.nodes": "nodes",
   "graphOverlay.links": "links",
+  "graphOverlay.fogWarning": "Dangerous load. Risk of page reload.",
+  "graphOverlay.fogRecovery": "Load decreased. Mode restored.",
   "graphOverlay.fogToggle": "Fog",
   "graphOverlay.fogToggleTitle": "Toggle fog of war",
   // TypeSelector
