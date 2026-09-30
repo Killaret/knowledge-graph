@@ -200,3 +200,84 @@ func TestNoteIDRoutesRequireAccessGuard(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, anonW.Code,
 		"anonymous GET on a private note must be concealed with 404, got %d", anonW.Code)
 }
+
+// trashAwareNoteRepo mirrors the real repository's split: FindByID never sees
+// soft-deleted notes, FindByIDIncludingDeleted does. The stored note pretends
+// to sit in the trash.
+type trashAwareNoteRepo struct {
+	note *note.Note
+}
+
+func (r *trashAwareNoteRepo) Save(ctx context.Context, n *note.Note) error { return nil }
+func (r *trashAwareNoteRepo) FindByID(ctx context.Context, id uuid.UUID) (*note.Note, error) {
+	return nil, nil
+}
+func (r *trashAwareNoteRepo) FindByIDIncludingDeleted(ctx context.Context, id uuid.UUID) (*note.Note, error) {
+	return r.note, nil
+}
+func (r *trashAwareNoteRepo) Delete(ctx context.Context, id uuid.UUID) error { return nil }
+func (r *trashAwareNoteRepo) DeleteBatch(ctx context.Context, ids []uuid.UUID) error {
+	return nil
+}
+func (r *trashAwareNoteRepo) Restore(ctx context.Context, id uuid.UUID) error { return nil }
+func (r *trashAwareNoteRepo) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	return nil, 0, nil
+}
+func (r *trashAwareNoteRepo) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
+	return nil, 0, nil
+}
+func (r *trashAwareNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
+	return nil, nil
+}
+func (r *trashAwareNoteRepo) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	return nil, 0, nil
+}
+
+// NOTE-DELETE-1-TAIL: POST /notes/:id/restore must look the note up through
+// FindByIDIncludingDeleted — its target sits in the trash. The router wires
+// noteWriteTrash for that; the mutation "route behind plain noteWrite" makes
+// the guard answer 404 before the handler runs. With the correct guard the
+// request reaches the (nil in this harness) handler, which the recovery
+// middleware turns into a 500 — anything but 404 proves the guard passed.
+func TestRestoreRouteSeesTrashedNote(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	cfg := &config.Config{}
+	jwtManager := auth.NewJWTManager("test-secret-key-for-restore-guard-test", time.Minute, time.Hour)
+	jwtConfig := middleware.DefaultJWTConfig(jwtManager, nil)
+	apiKeyConfig := middleware.DefaultAPIKeyConfig(nil, false, "")
+	skipAuthConfig := middleware.DefaultSkipAuthConfig(false)
+
+	ownerID := uuid.New()
+	pair, err := jwtManager.GenerateTokenPair(ownerID, "owner", "user")
+	require.NoError(t, err)
+
+	title, err := note.NewTitle("Trashed note")
+	require.NoError(t, err)
+	content, err := note.NewContent("in the trash")
+	require.NoError(t, err)
+	noteID := uuid.New()
+	trashed := note.ReconstructNoteWithCreator(noteID, title, content, note.MustType("star"),
+		note.Metadata{}, &ownerID, time.Now(), time.Now())
+
+	r := setupRouter(
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil, &drafthandler.Handler{},
+		cfg,
+		newHealthHandler(nil, nil, nil),
+		newMetricsHandler(nil),
+		newWriteLimiter(cfg),
+		jwtConfig,
+		apiKeyConfig,
+		skipAuthConfig,
+		&trashAwareNoteRepo{note: trashed},
+	)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/notes/"+noteID.String()+"/restore", nil)
+	req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.NotEqual(t, http.StatusNotFound, w.Code,
+		"owner restoring a trashed note must pass the guard; 404 means the route lost noteWriteTrash")
+}

@@ -71,3 +71,31 @@ func TestKeywordRepository_FindNoteIDsMissingExtractor_Integration(t *testing.T)
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []uuid.UUID{oldID, freshID, bareID}, ids)
 }
+
+// NOTE-DELETE-1-TAIL: a trashed note with non-empty content must not be
+// picked for keyword recompute — it is invisible to every read path.
+// Mutation "drop n.deleted_at IS NULL" turns this test red.
+func TestKeywordRepository_SkipsDeletedNotes_Integration(t *testing.T) {
+	db, cleanup := testutil.SetupTestDB(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	require.NoError(t, db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteKeywordModel{}))
+
+	repo := NewKeywordRepository(db)
+
+	liveID := uuid.New()
+	deadID := uuid.New()
+	for _, n := range []NoteModel{
+		{ID: liveID, Title: "live", Content: "still on the graph"},
+		{ID: deadID, Title: "dead", Content: "in the trash"},
+	} {
+		require.NoError(t, db.Create(&n).Error)
+	}
+	require.NoError(t, db.Exec("UPDATE notes SET deleted_at = NOW() WHERE id = ?", deadID).Error)
+
+	ids, err := repo.FindNoteIDsMissingExtractor(ctx, "keybert-hybrid-0.9")
+	require.NoError(t, err)
+	assert.Equal(t, []uuid.UUID{liveID}, ids,
+		"trashed notes must stay invisible to the keyword pipeline")
+}

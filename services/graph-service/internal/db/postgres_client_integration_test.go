@@ -204,4 +204,30 @@ func TestPostgresClient_Integration(t *testing.T) {
 		assert.Equal(t, "550e8400-e29b-41d4-a716-446655440002", rev[0])
 		assert.Equal(t, "550e8400-e29b-41d4-a716-446655440000", rev[len(rev)-1])
 	})
+
+	// NOTE-DELETE-1-TAIL: a trashed note leaves the graph on every read path —
+	// the node itself, its cascade-deleted links and as a traversal root.
+	// Mutation "drop deleted_at IS NULL from the notes query" turns this red.
+	t.Run("GetNotes_ExcludesDeleted", func(t *testing.T) {
+		// Real deletion marks the note's links via deleted_via_note_id;
+		// emulate the cascade so only link 0 -> 1 survives.
+		_, err := pool.Exec(ctx, `
+			UPDATE notes SET deleted_at = NOW() WHERE id = '550e8400-e29b-41d4-a716-446655440002';
+			UPDATE links SET deleted_at = NOW()
+				WHERE source_note_id = '550e8400-e29b-41d4-a716-446655440002'
+				   OR target_note_id = '550e8400-e29b-41d4-a716-446655440002';
+		`)
+		require.NoError(t, err)
+
+		notes, links, err := client.GetNotes(ctx, NotesFilter{})
+		require.NoError(t, err)
+		assert.Equal(t, 2, len(notes), "the trashed note must stay off the graph")
+		assert.Equal(t, 2, len(links), "only the links cascade-deleted with the note are gone")
+
+		// A trashed root yields no neighbourhood at all.
+		notes, links, err = client.GetNotes(ctx, NotesFilter{RootID: "550e8400-e29b-41d4-a716-446655440002", Depth: 2})
+		require.NoError(t, err)
+		assert.Empty(t, notes)
+		assert.Empty(t, links)
+	})
 }
