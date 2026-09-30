@@ -88,7 +88,7 @@ The stale comment on `backend/internal/interfaces/api/middleware/skip_auth.go:55
 - Review that found it: `docs/tasks/AUD-2-review-findings.md`
 - Introduced in `889c33e`
 
-## Решение владельца (2026-09-07)
+## Решение владельца (2026-09-06)
 
 **`SKIP_AUTH` остаётся, и строка тестового пользователя в базе сохраняется.**
 

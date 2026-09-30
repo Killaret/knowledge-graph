@@ -274,6 +274,12 @@ export function createHomePageState() {
         viewMode: mode,
         nocache,
         fullGraphLoader: (bypass) => getGraphWithPreload(1000, bypass ?? nocache, mode),
+        // UI-LOAD-1: the notes list becomes usable before the graph arrives.
+        onNotesReady: (ready) => {
+          if (!isCurrent()) return;
+          allNotes = ready;
+          applyFiltersAndSort();
+        },
       });
 
       if (!isCurrent()) return;

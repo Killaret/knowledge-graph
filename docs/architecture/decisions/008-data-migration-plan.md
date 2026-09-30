@@ -2,6 +2,7 @@
 
 ## Status
 Accepted
+**Implementation status:** design accepted; not implemented in the current single-user codebase (verified in DOC-AUDIT-2, 2026-09-26).
 
 ## Context
 We are transitioning the Knowledge Graph platform from single-user MVP to multi-tenant SaaS. This requires:

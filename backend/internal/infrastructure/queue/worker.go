@@ -2,6 +2,8 @@ package queue
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,10 +15,12 @@ import (
 	"github.com/pgvector/pgvector-go"
 
 	importer "knowledge-graph/internal/application/import"
+	appquality "knowledge-graph/internal/application/quality"
 	dcache "knowledge-graph/internal/domain/cache"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
 )
 
@@ -27,28 +31,59 @@ type GammaLinkRunner interface {
 	GenerateForNote(ctx context.Context, noteID uuid.UUID) ([]*link.Link, error)
 }
 
-// LinkEventPublisher publishes LinkCreated events (events.Publisher or a stub).
-type LinkEventPublisher interface {
-	PublishLinkCreated(ctx context.Context, sourceNoteID, targetNoteID, userID string) error
-}
-
 // RecommendationsEnqueuer schedules a recommendations refresh for a note.
 type RecommendationsEnqueuer interface {
 	EnqueueRefreshRecommendations(ctx context.Context, noteID uuid.UUID, delay time.Duration) error
 }
 
-type Worker struct {
-	noteRepo       note.Repository
-	keywordRepo    *postgres.KeywordRepository
-	embeddingRepo  *postgres.EmbeddingRepository
-	nlpClient      *nlp.NLPClient
-	cacheClient    dcache.CacheClient
-	importSvc      *importer.Service
-	gammaGen       GammaLinkRunner
-	eventPublisher LinkEventPublisher
-	taskQueue      RecommendationsEnqueuer
-	taskDelay      time.Duration
+// NlpArtifactsStore persists NLP-4 artifacts (mongo.NlpArtifactsRepository in
+// production; fakes in tests). Nil store = pipeline storage unavailable.
+type NlpArtifactsStore interface {
+	FindCurrentSourceHash(ctx context.Context, noteID uuid.UUID, pipelineVersion string) (string, bool, error)
+	FindCurrent(ctx context.Context, noteID uuid.UUID, pipelineVersion string) (*mongo.NlpArtifact, error)
+	SaveCurrent(ctx context.Context, doc *mongo.NlpArtifact, historyEnabled bool) error
+	DeleteByNoteID(ctx context.Context, noteID uuid.UUID) (int64, error)
 }
+
+// EmbeddingEnqueuer schedules compute:embedding — used by HandleNormalizeNote
+// to re-embed the note once its artifact is fresh (MODEL-2).
+type EmbeddingEnqueuer interface {
+	EnqueueComputeEmbedding(ctx context.Context, noteID string) error
+}
+
+type Worker struct {
+	noteRepo          note.Repository
+	keywordRepo       *postgres.KeywordRepository
+	embeddingRepo     *postgres.EmbeddingRepository
+	nlpClient         *nlp.NLPClient
+	cacheClient       dcache.CacheClient
+	importSvc         *importer.Service
+	gammaGen          GammaLinkRunner
+	taskQueue         RecommendationsEnqueuer
+	taskDelay         time.Duration
+	artifactsStore    NlpArtifactsStore
+	nlpHistoryEnabled bool
+	nlpModelVersion   string
+
+	// NOTE-QUALITY-1: installed by UseQuality; nil = quality pass disabled.
+	qualityAssessor *appquality.Assessor
+	qualityEnq      QualityEnqueuer
+
+	// MODEL-2: installed by UseNlpPipeline; nil = embeddings keep using raw
+	// note content and normalize does not chain a re-embed.
+	embedEnq EmbeddingEnqueuer
+}
+
+// UseNlpPipeline turns on the MODEL-2 embedding source: compute:embedding
+// reads nlp_artifacts normalized text when it is fresh for the note, and
+// nlp:normalize enqueues a re-embed after storing a new artifact.
+func (w *Worker) UseNlpPipeline(enq EmbeddingEnqueuer) {
+	w.embedEnq = enq
+}
+
+// NlpPipelineVersion identifies the normalizer ruleset; bump on rule changes
+// so stale artifacts are distinguishable and recompute can refill.
+const NlpPipelineVersion = "norm-v1"
 
 func NewWorker(
 	noteRepo note.Repository,
@@ -58,21 +93,25 @@ func NewWorker(
 	cacheClient dcache.CacheClient,
 	importSvc *importer.Service,
 	gammaGen GammaLinkRunner,
-	eventPublisher LinkEventPublisher,
 	taskQueue RecommendationsEnqueuer,
 	taskDelay time.Duration,
+	artifactsStore NlpArtifactsStore,
+	nlpHistoryEnabled bool,
+	nlpModelVersion string,
 ) *Worker {
 	return &Worker{
-		noteRepo:       noteRepo,
-		keywordRepo:    keywordRepo,
-		embeddingRepo:  embeddingRepo,
-		nlpClient:      nlpClient,
-		cacheClient:    cacheClient,
-		importSvc:      importSvc,
-		gammaGen:       gammaGen,
-		eventPublisher: eventPublisher,
-		taskQueue:      taskQueue,
-		taskDelay:      taskDelay,
+		noteRepo:          noteRepo,
+		keywordRepo:       keywordRepo,
+		embeddingRepo:     embeddingRepo,
+		nlpClient:         nlpClient,
+		cacheClient:       cacheClient,
+		importSvc:         importSvc,
+		gammaGen:          gammaGen,
+		taskQueue:         taskQueue,
+		taskDelay:         taskDelay,
+		artifactsStore:    artifactsStore,
+		nlpHistoryEnabled: nlpHistoryEnabled,
+		nlpModelVersion:   nlpModelVersion,
 	}
 }
 
@@ -97,7 +136,9 @@ func (w *Worker) HandleExtractKeywords(ctx context.Context, t *asynq.Task) error
 		return nil
 	}
 
-	text := n.Title().String() + " " + n.Content().String()
+	title := n.Title().String()
+	content := n.Content().String()
+	text := title + " " + content
 	if text == "" {
 		// Удаляем ключевые слова
 		return w.keywordRepo.DeleteAll(ctx, noteID)
@@ -115,7 +156,7 @@ func (w *Worker) HandleExtractKeywords(ctx context.Context, t *asynq.Task) error
 			topN = dynamic
 		}
 	}
-	kwResult, err := w.nlpClient.ExtractKeywords(ctx, text, topN)
+	kwResult, err := w.nlpClient.ExtractKeywords(ctx, content, title, topN)
 	if err != nil {
 		log.Printf("HandleExtractKeywords: failed to extract keywords: %v", err)
 		return fmt.Errorf("failed to extract keywords: %w", err)
@@ -140,6 +181,7 @@ func (w *Worker) HandleExtractKeywords(ctx context.Context, t *asynq.Task) error
 		return err
 	}
 	log.Printf("HandleExtractKeywords: successfully processed note %s with %d keywords", noteID, len(keywords))
+	w.scheduleQuality(ctx, noteID)
 	return nil
 }
 
@@ -168,13 +210,17 @@ func (w *Worker) HandleComputeEmbedding(ctx context.Context, t *asynq.Task) erro
 	}
 	log.Printf("HandleComputeEmbedding: found note %s, processing...", noteID)
 
-	text := n.Title().String() + " " + n.Content().String()
+	title := n.Title().String()
+	content := n.Content().String()
+	text := title + " " + content
 	if text == "" {
 		// Удаляем эмбеддинг
 		return w.embeddingRepo.Delete(ctx, noteID)
 	}
 
-	embedding, err := w.nlpClient.Embed(ctx, text)
+	embedText := w.embedTextForNote(ctx, noteID, title, content)
+
+	embedding, err := w.nlpClient.Embed(ctx, embedText, title)
 	if err != nil {
 		log.Printf("HandleComputeEmbedding: failed to compute embedding: %v", err)
 		return fmt.Errorf("failed to compute embedding: %w", err)
@@ -198,12 +244,16 @@ func (w *Worker) HandleComputeEmbedding(ctx context.Context, t *asynq.Task) erro
 			return err
 		}
 	}
+	// NOTE-QUALITY-1: embedding (+ any gamma links) changed the enrichment
+	// counters — a fresh assessment is due when quality is enabled.
+	w.scheduleQuality(ctx, noteID)
 	return nil
 }
 
-// generateGammaLinks creates gamma links for the note, publishes LinkCreated
-// for each and enqueues a recommendations refresh for source and targets —
-// a target gained an incoming neighbour.
+// generateGammaLinks creates gamma links for the note and enqueues a
+// recommendations refresh for source and targets — a target gained an
+// incoming neighbour. LinkCreated events flow through the repository outbox
+// decorator (SYNC-1 A2), no manual publishing here.
 func (w *Worker) generateGammaLinks(ctx context.Context, n *note.Note, noteID uuid.UUID) error {
 	created, err := w.gammaGen.GenerateForNote(ctx, noteID)
 	if err != nil {
@@ -213,18 +263,7 @@ func (w *Worker) generateGammaLinks(ctx context.Context, n *note.Note, noteID uu
 		return nil
 	}
 
-	userID := ""
-	if n != nil && n.CreatorID() != nil {
-		userID = n.CreatorID().String()
-	}
-
 	for _, l := range created {
-		if w.eventPublisher != nil {
-			if err := w.eventPublisher.PublishLinkCreated(ctx, l.SourceNoteID().String(), l.TargetNoteID().String(), userID); err != nil {
-				log.Printf("HandleComputeEmbedding: failed to publish LinkCreated %s -> %s: %v",
-					l.SourceNoteID(), l.TargetNoteID(), err)
-			}
-		}
 		if w.taskQueue != nil {
 			if err := w.taskQueue.EnqueueRefreshRecommendations(ctx, l.TargetNoteID(), w.taskDelay); err != nil {
 				log.Printf("HandleComputeEmbedding: failed to enqueue refresh for target %s: %v", l.TargetNoteID(), err)
@@ -267,4 +306,153 @@ func (w *Worker) HandleImportBookmarks(ctx context.Context, t *asynq.Task) error
 	}
 
 	return w.importSvc.ProcessImportTask(ctx, userID, p.TaskID, items)
+}
+
+// embedTextForNote returns the artifact's normalized text when the MODEL-2
+// pipeline is on and the artifact matches the note's current content; the raw
+// content otherwise. A missing store or read error falls back to raw.
+func (w *Worker) embedTextForNote(ctx context.Context, noteID uuid.UUID, title, content string) string {
+	if w.embedEnq == nil || w.artifactsStore == nil {
+		return content
+	}
+	artifact, err := w.artifactsStore.FindCurrent(ctx, noteID, NlpPipelineVersion)
+	if err != nil {
+		log.Printf("embedTextForNote: artifact read failed for %s, embedding raw text: %v", noteID, err)
+		return content
+	}
+	if artifact != nil && artifact.SourceHash == nlpArtifactsSourceHash(title, content) && artifact.NormalizedText != "" {
+		return artifact.NormalizedText
+	}
+	return content
+}
+
+// HandleNormalizeNote runs NLP-4 for one note: /normalize via the NLP
+// service, then the artifact lands in Mongo as the single current document
+// for (note_id, pipeline_version). Unchanged source_hash skips the call —
+// makes the task idempotent under retries and recompute runs.
+func (w *Worker) HandleNormalizeNote(ctx context.Context, t *asynq.Task) error {
+	var p NormalizeNotePayload
+	if err := json.Unmarshal(t.Payload(), &p); err != nil {
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+	noteID, err := uuid.Parse(p.NoteID)
+	if err != nil {
+		return fmt.Errorf("invalid note id: %w", err)
+	}
+
+	if w.artifactsStore == nil {
+		log.Printf("HandleNormalizeNote: artifacts store unavailable for note %s, skipping", noteID)
+		return nil
+	}
+
+	n, err := w.noteRepo.FindByID(ctx, noteID)
+	if err != nil {
+		return fmt.Errorf("failed to fetch note: %w", err)
+	}
+	if n == nil {
+		// Note deleted before the task ran — nothing to keep artifacts for.
+		_, err := w.artifactsStore.DeleteByNoteID(ctx, noteID)
+		return err
+	}
+
+	title := n.Title().String()
+	content := n.Content().String()
+	sourceHash := nlpArtifactsSourceHash(title, content)
+
+	existingHash, found, err := w.artifactsStore.FindCurrentSourceHash(ctx, noteID, NlpPipelineVersion)
+	if err != nil {
+		return fmt.Errorf("failed to read current artifact: %w", err)
+	}
+	if found && existingHash == sourceHash {
+		return nil // unchanged since last run — idempotent skip
+	}
+
+	res, err := w.nlpClient.Normalize(ctx, content, title)
+	if err != nil {
+		return fmt.Errorf("failed to normalize note: %w", err)
+	}
+
+	doc := &mongo.NlpArtifact{
+		NoteID:          noteID,
+		SourceHash:      sourceHash,
+		PipelineVersion: NlpPipelineVersion,
+		ModelVersion:    w.nlpModelVersion,
+		NormalizedText:  res.NormalizedText,
+		Chunks:          mapNormalizeChunks(res.Chunks),
+		Metrics: mongo.NlpArtifactMetrics{
+			RawTokens:      res.Metrics.RawTokens,
+			NormTokens:     res.Metrics.NormTokens,
+			Compression:    res.Metrics.Compression,
+			Iterations:     res.Metrics.Iterations,
+			StopReason:     res.Metrics.StopReason,
+			EmbCosine:      res.Metrics.EmbCosine,
+			RolledBack:     res.RolledBack,
+			RollbackReason: res.RollbackReason,
+			Skipped:        res.Skipped,
+		},
+	}
+	if err := w.artifactsStore.SaveCurrent(ctx, doc, w.nlpHistoryEnabled); err != nil {
+		return fmt.Errorf("failed to save artifact: %w", err)
+	}
+	log.Printf("HandleNormalizeNote: stored artifact for note %s (rolled_back=%v, chunks=%d)",
+		noteID, res.RolledBack, len(res.Chunks))
+
+	// MODEL-2: the stored artifact is now the embedding source — re-embed so
+	// the vector reflects the normalized text even when compute:embedding ran
+	// before this artifact existed. Best-effort: a queue error is logged.
+	if w.embedEnq != nil {
+		if err := w.embedEnq.EnqueueComputeEmbedding(ctx, noteID.String()); err != nil {
+			log.Printf("HandleNormalizeNote: failed to enqueue re-embed for %s: %v", noteID, err)
+		}
+	}
+	// NOTE-QUALITY-1: the artifact changed — a fresh assessment is due.
+	w.scheduleQuality(ctx, noteID)
+	return nil
+}
+
+// HandleNlpArtifactsCleanup removes every nlp_artifacts document of a
+// deleted note. No-op when the store is absent (pipeline never ran).
+func (w *Worker) HandleNlpArtifactsCleanup(ctx context.Context, t *asynq.Task) error {
+	var p NlpArtifactsCleanupPayload
+	if err := json.Unmarshal(t.Payload(), &p); err != nil {
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+	noteID, err := uuid.Parse(p.NoteID)
+	if err != nil {
+		return fmt.Errorf("invalid note id: %w", err)
+	}
+	if w.artifactsStore == nil {
+		return nil
+	}
+	deleted, err := w.artifactsStore.DeleteByNoteID(ctx, noteID)
+	if err != nil {
+		return fmt.Errorf("failed to delete artifacts: %w", err)
+	}
+	if deleted > 0 {
+		log.Printf("HandleNlpArtifactsCleanup: deleted %d artifacts for note %s", deleted, noteID)
+	}
+	return nil
+}
+
+// nlpArtifactsSourceHash hashes the normalization inputs (title + content)
+// so a change to either triggers a rebuild.
+func nlpArtifactsSourceHash(title, content string) string {
+	sum := sha256.Sum256([]byte(title + "\x00" + content))
+	return hex.EncodeToString(sum[:])
+}
+
+func mapNormalizeChunks(chunks []nlp.NormalizeChunk) []mongo.NlpArtifactChunk {
+	out := make([]mongo.NlpArtifactChunk, len(chunks))
+	for i, c := range chunks {
+		out[i] = mongo.NlpArtifactChunk{
+			Idx:         c.Idx,
+			Text:        c.Text,
+			HeadingPath: c.HeadingPath,
+			CharSpan:    c.CharSpan,
+			TokenCount:  c.TokenCount,
+			Kind:        c.Kind,
+			ForcedSplit: c.ForcedSplit,
+		}
+	}
+	return out
 }

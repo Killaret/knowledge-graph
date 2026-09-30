@@ -11,30 +11,46 @@ node "ПК Разработчика" {
         component "Svelte 5\n(Nginx)" as Frontend
     }
     
-    node "Контейнер: backend" {
-        component "Go + Gin\n(бэкенд)" as Backend
+    node "Контейнер: kg-backend" {
+        component "Go + Gin\n(бэкенд :8080)" as Backend
+    }
+
+    node "Контейнер: kg-worker" {
         component "Asynq Worker" as Worker
     }
-    
-    node "Контейнер: postgres" {
+
+    node "Контейнер: kg-graph-service" {
+        component "Graph Service\n(gRPC :9090, HTTP :9091)" as GraphSvc
+    }
+
+    node "Контейнер: kg-postgres" {
         database "PostgreSQL 16\n+ pgvector" as PostgresDB
     }
-    
-    node "Контейнер: redis" {
-        database "Redis 7\n(очереди + кэш)" as RedisDB
+
+    node "Контейнер: kg-redis" {
+        database "Redis 7\n(очереди + кэш + pub/sub)" as RedisDB
     }
-    
-    node "Контейнер: nlp" {
+
+    node "Контейнер: kg-mongo" {
+        database "MongoDB 7\n(drafts)" as MongoDB
+    }
+
+    node "Контейнер: kg-nlp" {
         component "Python + FastAPI\n(sentence-transformers)" as NLP
     }
 }
 
 actor "Пользователь" as User
 
-User --> Frontend : HTTP (3000)
-Frontend --> Backend : HTTP (8080) /api
+User --> Frontend : HTTP (5173 dev / 3000 prod)
+Frontend --> Backend : HTTP (9000→8080) /api
+Frontend --> GraphSvc : HTTP (9091) /graph-service/api
 Backend --> PostgresDB : SQL (5432)
 Backend --> RedisDB : TCP (6379)
+Backend --> MongoDB : TCP (27017)
+Backend --> GraphSvc : HTTP (9091)
+GraphSvc --> PostgresDB : SQL (5432)
+GraphSvc --> RedisDB : cache + subscribe graph:events
 Worker --> RedisDB : TCP (6379)
 Backend --> NLP : HTTP (5000)
 Worker --> NLP : HTTP (5000)

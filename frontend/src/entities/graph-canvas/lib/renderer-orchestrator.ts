@@ -20,7 +20,18 @@ import { drawGhostNodeScreen, drawGhostNodeTooltipScreen } from "./ghost-node";
 import type { GhostNodeState } from "./ghost-node";
 import { drawDistortedBackgroundGrid } from "./gravity-system";
 import { drawBackground } from "./background";
-import { registerCelestialBodyDrawers } from "./node-registration";
+import { ensureCelestialBodyDrawers } from "./node-registration";
+import { beginLightFrame, isLightStyle, lightFrame } from "./light/style";
+import { drawLightBackground } from "./light/background";
+import { drawLightLink } from "./light/threads";
+import { captionPriority, drawLightCaptions, type LightCaption } from "./light/labels";
+import { lightCoreRadius, lightTypeColor, rgba } from "./light/palette";
+import { zoomCompensation } from "./light/glyphs";
+import {
+  activeRecommendationIds,
+  drawLightRecommendations,
+  drawSelectionRing,
+} from "./light/recommendations";
 import {
   drawAnimatedLink,
   drawLink,
@@ -29,6 +40,7 @@ import {
   BIDIRECTIONAL_LINK_OFFSET,
 } from "./link-renderers";
 import { isNewNode } from "./renderer-utils";
+import { chainDepthOpacity, type DependencyChain } from "./dependency-chain";
 
 /**
  * Draw all links with animation and hover effects
@@ -45,10 +57,12 @@ export function drawAllLinks(
   dyingLinkOpacity: Map<string, number> = new Map(),
   nodeMap?: Map<string, SimulationNode>,
   visibleNodeIds?: Set<string>,
-  hoveredNeighborIds?: Set<string>
+  hoveredNeighborIds?: Set<string>,
+  depChain?: DependencyChain | null
 ): void {
   let drawnCount = 0;
   let skippedCount = 0;
+  const light = isLightStyle();
 
   const bidirectionalPairs = buildBidirectionalPairSet(simLinks);
   const resolvedNodeMap = nodeMap ?? new Map<string, SimulationNode>();
@@ -99,19 +113,32 @@ export function drawAllLinks(
       ? (sourceId < targetId ? 1 : -1) * BIDIRECTIONAL_LINK_OFFSET
       : 0;
 
-    // Use animated link drawing
-    drawAnimatedLink(
-      ctx,
-      link,
-      resolvedNodeMap,
-      animationTime,
-      simLinks.length,
-      hoveredNodeId,
-      curveOffset,
-      opacity,
-      isHighlighted,
-      hoveredNeighborIds
-    );
+    if (light) {
+      // GRAPH-LIGHT-1: threads of light instead of typed strokes.
+      drawLightLink(ctx, link, sourceNode, targetNode, {
+        fadeOpacity: opacity,
+        hoveredNodeId,
+        hoveredNeighborIds,
+        depChain,
+        curveOffset,
+        isDuplicateHighlighted: isHighlighted,
+      });
+    } else {
+      // Use animated link drawing
+      drawAnimatedLink(
+        ctx,
+        link,
+        resolvedNodeMap,
+        animationTime,
+        simLinks.length,
+        hoveredNodeId,
+        curveOffset,
+        opacity,
+        isHighlighted,
+        hoveredNeighborIds,
+        depChain
+      );
+    }
     drawnCount++;
   });
 
@@ -143,7 +170,11 @@ export function drawAllLinks(
         (link.link_type || "related");
     const opacity = dyingLinkOpacity.get(linkId) ?? 0;
     if (opacity > 0) {
-      drawLink(ctx, link, sourceNode, targetNode, opacity, null, false, 0);
+      if (light) {
+        drawLightLink(ctx, link, sourceNode, targetNode, { fadeOpacity: opacity });
+      } else {
+        drawLink(ctx, link, sourceNode, targetNode, opacity, null, false, 0);
+      }
     }
   });
 
@@ -178,9 +209,7 @@ export function drawNode(
 
   // The renderer layer wires Canvas primitives to the domain object lazily.
   // This guard also makes unit tests that call vi.resetModules() more robust.
-  if (!CelestialBody.STAR.drawFunction) {
-    registerCelestialBodyDrawers();
-  }
+  ensureCelestialBodyDrawers();
 
   // Get deterministic variation for this node (used for color/hue/size/phase).
   // We still apply variation in stable render mode so color/size remain deterministic,
@@ -194,8 +223,20 @@ export function drawNode(
   // This skips expensive per-type renderers, shadows, and animated effects.
   if (simplified && !focusMode && node.x != null && node.y != null) {
     ctx.beginPath();
-    ctx.arc(node.x, node.y, r * body.baseRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = variation?.glowColor ?? body.glowColor;
+    if (isLightStyle()) {
+      // GRAPH-LIGHT-1: far away a note is a point of light in its type colour.
+      ctx.arc(
+        node.x,
+        node.y,
+        lightCoreRadius(body.type, r * body.baseRadius) * zoomCompensation(),
+        0,
+        2 * Math.PI
+      );
+      ctx.fillStyle = rgba(lightTypeColor(body.type), 1);
+    } else {
+      ctx.arc(node.x, node.y, r * body.baseRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = variation?.glowColor ?? body.glowColor;
+    }
     ctx.fill();
     return;
   }
@@ -286,10 +327,16 @@ export function drawAllNodes(
   searchMatchIds?: Set<string>,
   visibleNodeIds?: Set<string>,
   simplified: boolean = false,
-  hoveredNeighborIds?: Set<string>
+  hoveredNeighborIds?: Set<string>,
+  labeledNodeIds?: Set<string>,
+  depChain?: DependencyChain | null
 ): void {
   const r = BASE_NODE_RADIUS;
   const nodeCount = nodes.length;
+  const light = isLightStyle();
+  const captions: LightCaption[] = [];
+  // Decision 81: recommendations of the hovered note stay lit (not dimmed).
+  const recommendedIds = light ? activeRecommendationIds(hoveredNodeId) : new Set<string>();
 
   if (disableVariation) {
     for (const node of nodes) {
@@ -300,7 +347,7 @@ export function drawAllNodes(
     }
   }
 
-  if (particleSystem?.isEnabled() && !simplified) {
+  if (!light && particleSystem?.isEnabled() && !simplified) {
     for (const node of nodes) {
       if (visibleNodeIds && !visibleNodeIds.has(node.id)) continue;
       // Use glowColor for orbit particles so they remain visible even for
@@ -323,7 +370,28 @@ export function drawAllNodes(
     const isNeighbor =
       hoveredNodeId != null && hoveredNeighborIds ? hoveredNeighborIds.has(node.id) : false;
     const isSearchMatch = searchMatchIds?.has(node.id) ?? false;
-    const finalOpacity = hoveredNodeId ? (isHovered ? 1 : isNeighbor ? 0.85 : 0.3) : opacity;
+    // GRAPH-LIGHT-1: in the light style the neighbourhood burns at full
+    // brightness and everything else fades to about 15 %.
+    const dimmed = light ? (recommendedIds.has(node.id) ? 0.8 : 0.15) : 0.3;
+    let finalOpacity = hoveredNodeId
+      ? isHovered
+        ? 1
+        : isNeighbor
+          ? light
+            ? 1
+            : 0.85
+          : dimmed
+      : opacity;
+    if (depChain && node.id) {
+      // LINK-TYPES-1: chain members fade with BFS distance, others dim hard.
+      const depth = depChain.nodeDepth.get(node.id);
+      finalOpacity =
+        depth === undefined ? (light ? 0.15 : 0.2) : depth === 0 ? 1 : chainDepthOpacity(depth);
+    }
+    if (light && (hoveredNodeId || depChain) && lightFrame.focusMix < 1) {
+      // GRAPH-LIGHT-1: the canvas fades the focus in and out.
+      finalOpacity = opacity + (finalOpacity - opacity) * lightFrame.focusMix;
+    }
     const nodeSimplified = simplified && !isHovered && !isNeighbor;
 
     const previousAlpha = ctx.globalAlpha;
@@ -343,8 +411,37 @@ export function drawAllNodes(
       nodeSimplified
     );
 
-    if (!nodeSimplified) {
-      drawNodeTitle(ctx, node, r, finalOpacity, disableVariation);
+    if (light && node.id === lightFrame.selectedId) {
+      const body = CelestialBody.fromString(node.type);
+      drawSelectionRing(
+        ctx,
+        node,
+        lightCoreRadius(body.type, r * body.baseRadius) * zoomCompensation()
+      );
+    }
+
+    // UI-GRAPH-1: labels are selective — only the ids in labeledNodeIds get a
+    // caption (hubs, hovered/selected, search matches). Snapshot mode
+    // (disableVariation) keeps every label for deterministic captures.
+    const captioned =
+      disableVariation ||
+      !labeledNodeIds ||
+      labeledNodeIds.has(node.id) ||
+      recommendedIds.has(node.id);
+    if (!nodeSimplified && captioned) {
+      const outsideFocus =
+        lightFrame.focusMix > 0.5 &&
+        ((hoveredNodeId != null && !isHovered && !isNeighbor && !recommendedIds.has(node.id)) ||
+          (depChain != null && !depChain.nodeDepth.has(node.id)));
+      if (light && !outsideFocus) {
+        captions.push({
+          node,
+          opacity: finalOpacity,
+          priority: captionPriority(node, hoveredNodeId, hoveredNeighborIds),
+        });
+      } else if (!light) {
+        drawNodeTitle(ctx, node, r, finalOpacity, disableVariation);
+      }
 
       // Search match outline
       if (isSearchMatch && node.x != null && node.y != null) {
@@ -374,7 +471,7 @@ export function drawAllNodes(
         ctx.restore();
       }
 
-      if (!focusMode && particleSystem?.isEnabled() && node.x && node.y) {
+      if (!light && !focusMode && particleSystem?.isEnabled() && node.x && node.y) {
         // Keep particles fixed in stable render mode for deterministic screenshots
         if (!disableVariation) {
           particleSystem.update(node.id, node.x, node.y);
@@ -385,6 +482,10 @@ export function drawAllNodes(
 
     ctx.globalAlpha = previousAlpha;
   });
+
+  if (light && captions.length > 0) {
+    drawLightCaptions(ctx, captions, r);
+  }
 }
 
 /**
@@ -430,12 +531,30 @@ export function draw(
   linkPreviewTarget?: { sourceId: string; targetId: string } | null,
   linkPreviewMousePos?: { sourceId: string; x: number; y: number } | null,
   fog: FogRenderParams = defaultFogRenderParams(),
-  hoveredNeighborIds?: Set<string>
+  hoveredNeighborIds?: Set<string>,
+  labeledNodeIds?: Set<string>,
+  depChain?: DependencyChain | null
 ): void {
   ctx.clearRect(0, 0, width, height);
+  beginLightFrame(transform.k, animationTime, disableVariation);
 
-  // Draw background with gravity lens distortion (skipped in focus mode)
-  if (!focusMode) {
+  if (isLightStyle()) {
+    // GRAPH-LIGHT-1: deep sky with a parallax starfield; plain ink in focus mode.
+    if (focusMode) {
+      ctx.fillStyle = "#04060d";
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      drawLightBackground(
+        ctx,
+        width,
+        height,
+        transform,
+        animationTime,
+        lightFrame.ambient && !disableVariation
+      );
+    }
+  } else if (!focusMode) {
+    // Draw background with gravity lens distortion (skipped in focus mode)
     drawBackground(ctx, width, height, nodes, animationTime);
     if (gravitySystem?.isEnabled(nodes.length)) {
       drawDistortedBackgroundGrid(ctx, width, height, nodes, animationTime);
@@ -492,8 +611,15 @@ export function draw(
     dyingLinkOpacity,
     nodeMap,
     visibleNodeIds,
-    hoveredNeighborIds
+    hoveredNeighborIds,
+    depChain
   );
+
+  // Decision 81: recommendations of the hovered note, only while hovering.
+  if (isLightStyle() && hoveredNodeId) {
+    const hovered = nodeMap.get(hoveredNodeId);
+    if (hovered) drawLightRecommendations(ctx, hovered, nodeMap, hoveredNeighborIds);
+  }
 
   // Draw link preview if dragging for link creation
   if (linkPreviewTarget) {
@@ -544,7 +670,9 @@ export function draw(
     searchMatchIdSet,
     visibleNodeIds,
     simplified,
-    hoveredNeighborIds
+    hoveredNeighborIds,
+    labeledNodeIds,
+    depChain
   );
 
   ctx.restore();
@@ -576,7 +704,8 @@ export function resetView(
   nodes: SimulationNode[],
   transform: { x: number; y: number; k: number }
 ): void {
-  if (nodes.length === 0) return;
+  // Nothing to fit into: a hidden or collapsed canvas has no size.
+  if (nodes.length === 0 || !(width > 0) || !(height > 0)) return;
 
   // Find graph bounds
   let minX = Infinity,
@@ -603,7 +732,9 @@ export function resetView(
   // Compute scale to fit entire graph
   const scaleX = width / graphWidth;
   const scaleY = height / graphHeight;
-  transform.k = Math.min(scaleX, scaleY, 1); // Don’t zoom beyond 1:1
+  // Classic icons are not zoomed past 1:1; lights keep their on-screen size,
+  // so the light style may zoom in to fill the screen (GRAPH-LIGHT-1).
+  transform.k = Math.min(scaleX, scaleY, isLightStyle() ? 2 : 1);
 
   // Center
   transform.x = (width - graphWidth * transform.k) / 2 - minX * transform.k;

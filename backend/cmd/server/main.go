@@ -29,11 +29,11 @@ import (
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/email"
-	"knowledge-graph/internal/infrastructure/events"
 	graphinfra "knowledge-graph/internal/infrastructure/graph"
 	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
 	oauthpkg "knowledge-graph/internal/infrastructure/oauth"
+	"knowledge-graph/internal/infrastructure/outbox"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/infrastructure/web"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
@@ -190,8 +190,12 @@ func run(
 
 	cacheClient := infracache.NewRedisCacheClient(redisClient)
 
-	noteRepo := postgres.NewNoteRepository(database, cacheClient)
-	linkRepo := postgres.NewLinkRepository(database)
+	// SYNC-1 A2: note/link writes go through the outbox decorators — every
+	// repository write commits its graph event in the same transaction, and
+	// the worker's relayer delivers it to Redis. No handler publishes
+	// manually anymore.
+	noteRepo := outbox.NewNoteRepository(postgres.NewNoteRepository(database, cacheClient), database)
+	linkRepo := outbox.NewLinkRepository(postgres.NewLinkRepository(database), database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database, cfg.NLPModelName)
 
 	// Draft service and handler (only if MongoDB is available)
@@ -251,23 +255,23 @@ func run(
 		}
 	}
 
-	// Graph event publisher (nil when Redis is unavailable)
-	var eventPublisher *events.Publisher
-	if redisClient != nil {
-		eventPublisher = events.NewPublisher(redisClient, cfg.EventChannel)
-	}
-
 	// Import service and handlers
 	importService := importer.NewService(noteRepo, cacheClient, taskQueue, web.NewImportFetcher())
 
 	// Handlers with new parameters
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService, importService)
 	noteHandler.SetLinkRepository(linkRepo)
-	linkHandler := linkhandler.New(linkRepo, noteRepo, achievementService, graphCache)
-	if eventPublisher != nil {
-		noteHandler.SetEventPublisher(eventPublisher)
-		linkHandler.SetEventPublisher(eventPublisher)
+	// NOTE-QUALITY-1 part 3: re-fetch uses the same stage-A extractor as the
+	// import preview — a user action, never the quality pipeline.
+	noteHandler.SetRefetch(web.NewImportFetcher())
+
+	// NOTE-QUALITY-1: endpoints stay mounted but answer {"enabled": false}
+	// until the flag and Mongo are both present. The enqueuer is the task
+	// queue only when it implements the (narrow) quality enqueue method.
+	if installQualityEndpoints(ctx, noteHandler, cfg.NLPQualityEnabled, mongoClient, taskQueue) {
+		log.Println("[Quality] NOTE-QUALITY-1 endpoints enabled")
 	}
+	linkHandler := linkhandler.New(linkRepo, noteRepo, achievementService, graphCache)
 	graphHandler := graphhandler.New(noteRepo, linkRepo, cfg, graphCache)
 	tagRepo := postgres.NewTagRepository(database)
 	tagHandler := taghandler.New(tagRepo, noteRepo)
@@ -464,11 +468,31 @@ func newAsynqClient(cfg *config.Config) common.TaskQueue {
 		return nil
 	}
 
-	asynqClient, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled)
+	asynqClient, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled, cfg.NLPQualityEnabled)
 	if err != nil {
 		log.Printf("WARNING: failed to create asynq client: %v", err)
 		return nil
 	}
 	log.Printf("Asynq client created successfully")
 	return asynqClient
+}
+
+// installQualityEndpoints wires the NOTE-QUALITY-1 endpoints when both the
+// feature flag and its Mongo storage are present; otherwise the mounted
+// endpoints keep answering {"enabled": false} and nothing touches Mongo or
+// the queue. Returns whether the feature was enabled.
+func installQualityEndpoints(ctx context.Context, h *notehandler.Handler, enabled bool, mongoClient *mongo.Client, taskQueue common.TaskQueue) bool {
+	if !enabled || mongoClient == nil {
+		return false
+	}
+	qualityLog := mongo.NewQualityLogRepository(mongoClient)
+	if err := qualityLog.EnsureIndexes(ctx); err != nil {
+		log.Printf("[Quality] WARNING: failed to ensure quality_log indexes: %v", err)
+	}
+	var qualityEnq notehandler.QualityEnqueuer
+	if e, ok := taskQueue.(notehandler.QualityEnqueuer); ok {
+		qualityEnq = e
+	}
+	h.SetQuality(true, qualityLog, qualityEnq)
+	return true
 }

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	appcache "knowledge-graph/internal/application/cache"
 	importer "knowledge-graph/internal/application/import"
@@ -118,7 +119,11 @@ func (m *embeddingRepoMock) FindSimilarNotesBatch(ctx context.Context, noteIDs [
 	return nil, nil
 }
 
-type taskQueueMock struct{ mock.Mock }
+type taskQueueMock struct {
+	mock.Mock
+	normalizeCalls []string
+	cleanupCalls   []string
+}
 
 func (m *taskQueueMock) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
 	return nil
@@ -223,6 +228,27 @@ func TestCreateNote_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Test Note")
 	repo.AssertExpectations(t)
 	tq.AssertExpectations(t)
+	// NLP-4: creating a note enqueues normalization (the queue client
+	// itself gates on nlp.pipeline.enabled — the handler always calls).
+	assert.Len(t, tq.normalizeCalls, 1)
+}
+
+func TestCreateBatch_EnqueuesNormalize(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+
+	body := `{"notes":[{"title":"Batch 1","content":"one"},{"title":"Batch 2","content":"two"}]}`
+	_, c := newContext(t, http.MethodPost, "/notes/batch/create", body)
+	h.CreateBatch(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	repo.AssertExpectations(t)
+	// NLP-4: each note created in a batch goes through normalization.
+	assert.Len(t, tq.normalizeCalls, 2)
 }
 
 func TestCreateNote_WithUser(t *testing.T) {
@@ -373,6 +399,9 @@ func TestUpdateNote_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "New Title")
 	repo.AssertExpectations(t)
 	tq.AssertExpectations(t)
+	// NLP-4: editing note text re-enqueues normalization — without it the
+	// artifact silently goes stale.
+	assert.Len(t, tq.normalizeCalls, 1)
 }
 
 func TestUpdateNote_NoTextChange(t *testing.T) {
@@ -391,6 +420,7 @@ func TestUpdateNote_NoTextChange(t *testing.T) {
 	assert.Equal(t, http.StatusOK, c.Writer.Status())
 	tq.AssertNotCalled(t, "EnqueueExtractKeywords")
 	tq.AssertNotCalled(t, "EnqueueComputeEmbedding")
+	assert.Empty(t, tq.normalizeCalls, "no text change — no normalization")
 }
 
 func TestUpdateNote_InvalidID(t *testing.T) {
@@ -499,7 +529,7 @@ func TestUpdateNote_SaveError(t *testing.T) {
 }
 
 func TestDeleteNote_Success(t *testing.T) {
-	h, repo, _, _, _, _ := setupUnitHandler(t)
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
 	userID := uuid.New()
 	n := newTestNote(t, "ToDelete", "Content", "star")
 
@@ -513,6 +543,8 @@ func TestDeleteNote_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusNoContent, c.Writer.Status())
 	repo.AssertExpectations(t)
+	// NLP-4 criterion 4: deleting a note cascades to its nlp_artifacts docs.
+	assert.Equal(t, []string{n.ID().String()}, tq.cleanupCalls)
 }
 
 func TestDeleteNote_InvalidID(t *testing.T) {
@@ -570,7 +602,7 @@ func TestDeleteNote_DeleteError(t *testing.T) {
 }
 
 func TestDeleteBatchNotes_Success(t *testing.T) {
-	h, repo, _, _, _, _ := setupUnitHandler(t)
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
 	owner := uuid.New()
 	n1 := newTestNote(t, "T1", "C1", "star")
 	n2 := newTestNote(t, "T2", "C2", "star")
@@ -588,6 +620,8 @@ func TestDeleteBatchNotes_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusNoContent, c.Writer.Status())
 	repo.AssertExpectations(t)
+	// NLP-4 criterion 4: each deleted note gets its own cleanup task.
+	assert.ElementsMatch(t, []string{n1.ID().String(), n2.ID().String()}, tq.cleanupCalls)
 }
 
 // SEC-1: a batch containing a foreign note must be refused wholesale —
@@ -861,12 +895,14 @@ func TestGetSuggestions_SemanticFallback(t *testing.T) {
 }
 
 func TestGetSuggestions_CacheFallback(t *testing.T) {
-	h, _, tq, recRepo, embRepo, cache := setupUnitHandler(t)
+	h, repo, tq, recRepo, embRepo, cache := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
 	suggestionID := uuid.New()
 
 	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{}, nil)
 	embRepo.On("FindSimilarNotes", mock.Anything, n.ID(), 5).Return([]recommendation.SimilarNote{}, nil)
+	// The cache path re-resolves each entry — deleted/gone notes drop out.
+	repo.On("FindByID", mock.Anything, suggestionID).Return(newTestNote(t, "Cached", "Body", "planet"), nil)
 
 	cached := fmt.Sprintf(`[{"note_id":%q,"score":0.7}]`, suggestionID.String())
 	_ = cache.Set(context.Background(), "recommendations:"+n.ID().String(), cached, 0)
@@ -880,6 +916,60 @@ func TestGetSuggestions_CacheFallback(t *testing.T) {
 	assert.Equal(t, http.StatusOK, c.Writer.Status())
 	assert.Equal(t, "redis", w.Header().Get("X-Recommendations-Source"))
 	assert.Contains(t, w.Body.String(), suggestionID.String())
+	tq.AssertExpectations(t)
+}
+
+// NOTE-DELETE-1 regression: a trashed note must not be suggested — the
+// precomputed table and the cache both carry stale rows. Mutation "keep
+// appending when FindByID returns nil" turns these red.
+func TestGetSuggestions_PrecomputedSkipsTrashed(t *testing.T) {
+	h, repo, _, recRepo, _, _ := setupUnitHandler(t)
+	n := newTestNote(t, "Sug", "Content", "star")
+	live := newTestNote(t, "Live", "Content", "planet")
+	trashedID := uuid.New()
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("FindByID", mock.Anything, live.ID()).Return(live, nil)
+	repo.On("FindByID", mock.Anything, trashedID).Return(nil, nil) // in the trash
+	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{
+		{NoteID: n.ID(), RecommendedNoteID: live.ID(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
+		{NoteID: n.ID(), RecommendedNoteID: trashedID, Score: 0.8, UpdatedAt: time.Now().Add(time.Hour)},
+	}, nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions", "")
+	withID(c, n.ID())
+	h.GetSuggestions(c)
+	_ = w
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.Contains(t, w.Body.String(), live.ID().String())
+	assert.NotContains(t, w.Body.String(), trashedID.String(), "trashed note must not be suggested")
+}
+
+func TestGetSuggestions_CacheSkipsTrashed(t *testing.T) {
+	h, repo, tq, recRepo, embRepo, cache := setupUnitHandler(t)
+	n := newTestNote(t, "Sug", "Content", "star")
+	liveID := uuid.New()
+	trashedID := uuid.New()
+
+	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{}, nil)
+	embRepo.On("FindSimilarNotes", mock.Anything, n.ID(), 5).Return([]recommendation.SimilarNote{}, nil)
+	repo.On("FindByID", mock.Anything, liveID).Return(newTestNote(t, "Live", "Body", "planet"), nil)
+	repo.On("FindByID", mock.Anything, trashedID).Return(nil, nil)
+
+	cached := fmt.Sprintf(`[{"note_id":%q,"score":0.7},{"note_id":%q,"score":0.6}]`, liveID.String(), trashedID.String())
+	_ = cache.Set(context.Background(), "recommendations:"+n.ID().String(), cached, 0)
+	tq.On("EnqueueRefreshRecommendations", mock.Anything, n.ID(), mock.AnythingOfType("time.Duration")).Return(nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions", "")
+	withID(c, n.ID())
+	h.GetSuggestions(c)
+	_ = w
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.Equal(t, "redis", w.Header().Get("X-Recommendations-Source"))
+	assert.Contains(t, w.Body.String(), liveID.String())
+	assert.NotContains(t, w.Body.String(), trashedID.String(), "cached suggestion for a trashed note must be dropped")
 	tq.AssertExpectations(t)
 }
 
@@ -1069,16 +1159,21 @@ func TestBookmarklet_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "asteroid")
 	repo.AssertExpectations(t)
 	tq.AssertExpectations(t)
+	// NLP-4: bookmarklet-created notes go through normalization too.
+	assert.Len(t, tq.normalizeCalls, 1)
 }
 
 func TestBookmarklet_DefaultTypeAndTruncation(t *testing.T) {
 	h, repo, tq, _, _, _ := setupUnitHandler(t)
 	userID := uuid.New()
 
-	hugeText := strings.Repeat("x", 20000)
+	// URL-HEADING-1: the domain Content limit is 50 000 runes and the request
+	// DTO rejects anything above 50 000 chars — so the old 10 000-byte cut no
+	// longer fires here; truncation itself stays covered by TestBuildContent.
+	hugeText := strings.Repeat("x", 40000)
 
 	repo.On("Save", mock.Anything, mock.MatchedBy(func(n *note.Note) bool {
-		return n.Type() == "asteroid" && len(n.Content().String()) <= 10000
+		return n.Type() == "asteroid" && utf8.RuneCountInString(n.Content().String()) <= 50000
 	})).Return(nil)
 	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
 	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
@@ -1116,4 +1211,17 @@ func TestBookmarklet_ValidationError(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
 	repo.AssertNotCalled(t, "Save")
 	_ = w
+}
+
+// NLP-4 criteria 4-5: normalize enqueue on content-changing writes and the
+// deletion cascade are observable — the mock records both so removing the
+// call sites reddens the delete/create tests below.
+func (m *taskQueueMock) EnqueueNormalizeNote(ctx context.Context, noteID string) error {
+	m.normalizeCalls = append(m.normalizeCalls, noteID)
+	return nil
+}
+
+func (m *taskQueueMock) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
+	m.cleanupCalls = append(m.cleanupCalls, noteID)
+	return nil
 }

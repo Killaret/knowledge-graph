@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import {
+    COCKPIT_CLOSE_DELAY,
     COCKPIT_EDGE_SIZE,
     cockpitStore,
     type CockpitPanelPosition,
@@ -46,7 +47,10 @@
   let closeTimer: ReturnType<typeof setTimeout> | null = $state(null);
 
   const panel = $derived(cockpitStore.panels[position]);
-  const isOpen = $derived(panel.open || panel.pinned || panel.hovering);
+  // Visibility is explicit only (UI-PANELS-1): a bare hover flag never slides
+  // the panel out — hovering merely arms the delayed open/close timers when
+  // auto-collapse mode is on.
+  const isOpen = $derived(panel.open || panel.pinned);
   const visibleSize = $derived(isOpen ? size : handleSize);
   const hoverDelay = $derived(delay ?? cockpitStore.hoverDelay);
   const isVertical = $derived(position === "left" || position === "right");
@@ -123,11 +127,15 @@
     if (!cockpitStore.autoCollapse || panel.pinned) return;
     if (closeTimer) clearTimeout(closeTimer);
     closeTimer = setTimeout(() => {
-      if (!panel.pinned && !panel.hovering) {
-        cockpitStore.closePanel(position);
-      }
       closeTimer = null;
-    }, hoverDelay);
+      if (panel.pinned || panel.hovering) return;
+      // Do not hide while the user is interacting inside: an open dropdown
+      // or a focused input keeps the panel up (UI-PANELS-1).
+      const active = document.activeElement;
+      if (panelRef && active && panelRef.contains(active)) return;
+      if (panelRef?.querySelector('[aria-expanded="true"], details[open]')) return;
+      cockpitStore.closePanel(position);
+    }, COCKPIT_CLOSE_DELAY);
   }
 
   function cancelClose() {
@@ -141,7 +149,9 @@
     if (cockpitStore.firstPerson) return;
     cockpitStore.hoverPanel(position, true);
     cancelClose();
-    if (!panel.open && !panel.pinned) {
+    // Hover-to-open exists only in the auto-collapse mode; otherwise panels
+    // open exclusively on explicit actions (click, drag, node select).
+    if (cockpitStore.autoCollapse && !panel.open && !panel.pinned) {
       open();
     }
   }
@@ -149,7 +159,7 @@
   function handleLeave() {
     cockpitStore.hoverPanel(position, false);
     cancelOpen();
-    if (panel.open && !panel.pinned) {
+    if (cockpitStore.autoCollapse && panel.open && !panel.pinned) {
       scheduleClose();
     }
   }
@@ -221,7 +231,8 @@
   }
 
   function getTransition(): string {
-    return cockpitStore.reducedMotion ? "none" : "transform 0.3s ease";
+    // Reduced motion = user setting OR the OS-level prefers-reduced-motion.
+    return cockpitStore.motionReduced ? "none" : "transform 0.15s ease";
   }
 
   // Arrows point in the direction the panel opens (toward the canvas) so the
@@ -279,14 +290,15 @@
         onkeydown={(e) => e.key === "Enter" && cockpitStore.openPanel(position)}
         data-testid="cockpit-handle-{position}"
         aria-label={t("cockpit.handle.open", { position })}
+        title={title ?? t("cockpit.handle.open", { position })}
         role="button"
         tabindex="-1"
       >
         <span class="handle-arrow-wrapper" style="transform: rotate({arrowRotation}deg);">
           <svg
             class="handle-arrow"
-            width="14"
-            height="14"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -353,14 +365,15 @@
         onkeydown={(e) => e.key === "Enter" && cockpitStore.openPanel(position)}
         data-testid="cockpit-handle-{position}"
         aria-label={t("cockpit.handle.open", { position })}
+        title={title ?? t("cockpit.handle.open", { position })}
         role="button"
         tabindex="-1"
       >
         <span class="handle-arrow-wrapper" style="transform: rotate({arrowRotation}deg);">
           <svg
             class="handle-arrow"
-            width="14"
-            height="14"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -627,10 +640,11 @@
       rgba(10, 10, 15, 0.9) 55%,
       rgba(139, 92, 246, 0.12) 100%
     );
-    border: 1px solid rgba(34, 211, 238, 0.22);
+    border: 1px solid rgba(34, 211, 238, 0.45);
     box-shadow:
       inset 0 0 10px rgba(34, 211, 238, 0.08),
-      0 0 12px rgba(0, 0, 0, 0.5);
+      0 0 12px rgba(0, 0, 0, 0.5),
+      0 0 8px rgba(34, 211, 238, 0.12);
     transition:
       background 0.25s ease,
       box-shadow 0.25s ease;
@@ -672,7 +686,7 @@
   }
 
   .handle-arrow {
-    color: rgba(34, 211, 238, 0.75);
+    color: rgba(34, 211, 238, 0.95);
     filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.4));
     animation: pulse 1.6s ease-in-out infinite;
   }

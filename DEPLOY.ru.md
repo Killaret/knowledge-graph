@@ -519,6 +519,8 @@ docker compose -f docker-compose.personal.yml up -d backup_scheduler
 
 NLP-сервис работает **офлайн** (`HF_HUB_OFFLINE=1`) и читает модель из bind-mount `./huggingface_cache:/root/.cache/huggingface`. При первом старте папка пустая.
 
+Deploy-compose использует именованный том `nlp_hf_cache`, а не bind-mount хоста. На первом старте `HF_HUB_OFFLINE=0`: контейнер скачивает только нужные сервису JSON-файлы, токенизатор и `model.safetensors`; следующие старты используют том повторно. В образ модель не входит, поэтому интернет серверу нужен только при заполнении пустого тома.
+
 ### Вариант А — с интернетом
 
 Скачать модель через тот же контейнер:

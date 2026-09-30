@@ -244,6 +244,24 @@ class PreloadServiceClass {
         return null;
       }
 
+      if (delta.resync) {
+        // The server no longer remembers our version — replace the cached
+        // graph wholesale instead of merging a partial delta.
+        const fresh = await getFullGraphData(undefined, undefined, undefined, graphView.mode);
+        if (this.preloadedGraph !== cached || graphView.scopeKey !== scopeKey) {
+          return null;
+        }
+        this.preloadedGraph = {
+          data: fresh,
+          timestamp: Date.now(),
+          ttl: this.GRAPH_TTL,
+          lastHash: fresh.hash,
+          isPublic: false,
+          scopeKey,
+        };
+        return delta;
+      }
+
       this.applyDelta(delta);
       this.preloadedGraph.delta = delta;
       if (delta.current_hash) {

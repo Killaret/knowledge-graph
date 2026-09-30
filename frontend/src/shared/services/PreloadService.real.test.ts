@@ -199,6 +199,34 @@ describe("PreloadService (real)", () => {
     expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("seed-hash-2");
   });
 
+  // SYNC-1: when the server no longer knows our version it answers resync —
+  // the cached graph must be replaced wholesale, not merged.
+  it("replaces the graph wholesale when the delta answers resync", async () => {
+    mockAuth.isAuthenticated.mockReturnValue(true);
+    const seeded = {
+      nodes: [{ id: "old-1", title: "Stale", type: "star" }],
+      links: [{ source: "old-1", target: "old-2", link_type: "related" }],
+      hash: "stale-hash",
+    };
+    PreloadService.seedGraph(seeded);
+
+    mockGraphApi.getGraphDelta.mockResolvedValue({ resync: true });
+    mockGraphApi.getFullGraphData.mockResolvedValue({
+      nodes: [{ id: "fresh-1", title: "Fresh", type: "planet" }],
+      links: [],
+      hash: "fresh-hash",
+    });
+
+    const result = await PreloadService.updateWithDelta();
+
+    expect(result).toEqual({ resync: true });
+    expect(mockGraphApi.getFullGraphData).toHaveBeenCalled();
+    const graph = PreloadService.getPreloadedGraph();
+    expect(graph?.nodes.map((n: any) => n.id)).toEqual(["fresh-1"]);
+    expect(graph?.links).toHaveLength(0);
+    expect(PreloadService.getPreloadedGraphData()?.lastHash).toBe("fresh-hash");
+  });
+
   it("handles public preload errors gracefully", async () => {
     mockGraphApi.getFullGraphData.mockRejectedValue(new Error("network"));
 

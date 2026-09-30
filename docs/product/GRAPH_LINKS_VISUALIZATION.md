@@ -71,13 +71,18 @@ const baseOpacity = 0.4 + (weight ?? 0.5) * 0.4;
 
 ### Direct vs Recommended
 
+> **Implementation status (DOC-AUDIT-2, 2026-09-30):** recommendations live in
+> `note_recommendations` and **are drawn** — since GRAPH-LIGHT-1 (2026-09-29,
+> owner decision 81) they render as a third line kind: pale dotted lines shown
+> on hover in the default light look (`entities/graph-canvas/lib/light/recommendations.ts`).
+
 | Feature | Direct link | Recommendation |
 |---------|-------------|----------------|
 | **Source** | `links` table | `note_recommendations` table |
 | **Creation** | Manual via UI/API | Worker / NLP service |
 | **Type** | Explicit (`reference`/`dependency`/`related`/`custom`/`parent`/`child`) | Usually `related` |
 | **Weight** | User-defined (0.0–1.0) | Computed (α×graph + β×semantic + γ×keyword) |
-| **Visual** | Type color and dash | Paler, weight-based dash |
+| **Visual** | Type color and dash | Planned: pale, weight-based dash |
 
 ## 4. Rendering
 
@@ -123,7 +128,7 @@ When both `A→B` and `B→A` exist, each link is offset perpendicularly by `BID
   - type icon and label,
   - color line,
   - weight and source/target titles,
-  - `source_type` badge (user / auto / worker),
+  - `source_type` badge (`user` / `gamma` — the DB CHECK constraint; `gamma` marks auto-proposed links),
   - `last_weight_update` date.
 - Edit / delete buttons are shown when `onLinkEdit` / `onLinkDelete` are provided.
 

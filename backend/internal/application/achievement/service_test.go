@@ -485,3 +485,11 @@ func TestCheckTrigger_UserHasAchievementError(t *testing.T) {
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
 }
+
+func (q *mockTaskQueue) EnqueueNormalizeNote(ctx context.Context, noteID string) error {
+	return nil
+}
+
+func (q *mockTaskQueue) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
+	return nil
+}

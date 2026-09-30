@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 // NoteModel — note model with creator binding
@@ -20,7 +21,7 @@ type NoteModel struct {
 	IsPublic     bool           `gorm:"column:is_public;default:false;index"`
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
-	DeletedAt    *time.Time `gorm:"index"`
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }
 
 func (NoteModel) TableName() string {

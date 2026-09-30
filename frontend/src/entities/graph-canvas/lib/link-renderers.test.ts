@@ -5,7 +5,11 @@ import {
   drawAnimatedLink,
   drawLink,
   drawPreviewLink,
+  linkStrokeColor,
+  DEPENDENCY_CYCLE_COLOR,
 } from "./link-renderers";
+import { computeDependencyChain } from "./dependency-chain";
+import { AUTO_LINK_COLOR, LinkType } from "$entities";
 import type { SimulationLink, SimulationNode } from "./types";
 
 function createCtx() {
@@ -132,5 +136,130 @@ describe("link renderers", () => {
     drawPreviewLink(ctx as any, 0, 0, 10, 10, 0.3);
     expect(ctx.stroke).toHaveBeenCalled();
     expect(ctx.fill).toHaveBeenCalled();
+  });
+
+  it("renders model-suggested links thinner and more transparent than manual ones", () => {
+    // UI-GRAPH-1: gamma links must be visually weaker than user-created links.
+    const alpha = (style: string) => parseFloat(style.slice(style.lastIndexOf(",") + 1));
+
+    const userLink = makeLink("reference", "a", "b", 0.5);
+    drawLink(ctx as any, userLink, makeNode("a", 0, 0), makeNode("b", 10, 10), 1);
+    const userWidth = ctx.lineWidth;
+    const userAlpha = alpha(ctx.strokeStyle);
+
+    const gammaLink = { ...userLink, source_type: "gamma" } as SimulationLink;
+    drawLink(ctx as any, gammaLink, makeNode("a", 0, 0), makeNode("b", 10, 10), 1);
+    const gammaWidth = ctx.lineWidth;
+    const gammaAlpha = alpha(ctx.strokeStyle);
+
+    expect(gammaWidth).toBeLessThan(userWidth);
+    expect(gammaAlpha).toBeLessThan(userAlpha);
+    expect(gammaAlpha).toBeCloseTo(userAlpha * 0.45, 5);
+  });
+
+  it("renders a promoted gamma_origin link like a manual one", () => {
+    // gamma_origin only records provenance — once source_type is "user" the
+    // link is confirmed and renders at full strength.
+    const alpha = (style: string) => parseFloat(style.slice(style.lastIndexOf(",") + 1));
+
+    const manual = makeLink("reference", "a", "b", 0.5);
+    drawLink(ctx as any, manual, makeNode("a", 0, 0), makeNode("b", 10, 10), 1);
+    const manualAlpha = alpha(ctx.strokeStyle);
+
+    const promoted = {
+      ...makeLink("reference", "a", "b", 0.5),
+      gamma_origin: true,
+    } as SimulationLink;
+    drawLink(ctx as any, promoted, makeNode("a", 0, 0), makeNode("b", 10, 10), 1);
+    expect(alpha(ctx.strokeStyle)).toBeCloseTo(manualAlpha, 5);
+  });
+
+  it("paints auto (gamma) links with the dedicated colour, not the type colour", () => {
+    // LINK-TYPES-1 mutation guard: rendering a gamma link with its manual
+    // type's colour must fail — the hue has to be the auto-link one.
+    const gammaLink = {
+      ...makeLink("related", "a", "b", 0.5),
+      source_type: "gamma",
+    } as SimulationLink;
+    const style = linkStrokeColor(gammaLink, LinkType.RELATED, 0.5, 1);
+    expect(style).toContain("74, 222, 128"); // AUTO_LINK_COLOR rgb
+    expect(style).not.toContain("153, 153, 153"); // LinkType.RELATED rgb
+  });
+
+  it("auto-link brightness follows the weight", () => {
+    const alpha = (style: string) => parseFloat(style.slice(style.lastIndexOf(",") + 1));
+    const gammaLink = { ...makeLink("related", "a", "b"), source_type: "gamma" } as SimulationLink;
+    const dim = linkStrokeColor(gammaLink, LinkType.RELATED, 0.1, 1);
+    const bright = linkStrokeColor(gammaLink, LinkType.RELATED, 0.9, 1);
+    expect(alpha(bright)).toBeGreaterThan(alpha(dim));
+    expect(AUTO_LINK_COLOR).not.toBe(LinkType.RELATED.color);
+  });
+
+  it("dims links outside the dependency chain and fades chain links by depth", () => {
+    // chain: a→b→c ; hover a; unrelated link x→y
+    const chain = computeDependencyChain("a", [
+      { source: "a", target: "b", link_type: "dependency" },
+      { source: "b", target: "c", link_type: "dependency" },
+    ]);
+
+    const alpha = (style: string) => parseFloat(style.slice(style.lastIndexOf(",") + 1));
+
+    const chainLink = makeLink("dependency", "a", "b", 0.5);
+    drawLink(
+      ctx as any,
+      chainLink,
+      makeNode("a", 0, 0),
+      makeNode("b", 10, 10),
+      1,
+      "a",
+      false,
+      0,
+      undefined,
+      chain
+    );
+    const chainAlpha = alpha(ctx.strokeStyle);
+
+    const farLink = makeLink("related", "x", "y", 0.5);
+    drawLink(
+      ctx as any,
+      farLink,
+      makeNode("x", 0, 0),
+      makeNode("y", 10, 10),
+      1,
+      "a",
+      false,
+      0,
+      undefined,
+      chain
+    );
+    const dimmedAlpha = alpha(ctx.strokeStyle);
+
+    expect(chainAlpha).toBeGreaterThan(dimmedAlpha);
+    expect(dimmedAlpha).toBeLessThanOrEqual(0.2);
+  });
+
+  it("renders dependency-cycle links in red", () => {
+    // a→b→a cycle; hover a
+    const chain = computeDependencyChain("a", [
+      { source: "a", target: "b", link_type: "dependency" },
+      { source: "b", target: "a", link_type: "dependency" },
+    ]);
+    expect(chain!.hasCycle).toBe(true);
+
+    const cycleLink = makeLink("dependency", "a", "b", 0.5);
+    drawLink(
+      ctx as any,
+      cycleLink,
+      makeNode("a", 0, 0),
+      makeNode("b", 10, 10),
+      1,
+      "a",
+      false,
+      0,
+      undefined,
+      chain
+    );
+    expect(ctx.strokeStyle).toContain("239, 68, 68"); // DEPENDENCY_CYCLE_COLOR
+    expect(DEPENDENCY_CYCLE_COLOR).toBe("#ef4444");
   });
 });

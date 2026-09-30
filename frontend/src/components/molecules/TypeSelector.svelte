@@ -131,7 +131,7 @@
     max-width: 160px;
     font-size: 10px;
     font-weight: 400;
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -1,0 +1,447 @@
+<!doctype html><html class=no-js lang=en><head><meta charset=utf-8><meta content="width=device-width,initial-scale=1.0" name=viewport><meta content=deny http-equiv=X-Frame-Options><script>(function() {
+        var stored = localStorage.getItem('theme');
+        if (stored === 'dark' || stored === 'light') {
+            document.documentElement.setAttribute('data-theme', stored);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    })();</script><title>Auth Code Flow pt. 2 | OneLogin Developers</title><meta content="OneLogin developer documentation, API reference, and resources" name=description><link href=https://cdn.onelogin.com/typography-fonts/fonts.css rel=stylesheet><link href=/style.css?v=6300ce35400afc961ed1bbe808a2ff557b94a6ee rel=stylesheet><link rel="shortcut icon" href=/favicon.png type=image/png><link title="OneLogin Developers" href=/atom.xml rel=alternate type=application/atom+xml><body class="page page-with-sidebar" id=top><a class=skip-link href=#main-content>Skip to main content</a><header id=header><div class="wrapper overflow-show"><a class=logo-link href=/> <img alt=OneLogin class=header-logo src=/logo-white.svg> </a><button aria-label="Toggle navigation menu" aria-expanded=false class=nav-toggle id=nav-toggle><span class=hamburger-line></span> <span class=hamburger-line></span> <span class=hamburger-line></span></button><nav aria-label="Main navigation" class=prevent-rsa id=main-nav><ul class=flat><li><a href=/blog> BLOG </a><li><a href=/docs/quickstart/getting-started> DOCS </a><li><a href=/api-docs/2/getting-started/dev-overview> API REFERENCE </a><li><a href=/support> SUPPORT </a></ul><div class=mobile-nav-extras><div class=mobile-nav-search><svg viewbox="0 0 24 24" aria-hidden=true class=search-icon fill=none height=14 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2.5 width=14 xmlns=http://www.w3.org/2000/svg><circle cx=11 cy=11 r=8 /><line x1=21 x2=16.65 y1=21 y2=16.65 /></svg><label class=sr-only for=mobile-search-input>Search documentation</label><input placeholder="Search docs..." autocomplete=off id=mobile-search-input><div aria-label="Search results" class=search-results id=mobile-search-results role=listbox></div></div><div class=mobile-nav-actions><button aria-label="Toggle dark mode" title="Toggle dark mode" class=theme-toggle id=mobile-theme-toggle><svg viewbox="0 0 24 24" aria-hidden=true class=icon-sun fill=none height=18 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2 width=18 xmlns=http://www.w3.org/2000/svg><circle cx=12 cy=12 r=5 /><line x1=12 x2=12 y1=1 y2=3 /><line x1=12 x2=12 y1=21 y2=23 /><line x1=4.22 x2=5.64 y1=4.22 y2=5.64 /><line x1=18.36 x2=19.78 y1=18.36 y2=19.78 /><line x1=1 x2=3 y1=12 y2=12 /><line x1=21 x2=23 y1=12 y2=12 /><line x1=4.22 x2=5.64 y1=19.78 y2=18.36 /><line x1=18.36 x2=19.78 y1=5.64 y2=4.22 /></svg> <svg viewbox="0 0 24 24" aria-hidden=true class=icon-moon fill=none height=18 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2 width=18 xmlns=http://www.w3.org/2000/svg><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> <span class=toggle-label>Dark Mode</span></button><a class="btn mobile-trial-btn" rel="noopener noreferrer" href=https://www.onelogin.com/free-trial target=_blank>Free Trial<span class=sr-only> (opens in new tab)</span></a></div></div></nav><div class=header-actions><button aria-label="Toggle dark mode" title="Toggle dark mode" class=theme-toggle id=theme-toggle><svg viewbox="0 0 24 24" aria-hidden=true class=icon-sun fill=none height=18 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2 width=18 xmlns=http://www.w3.org/2000/svg><circle cx=12 cy=12 r=5 /><line x1=12 x2=12 y1=1 y2=3 /><line x1=12 x2=12 y1=21 y2=23 /><line x1=4.22 x2=5.64 y1=4.22 y2=5.64 /><line x1=18.36 x2=19.78 y1=18.36 y2=19.78 /><line x1=1 x2=3 y1=12 y2=12 /><line x1=21 x2=23 y1=12 y2=12 /><line x1=4.22 x2=5.64 y1=19.78 y2=18.36 /><line x1=18.36 x2=19.78 y1=5.64 y2=4.22 /></svg> <svg viewbox="0 0 24 24" aria-hidden=true class=icon-moon fill=none height=18 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2 width=18 xmlns=http://www.w3.org/2000/svg><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button><div class=nav-search><svg viewbox="0 0 24 24" aria-hidden=true class=search-icon fill=none height=14 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2.5 width=14 xmlns=http://www.w3.org/2000/svg><circle cx=11 cy=11 r=8 /><line x1=21 x2=16.65 y1=21 y2=16.65 /></svg><label class=sr-only for=search-input>Search documentation</label><input placeholder="Search docs..." autocomplete=off id=search-input><div aria-label="Search results" class=search-results id=search-results role=listbox></div></div><a class="btn get-ol" rel="noopener noreferrer" href=https://www.onelogin.com/free-trial target=_blank>Free Trial<span class=sr-only> (opens in new tab)</span></a></div></div></header><div class=page-layout><aside class=docs-sidebar><div class=docs-sidebar-content><div class="docs-section collapsible"><h3 class=section-toggle onclick=toggleSection(this)><span class=toggle-icon>▶︎</span> Quickstart Guide</h3><ul class=section-content><li><a href=/docs/quickstart/> Overview </a><li class=has-children><div onclick="toggleSubsection(event, this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSubsection(event,this)}" aria-expanded=false class=subsection-toggle role=button tabindex=0><span aria-hidden=true class=toggle-icon>▶︎</span><span class=subsection-title>Authenticating Users</span></div> <ul class=subsection-content><li><a href=/docs/quickstart/authentication/> Overview </a><li><a href=/docs/quickstart/authentication/nodejs/> Node.js + Express </a><li><a href=/docs/quickstart/authentication/java-spring/> Java Spring Boot </a><li><a href=/docs/quickstart/authentication/react/> React </a><li><a href=/docs/quickstart/authentication/native-android-app/> Native Android App </a><li><a href=/docs/quickstart/authentication/native-ios-app/> Native iOS App </a><li><a href=/docs/quickstart/authentication/django-with-onelogin/> Django </a></ul><li><a href=/docs/quickstart/saml/> Getting started with SAML </a><li><a href=/docs/quickstart/api/> Manage Users, Apps & Roles </a><li><a href=/docs/quickstart/mfa/> Enroll, Push, & Verify MFA </a><li><a href=/docs/quickstart/reporting/> Extract data for reporting </a><li><a href=/docs/quickstart/geoblock/> Geo-blocking users at login time </a><li><a href=/docs/quickstart/using-postman/> Using Postman to Explore the OneLogin API </a><li><a href=/docs/quickstart/onelogin-api-to-create-update-user-mappings/> Using OneLogin API to Create and Update User Mappings </a><li><a href=/docs/quickstart/google-ontap-with-onelogin/> Integrating Google One Tap with OneLogin </a><li><a href=/docs/quickstart/api-examples/> API examples in cURL </a></ul></div><div class="docs-section collapsible"><h3 class=section-toggle onclick=toggleSection(this)><span class=toggle-icon>▶︎</span> SAML</h3><ul class=section-content><li><a href=/docs/saml/> Overview </a><li><a href=/docs/saml/why-saml/> Why SAML? </a><li><a href=/docs/saml/app-catalog/> Add Your App to Our Catalog </a><li class=has-children><div onclick="toggleSubsection(event, this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSubsection(event,this)}" aria-expanded=false class=subsection-toggle role=button tabindex=0><span aria-hidden=true class=toggle-icon>▶︎</span><span class=subsection-title>Examples</span></div> <ul class=subsection-content><li><a href=/docs/saml/examples/> Overview </a><li><a href=/docs/saml/examples/authnrequest/> AuthNRequest </a><li><a href=/docs/saml/examples/response/> Response </a><li><a href=/docs/saml/examples/logout-request/> Logout Request </a><li><a href=/docs/saml/examples/logout-response/> Logout Response </a></ul><li class=has-children><div onclick="toggleSubsection(event, this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSubsection(event,this)}" aria-expanded=false class=subsection-toggle role=button tabindex=0><span aria-hidden=true class=toggle-icon>▶︎</span><span class=subsection-title>Toolkits</span></div> <ul class=subsection-content><li><a href=/docs/saml/toolkits/> Overview </a><li><a href=/docs/saml/toolkits/java/> Java Toolkit </a><li><a href=/docs/saml/toolkits/php/> PHP Toolkit </a><li><a href=/docs/saml/toolkits/python/> Python Toolkit </a><li><a href=/docs/saml/toolkits/ruby/> Ruby Toolkit </a><li><a href=/docs/saml/toolkits/c-and-aspnet/> C# / .NET Toolkit </a></ul><li><a href=/docs/saml/online-tools/> Online Tools </a><li><a href=/docs/saml/best-practices-and-faqs/> Best Practices & FAQs </a></ul></div><div class="docs-section collapsible open"><h3 class=section-toggle onclick=toggleSection(this)><span class=toggle-icon>▼︎</span> OpenID Connect</h3><ul class=section-content><li><a href=/docs/openid-connect/dev-overview/> Overview </a><li><a href=/docs/openid-connect/enable-app/> Build an OIDC enabled app </a><li><a href=/docs/openid-connect/connect-to-onelogin/> Connect an OIDC enabled app </a><li class="has-children open"><div onclick="toggleSubsection(event, this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSubsection(event,this)}" aria-expanded=true class=subsection-toggle role=button tabindex=0><span aria-hidden=true class=toggle-icon>▼︎</span><span class=subsection-title>OpenID Connect API</span></div> <ul class=subsection-content><li><a href=/docs/openid-connect/api/> Overview </a><li><a href=/docs/openid-connect/api/upgrade/> Upgrade v1 to v2 </a><li><a href=/docs/openid-connect/api/authorization-code/> Auth Code Flow pt. 1 </a><li><a class=active href=/docs/openid-connect/api/authorization-code-grant/> Auth Code Flow pt. 2 </a><li><a href=/docs/openid-connect/api/device-code-auth/> Device Code Flow - Authorization </a><li><a href=/docs/openid-connect/api/device-code-token/> Device Code Flow - Token </a><li><a href=/docs/openid-connect/api/id-token/> Implicit Flow </a><li><a href=/docs/openid-connect/api/password-grant/> Password Grant </a><li><a href=/docs/openid-connect/api/client-credentials-grant/> Client Credentials Grant </a><li><a href=/docs/openid-connect/api/validate-token/> Validate a Token </a><li><a href=/docs/openid-connect/api/refresh-token/> Refresh a Token </a><li><a href=/docs/openid-connect/api/revoke-token/> Revoke a Token </a><li><a href=/docs/openid-connect/api/user-info/> Get User Info </a><li><a href=/docs/openid-connect/api/logout/> Logout </a><li><a href=/docs/openid-connect/api/dynamic-client-registration/> Dynamic Client Registration </a><li><a href=/docs/openid-connect/api/provider-config/> Provider Configuration </a><li><a href=/docs/openid-connect/api/list-keys/> List Signing Keys </a><li><a href=/docs/openid-connect/api/get-key/> Get Signing Key </a><li><a href=/docs/openid-connect/api/rotate-key/> Rotate Signing Key </a><li><a href=/docs/openid-connect/api/revoke-key/> Revoke Signing Key </a></ul><li class=has-children><div onclick="toggleSubsection(event, this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSubsection(event,this)}" aria-expanded=false class=subsection-toggle role=button tabindex=0><span aria-hidden=true class=toggle-icon>▶︎</span><span class=subsection-title>OpenID Connect API v1</span></div> <ul class=subsection-content><li><a href=/docs/openid-connect/api-v1/> Overview </a><li><a href=/docs/openid-connect/api-v1/authorization-code/> Auth Code Flow pt. 1 </a><li><a href=/docs/openid-connect/api-v1/authorization-code-grant/> Auth Code Flow pt. 2 </a><li><a href=/docs/openid-connect/api-v1/id-token/> Implicit Flow </a><li><a href=/docs/openid-connect/api-v1/password-grant/> Password Grant </a><li><a href=/docs/openid-connect/api-v1/client-credentials-grant/> Client Credentials Grant </a><li><a href=/docs/openid-connect/api-v1/validate-session/> Validate an Access Token </a><li><a href=/docs/openid-connect/api-v1/refresh-session/> Refresh an Access Token </a><li><a href=/docs/openid-connect/api-v1/revoke-session/> Revoke an Access Token </a><li><a href=/docs/openid-connect/api-v1/user-info/> Get User Info </a><li><a href=/docs/openid-connect/api-v1/provider-config/> Provider Configuration </a></ul><li><a href=/docs/openid-connect/scopes/> Scopes </a><li><a href=/docs/openid-connect/samples/> Sample Code </a><li class=has-children><div onclick="toggleSubsection(event, this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSubsection(event,this)}" aria-expanded=false class=subsection-toggle role=button tabindex=0><span aria-hidden=true class=toggle-icon>▶︎</span><span class=subsection-title>Guides</span></div> <ul class=subsection-content><li><a href=/docs/openid-connect/guides/auth-flow-pkce/> Auth Code Flow + PKCE </a><li><a href=/docs/openid-connect/guides/email-verified/> Enabling the email_verified claim </a></ul><li><a href=/docs/openid-connect/inspector/> OpenID Connect Inspector </a></ul></div><div class="docs-section collapsible"><h3 class=section-toggle onclick=toggleSection(this)><span class=toggle-icon>▶︎</span> SCIM</h3><ul class=section-content><li><a href=/docs/scim/dev-overview/> Developer Overview of SCIM </a><li><a href=/docs/scim/define-user-schema/> Step 1. Define Your SCIM User Schema </a><li><a href=/docs/scim/implement-scim-api/> Step 2. Implement RESTful SCIM APIs for Your App </a><li><a href=/docs/scim/create-app/> Step 3. Create a SCIM Test App </a><li><a href=/docs/scim/test-your-scim/> Step 4. Test Your SCIM </a><li><a href=/docs/scim/publish-app/> Step 5. Contact OneLogin Support to Publish Your App </a></ul></div><div class="docs-section collapsible"><h3 class=section-toggle onclick=toggleSection(this)><span class=toggle-icon>▶︎</span> API Authorization</h3><ul class=section-content><li><a href=/docs/api-authorization/authorizing-aws-api-gateway-requests-with-onelogin-oauth-access-tokens/> Use AWS Lambda authorizers with OneLogin to secure Amazon API Gateway </a><li><a href="/docs/api-authorization/Mulesoft- API- Gateway- JWT- Authorization- via- OneLogin/"> Mulesoft API Gateway JWT Authorization via OneLogin </a><li><a href=/docs/api-authorization/oneLogin-api-define-custom-access-tokens/> Using the OneLogin API to Define Custom Access Tokens </a><li><a href=/docs/api-authorization/using-the-appauth-pkce-to-authenticate-to-your-electron-application/> Using the AppAuth PKCE to Authenticate to your Electron Application </a></ul></div><div class=docs-section><h3><a href=/docs/oneclick-api/> OneClick API </a></h3></div><div class=docs-section><h3><a href=/docs/smart-hooks/smart-hooks-to-force-mfa-enrollment/> Smart Hooks </a></h3></div><div class="docs-section collapsible"><h3 class=section-toggle onclick=toggleSection(this)><span class=toggle-icon>▶︎</span> Authentication</h3><ul class=section-content><li><a href=/docs/authentication/> Overview </a><li class=has-children><div onclick="toggleSubsection(event, this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSubsection(event,this)}" aria-expanded=false class=subsection-toggle role=button tabindex=0><span aria-hidden=true class=toggle-icon>▶︎</span><span class=subsection-title>Authentication Tools</span></div> <ul class=subsection-content><li><a href=/docs/authentication/tools/jwt/> Validate a JWT Access Token </a><li><a href=/docs/authentication/tools/alexa/> Authenticating Alexa </a><li><a href=/docs/authentication/tools/linux-ssh-pam-module/> Configuring SSH PAM </a></ul><li class=has-children><div onclick="toggleSubsection(event, this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSubsection(event,this)}" aria-expanded=false class=subsection-toggle role=button tabindex=0><span aria-hidden=true class=toggle-icon>▶︎</span><span class=subsection-title>Session Management</span></div> <ul class=subsection-content><li><a href=/docs/authentication/sessions/cors/> CORS </a><li><a href=/docs/authentication/sessions/establish-onelogin-session-using-api-form-post/> Establish session via API using Form Post </a></ul></ul></div><div class=docs-section><h3><a href=/docs/administration/> Administration </a></h3></div><div class=blog-sidebar-section><h3>Quick Links</h3><ul><li><a href=/api-docs/2/getting-started/dev-overview/>API Reference</a><li><a href=/blog/>Developer Blog</a><li><a href=/support/>Support</a><li><a href=/contact/>Contact</a></ul></div></div></aside><main class=docs-content><article><nav aria-label=breadcrumb class=breadcrumbs><a href=/>Home</a><span class=separator> > </span><a href=/docs/openid-connect/>OpenID Connect</a><span class=separator> > </span><a href=/docs/openid-connect/api/>OpenID Connect API</a><span class=separator> > </span><span class=current>Auth Code Flow pt. 2</span></nav><h1>Auth Code Flow pt. 2</h1><div class=page-content><hr><p>This is the second of two requests that need to be made to complete the Authorization Code Flow.<p>In this step the <a href=/openid-connect/api/authorization-code>Authorization Code that was returned in step 1</a> will be exchanged for a token set containing Access, Refresh and ID Tokens.<blockquote class=markdown-alert-warning><p>Note that the <strong>access token</strong> returned is different to the access token generated via the <a href=/api-docs/1/oauth20-tokens/generate-tokens-2>OAuth 2.0 Tokens API</a>. Therefore it <strong>can not</strong> be used to authorize API calls against other endpoints such as Users or Events.</blockquote><h2 id=resource-url>Resource URL</h2><pre style="color-scheme:light dark;color:light-dark(#24292e,#e1e4e8);background-color:light-dark(#fff,#24292e)" class=giallo><code data-lang=plain><span class=giallo-l><span>https://&lt;subdomain>.onelogin.com/oidc/2/token</span></span></code></pre><h2 id=header-parameter>Header Parameter</h2><table cellpadding=10><tbody><tr><td align=right style=text-align:right valign=top width=20%><p><strong>Authorization</strong></p> <p>string</p><td valign=top><p style=color:#ff0004>Required if Token Endpoint Authentication Method is set to <b>Basic</b></p> <p>Set to <code>Basic &lt;base64 encoded "clientId:clientSecret"></code>.</p> <p>The <code>client_id</code> and <code>client_secret</code> are generated when you configure your OpenId Connect app in OneLogin.</p> <p>e.g. Using Node.js this would be<pre><code class=language-javascript>new Buffer(`${this.client_id}:${this.client_secret}`).toString('base64');</code></pre><tr><td align=right style=text-align:right valign=top width=20%><p><strong>Content-Type</strong></p> <p style=color:#ff0004>required</p> <p>string</p><td valign=top>application/x-www-form-urlencoded</table><h2>Resource Parameter</h2><table cellpadding=10><tbody><tr><td style=text-align:right width=20%><p><strong>subdomain</strong></p> <p style=color:#ff0004>required</p> <p>string<td valign=top><p>Set to the <code>subdomain</code> of your OneLogin instance.</p> <p>e.g. <code>oidc-sample</code> where the instance is https://<strong>oidc-sample</strong>.onelogin.com</p></table><h2>Request Parameter</h2><table cellpadding=10><tbody><tr><td align=right valign=top><p><strong>grant_type</strong></p> <p style=color:#ff0004>required</p> <p>string<td valign=top><p>Set to "authorization_code"<tr><td align=right valign=top><p><strong>code</strong></p> <p style=color:#ff0004>required</p> <p>string<td valign=top><p>The <strong>authorization code</strong> returned after a successful authentication via the Authorization Flow.<tr><td align=right valign=top><p><strong>redirect_uri</strong></p> <p style=color:#ff0004>required</p> <p>string<td valign=top><p>The redirect uri that is registered with OneLogin for this OpenId Connect app.<tr><td align=right valign=top><p><strong>client_id</strong></p> <p>string<td valign=top><p>The OneLogin generated Client ID for your OpenID Connect app.</p> <p style=color:#ff0004>Required if Token Endpoint Authentication method is set to <b>POST</b> or <b>none (PKCE)</b>.</p><tr><td align=right valign=top><p><strong>client_secret</strong></p> <p>string<td valign=top><p>The OneLogin generated Client Secret for your OpenID Connect app.</p> <p style=color:#ff0004>Required if Token Endpoint Authentication method is set to <b>POST</b>.</p><tr><td align=right valign=top><p><strong>code_verifier</strong></p> <p>string<td valign=top><p>The plain text string that was sent as the <b>code_challenge</b> in step 1 of the Auth Flow.</p> <p style=color:#ff0004>Required when Token Endpoint Authentication Method is set to <b>none (PKCE)</b>.</p></table><h2>Sample Request Body</h2><pre style="color-scheme:light dark;color:light-dark(#24292e,#e1e4e8);background-color:light-dark(#fff,#24292e)" class=giallo><code data-lang=javascript><span class=giallo-l><span>grant_type</span><span style=color:light-dark(#d73a49,#f97583)>=</span><span>authorization_code</span><span style=color:light-dark(#d73a49,#f97583)>&</span><span>code</span><span style=color:light-dark(#d73a49,#f97583)>=</span><span>xxxxxx</span><span style=color:light-dark(#d73a49,#f97583)>&</span><span>redirect_uri</span><span style=color:light-dark(#d73a49,#f97583)>=</span><span style=color:light-dark(#6f42c1,#b392f0)>https</span><span>:</span><span style=color:light-dark(#6a737d,#6a737d)>//</span><span style=color:light-dark(#6a737d,#6a737d)>myapp.com/callback</span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>`</span><span style=color:light-dark(#032f62,#9ecbff)>`</span><span style=color:light-dark(#032f62,#9ecbff)>`</span><span style=color:light-dark(#032f62,#9ecbff)>html</span></span>
+<span class=giallo-l></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>&lt;h2>Sample Response&lt;/h2></span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>&lt;div class="tab-group"></span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>&lt;ul class="tab-links"></span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>&lt;li class="t-link status-200 active" data-tab="1">200 OK&lt;/li></span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>&lt;li class="t-link status-400" data-tab="2">400 Bad Request&lt;/li></span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>&lt;li class="t-link status-401" data-tab="3">401 Unauthorized&lt;/li></span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>&lt;/ul></span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>&lt;div class="tab-views"></span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>&lt;div class="t-view active" data-tab="1"></span></span>
+<span class=giallo-l></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>`</span><span style=color:light-dark(#032f62,#9ecbff)>`</span><span style=color:light-dark(#032f62,#9ecbff)>`</span><span>json</span></span>
+<span class=giallo-l><span>{</span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>    "</span><span style=color:light-dark(#032f62,#9ecbff)>access_token</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>: </span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span style=color:light-dark(#032f62,#9ecbff)>NWE4Nzg2ZDEtNzQyMS00ZDViLThjMjctMGQwNjlmZjU5MWNkBGjFElT7CWzl0d....</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>,</span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>    "</span><span style=color:light-dark(#032f62,#9ecbff)>expires_in</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>: </span><span style=color:light-dark(#005cc5,#79b8ff)>3600</span><span>,</span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>    "</span><span style=color:light-dark(#032f62,#9ecbff)>id_token</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>: </span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span style=color:light-dark(#032f62,#9ecbff)>eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkpSY080bnhzNWpnYzhZZE43STJoTE80V...</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>,</span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>    "</span><span style=color:light-dark(#032f62,#9ecbff)>token_type</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>: </span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span style=color:light-dark(#032f62,#9ecbff)>Bearer</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>,</span></span>
+<span class=giallo-l><span style=color:light-dark(#032f62,#9ecbff)>    "</span><span style=color:light-dark(#032f62,#9ecbff)>refresh_token</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>: </span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span style=color:light-dark(#032f62,#9ecbff)>897987AGBEtNzQyMS00ZDViLThjMjctMGQwNjlmZjU5MWNkBGjFElT7CWzl0d....</span><span style=color:light-dark(#032f62,#9ecbff)>"</span></span>
+<span class=giallo-l><span>}</span></span></code></pre></div><div class=t-view data-tab=2><p>Probably an invalid <code>client_id</code><pre style="color-scheme:light dark;color:light-dark(#24292e,#e1e4e8);background-color:light-dark(#fff,#24292e)" class=giallo><code data-lang=json><span class=giallo-l><span>{</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>invalid_request</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>,</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error_description</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>Resource not found</span><span style=color:light-dark(#032f62,#9ecbff)>"</span></span>
+<span class=giallo-l><span>}</span></span></code></pre><p>The grant has been used or has expired<pre style="color-scheme:light dark;color:light-dark(#24292e,#e1e4e8);background-color:light-dark(#fff,#24292e)" class=giallo><code data-lang=json><span class=giallo-l><span>{</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>invalid_grant</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>,</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error_description</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>grant request is invalid</span><span style=color:light-dark(#032f62,#9ecbff)>"</span></span>
+<span class=giallo-l><span>}</span></span></code></pre><p>Missing the <code>redirect_uri</code><pre style="color-scheme:light dark;color:light-dark(#24292e,#e1e4e8);background-color:light-dark(#fff,#24292e)" class=giallo><code data-lang=json><span class=giallo-l><span>{</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>invalid_request</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>,</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error_description</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>missing required parameter(s). (redirect_uri)</span><span style=color:light-dark(#032f62,#9ecbff)>"</span></span>
+<span class=giallo-l><span>}</span></span></code></pre><p>The authorization header is invalid<pre style="color-scheme:light dark;color:light-dark(#24292e,#e1e4e8);background-color:light-dark(#fff,#24292e)" class=giallo><code data-lang=json><span class=giallo-l><span>{</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>invalid_request</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>,</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error_description</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>invalid authorization header value format</span><span style=color:light-dark(#032f62,#9ecbff)>"</span></span>
+<span class=giallo-l><span>}</span></span></code></pre></div><div class=t-view data-tab=3><pre style="color-scheme:light dark;color:light-dark(#24292e,#e1e4e8);background-color:light-dark(#fff,#24292e)" class=giallo><code data-lang=json><span class=giallo-l><span>{</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>invalid_request</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>,</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error_description</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>Authentication Failed</span><span style=color:light-dark(#032f62,#9ecbff)>"</span></span>
+<span class=giallo-l><span>}</span></span></code></pre><pre style="color-scheme:light dark;color:light-dark(#24292e,#e1e4e8);background-color:light-dark(#fff,#24292e)" class=giallo><code data-lang=json><span class=giallo-l><span>{</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>invalid_request</span><span style=color:light-dark(#032f62,#9ecbff)>"</span><span>,</span></span>
+<span class=giallo-l><span style=color:light-dark(#005cc5,#79b8ff)>    "</span><span style=color:light-dark(#005cc5,#79b8ff)>error_description</span><span style=color:light-dark(#005cc5,#79b8ff)>"</span><span>:</span><span style=color:light-dark(#032f62,#9ecbff)> "</span><span style=color:light-dark(#032f62,#9ecbff)>Access is unauthorized</span><span style=color:light-dark(#032f62,#9ecbff)>"</span></span>
+<span class=giallo-l><span>}</span></span></code></pre></div><h2>Response Elements</h2><table cellpadding=10 width=86%><tbody><tr><td style=text-align:right valign=top><code>access_token</code><td valign=top>A JSON Web Token (JWT) that represents the session that has just been created for the user. <p>For example the body of the JWT contains:</p> <pre><code class=language-javascript>{
+  "jti": "s0r5Z9z6LTJPs2xP2sipi",
+  "iss": "https://acme.onelogin.com/oidc/2",
+  "iat": 1534812736,
+  "exp": 1534813336,
+  "aud": "9a6d6350-2af8-0136-197b-06acc76d34b492920"
+}</code></pre><tr><td style=text-align:right valign=top><code>expires_in</code><td valign=top>The number of seconds until the session expires. Defaults to 3600.<tr><td style=text-align:right valign=top><code>id_token</code><td valign=top>A JSON Web Token (JWT) containing user and scope information for this session<tr><td style=text-align:right valign=top><code>token_type</code><td valign=top>The type of access token. Always set to "Bearer"<tr><td style=text-align:right valign=top><code>refresh_token</code><td valign=top>Only returned if a <strong>Refresh Token Timeout</strong> period has specified in your OpenId Connect app settings via the OneLogin portal.</table><h2>Sample Code</h2><h3 id=sample-curl-request>cURL</h3><p>Replace sample values indicated by <code>&lt; ></code> with your actual values.<pre><code class="prettyprint lang-c">curl -XPOST "https://&lt;subdomain>.onelogin.com/oidc/2/token" \
+-H "Authorization: Basic &lt;base64 encoded client_id:client_secret>" \
+-H "Content-Type: application/x-www-form-urlencoded" \
+-d "grant_type=authorization_code&code=&lt;authorization code>&redirect_uri=&lt;registered redirect uri>"
+</code>
+</pre><div class=spacer-50></div><h2 id=postman-collection>Postman Collection</h2><p><a href="https://god.gw.postman.com/run-collection/2629710-3649894c-c058-487d-a408-7f5f2d24e2cc?action=collection%2Ffork&source=rip_markdown&collection-url=entityId%3D2629710-3649894c-c058-487d-a408-7f5f2d24e2cc%26entityType%3Dcollection%26workspaceId%3D2a9bbc3a-4259-4faf-9f51-0b7ca1df3fd0" rel="noopener external" target=_blank><img alt="Run In Postman" src=https://run.pstmn.io/button.svg style=width:128px;height:32px></a><div aria-label="Help and support" class="callout callout-info have-a-question" role=complementary><h3>Have a Question?</h3><div class=haq-items><div class=haq-item><div aria-hidden=true class=haq-icon><svg viewbox="0 0 24 24" fill=none height=20 stroke=currentColor stroke-width=2 width=20><circle cx=12 cy=12 r=10 /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1=12 x2=12.01 y1=17 y2=17 /></svg></div><div class=haq-text><p>Found a problem or a bug? Submit a <a rel="noopener noreferrer" href=https://support.onelogin.com target=_blank>support ticket</a>.</div></div><div class=haq-item><div aria-hidden=true class=haq-icon><svg viewbox="0 0 24 24" fill=none height=20 stroke=currentColor stroke-width=2 width=20><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1=16 x2=8 y1=13 y2=13 /><line x1=16 x2=8 y1=17 y2=17 /><polyline points="10 9 9 9 8 9"/></svg></div><div class=haq-text><p>Looking for walkthroughs or how-to guides? Check out our <a href="https://docs.oneidentity.com/category/onelogin?labelkey=product_onelogin" rel="noopener noreferrer" target=_blank>Knowledge Base</a>.</div></div><div class=haq-item><div aria-hidden=true class=haq-icon><svg viewbox="0 0 24 24" fill=none height=20 stroke=currentColor stroke-width=2 width=20><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div class=haq-text><p>Have a product idea or request? Share it in our <a rel="noopener noreferrer" href=https://onelogin.ideas.aha.io/ target=_blank>Ideas Portal</a>.</div></div></div></div></article></main></div><script src=/js/sidebar.js></script><footer id=footer><div class=wrapper><div class=dx-7of12><div class=logo-container><a class=logo-link href=/> <img alt=OneLogin class=footer-logo src=/logo-white.svg> </a></div>  </div><div class="dx-5of12 dx-last"><ul class="flat footer-social white"><li><a rel="noopener noreferrer" aria-label=Contact class=email href=/contact target=_blank><span class=vis></span><span class=hover></span></a><li><a rel="noopener noreferrer" aria-label=GitHub class=github href=https://github.com/onelogin target=_blank><span class=vis></span><span class=hover></span></a><li><a rel="noopener noreferrer" aria-label=Facebook class=facebook href=https://www.facebook.com/OneLogin-Inc-194106523936451/ target=_blank><span class=vis></span><span class=hover></span></a><li><a rel="noopener noreferrer" aria-label=Twitter class=twitter href=https://twitter.com/OneLoginDev target=_blank><span class=vis></span><span class=hover></span></a></ul></div></div><div class=wrapper><div class=dx-7of12><nav aria-label="Footer links"><ul class="flat footer-links"><li><a href=/terms>TERMS</a><li aria-hidden=true class=separator>///<li><a href=/privacy>PRIVACY</a><li aria-hidden=true class=separator>///<li><a rel="noopener noreferrer" href=https://www.onelogin.com/security target=_blank>SECURITY<span class=sr-only> (opens in new tab)</span></a><li aria-hidden=true class=separator>///<li><a rel="noopener noreferrer" href=https://www.onelogin.com/company target=_blank>COMPANY<span class=sr-only> (opens in new tab)</span></a><li aria-hidden=true class=separator>///<li><a rel="noopener noreferrer" href=https://www.onelogin.com/jobs target=_blank>CAREERS<span class=sr-only> (opens in new tab)</span></a><li aria-hidden=true class=separator>///<li><a rel="noopener noreferrer" href=https://www.samltool.com target=_blank>SAMLTOOL.COM<span class=sr-only> (opens in new tab)</span></a></ul></nav></div><div class="dx-5of12 dx-last"><span class=copyright>© 2015 - 2026 OneLogin, Inc. All Rights Reserved</span></div></div></footer><script src=/elasticlunr.min.js></script><script src=/search_index.en.js></script><script>document.addEventListener('DOMContentLoaded', function() {
+
+        // ============================
+        // 1. Auto-wrap fenced code blocks into tab views (for fenced_code_tab shortcode)
+        // ============================
+        document.querySelectorAll('.code-tabs .tab-views').forEach(function(tabViews) {
+            if (tabViews.querySelector('.t-view')) return;
+            var pres = Array.from(tabViews.children).filter(function(el) {
+                return el.tagName === 'PRE';
+            });
+            pres.forEach(function(pre, i) {
+                var view = document.createElement('div');
+                view.className = 't-view' + (i === 0 ? ' active' : '');
+                view.setAttribute('data-tab', String(i + 1));
+                pre.parentNode.insertBefore(view, pre);
+                view.appendChild(pre);
+            });
+        });
+
+        // ============================
+        // 2. Tab group switching (handles both .tab-group and .code-tabs)
+        // ============================
+        document.querySelectorAll('.tab-group, .code-tabs').forEach(function(group) {
+            var tabLinks = group.querySelector('.tab-links');
+            if (!tabLinks) return;
+
+            tabLinks.addEventListener('click', function(e) {
+                var link = e.target.closest('.t-link');
+                if (!link) return;
+                e.preventDefault();
+
+                switchTab(group, link);
+            });
+
+            // Keyboard support for tabs
+            tabLinks.addEventListener('keydown', function(e) {
+                var link = e.target.closest('.t-link');
+                if (!link) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    switchTab(group, link);
+                }
+            });
+        });
+
+        function switchTab(group, link) {
+                var selection = link.getAttribute('data-tab');
+                if (!selection) return;
+
+                // Update links: remove active from all, add to clicked
+                group.querySelectorAll('.t-link').forEach(function(el) {
+                    el.classList.remove('active');
+                    el.setAttribute('aria-selected', 'false');
+                });
+                link.classList.add('active');
+                link.setAttribute('aria-selected', 'true');
+
+                // Update views: hide all, show selected
+                group.querySelectorAll('.t-view').forEach(function(el) {
+                    el.classList.remove('active');
+                });
+                group.querySelectorAll(".t-view[data-tab='" + selection + "']").forEach(function(el) {
+                    el.classList.add('active');
+                });
+        }
+
+        // ============================
+        // 3. Copy button for all code blocks
+        // ============================
+        function copyText(text, btn) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() {
+                    showCopied(btn);
+                }).catch(function() {
+                    fallbackCopy(text, btn);
+                });
+            } else {
+                fallbackCopy(text, btn);
+            }
+        }
+
+        function fallbackCopy(text, btn) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); showCopied(btn); } catch(e) {}
+            document.body.removeChild(ta);
+        }
+
+        function showCopied(btn) {
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(function() {
+                btn.textContent = 'Copy';
+                btn.classList.remove('copied');
+            }, 2000);
+        }
+
+        document.querySelectorAll('pre').forEach(function(pre) {
+            if (pre.parentElement && pre.parentElement.classList.contains('code-block-wrapper')) return;
+            // Skip pre elements inside table cells - they're inline code snippets
+            if (pre.closest('td') || pre.closest('th')) return;
+
+            var wrapper = document.createElement('div');
+            wrapper.className = 'code-block-wrapper';
+            pre.parentNode.insertBefore(wrapper, pre);
+            wrapper.appendChild(pre);
+
+            var btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            btn.textContent = 'Copy';
+            btn.setAttribute('aria-label', 'Copy code to clipboard');
+            btn.addEventListener('click', function() {
+                var code = pre.querySelector('code');
+                var text = code ? code.textContent : pre.textContent;
+                copyText(text, btn);
+            });
+            wrapper.appendChild(btn);
+        });
+
+        // ============================
+        // 4. Dark mode toggle (both desktop and mobile buttons)
+        // ============================
+        function toggleTheme() {
+            var current = document.documentElement.getAttribute('data-theme');
+            var next = (current === 'dark') ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        var toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', toggleTheme);
+        }
+
+        var mobileToggle = document.getElementById('mobile-theme-toggle');
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', toggleTheme);
+        }
+
+        // ============================
+        // 5. Hamburger menu toggle (mobile/tablet)
+        // ============================
+        var navToggle = document.getElementById('nav-toggle');
+        var mainNav = document.getElementById('main-nav');
+        if (navToggle && mainNav) {
+            navToggle.addEventListener('click', function() {
+                var expanded = navToggle.getAttribute('aria-expanded') === 'true';
+                navToggle.setAttribute('aria-expanded', String(!expanded));
+                mainNav.classList.toggle('nav-open');
+                // Close sidebar if open
+                var sidebar = document.querySelector('.docs-sidebar');
+                if (sidebar && sidebar.classList.contains('sidebar-open')) {
+                    sidebar.classList.remove('sidebar-open');
+                    var overlay = document.getElementById('sidebar-overlay');
+                    if (overlay) overlay.classList.remove('active');
+                    var sidebarBtn = document.getElementById('sidebar-toggle');
+                    if (sidebarBtn) sidebarBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav when clicking a nav link (mobile)
+            mainNav.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    navToggle.setAttribute('aria-expanded', 'false');
+                    mainNav.classList.remove('nav-open');
+                });
+            });
+        }
+
+        // ============================
+        // 6. Sidebar toggle (mobile/tablet off-canvas)
+        // ============================
+        var sidebarToggle = document.getElementById('sidebar-toggle');
+        var sidebar = document.querySelector('.docs-sidebar');
+        var sidebarOverlay = document.getElementById('sidebar-overlay');
+
+        function closeSidebar() {
+            if (sidebar) sidebar.classList.remove('sidebar-open');
+            if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+            if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', 'false');
+        }
+
+        function openSidebar() {
+            if (sidebar) sidebar.classList.add('sidebar-open');
+            if (sidebarOverlay) sidebarOverlay.classList.add('active');
+            if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', 'true');
+            // Close nav if open
+            if (mainNav && mainNav.classList.contains('nav-open')) {
+                mainNav.classList.remove('nav-open');
+                if (navToggle) navToggle.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        if (sidebarToggle && sidebar) {
+            sidebarToggle.addEventListener('click', function() {
+                var expanded = sidebarToggle.getAttribute('aria-expanded') === 'true';
+                if (expanded) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', closeSidebar);
+        }
+
+        // Close sidebar on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeSidebar();
+                if (mainNav && mainNav.classList.contains('nav-open')) {
+                    mainNav.classList.remove('nav-open');
+                    if (navToggle) navToggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+
+        // ============================
+        // 7. Auto-wrap tables for responsive scrolling
+        // ============================
+        document.querySelectorAll('.docs-content table, .page-content table, .api-content table').forEach(function(table) {
+            if (table.parentElement && table.parentElement.classList.contains('table-wrapper')) return;
+            var wrapper = document.createElement('div');
+            wrapper.className = 'table-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        });
+
+        // ============================
+        // 8. Search functionality (elasticlunr)
+        // ============================
+        if (typeof window.searchIndex !== 'undefined' && typeof elasticlunr !== 'undefined') {
+            var searchIdx = elasticlunr.Index.load(window.searchIndex);
+            var MAX_RESULTS = 10;
+            var MIN_QUERY_LEN = 2;
+            var debounceTimer = null;
+
+            function performSearch(query, resultsContainer) {
+                resultsContainer.innerHTML = '';
+                if (!query || query.length < MIN_QUERY_LEN) {
+                    resultsContainer.classList.remove('visible');
+                    return;
+                }
+
+                var results = searchIdx.search(query, {
+                    fields: {
+                        title: { boost: 5, bool: 'OR', expand: true },
+                        description: { boost: 2, bool: 'OR', expand: true },
+                        body: { boost: 1, bool: 'OR', expand: true }
+                    }
+                });
+
+                // Sort: prefer API v2 over v1 over v1-v3 (legacy)
+                results.sort(function(a, b) {
+                    var docA = searchIdx.documentStore.getDoc(a.ref);
+                    var docB = searchIdx.documentStore.getDoc(b.ref);
+                    var pathA = (docA && docA.path) || '';
+                    var pathB = (docB && docB.path) || '';
+
+                    function versionRank(p) {
+                        if (p.indexOf('/api-docs/2/') !== -1) return 0;
+                        if (p.indexOf('/api-docs/1/') !== -1) return 1;
+                        if (p.indexOf('/api-docs/v1-v3/') !== -1) return 2;
+                        return -1; // non-api-docs pages stay in relevance order
+                    }
+
+                    var rA = versionRank(pathA);
+                    var rB = versionRank(pathB);
+
+                    // If both are API docs, sort by version then by score
+                    if (rA >= 0 && rB >= 0 && rA !== rB) return rA - rB;
+                    // If only one is API docs, keep relevance-based order
+                    return 0;
+                });
+
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = '<div class="search-result-item search-no-results">No results found</div>';
+                    resultsContainer.classList.add('visible');
+                    return;
+                }
+
+                var fragment = document.createDocumentFragment();
+                var count = Math.min(results.length, MAX_RESULTS);
+                for (var i = 0; i < count; i++) {
+                    var item = results[i];
+                    var doc = searchIdx.documentStore.getDoc(item.ref);
+                    if (!doc) continue;
+
+                    var a = document.createElement('a');
+                    a.className = 'search-result-item';
+                    a.setAttribute('role', 'option');
+                    a.href = doc.path || item.ref;
+
+                    var titleEl = document.createElement('span');
+                    titleEl.className = 'search-result-title';
+                    titleEl.textContent = doc.title || doc.path || 'Untitled';
+                    a.appendChild(titleEl);
+
+                    if (doc.description) {
+                        var descEl = document.createElement('span');
+                        descEl.className = 'search-result-desc';
+                        descEl.textContent = doc.description.length > 120
+                            ? doc.description.substring(0, 120) + '...'
+                            : doc.description;
+                        a.appendChild(descEl);
+                    }
+
+                    var pathEl = document.createElement('span');
+                    pathEl.className = 'search-result-path';
+                    pathEl.textContent = doc.path || '';
+                    a.appendChild(pathEl);
+
+                    fragment.appendChild(a);
+                }
+
+                if (results.length > MAX_RESULTS) {
+                    var more = document.createElement('div');
+                    more.className = 'search-result-item search-more';
+                    more.textContent = '+ ' + (results.length - MAX_RESULTS) + ' more results';
+                    fragment.appendChild(more);
+                }
+
+                resultsContainer.appendChild(fragment);
+                resultsContainer.classList.add('visible');
+            }
+
+            function setupSearch(inputId, resultsId) {
+                var input = document.getElementById(inputId);
+                var results = document.getElementById(resultsId);
+                if (!input || !results) return;
+
+                input.addEventListener('input', function() {
+                    var val = input.value.trim();
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(function() {
+                        performSearch(val, results);
+                    }, 200);
+                });
+
+                input.addEventListener('focus', function() {
+                    if (input.value.trim().length >= MIN_QUERY_LEN) {
+                        performSearch(input.value.trim(), results);
+                    }
+                });
+
+                // Close on click outside
+                document.addEventListener('click', function(e) {
+                    if (!input.contains(e.target) && !results.contains(e.target)) {
+                        results.classList.remove('visible');
+                    }
+                });
+
+                // Keyboard navigation
+                input.addEventListener('keydown', function(e) {
+                    var items = results.querySelectorAll('a.search-result-item');
+                    if (!items.length) return;
+                    var active = results.querySelector('.search-result-item.active');
+                    var idx = active ? Array.prototype.indexOf.call(items, active) : -1;
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (active) active.classList.remove('active');
+                        idx = (idx + 1) % items.length;
+                        items[idx].classList.add('active');
+                        items[idx].scrollIntoView({ block: 'nearest' });
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (active) active.classList.remove('active');
+                        idx = idx <= 0 ? items.length - 1 : idx - 1;
+                        items[idx].classList.add('active');
+                        items[idx].scrollIntoView({ block: 'nearest' });
+                    } else if (e.key === 'Enter' && active) {
+                        e.preventDefault();
+                        window.location.href = active.href;
+                    } else if (e.key === 'Escape') {
+                        results.classList.remove('visible');
+                        input.blur();
+                    }
+                });
+            }
+
+            setupSearch('search-input', 'search-results');
+            setupSearch('mobile-search-input', 'mobile-search-results');
+        }
+    });</script>

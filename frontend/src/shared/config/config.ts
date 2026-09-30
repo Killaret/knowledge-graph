@@ -41,6 +41,16 @@ export interface Config {
       mock_goto_delay_ms: number;
     };
     graph: {
+      /** Max number of hub (top-degree) labels drawn at low zoom — shared 2D/3D rule */
+      label_hub_count: number;
+      /** Max BFS depth of the dependency-chain highlight (LINK-TYPES-1), shared 2D/3D */
+      dependency_highlight_depth: number;
+      /** 2D graph look: "classic" icons or "light" (GRAPH-LIGHT-1, decision 83) */
+      style?: "classic" | "light";
+      /** How many recommendations the light style draws on hover (decision 81) */
+      recommendations_on_hover?: number;
+      /** Light style: background motion only up to this many notes (GRAPH-LIGHT-1) */
+      ambient_max_nodes?: number;
       "2d": {
         max_nodes: number;
         /** Node count below which CSS drop-shadows are rendered (performance) */
@@ -152,6 +162,12 @@ export const config: Config = configData as Config;
 
 // Convenience exports for common values
 export const graphConfig2D = config.frontend.graph["2d"];
+export const graphLabelHubCount = config.frontend.graph.label_hub_count;
+export const graphDependencyHighlightDepth = config.frontend.graph.dependency_highlight_depth;
+export const graphStyle: "classic" | "light" =
+  config.frontend.graph.style === "classic" ? "classic" : "light";
+export const graphRecommendationsOnHover = config.frontend.graph.recommendations_on_hover ?? 4;
+export const graphAmbientMaxNodes = config.frontend.graph.ambient_max_nodes ?? 500;
 export const graphConfig3D = config.frontend.graph["3d"];
 export const graphPerformanceConfig = config.frontend.graph["3d"].performance;
 export const anomalyConfig = config.frontend.graph.anomaly;

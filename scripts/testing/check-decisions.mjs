@@ -4,24 +4,55 @@
 // 1. Every link in docs/DECISIONS.md resolves.
 // 2. Every owner-decision marker in docs/tasks/*.md and in the
 //    "## Решения владельца" section of docs/AI_HANDOFF.md has a matching row in
-//    docs/DECISIONS.md (matched by task identifier and/or date).
+//    docs/DECISIONS.md (matched by task identifier and/or date — a citation
+//    copies the original date, a new decision needs a row of its own; the
+//    file-link match is no exception).
 // 3. Every decision marked as requiring code has at least one commit that names
 //    its task identifier in the subject or body.
-// 4. Terminal board rows in docs/AI_HANDOFF.md older than three days are archived.
+// 4. No terminal board rows in docs/AI_HANDOFF.md: a row marked "принято" or
+//    "отменено" belongs in docs/archive/board/YYYY-MM.md the moment it closes.
+//    "отклонено" is not terminal - it means rework and stays on the board.
+//
+// Known limitations (recorded per CHECK-DECISIONS-2 review, 2026-09-27):
+// - A second owner decision on the same task on the same day passes without
+//   its own row: such a marker is indistinguishable from a citation. Telling
+//   them apart needs marker-text analysis - a separate task if the owner cares.
+// - A marker without a date (`Решение владельца (SYNC-1):`) slips through:
+//   dateCompatible lets a dateless marker match any row. The norm requires a
+//   date, so the guard could complain - kept permissive for now.
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
-import { join, resolve, dirname, relative } from "node:path";
+import { join, resolve, dirname, relative, basename } from "node:path";
 import { execSync } from "node:child_process";
 
-const repoRoot = resolve(process.argv[2] ?? ".");
+const args = process.argv.slice(2);
+let repoRoot = ".";
+let boardPath = null;
+let tasksDir = null;
+let decisionsPath = null;
+for (const arg of args) {
+    if (arg.startsWith("--board=")) {
+        boardPath = resolve(arg.slice("--board=".length));
+    } else if (arg.startsWith("--tasks=")) {
+        tasksDir = resolve(arg.slice("--tasks=".length));
+    } else if (arg.startsWith("--decisions=")) {
+        decisionsPath = resolve(arg.slice("--decisions=".length));
+    } else {
+        repoRoot = arg;
+    }
+}
+repoRoot = resolve(repoRoot);
 
-const DECISIONS_PATH = join(repoRoot, "docs", "DECISIONS.md");
-const HANDOFF_PATH = join(repoRoot, "docs", "AI_HANDOFF.md");
-const TASKS_DIR = join(repoRoot, "docs", "tasks");
+const DECISIONS_PATH = decisionsPath ?? join(repoRoot, "docs", "DECISIONS.md");
+const HANDOFF_PATH = boardPath ?? join(repoRoot, "docs", "AI_HANDOFF.md");
+const TASKS_DIR = tasksDir ?? join(repoRoot, "docs", "tasks");
 
 const DATE_RE = /\d{4}-\d{2}-\d{2}/;
 const ID_RE = /[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+/g; // e.g. PUB-2, P11-1, DEPENDABOT-79, AUTHOR-1
-const TERMINAL_STATUSES = new Set(["принято", "отклонено", "отменено"]);
+// Terminal means "closed forever": принято/отменено move to
+// docs/archive/board/. отклонено is rework, not closure - it stays with the
+// assignee and is never archived (owner decision 61, BOARD-3).
+const TERMINAL_STATUSES = new Set(["принято", "отменено"]);
 
 const errors = [];
 
@@ -175,9 +206,14 @@ function findMatchingRow(markers, sourceType) {
     for (const marker of markers) {
         let matched = false;
 
-        // 1. Identifier match (strong).
+        // 1. Identifier match (strong). The marker's decision date must equal
+        //    the row's date: a citation copies the original marker including
+        //    its date, while a new decision needs a row of its own — otherwise
+        //    any marker quoting a used id would pass without an index row.
+        //    A used row may be claimed again: several task files may cite the
+        //    same decision while the index links only one of them.
         for (const row of decisionRows) {
-            if (row.used) continue;
+            if (!dateCompatible(marker, row)) continue;
             if (hasCommonId(marker, row)) {
                 row.used = true;
                 matched = true;
@@ -186,11 +222,14 @@ function findMatchingRow(markers, sourceType) {
         }
 
         // 2. For task files, match by the source file name against row ids or
-        //    resolved row references.
+        //    resolved row references. Same date rule as step 1.
         if (!matched && sourceType === "task" && marker.taskFileIdentifier) {
             for (const row of decisionRows) {
                 if (row.used) continue;
+                // Weak match — the file id appears in the row's id set:
+                // require the same date, as in step 1.
                 if (
+                    dateCompatible(marker, row) &&
                     row.ids.some(
                         (id) => id.toLowerCase() === marker.taskFileIdentifier.toLowerCase(),
                     )
@@ -199,8 +238,14 @@ function findMatchingRow(markers, sourceType) {
                     matched = true;
                     break;
                 }
+                // Strong match — the index row links to the marker's own
+                // file; the link identifies the decision on its own. The date
+                // rule still applies: a citation copies the original date, so
+                // a marker carrying a different date is a new decision and
+                // needs a row of its own (CHECK-DECISIONS-2 rework).
                 if (
                     marker.filePath &&
+                    dateCompatible(marker, row) &&
                     row.refs.some(
                         (ref) => ref.isLink && ref.resolved === marker.filePath,
                     )
@@ -255,9 +300,11 @@ function findMatchingRow(markers, sourceType) {
 function extractDecisionMarkersFromFile(filePath, relPath) {
     const text = readText(filePath);
     const lines = text.split(/\r?\n/);
-    const fileId = extractLeadingId(
-        relPath.replace(/\\/g, "/").replace(/^docs\/tasks\//, "").replace(/\.md$/, ""),
-    );
+    // The task identifier comes from the file name itself, not the relative
+    // path — so a fixture dir passed via --tasks= derives ids the same way
+    // docs/tasks/ does (CHECK-DECISIONS-2 rework: the two-row probe needs a
+    // real taskFileIdentifier to reach the file-link match).
+    const fileId = extractLeadingId(basename(filePath).replace(/\.md$/, ""));
     const markers = [];
 
     for (const line of lines) {
@@ -423,24 +470,13 @@ for (const row of decisionRows) {
 }
 
 // ---------------------------------------------------------------------------
-// Rule 4: terminal board rows older than three days
+// Rule 4: no terminal rows on the board
 // ---------------------------------------------------------------------------
-
-const today = new Date();
-const threshold = new Date(today);
-threshold.setDate(threshold.getDate() - 3);
-threshold.setHours(0, 0, 0, 0);
 
 function parseBoardRows() {
     const text = readText(HANDOFF_PATH);
     const rows = [];
-    let inArchive = false;
     for (const line of text.split(/\r?\n/)) {
-        if (/^\s*<!--\s*archive\s*-->/i.test(line) || /^##\s+Архив/i.test(line)) {
-            inArchive = true;
-            break;
-        }
-        if (inArchive) continue;
         if (!/^\|/.test(line)) continue;
         if (/^\|[-\s|]+\|/.test(line)) continue; // separator
         const parts = line
@@ -466,11 +502,11 @@ function parseBoardRows() {
 }
 
 const boardRows = parseBoardRows();
-for (const { line, date } of boardRows) {
-    const d = new Date(date);
-    if (d < threshold) {
-        fail(`AI_HANDOFF.md board row is stale (older than 3 days): ${line}`);
-    }
+for (const { line } of boardRows) {
+    fail(
+        `AI_HANDOFF.md holds a terminal board row - it belongs in ` +
+            `docs/archive/board/YYYY-MM.md: ${line}`,
+    );
 }
 
 // ---------------------------------------------------------------------------

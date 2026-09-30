@@ -113,6 +113,51 @@ describe("GraphCanvas interactions", () => {
       const result = findLinkAtPosition(50, 20, [link], nodes, { x: 0, y: 0, k: 1 }, 25);
       expect(result).toBe(link);
     });
+
+    it("ignores link when cursor is inside a node radius (UX-3)", () => {
+      const link: SimulationLink = { source: "a", target: "b" };
+      // Cursor at node "a" center; default nodeHitRadius=30 swallows the link.
+      const result = findLinkAtPosition(0, 0, [link], nodes, { x: 0, y: 0, k: 1 });
+      expect(result).toBeNull();
+    });
+
+    it("finds link when neither endpoint is under cursor (UX-3)", () => {
+      const link: SimulationLink = { source: "a", target: "b" };
+      // Cursor on the line but well outside both node hit radii.
+      const result = findLinkAtPosition(50, 2, [link], nodes, { x: 0, y: 0, k: 1 });
+      expect(result).toBe(link);
+    });
+
+    // LINK-HIT-1: in a dense graph several links can be inside tolerance;
+    // the nearest one must win, not the first in the array.
+    const crossingNodes: SimulationNode[] = [
+      makeNode("a", 0, 0),
+      makeNode("b", 100, 0),
+      makeNode("d", 200, -50),
+      makeNode("e", 200, 50),
+    ];
+    const horizontal: SimulationLink = { source: "a", target: "b" }; // y=0
+    const vertical: SimulationLink = { source: "d", target: "e" }; // x=200
+
+    it("returns the nearest link when several are within tolerance", () => {
+      // (200,20): 20 from horizontal, 30 from vertical — both inside tolerance,
+      // far enough from all four node centers (default nodeHitRadius=30).
+      const result = findLinkAtPosition(200, 20, [horizontal, vertical], crossingNodes, {
+        x: 0,
+        y: 0,
+        k: 1,
+      });
+      expect(result).toBe(vertical);
+    });
+
+    it("returns the nearer link regardless of array order", () => {
+      const result = findLinkAtPosition(200, 20, [vertical, horizontal], crossingNodes, {
+        x: 0,
+        y: 0,
+        k: 1,
+      });
+      expect(result).toBe(vertical);
+    });
   });
 
   describe("handleZoom", () => {

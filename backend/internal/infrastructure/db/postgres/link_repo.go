@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type LinkRepository struct {
@@ -22,35 +23,53 @@ func NewLinkRepository(db *gorm.DB) *LinkRepository {
 	return &LinkRepository{db: db}
 }
 
+// LinkAffectedRow is the pair metadata a link write touched, reported via
+// RETURNING so the outbox decorator (SYNC-1 A2) can record Link* events with
+// the right endpoints and owner.
+type LinkAffectedRow struct {
+	ID           uuid.UUID
+	SourceNoteID uuid.UUID
+	TargetNoteID uuid.UUID
+	CreatorID    *uuid.UUID
+}
+
 func (r *LinkRepository) Save(ctx context.Context, l *link.Link) error {
+	_, err := r.SaveReturning(ctx, l)
+	return err
+}
+
+// SaveReturning behaves like Save and reports whether the row was created
+// (true) or updated (false) — the outbox decorator maps that to
+// LinkCreated/LinkUpdated.
+func (r *LinkRepository) SaveReturning(ctx context.Context, l *link.Link) (bool, error) {
 	var existing LinkModel
-	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", l.ID()).First(&existing).Error
+	err := dbFromContext(ctx, r.db).Where("id = ? AND deleted_at IS NULL", l.ID()).First(&existing).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		model, err := toGormLink(l)
 		if err != nil {
 			log.Printf("[LinkRepository.Save] toGormLink failed: %v", err)
-			return err
+			return false, err
 		}
-		if err := r.db.WithContext(ctx).Create(&model).Error; err != nil {
+		if err := dbFromContext(ctx, r.db).Create(&model).Error; err != nil {
 			log.Printf("[LinkRepository.Save] Create failed: id=%s source=%s target=%s error=%v",
 				model.ID, model.SourceNoteID, model.TargetNoteID, err)
 			// Проверяем на нарушение уникального ограничения (PostgreSQL код 23505)
 			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-				return link.ErrDuplicateLink
+				return false, link.ErrDuplicateLink
 			}
-			return err
+			return false, err
 		}
-		return nil
+		return true, nil
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
-	return r.updateModel(ctx, &existing, l)
+	return false, r.updateModel(ctx, &existing, l)
 }
 
 func (r *LinkRepository) Update(ctx context.Context, l *link.Link) error {
 	var existing LinkModel
-	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", l.ID()).First(&existing).Error
+	err := dbFromContext(ctx, r.db).Where("id = ? AND deleted_at IS NULL", l.ID()).First(&existing).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return link.ErrLinkNotFound
 	}
@@ -65,12 +84,12 @@ func (r *LinkRepository) updateModel(ctx context.Context, existing *LinkModel, l
 	if err != nil {
 		return err
 	}
-	return r.db.WithContext(ctx).Model(existing).Updates(model).Error
+	return dbFromContext(ctx, r.db).Model(existing).Updates(model).Error
 }
 
 func (r *LinkRepository) FindByID(ctx context.Context, id uuid.UUID) (*link.Link, error) {
 	var model LinkModel
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error
+	err := dbFromContext(ctx, r.db).Where("id = ? AND deleted_at IS NULL", id).First(&model).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -82,7 +101,7 @@ func (r *LinkRepository) FindByID(ctx context.Context, id uuid.UUID) (*link.Link
 
 func (r *LinkRepository) FindBySource(ctx context.Context, sourceID uuid.UUID) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Find(&models).Error
+	err := dbFromContext(ctx, r.db).Where("source_note_id = ? AND deleted_at IS NULL", sourceID).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +110,7 @@ func (r *LinkRepository) FindBySource(ctx context.Context, sourceID uuid.UUID) (
 
 func (r *LinkRepository) FindByTarget(ctx context.Context, targetID uuid.UUID) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("target_note_id = ?", targetID).Find(&models).Error
+	err := dbFromContext(ctx, r.db).Where("target_note_id = ? AND deleted_at IS NULL", targetID).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +124,7 @@ func (r *LinkRepository) FindBySourceIDs(ctx context.Context, sourceIDs []uuid.U
 	}
 
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("source_note_id IN ?", sourceIDs).Find(&models).Error
+	err := dbFromContext(ctx, r.db).Where("source_note_id IN ? AND deleted_at IS NULL", sourceIDs).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +147,7 @@ func (r *LinkRepository) FindByTargetIDs(ctx context.Context, targetIDs []uuid.U
 	}
 
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Where("target_note_id IN ?", targetIDs).Find(&models).Error
+	err := dbFromContext(ctx, r.db).Where("target_note_id IN ? AND deleted_at IS NULL", targetIDs).Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +166,7 @@ func (r *LinkRepository) FindByTargetIDs(ctx context.Context, targetIDs []uuid.U
 // FindByPair возвращает все связи направленной пары (source → target).
 func (r *LinkRepository) FindByPair(ctx context.Context, sourceID, targetID uuid.UUID) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).
+	err := dbFromContext(ctx, r.db).
 		Where("source_note_id = ? AND target_note_id = ? AND deleted_at IS NULL", sourceID, targetID).
 		Find(&models).Error
 	if err != nil {
@@ -170,7 +189,7 @@ func (r *LinkRepository) SaveUserLink(ctx context.Context, l *link.Link) (*link.
 	var result *link.Link
 	created := true
 
-	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err := dbFromContext(ctx, r.db).Transaction(func(tx *gorm.DB) error {
 		var models []LinkModel
 		if err := tx.
 			Where("(source_note_id = ? AND target_note_id = ? OR source_note_id = ? AND target_note_id = ?) AND deleted_at IS NULL",
@@ -273,7 +292,7 @@ func (r *LinkRepository) SaveUserLink(ctx context.Context, l *link.Link) (*link.
 
 // DeleteAndSuppress removes the link and records the pair rejection atomically.
 func (r *LinkRepository) DeleteAndSuppress(ctx context.Context, l *link.Link, s *link.Suppression) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	return dbFromContext(ctx, r.db).Transaction(func(tx *gorm.DB) error {
 		if s != nil {
 			if err := upsertSuppression(tx, s); err != nil {
 				return err
@@ -285,7 +304,7 @@ func (r *LinkRepository) DeleteAndSuppress(ctx context.Context, l *link.Link, s 
 
 // SaveSuppression upserts a pair rejection.
 func (r *LinkRepository) SaveSuppression(ctx context.Context, s *link.Suppression) error {
-	return upsertSuppression(r.db.WithContext(ctx), s)
+	return upsertSuppression(dbFromContext(ctx, r.db), s)
 }
 
 // FindSuppressionsForNotes returns all rejections that involve any of the notes.
@@ -294,7 +313,7 @@ func (r *LinkRepository) FindSuppressionsForNotes(ctx context.Context, noteIDs [
 		return nil, nil
 	}
 	var models []LinkSuppressionModel
-	err := r.db.WithContext(ctx).
+	err := dbFromContext(ctx, r.db).
 		Where("note_a_id IN ? OR note_b_id IN ?", noteIDs, noteIDs).
 		Find(&models).Error
 	if err != nil {
@@ -346,11 +365,46 @@ func liftSuppressions(tx *gorm.DB, sourceID, targetID uuid.UUID, linkType string
 }
 
 func (r *LinkRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&LinkModel{}, "id = ?", id).Error
+	_, err := r.DeleteReturning(ctx, id)
+	return err
+}
+
+// DeleteReturning is Delete plus the deleted row's endpoint/owner metadata —
+// collected via RETURNING for the outbox decorator.
+func (r *LinkRepository) DeleteReturning(ctx context.Context, id uuid.UUID) ([]LinkAffectedRow, error) {
+	var links []LinkModel
+	err := dbFromContext(ctx, r.db).
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}, {Name: "source_note_id"}, {Name: "target_note_id"}, {Name: "creator_id"}}}).
+		Where("id = ?", id).Delete(&links).Error
+	return linkAffectedRows(links), err
 }
 
 func (r *LinkRepository) DeleteBySource(ctx context.Context, sourceID uuid.UUID) error {
-	return r.db.WithContext(ctx).Where("source_note_id = ?", sourceID).Delete(&LinkModel{}).Error
+	_, err := r.DeleteBySourceReturning(ctx, sourceID)
+	return err
+}
+
+// DeleteBySourceReturning is DeleteBySource plus RETURNING metadata for every
+// deleted link — the decorator emits one LinkDeleted per row.
+func (r *LinkRepository) DeleteBySourceReturning(ctx context.Context, sourceID uuid.UUID) ([]LinkAffectedRow, error) {
+	var links []LinkModel
+	err := dbFromContext(ctx, r.db).
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}, {Name: "source_note_id"}, {Name: "target_note_id"}, {Name: "creator_id"}}}).
+		Where("source_note_id = ?", sourceID).Delete(&links).Error
+	return linkAffectedRows(links), err
+}
+
+func linkAffectedRows(models []LinkModel) []LinkAffectedRow {
+	rows := make([]LinkAffectedRow, 0, len(models))
+	for i := range models {
+		rows = append(rows, LinkAffectedRow{
+			ID:           models[i].ID,
+			SourceNoteID: models[i].SourceNoteID,
+			TargetNoteID: models[i].TargetNoteID,
+			CreatorID:    models[i].CreatorID,
+		})
+	}
+	return rows
 }
 
 // FindBySourceType returns all links carrying the given source_type
@@ -358,7 +412,7 @@ func (r *LinkRepository) DeleteBySource(ctx context.Context, sourceID uuid.UUID)
 // events with correct source/target pairs.
 func (r *LinkRepository) FindBySourceType(ctx context.Context, sourceType string) ([]*link.Link, error) {
 	var models []LinkModel
-	if err := r.db.WithContext(ctx).Where("source_type = ?", sourceType).Find(&models).Error; err != nil {
+	if err := dbFromContext(ctx, r.db).Where("source_type = ? AND deleted_at IS NULL", sourceType).Find(&models).Error; err != nil {
 		return nil, err
 	}
 	result := make([]*link.Link, 0, len(models))
@@ -376,14 +430,24 @@ func (r *LinkRepository) FindBySourceType(ctx context.Context, sourceType string
 // and returns how many rows were deleted. Manual links have a different
 // source_type and are not touched.
 func (r *LinkRepository) DeleteBySourceType(ctx context.Context, sourceType string) (int64, error) {
-	res := r.db.WithContext(ctx).Where("source_type = ?", sourceType).Delete(&LinkModel{})
-	return res.RowsAffected, res.Error
+	count, _, err := r.DeleteBySourceTypeReturning(ctx, sourceType)
+	return count, err
+}
+
+// DeleteBySourceTypeReturning additionally reports every deleted link's
+// endpoints and owner so the outbox decorator can emit LinkDeleted per row.
+func (r *LinkRepository) DeleteBySourceTypeReturning(ctx context.Context, sourceType string) (int64, []LinkAffectedRow, error) {
+	var links []LinkModel
+	res := dbFromContext(ctx, r.db).
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}, {Name: "source_note_id"}, {Name: "target_note_id"}, {Name: "creator_id"}}}).
+		Where("source_type = ?", sourceType).Delete(&links)
+	return res.RowsAffected, linkAffectedRows(links), res.Error
 }
 
 // CountBySourceType returns how many links carry the given source_type.
 func (r *LinkRepository) CountBySourceType(ctx context.Context, sourceType string) (int64, error) {
 	var count int64
-	err := r.db.WithContext(ctx).Model(&LinkModel{}).Where("source_type = ?", sourceType).Count(&count).Error
+	err := dbFromContext(ctx, r.db).Model(&LinkModel{}).Where("source_type = ? AND deleted_at IS NULL", sourceType).Count(&count).Error
 	return count, err
 }
 
@@ -393,18 +457,18 @@ func (r *LinkRepository) FindAllPaginated(ctx context.Context, limit, offset int
 	var total int64
 
 	// Считаем общее количество
-	if err := r.db.WithContext(ctx).Model(&LinkModel{}).Count(&total).Error; err != nil {
+	if err := dbFromContext(ctx, r.db).Model(&LinkModel{}).Where("deleted_at IS NULL").Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	// Запрос с пагинацией
-	query := r.db.WithContext(ctx)
+	query := dbFromContext(ctx, r.db)
 	if limit > 0 {
 		query = query.Limit(limit).Offset(offset)
 	}
 
 	var models []LinkModel
-	if err := query.Find(&models).Error; err != nil {
+	if err := query.Where("deleted_at IS NULL").Find(&models).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -415,7 +479,7 @@ func (r *LinkRepository) FindAllPaginated(ctx context.Context, limit, offset int
 // DEPRECATED: используйте FindAllPaginated для больших наборов данных
 func (r *LinkRepository) FindAll(ctx context.Context) ([]*link.Link, error) {
 	var models []LinkModel
-	err := r.db.WithContext(ctx).Find(&models).Error
+	err := dbFromContext(ctx, r.db).Where("deleted_at IS NULL").Find(&models).Error
 	if err != nil {
 		return nil, err
 	}

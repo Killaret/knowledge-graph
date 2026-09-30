@@ -61,9 +61,16 @@ export async function deleteLink(id: string): Promise<void> {
 }
 
 // Получить связи для заметки (исходящие и входящие)
+// Backend returns {data: {incoming, outgoing}} — merge them; a self-loop link
+// lands in both lists, so dedupe by id. Flat array tolerated for compatibility.
 export async function getNoteLinks(noteId: string): Promise<Link[]> {
-  const response = await api.get(`v1/notes/${noteId}/links`).json<{ data: Link[] }>();
-  return response.data;
+  const response = await api
+    .get(`v1/notes/${noteId}/links`)
+    .json<{ data: Link[] | { incoming?: Link[]; outgoing?: Link[] } }>();
+  const d = response.data;
+  if (Array.isArray(d)) return d;
+  const merged = [...(d?.outgoing ?? []), ...(d?.incoming ?? [])];
+  return merged.filter((l, i) => merged.findIndex((x) => x.id === l.id) === i);
 }
 
 // Delete all links for a note

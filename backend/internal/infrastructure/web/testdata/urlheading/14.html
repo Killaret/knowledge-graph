@@ -1,0 +1,2078 @@
+<!DOCTYPE html>
+<html lang="ru-RU">
+<head prefix="article: http://ogp.me/ns/article#">
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+
+    <!-- Иконки для Apple -->
+    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- Preconnect & DNS-prefetch -->
+<link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+<link rel="dns-prefetch" href="//cdn.growthbook.io">
+<link rel="preconnect" href="https://cdn.growthbook.io" crossorigin>
+<!-- End Preconnect & DNS-prefetch -->
+
+    <!--  Alternate for FEED -->
+    <link rel="alternate" type="application/rss+xml" href="https://www.unisender.com/ru/blog/feed/"
+          title="RSS Feed for Конверт, журнал Unisender">
+
+    <!-- Fonts preload -->
+    <link rel="preload" as="font" href="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/fonts/Fact/fact_semi-expanded-extra-bold.otf" type="font/otf" crossorigin>
+    <link rel="preload" as="font" href="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/fonts/InterDisplay/InterDisplay-Regular.woff2" type="font/woff2" crossorigin>
+
+    <!-- Mail Pulse -->
+    <meta name="pmail-verification" content="a845c870027f0ed2528c225e4cf2daee">
+
+    <script
+    src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/lib/amplitude.js"
+    onload="
+    try {
+      amplitude.init('297bffec0e4bf4acb96cad7940cc088f', {
+        fetchRemoteConfig: false,
+        serverUrl: 'https://apx.unisender.com/amplitude-proxy.php',
+        minIdLength: 1,
+        autocapture: {
+          networkTracking: true,
+          pageUrlEnrichment: true
+        }
+      });
+    } catch (e) {
+      console.error('Amplitude init error:', e);
+    }
+  "
+></script>
+
+
+    <script>
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(?:^| )' + name + '=([^;]+)'));
+            if (match) return match[1];
+        }
+
+        function setCookie(name, days, value = false) {
+
+            const date = new Date();
+            date.setDate(date.getDate() + days);
+
+            const domain = "." + window.location.host.replace(/^(www|admitad)\./, "");
+
+            document.cookie = `${name}=${value}; domain=${domain}; expires=${date.toUTCString()}; path=/`;
+        }
+    </script>
+
+    <!-- GrowthBook JavaScript SDK -->
+<script>
+    function growthbookInit() {
+        const getUUID = () => {
+            const COOKIE_NAME = "gbuuid";
+            const COOKIE_DAYS = 400; // 400 days is the max cookie duration for chrome
+
+            // use the browsers crypto.randomUUID if set
+            const genUUID = () => {
+                if (window?.crypto?.randomUUID) return window.crypto.randomUUID();
+                return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+                    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                );
+            }
+            const getCookie = (name) => {
+                let value = `; ${document.cookie}`;
+                let parts = value.split(`; ${name}=`);
+                if (parts.length === 2) {
+                    let existing = parts.pop().split(';').shift();
+                    setCookie(name, existing);
+                    return existing;
+                }
+            }
+            const setCookie = (name, value) => {
+                var d = new Date();
+                d.setTime(d.getTime() + 24 * 60 * 60 * 1000 * COOKIE_DAYS);
+                document.cookie = name + "=" + value + ";path=/;domain=unisender.com;expires=" + d.toGMTString();
+            }
+
+            // get the existing UUID from cookie if set, otherwise create one and store it in the cookie
+            let existing = getCookie(COOKIE_NAME);
+            if (existing) return existing;
+
+            const uuid = genUUID();
+            setCookie(COOKIE_NAME, uuid);
+            return uuid;
+        }
+
+        // Create a GrowthBook instance
+        const gb = new window.growthbook.GrowthBook({
+            apiHost: "https://cdn.growthbook.io",
+            clientKey: "sdk-glPPi72CIi36Inhq",
+            attributes: {
+                id: getUUID(),
+            },
+            navigate: (url) => window.location.replace(`${url}${url.includes('?') ? '&' : '?'}abtest=1`),
+            navigateDelay: 500,
+            enableDevMode: true,
+            trackingCallback: (experiment, result) => {
+                if (experiment) {
+                    gb.context.antiFlicker = true;
+                    gb.context.antiFlickerTimeout = 1500;
+
+                    sessionStorage.setItem('experiment_id', experiment.key);
+                    sessionStorage.setItem('variation_id', result.key);
+
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                        'event': 'experiment_viewed', 'experimentId': experiment.key,
+                        'variationId': result.key
+                    });
+                }
+            },
+        });
+
+        gb.init();
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@growthbook/growthbook/dist/bundles/index.min.js" async onload="growthbookInit()" fetchpriority="high"></script>
+
+    <script
+    id="pap_x2s6df8d"
+    src="https://affiliate.unisender.com/scripts/trackjs.js"
+    async
+    onload="
+      try {
+        PostAffTracker.setAccountId('default1');
+        PostAffTracker.setParamNameUserId('a');
+        PostAffTracker.track();
+      } catch (e) {
+        console.error('Error initializing PAP tracker:', e);
+      }
+    ">
+</script>
+
+    <!-- Source Buster -->
+    <script src="/wp-content/themes/UniSender/js/lib/sourcebuster.js"></script>
+    <script>
+        if (typeof sbjs !== 'undefined') {
+            sbjs.init({
+                domain: {
+                    host: 'unisender.com',
+                    isolate: false,
+                }
+            });
+        }
+    </script>
+    <!-- End Source Buster -->
+
+    <!--  Load default WordPress files - START  -->
+    <meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
+
+	<!-- This site is optimized with the Yoast SEO plugin v26.8 - https://yoast.com/product/yoast-seo-wordpress/ -->
+	<title>Гид по инструментам разработчика в браузере (Chrome, Mozilla и других)</title>
+	<meta name="description" content="Как работать с DevTools Chrome и других браузеров. Как проверить адаптивность, скорость загрузки и не только." />
+	<link rel="canonical" href="https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/" />
+	<meta property="og:locale" content="ru_RU" />
+	<meta property="og:type" content="article" />
+	<meta property="og:title" content="Гид по инструментам разработчика в браузере (Chrome, Mozilla и других)" />
+	<meta property="og:description" content="В Chrome, Mozilla и других браузерах" />
+	<meta property="og:url" content="https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/" />
+	<meta property="og:site_name" content="Конверт, журнал Unisender" />
+	<meta property="article:published_time" content="2023-09-05T14:54:59+00:00" />
+	<meta property="article:modified_time" content="2023-09-11T08:00:06+00:00" />
+	<meta property="og:image" content="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/gid-po-devtools-chrome-i-drugih-brauzerov_soczseti.png.webp" />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+	<meta property="og:image:type" content="image/png" />
+	<meta name="author" content="Михаил Шумовский" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content="Гид по инструментам разработчика (DevTools) для маркетолога" />
+	<meta name="twitter:description" content="В Chrome, Mozilla и других браузерах" />
+	<meta name="twitter:image" content="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/gid-po-devtools-chrome-i-drugih-brauzerov_soczseti.png.webp" />
+	<meta name="twitter:label1" content="Написано автором" />
+	<meta name="twitter:data1" content="Михаил Шумовский" />
+	<meta name="twitter:label2" content="Примерное время для чтения" />
+	<meta name="twitter:data2" content="10 минут" />
+	<script type="application/ld+json" class="yoast-schema-graph">{
+	    "@context": "https://schema.org",
+	    "@graph": [
+	        {
+	            "@type": "Article",
+	            "@id": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/#article",
+	            "isPartOf": {
+	                "@id": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/"
+	            },
+	            "author": {
+	                "name": "Михаил Шумовский",
+	                "@id": "https://www.unisender.com/ru/blog/#/schema/person/1f4c062bca42f0bbdcabbf291f105302"
+	            },
+	            "headline": "Гид по инструментам разработчика (DevTools) для маркетолога",
+	            "datePublished": "2023-09-05T14:54:59+00:00",
+	            "dateModified": "2023-09-11T08:00:06+00:00",
+	            "mainEntityOfPage": {
+	                "@id": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/"
+	            },
+	            "wordCount": 2829,
+	            "commentCount": 0,
+	            "publisher": {
+	                "@id": "https://www.unisender.com/ru/blog/#organization"
+	            },
+	            "image": {
+	                "@id": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/#primaryimage"
+	            },
+	            "thumbnailUrl": "https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/gid-po-devtools-chrome-i-drugih-brauzerov.png.webp",
+	            "keywords": [
+	                "Дизайн",
+	                "Сайты"
+	            ],
+	            "articleSection": [
+	                "Гайды"
+	            ],
+	            "inLanguage": "ru-RU",
+	            "potentialAction": [
+	                {
+	                    "@type": "CommentAction",
+	                    "name": "Comment",
+	                    "target": [
+	                        "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/#respond"
+	                    ]
+	                }
+	            ]
+	        },
+	        {
+	            "@type": "WebPage",
+	            "@id": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/",
+	            "url": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/",
+	            "name": "Гид по инструментам разработчика в браузере (Chrome, Mozilla и других)",
+	            "isPartOf": {
+	                "@id": "https://www.unisender.com/ru/blog/#website"
+	            },
+	            "primaryImageOfPage": {
+	                "@id": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/#primaryimage"
+	            },
+	            "image": {
+	                "@id": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/#primaryimage"
+	            },
+	            "thumbnailUrl": "https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/gid-po-devtools-chrome-i-drugih-brauzerov.png.webp",
+	            "datePublished": "2023-09-05T14:54:59+00:00",
+	            "dateModified": "2023-09-11T08:00:06+00:00",
+	            "description": "Как работать с DevTools Chrome и других браузеров. Как проверить адаптивность, скорость загрузки и не только.",
+	            "breadcrumb": {
+	                "@id": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/#breadcrumb"
+	            },
+	            "inLanguage": "ru-RU",
+	            "potentialAction": [
+	                {
+	                    "@type": "ReadAction",
+	                    "target": [
+	                        "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/"
+	                    ]
+	                }
+	            ]
+	        },
+	        {
+	            "@type": "ImageObject",
+	            "inLanguage": "ru-RU",
+	            "@id": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/#primaryimage",
+	            "url": "https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/gid-po-devtools-chrome-i-drugih-brauzerov.png.webp",
+	            "contentUrl": "https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/gid-po-devtools-chrome-i-drugih-brauzerov.png.webp",
+	            "width": 1920,
+	            "height": 565,
+	            "caption": "Гид по инструментам разработчика (DevTools)"
+	        },
+	        {
+	            "@type": "BreadcrumbList",
+	            "@id": "https://www.unisender.com/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/#breadcrumb",
+	            "itemListElement": [
+	                {
+	                    "@type": "ListItem",
+	                    "position": 1,
+	                    "name": "Главная",
+	                    "item": "https://www.unisender.com/"
+	                },
+	                {
+	                    "@type": "ListItem",
+	                    "position": 2,
+	                    "name": "Конверт",
+	                    "item": "https://www.unisender.com/ru/blog/"
+	                },
+	                {
+	                    "@type": "ListItem",
+	                    "position": 3,
+	                    "name": "Гид по инструментам разработчика (DevTools) для маркетолога"
+	                }
+	            ]
+	        },
+	        {
+	            "@type": "WebSite",
+	            "@id": "https://www.unisender.com/ru/blog/#website",
+	            "url": "https://www.unisender.com/ru/blog/",
+	            "name": "Конверт, журнал Unisender",
+	            "description": "",
+	            "publisher": {
+	                "@id": "https://www.unisender.com/ru/blog/#organization"
+	            },
+	            "potentialAction": [
+	                {
+	                    "@type": "SearchAction",
+	                    "target": {
+	                        "@type": "EntryPoint",
+	                        "urlTemplate": "https://www.unisender.com/ru/blog/?s={search_term_string}"
+	                    },
+	                    "query-input": {
+	                        "@type": "PropertyValueSpecification",
+	                        "valueRequired": true,
+	                        "valueName": "search_term_string"
+	                    }
+	                }
+	            ],
+	            "inLanguage": "ru-RU"
+	        },
+	        {
+	            "@type": "Organization",
+	            "@id": "https://www.unisender.com/ru/blog/#organization",
+	            "name": "Конверт, журнал Unisender",
+	            "url": "https://www.unisender.com/ru/blog/",
+	            "logo": {
+	                "@type": "ImageObject",
+	                "inLanguage": "ru-RU",
+	                "@id": "https://www.unisender.com/ru/blog/#/schema/logo/image/",
+	                "url": "https://www.unisender.com/ru/blog/wp-content/uploads/2021/04/unisender.svg",
+	                "contentUrl": "https://www.unisender.com/ru/blog/wp-content/uploads/2021/04/unisender.svg",
+	                "width": 178,
+	                "height": 35,
+	                "caption": "Конверт, журнал Unisender"
+	            },
+	            "image": {
+	                "@id": "https://www.unisender.com/ru/blog/#/schema/logo/image/"
+	            }
+	        },
+	        {
+	            "@type": "Person",
+	            "@id": "https://www.unisender.com/ru/blog/#/schema/person/1f4c062bca42f0bbdcabbf291f105302",
+	            "name": "Михаил Шумовский",
+	            "image": {
+	                "@type": "ImageObject",
+	                "inLanguage": "ru-RU",
+	                "@id": "https://www.unisender.com/ru/blog/#/schema/person/image/",
+	                "url": "https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2024/06/m-shumovski-new-100x100.png.webp",
+	                "contentUrl": "https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2024/06/m-shumovski-new-100x100.png.webp",
+	                "caption": "Михаил Шумовский"
+	            },
+	            "description": "Редактор в «Конверте» и главред в «Нейромедиа»",
+	            "url": "https://www.unisender.com/ru/blog/author/m-shumovskiy/"
+	        }
+	    ]
+	}</script>
+	<!-- / Yoast SEO plugin. -->
+
+
+<style id="wp-img-auto-sizes-contain-inline-css">
+img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
+/*# sourceURL=wp-img-auto-sizes-contain-inline-css */
+</style>
+
+<link rel='stylesheet' id='magnific-popup-css' href='https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/libs/Magnific-Popup-master/dist/magnific-popup.min.css?v=ac8fc3ac99de152af18a8c902429fdf7&#038;ver=7.0.4' media='all' />
+<link rel='stylesheet' id='uniblog-subscribe-form-style-css' href='https://www.unisender.com/ru/blog/wp-content/themes/uniblog/blocks/subscribe-form/subscribe-form.min.css?v=e8551f8ac2c5d22791e7af54cb69d4bc&#038;ver=7.0.4' media='all' />
+
+<style id="global-styles-inline-css">
+:root{--wp--preset--aspect-ratio--square: 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4: 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3: 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16: 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray: #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink: #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange: #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan: #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue: #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple: #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgb(6,147,227) 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgb(252,185,0) 0%,rgb(255,105,0) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgb(255,105,0) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium: 20px;--wp--preset--font-size--large: 36px;--wp--preset--font-size--x-large: 42px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40: 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70: 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgb(255, 255, 255), 6px 6px rgb(0, 0, 0);--wp--preset--shadow--crisp: 6px 6px 0px rgb(0, 0, 0);}:where(body) { margin: 0; }:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap: 0.5em;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items: center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display: grid;}.is-layout-grid > :is(*, div){margin: 0;}body{padding-top: 0px;padding-right: 0px;padding-bottom: 0px;padding-left: 0px;}:root :where(.wp-element-button, .wp-block-button__link){background-color: #32373c;border-width: 0;color: #fff;font-family: inherit;font-size: inherit;font-style: inherit;font-weight: inherit;letter-spacing: inherit;line-height: inherit;padding-top: calc(0.667em + 2px);padding-right: calc(1.333em + 2px);padding-bottom: calc(0.667em + 2px);padding-left: calc(1.333em + 2px);text-decoration: none;text-transform: inherit;}.has-black-color{color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color: var(--wp--preset--color--white) !important;}.has-pale-pink-color{color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color: var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color: var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color: var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color: var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color: var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background: var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background: var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background: var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background: var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background: var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background: var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size: var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size: var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size: var(--wp--preset--font-size--x-large) !important;}
+/*# sourceURL=global-styles-inline-css */
+</style>
+
+<script id="jquery-core-js" src="https://www.unisender.com/ru/blog/wp-includes/js/jquery/jquery.min.js?ver=3.7.1"></script>
+<script id="jquery-migrate-js" src="https://www.unisender.com/ru/blog/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1"></script>
+<script id="jquery-ui-core-js" src="https://www.unisender.com/ru/blog/wp-includes/js/jquery/ui/core.min.js?ver=1.13.3"></script>
+<script id="jquery-ui-menu-js" src="https://www.unisender.com/ru/blog/wp-includes/js/jquery/ui/menu.min.js?ver=1.13.3"></script>
+<script id="wp-dom-ready-js" src="https://www.unisender.com/ru/blog/wp-includes/js/dist/dom-ready.min.js?ver=a06281ae5cf5500e9317"></script>
+<script id="wp-hooks-js" src="https://www.unisender.com/ru/blog/wp-includes/js/dist/hooks.min.js?ver=7496969728ca0f95732d"></script>
+<script id="wp-i18n-js" src="https://www.unisender.com/ru/blog/wp-includes/js/dist/i18n.min.js?ver=781d11515ad3d91786ec"></script>
+<script id="wp-i18n-js-after">
+wp.i18n.setLocaleData( { 'text direction\u0004ltr': [ 'ltr' ] } );
+//# sourceURL=wp-i18n-js-after
+</script>
+<script id="wp-a11y-js-translations">
+( function( domain, translations ) {
+	var localeData = translations.locale_data[ domain ] || translations.locale_data.messages;
+	localeData[""].domain = domain;
+	wp.i18n.setLocaleData( localeData, domain );
+} )( "default", {"translation-revision-date":"2026-01-29 03:22:33+0000","generator":"GlotPress\/4.0.3","domain":"messages","locale_data":{"messages":{"":{"domain":"messages","plural-forms":"nplurals=3; plural=(n % 10 == 1 && n % 100 != 11) ? 0 : ((n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? 1 : 2);","lang":"ru"},"Notifications":["\u0423\u0432\u0435\u0434\u043e\u043c\u043b\u0435\u043d\u0438\u044f"]}},"comment":{"reference":"wp-includes\/js\/dist\/a11y.js"}} );
+//# sourceURL=wp-a11y-js-translations
+</script>
+<script id="wp-a11y-js" src="https://www.unisender.com/ru/blog/wp-includes/js/dist/a11y.min.js?ver=af934e5259bc51b8718e"></script>
+<script id="jquery-ui-autocomplete-js" src="https://www.unisender.com/ru/blog/wp-includes/js/jquery/ui/autocomplete.min.js?ver=1.13.3"></script>
+<script id="wpfts_frontend-js" src="https://www.unisender.com/ru/blog/wp-content/plugins/fulltext-search/js/wpfts_frontend.js?ver=1.79.274"></script>
+<script></script><script>window.dataLayer=window.dataLayer||[];dataLayer.push({"PublicationDate":"202309"})</script><script type="text/javascript">
+		document.wpfts_ajaxurl = "https://www.unisender.com/ru/blog/wp-admin/admin-ajax.php";
+	</script><style>.recentcomments a{display:inline !important;padding:0 !important;margin:0 !important;}</style><style type="text/css" data-type="vc_shortcodes-custom-css">.vc_custom_1693915532532{margin-bottom: 64px !important;}.vc_custom_1747232411867{margin-bottom: 64px !important;}.vc_custom_1693915660955{margin-bottom: 64px !important;}.vc_custom_1693915710907{margin-bottom: 64px !important;}.vc_custom_1693915757444{margin-bottom: 64px !important;}.vc_custom_1693915810293{margin-bottom: 64px !important;}.vc_custom_1693915922203{margin-bottom: 64px !important;}.vc_custom_1693915982050{margin-bottom: 64px !important;}.vc_custom_1693916031722{margin-bottom: 64px !important;}.vc_custom_1693916112724{margin-bottom: 64px !important;}.vc_custom_1693916145068{margin-bottom: 64px !important;}.vc_custom_1693916175739{margin-bottom: 64px !important;}.vc_custom_1693916204427{margin-bottom: 64px !important;}.vc_custom_1693916279459{margin-bottom: 64px !important;}.vc_custom_1693916462500{margin-bottom: 64px !important;}.vc_custom_1693916839747{margin-bottom: 64px !important;}.vc_custom_1693916904988{margin-bottom: 64px !important;}.vc_custom_1693916981498{margin-bottom: 64px !important;}.vc_custom_1693917016674{margin-bottom: 64px !important;}.vc_custom_1693917076299{margin-bottom: 64px !important;}.vc_custom_1693917123714{margin-bottom: 64px !important;}.vc_custom_1693917151812{margin-bottom: 64px !important;}.vc_custom_1693917196012{margin-bottom: 64px !important;}.vc_custom_1693917225385{margin-bottom: 64px !important;}.vc_custom_1693917269236{margin-bottom: 64px !important;}</style><noscript><style> .wpb_animate_when_almost_visible { opacity: 1; }</style></noscript>    <!--  Load default WordPress files - END  -->
+
+    <link rel="stylesheet" href="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/css/common.min.css?v=39301763aee536f048dc9cb72c9aa8c5">
+
+
+
+<link rel="stylesheet" href="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/single/css/single.min.css?v=627d0e7e24c67d769dce894d4a8512ac">
+
+</head>
+
+<body class="wp-singular post-template-default single single-post postid-52303 single-format-standard wp-theme-uniblog gid-po-devtools-chrome-i-drugih-brauzerov sidebar-primary wpb-js-composer js-comp-ver-8.7.2 vc_responsive">
+
+<!-- Google Tag Manager (noscript) -->
+<noscript>
+    <iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-N5G7RB"
+        height="0"
+        width="0"
+        style="display:none;visibility:hidden"
+    ></iframe>
+</noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+
+<header class="header">
+    <div class="header_top">
+        <div class="container">
+                        <div class="header__left">
+                <div class="logo">
+                    <a href="/">
+                        <img width="242" height="60" src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/img/unisender-logo.svg?v=f6598effe2d0fd1ddc411f7503dd1ccd"
+                             alt="логотип Unisender">
+                    </a>
+                </div>
+
+                <nav class="nav-menu" aria-label="Основная навигация">
+
+                                            <ul class="menu-level-1">
+                                                            <li>
+                                                                            <span class="two-columns">
+                                            Возможности                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 15.4L6 9.4L7.4 8L12 12.6L16.6 8L18 9.4L12 15.4Z" fill="#2C2C2C" />
+                                            </svg>
+                                        </span>
+                                    
+                                                                            <ul class="menu-level-2 has_special_block">
+                                                                                            <li>
+                                                        <a href="/ru/features/email/"
+       target="_self"
+               class="">Email рассылка</a>
+                                                                                                            <ul class="menu-level-3">
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/email/konstruktor-pisem/"
+       target="_self"
+               class="">Создание письма</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/templates/"
+       target="_self"
+               class="">Бесплатные шаблоны</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/email/formy-podpiski/"
+       target="_self"
+               class="">Форма подписки</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/email/segmentacija-bazy-podpischikov/"
+       target="_self"
+               class="">Сегментация базы</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/support/category/api/"
+       target="_self"
+               class="">API</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/email/triggernye-rassylki/"
+       target="_self"
+               class="">Триггерные письма</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/email/tranzakcionnye-rassylki/"
+       target="_self"
+               class="">Транзакционные письма</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/email/unisender-go-email-smtp-api/"
+       target="_self"
+               class="">Email-транспорт</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/email/validator/"
+       target="_self"
+               class="">Email валидатор</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/email/analitika-rassylok/"
+       target="_self"
+               class="">Аналитика</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/email/ab-testirovanie-rassylok/"
+       target="_self"
+               class="">A/B тесты</a>
+                                                                </li>
+                                                                                                                    </ul>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/features/chat-bot/"
+       target="_self"
+               class="">Чат-боты</a>
+                                                                                                            <ul class="menu-level-3">
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/chat-bot/telegram/"
+       target="_self"
+               class="">Чат-боты в Telegram</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/chat-bot/max/"
+       target="_self"
+               class="">Чат-боты в МАКС</a>
+                                                                </li>
+                                                                                                                    </ul>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/features/omnikanalnaya-avtomatizatsya/"
+       target="_self"
+               class="">Автоматизация</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/features/sms-rassylka/"
+       target="_self"
+               class="">SMS рассылка</a>
+                                                                                                            <ul class="menu-level-3">
+                                                                                                                            <li>
+                                                                        <a href="/ru/features/sms-rassylka/personalizirovannye-sms/"
+       target="_self"
+               class="">Персонализированные SMS</a>
+                                                                </li>
+                                                                                                                    </ul>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/integrations/"
+       target="_self"
+               class="">Интеграции</a>
+                                                                                                            <ul class="menu-level-3">
+                                                                                                                            <li>
+                                                                        <a href="/ru/support/category/integration/"
+       target="_self"
+               class="">Список интеграций</a>
+                                                                </li>
+                                                                                                                            <li>
+                                                                        <a href="/ru/kursy/kurs-po-rabote-s-integracziyami/"
+       target="_self"
+               class="">Курс по интеграциям</a>
+                                                                </li>
+                                                                                                                    </ul>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/business/konstruktor-landing-page-besplatno/"
+       target="_self"
+               class="">Лендинги</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/features/"
+       target="_self"
+               class="btn btn-secondary">Все возможности</a>
+                                                                                                    </li>
+                                                                                                                                        <li class="special__block">
+                                                    <div class="special__block-title">Повышайте продажи с&nbsp;помощью Unisender</div>
+                                                    <ul class="special__block-list">
+                                                        <li class="special__block-item">Персональные кампании и&nbsp;автоматические цепочки</li>
+                                                        <li class="special__block-item">Чат-боты, омниканальные сценарии и смс</li>
+                                                        <li class="special__block-item">Удобный редактор и&nbsp;готовые интеграции</li>
+                                                        <li class="special__block-item">Аналитика для роста конверсии</li>
+                                                    </ul>
+                                                    <a href="https://app.unisender.com/ru/v5/spa/registration/step/1?uni_plc=header&uni_object=button&uni_offer=registration&uni_type=static&uni_name=new_block"
+                                                       class="btn btn-purple" target="_blank"
+                                                       rel="noopener">Попробовать</a>
+                                                </li>
+                                                                                    </ul>
+                                                                    </li>
+                                                            <li>
+                                                                            <span>
+                                            Цены                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 15.4L6 9.4L7.4 8L12 12.6L16.6 8L18 9.4L12 15.4Z" fill="#2C2C2C" />
+                                            </svg>
+                                        </span>
+                                    
+                                                                            <ul class="menu-level-2">
+                                                                                            <li>
+                                                        <a href="/ru/prices/"
+       target="_self"
+               class="">Email-рассылки</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/prices/cena-na-chat-boty/"
+       target="_self"
+               class="">Чат-боты</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/prices/stoimost-sms-rassylki/"
+       target="_self"
+               class="">SMS</a>
+                                                                                                    </li>
+                                                                                                                                </ul>
+                                                                    </li>
+                                                            <li>
+                                        <a href="/ru/services/"
+       target="_self"
+               class="">Услуги</a>
+
+                                                                    </li>
+                                                            <li>
+                                                                            <span class="wide">
+                                            Полезное                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 15.4L6 9.4L7.4 8L12 12.6L16.6 8L18 9.4L12 15.4Z" fill="#2C2C2C" />
+                                            </svg>
+                                        </span>
+                                    
+                                                                            <ul class="menu-level-2">
+                                                                                            <li>
+                                                        <a href="/ru/support/"
+       target="_self"
+               class="">База знаний</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/blog/"
+       target="_self"
+               class="">Журнал «Конверт»</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/glossary/"
+       target="_self"
+               class="">Словарь маркетолога</a>
+                                                                                                            <ul class="menu-level-3">
+                                                                                                                            <li>
+                                                                                                                                    </li>
+                                                                                                                    </ul>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/tools/"
+       target="_self"
+               class="">Бесплатные инструменты</a>
+                                                                                                    </li>
+                                                                                                                                </ul>
+                                                                    </li>
+                                                            <li>
+                                                                            <span>
+                                            О нас                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 15.4L6 9.4L7.4 8L12 12.6L16.6 8L18 9.4L12 15.4Z" fill="#2C2C2C" />
+                                            </svg>
+                                        </span>
+                                    
+                                                                            <ul class="menu-level-2">
+                                                                                            <li>
+                                                        <a href="/ru/about/"
+       target="_self"
+               class="">О компании</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/otzivy/"
+       target="_self"
+               class="">Отзывы</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/contacts/"
+       target="_self"
+               class="">Контакты</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/about/career/"
+       target="_self"
+               class="">Карьера</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/partners/"
+       target="_self"
+               class="">Партнёрам</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/press/"
+       target="_self"
+               class="">Пресс-центр</a>
+                                                                                                    </li>
+                                                                                            <li>
+                                                        <a href="/ru/about/nko/"
+       target="_self"
+               class="">Поддержка НКО</a>
+                                                                                                    </li>
+                                                                                                                                </ul>
+                                                                    </li>
+                                                            <li>
+                                        <a href="/ru/blog/kejsy/"
+       target="_self"
+               class="">Кейсы</a>
+
+                                                                    </li>
+                                                            <li>
+                                        <a href="https://school.unisender.com/"
+       target="_blank"
+        rel="noopener"       class="">Школа</a>
+
+                                                                    </li>
+                                                    </ul>
+                    
+                </nav>
+
+            </div>
+            <div class="header__right">
+                <div class="header-btns">
+                    <ul>
+                        <li class="login">
+                                <a href="https://app.unisender.com/ru/v5/spa/login"
+       target="_blank"
+        rel="noopener"       class="btn btn-border">Войти</a>
+                        </li>
+                        <li class="signup">
+                                <a href="https://app.unisender.com/ru/v5/spa/registration/step/1?uni_plc=header&#038;uni_object=button&#038;uni_offer=registration&#038;uni_type=static&#038;uni_name=blog"
+       target="_blank"
+        rel="noopener"       class="btn btn-purple gtm-registration-header d-none d-xl-block">Зарегистрироваться</a>
+							    <a href="https://app.unisender.com/ru/v5/spa/registration/step/1?uni_plc=header&#038;uni_object=button&#038;uni_offer=registration&#038;uni_type=static_m&#038;uni_name=blog"
+       target="_blank"
+        rel="noopener"       class="btn btn-purple gtm-registration-header d-xl-none">Зарегистрироваться</a>
+                        </li>
+                    </ul>
+                </div>
+
+				    <a href="https://app.unisender.com/ru/v5/spa/registration/step/1?uni_plc=header&#038;uni_object=button&#038;uni_offer=registration&#038;uni_type=static_m&#038;uni_name=blog"
+       target="_blank"
+        rel="noopener"       class="btn btn-purple gtm-registration-header d-xl-none">Зарегистрироваться</a>
+
+                <button type="button" class="burger-button">
+                    <span>...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="header_blog">
+        <div class="container">
+            <div class="header_blog_nav">
+                <div class="logo-konvert">
+                    <a href="/ru/blog/">
+                        <img width="216" height="40" src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/img/konvert-logo.svg?v=556d8f55424ab6a7b89d9ce90d69ffe8"
+                             alt="Конверт">
+                    </a>
+                </div>
+
+                <div class="tags__wrapper">
+                    <div class="popular-tags">
+                        <div class="h3">Популярные</div>
+                        <ul id="menu-verhnee-menyu" class="menu"><li id="menu-item-80315" class="menu-item menu-item-type-taxonomy menu-item-object-post_tag menu-item-80315"><a href="https://www.unisender.com/ru/blog/tag/nejroseti/">Нейросети</a></li>
+<li id="menu-item-80316" class="menu-item menu-item-type-taxonomy menu-item-object-post_tag menu-item-80316"><a href="https://www.unisender.com/ru/blog/tag/email/">Email</a></li>
+<li id="menu-item-107904" class="menu-item menu-item-type-taxonomy menu-item-object-post_tag menu-item-107904"><a href="https://www.unisender.com/ru/blog/tag/sms/">SMS</a></li>
+<li id="menu-item-80318" class="menu-item menu-item-type-taxonomy menu-item-object-post_tag menu-item-80318"><a href="https://www.unisender.com/ru/blog/tag/dizajn/">Дизайн</a></li>
+<li id="menu-item-80317" class="menu-item menu-item-type-taxonomy menu-item-object-post_tag menu-item-80317"><a href="https://www.unisender.com/ru/blog/tag/smm/">SMM</a></li>
+<li id="menu-item-80320" class="menu-item menu-item-type-taxonomy menu-item-object-post_tag menu-item-80320"><a href="https://www.unisender.com/ru/blog/tag/kontent/">Контент</a></li>
+<li id="menu-item-80321" class="menu-item menu-item-type-taxonomy menu-item-object-post_tag menu-item-80321"><a href="https://www.unisender.com/ru/blog/tag/brending/">Брендинг</a></li>
+<li id="menu-item-80322" class="menu-item menu-item-type-taxonomy menu-item-object-post_tag menu-item-80322"><a href="https://www.unisender.com/ru/blog/tag/razvitie/">Развитие</a></li>
+<li id="menu-item-80323" class="menu-item menu-item-type-taxonomy menu-item-object-post_tag menu-item-80323"><a href="https://www.unisender.com/ru/blog/tag/biznes/">Бизнес</a></li>
+</ul>                    </div>
+
+                    <div class="all-tags">
+                        <div class="h3">Ещё темы</div>
+                        <ul class="menu"><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/analitika/>Аналитика</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/bezopasnost/>Безопасность</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/zdorove/>Здоровье</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/karera/>Карьера</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/marketplejsy/>Маркетплейсы</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/menedzhment/>Менеджмент</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/obrazovanie/>Образование</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/pravo/>Право</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/prodazhi/>Продажи</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/reklama/>Реклама</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/sajty/>Сайты</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/udalenka/>Удаленка</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/finansy/>Финансы</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/chat-boty/>Чат-боты</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/ecommerce/>Ecommerce</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/excel-i-sheets/>Excel и Sheets</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/hr/>HR</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/seo/>SEO</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/telegram/>Telegram</a></li><li class="menu-item"><a href=https://www.unisender.com/ru/blog/tag/vk/>VK</a></li></ul>                    </div>
+                </div>
+
+                <div class="show-btn__wrapper">
+                    <button type="button" class="show-more" aria-label="Раскрыть меню с темами">
+                        <span class="mobile-label">Все темы</span>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="24" height="24" fill="none" />
+                            <path d="M6 14C5.45 14 4.97917 13.8042 4.5875 13.4125C4.19583 13.0208 4 12.55 4 12C4 11.45 4.19583 10.9792 4.5875 10.5875C4.97917 10.1958 5.45 10 6 10C6.55 10 7.02083 10.1958 7.4125 10.5875C7.80417 10.9792 8 11.45 8 12C8 12.55 7.80417 13.0208 7.4125 13.4125C7.02083 13.8042 6.55 14 6 14ZM12 14C11.45 14 10.9792 13.8042 10.5875 13.4125C10.1958 13.0208 10 12.55 10 12C10 11.45 10.1958 10.9792 10.5875 10.5875C10.9792 10.1958 11.45 10 12 10C12.55 10 13.0208 10.1958 13.4125 10.5875C13.8042 10.9792 14 11.45 14 12C14 12.55 13.8042 13.0208 13.4125 13.4125C13.0208 13.8042 12.55 14 12 14ZM18 14C17.45 14 16.9792 13.8042 16.5875 13.4125C16.1958 13.0208 16 12.55 16 12C16 11.45 16.1958 10.9792 16.5875 10.5875C16.9792 10.1958 17.45 10 18 10C18.55 10 19.0208 10.1958 19.4125 10.5875C19.8042 10.9792 20 11.45 20 12C20 12.55 19.8042 13.0208 19.4125 13.4125C19.0208 13.8042 18.55 14 18 14Z" fill="#2C2C2C" />
+                        </svg>
+                    </button>
+                </div>
+
+                <a href="/ru/blog/search/" class="search_btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.14583 15.3708 4.8875 14.1125C3.62917 12.8542 3 11.3167 3 9.5C3 7.68333 3.62917 6.14583 4.8875 4.8875C6.14583 3.62917 7.68333 3 9.5 3C11.3167 3 12.8542 3.62917 14.1125 4.8875C15.3708 6.14583 16 7.68333 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8125 13.5625 12.6875 12.6875C13.5625 11.8125 14 10.75 14 9.5C14 8.25 13.5625 7.1875 12.6875 6.3125C11.8125 5.4375 10.75 5 9.5 5C8.25 5 7.1875 5.4375 6.3125 6.3125C5.4375 7.1875 5 8.25 5 9.5C5 10.75 5.4375 11.8125 6.3125 12.6875C7.1875 13.5625 8.25 14 9.5 14Z" fill="#2C2C2C" />
+                    </svg>
+                    Поиск</a>
+
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="content-wrapper">
+
+    <div class="breadcrumbs">
+        <div class="container">
+            <nav aria-label="Хлебные крошки"><span><a href="https://www.unisender.com/">Главная</a></span>  <span><a href="https://www.unisender.com/ru/blog/">Конверт</a></span>  <span class="breadcrumb_last" aria-current="page">Гид по инструментам разработчика (DevTools) для маркетолога</span></nav>        </div>
+    </div>
+
+    
+    <!-- id поста для js -->
+    <input type="hidden" name="post_id" value="52303">
+
+    
+        
+        <section class="post_head">
+            <div class="container article_container">
+                <h1 class="h1">Гид по инструментам разработчика (DevTools) для маркетолога</h1>
+                                    <p class="post_excerpt">Проверяем адаптивность, измеряем скорость загрузки и не только</p>
+                                <div class="post_info">
+                    <div class="date_wrapper">
+                                                <span class="post_date">Опубликовано:
+                            11.09.2023                        </span>
+                    </div>
+                    <div class="info_wrapper">
+                        															<span class="post_views">22K</span>
+							                        
+                                                    <a href="https://www.unisender.com/ru/blog/guides/" class="post_category">Гайды</a>
+                                            </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="post_wrapper">
+            <div class="container article_container">
+                                    <div class="post__navigation-wrapper">
+                        <nav class="post__navigation" aria-label="Навигация по разделам статьи">
+                            <div class="nav-title">В этой статье</div>
+                            <ul class="tabs">
+                                                                        <li class="tab"><a href="#anchor-1">Вызываем инструменты разработчика в браузере</a></li>
+                                                                            <li class="tab"><a href="#anchor-2">Проверяем адаптивность</a></li>
+                                                                            <li class="tab"><a href="#anchor-3">Меняем расположение и дизайн элементов на странице</a></li>
+                                                                            <li class="tab"><a href="#anchor-4">Работаем с xPath</a></li>
+                                                                            <li class="tab"><a href="#anchor-5">Делаем скриншоты в высоком качестве</a></li>
+                                                                            <li class="tab"><a href="#anchor-6">Проверяем корректность загрузки кода сайта</a></li>
+                                                                            <li class="tab"><a href="#anchor-7">Узнаем содержимое сайта</a></li>
+                                                                            <li class="tab"><a href="#anchor-8">Проверяем скорость загрузки сайта</a></li>
+                                                                            <li class="tab"><a href="#anchor-9">Скачиваем картинки, видео и аудио</a></li>
+                                                                            <li class="tab"><a href="#anchor-10">Узнаем, как сайт нагружает ПК пользователя</a></li>
+                                                                            <li class="tab"><a href="#anchor-11">Смотрим, сколько весит сайт</a></li>
+                                                                            <li class="tab"><a href="#anchor-12">Чистим хранилище и кэш</a></li>
+                                                                            <li class="tab"><a href="#anchor-13">Проверяем наличие сертификатов</a></li>
+                                                                            <li class="tab"><a href="#anchor-14">Анализируем работу сайта</a></li>
+                                                                            <li class="tab"><a href="#anchor-15">Проверяем, как сайт реагирует на действия пользователя</a></li>
+                                                                            <li class="tab"><a href="#anchor-16">Снова измеряем скорость загрузки сайта</a></li>
+                                                                            <li class="tab"><a href="#anchor-17">Коротко о главном</a></li>
+                                    
+                                                            </ul>
+                        </nav>
+                    </div>
+                
+                                    <div class="post_image">
+                                                    <img src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/gid-po-devtools-chrome-i-drugih-brauzerov.png.webp" class="img-responsive"
+                                 alt="Гид по инструментам разработчика (DevTools)" fetchpriority="high">
+                                            </div>
+                
+                <div class="post__tags">
+                                            <div class="terms__overflow">
+                            <ul class="terms__list" aria-label="Список тем" role="list">
+                                                                    <li class="terms__item"><a class="term__link" href="https://www.unisender.com/ru/blog/tag/dizajn/">Дизайн</a></li>
+                                                                    <li class="terms__item"><a class="term__link" href="https://www.unisender.com/ru/blog/tag/sajty/">Сайты</a></li>
+                                                            </ul>
+                        </div>
+                    
+                        <div class="btn-block">
+        <a href="https://app.unisender.com/ru/v5/spa/registration/step/1?uni_plc=blog&#038;uni_object=button&#038;uni_offer=registration&#038;uni_type=static&#038;uni_name=create-email"
+           target="_blank"
+            rel="noopener"           class="social-link" style="--bg:#e9f8f7; --bg-hover:#8fdbd6">
+                        🔮 Создать письмо        </a>
+    </div>
+                </div>
+
+                <div class="post__authors">
+                    <div class="post__author post_creator">
+                                                <span class="post__author-role">Автор</span>
+                        <img loading="lazy" decoding="async" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2024/06/m-shumovski-new-100x100.png.webp" width="68" height="68" srcset="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2024/06/m-shumovski-new-175x175.png.webp 2x" alt="Михаил Шумовский" class="avatar avatar-68 wp-user-avatar wp-user-avatar-68 alignnone photo" />                        <a href="https://www.unisender.com/ru/blog/author/m-shumovskiy/"
+                           class="post__author-name">Михаил Шумовский</a>
+                        <div class="post__author-job">Редактор в «Конверте» и главред в «Нейромедиа»</div>
+                    </div>
+                                    </div>
+
+                <div class="post__content">
+                                        <div class="wpb-content-wrapper"><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">DevTools — это инструменты разработчика в браузерах, которые помогают в создании, тестировании, оптимизации сайтов или веб-приложений. С помощью DevTools можно проверять адаптивность сайта, делать скриншоты, измерять скорость загрузки и не только. Рассказываем подробнее, что это за инструменты и как с ними работать.</span></p>
+<p><b>Важно!</b><span style="font-weight: 400;"> DevTools выполняет многие функции, и они пригодятся разным специалистам. Мы в статье подробнее расскажем о том, как инструменты помогут маркетологам и дадим полезные ссылки на более подробные уроки от веб-разработчиков.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="1">
+		<div class="wpb_wrapper">
+			<h2>Вызываем инструменты разработчика в браузере</h2>
+<p><span style="font-weight: 400;">DevTools есть во всех браузерах — Google Chrome, Opera, Mozilla Firefox, Яндекс.Браузере. Инструменты разработчика можно запустить тремя способами:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Сочетанием клавиш «Ctrl + Shift + I».</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Через меню браузера: в Google Chrome для этого нажмите на три точки в правом верхнем углу →  «Дополнительные инструменты» → «Инструменты разработчика». В остальных браузерах DevTools запускаются похожим способом.</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Кликнув правой кнопкой мыши на нужной странице: правая кнопка мыши → «Посмотреть код». Открывать нужно именно «Посмотреть код», а не «Просмотр кода страницы».</span></li>
+</ul>
+<p><b>Важно! </b><span style="font-weight: 400;">Мы рассказываем о работе с DevTools на примере браузера Google Chrome. В нем есть русская версия DevTools, но мы будем показывать все на английской.</span></p>
+<p><span style="font-weight: 400;">Всего в интерфейсе есть 11 вкладок: «Elements», «Console», «Sources», «Network», «Performance», «Memory», «Application», «Security», «Lighthouse», «Recorder», «Performance insights». Разберемся в функционале каждой подробнее и на конкретных примерах.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="2">
+		<div class="wpb_wrapper">
+			<h2>Проверяем адаптивность</h2>
+<p><span style="font-weight: 400;">Когда вы запустите DevTools, в левом верхнем углу будет иконки компьютерной мыши, а рядом — смартфона и ноутбука.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693915532532">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/1-proverka-adaptivnost1-i.jpg.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img fetchpriority="high" loading="lazy" decoding="async" width="1424" height="576" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/1-proverka-adaptivnost1-i.jpg.webp" class="vc_single_image-img attachment-full" alt="Как проверить адаптивность страницы" /></a>
+			<div class="vc_figure-caption">Смартфон и ноутбук — иконки проверки адаптивности</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Кликните на нее и вверху страницы появится новая панель. В ней вы сможете выбрать режим отображения с телефона или компьютера, ориентацию смартфона и даже его модель.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1747232411867">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads/2023/09/2-vybiraem-tehniku.gif" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1510" height="894" src="https://www.unisender.com/ru/blog/wp-content/uploads/2023/09/2-vybiraem-tehniku.gif" class="vc_single_image-img attachment-full" alt="Проверка адаптивности сайта с помощью DevTools" /></a>
+			<div class="vc_figure-caption">Проверяем адаптивность журнала «Конверт»</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">В журнале «Конверт» мы писали и про другие </span><a href="https://www.unisender.com/ru/blog/kak-proverit-adaptivnost-mobilnost/" data-wpel-link="internal" target="_blank"><span style="font-weight: 400;">способы проверки адаптивности (мобильности) сайта</span></a><span style="font-weight: 400;">.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="3">
+		<div class="wpb_wrapper">
+			<h2>Меняем расположение и дизайн элементов на странице</h2>
+<p><span style="font-weight: 400;">На вкладке «Elements» отображается HTML- и CSS-код открытой страницы. Здесь можно отредактировать CSS-, JavaScript- и HTML-файлы.</span></p>
+<p><span style="font-weight: 400;">Чтобы выбрать определенный код, кликните на иконку курсора в левом верхнем углу DevTools или нажмите «Ctrl + Shift + C». После этого вы можете наводить мышку на нужное содержимое страницы, а строка с кодом будет автоматически подсвечиваться в редакторе.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693915660955">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads/2023/09/3-vybiraem-kod.gif" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1511" height="902" src="https://www.unisender.com/ru/blog/wp-content/uploads/2023/09/3-vybiraem-kod.gif" class="vc_single_image-img attachment-full" alt="Как выделять нужные строки кода с помощью DevTools" /></a>
+			<div class="vc_figure-caption">Выделяем нужные строки кода</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Чтобы изменить выделенный элемент, кликните на него левой кнопкой мыши дважды — строка с кодом зафиксируется в редакторе. В начале этой строки появятся три точки — кликните на них и выберите «Edit as HTML». Теперь вы можете править HTML-код: добавлять свой текст, удалять существующий и устанавливать новую разметку. А чтобы посмотреть на изменения, просто кликните левой кнопкой мыши в свободное место на экране и сайт обновится.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693915710907">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads/2023/09/4-menyaem-kod.gif" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1512" height="901" src="https://www.unisender.com/ru/blog/wp-content/uploads/2023/09/4-menyaem-kod.gif" class="vc_single_image-img attachment-full" alt="Как изменить код страницы с помощью DevTools" /></a>
+			<div class="vc_figure-caption">Изменяем код страницы</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Также с DevTools можно изменить расположение элементов относительно друг друга. Для этого нужно выбрать нужный HTML-код и перетащить его вверх или вниз.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693915757444">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads/2023/09/5.gif" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1792" height="934" src="https://www.unisender.com/ru/blog/wp-content/uploads/2023/09/5.gif" class="vc_single_image-img attachment-full" alt="Как поменять местами элементы через DevTools" /></a>
+			<div class="vc_figure-caption">Перетаскиваем объекты через код страницы</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><b>Теперь изменим CSS. </b><span style="font-weight: 400;">С CSS нужно работать в разделе «Styles» в нижней половине экрана. Чтобы изменить стили, кликните на нужный элемент в HTML-редакторе и в он автоматически откроется в стилях. В них можно изменить цветовую гамму, размер шрифтов, сделать его жирнее, тоньше и т.д. В общем, вы сможете протестировать различные дизайны и проверить, как будет смотреться сайт.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693915810293">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads/2023/09/6.gif" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1911" height="932" src="https://www.unisender.com/ru/blog/wp-content/uploads/2023/09/6.gif" class="vc_single_image-img attachment-full" alt="Как изменить стиль сайта с помощью DevTools" /></a>
+			<div class="vc_figure-caption">Меняем стили на сайте</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Полезные ссылки по работе с вкладкой «Elements»:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/css/reference/#change" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как редактировать стили</span></a></li>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/css/issues/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как найти нерабочий CSS</span></a></li>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/coverage/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как найти неиспользуемый CSS</span></a></li>
+</ul>
+
+		</div>
+	</div>
+    <div class="quote__place">
+        <div class="quote__info">
+                                                <a target="_blank" href="/ru/blog/top-kursov-po-html-i-css-dlya-novichkov/" data-wpel-link="internal">10 курсов по HTML и CSS для новичков</a>
+                                    </div>
+    </div>
+
+    </div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="4">
+		<div class="wpb_wrapper">
+			<h2>Работаем с xPath</h2>
+<p><span style="font-weight: 400;">Через инструменты разработчика можно получить XPath-запрос к любому элементу на странице. Для этого откройте вкладку «Elements», выберите нужный фрагмент кода и кликните на него правой кнопкой мыши. Выберите «Copy» → «Copy XPath».</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693915922203">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/7.jpg.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1486" height="908" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/7.jpg.webp" class="vc_single_image-img attachment-full" alt="Как найти XPath через DevTools" /></a>
+			<div class="vc_figure-caption">Копируем XPath абзаца</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Затем полученный XPath-запрос можно использовать в настройке парсинга, например, для SEO-анализа контента.</span></p>
+<p><span style="font-weight: 400;">Также здесь можно тестировать XPath. Для этого нужно нажать «Ctrl + F4» и написать нужный запрос в появившейся строке. DevTools подсветит найденные по нему элементы. Если ничего не найдет, значит, в XPath-выражении ошибка.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="5">
+		<div class="wpb_wrapper">
+			<h2>Делаем скриншоты в высоком качестве</h2>
+<p><span style="font-weight: 400;">DevTools позволяет сделать скриншот сайта или веб-приложения. Для этого нужно открыть инструменты разработчика, нажать «Ctrl+Shift+P», написать «screenshot» и выбрать нужный вариант.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693915982050">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/9.jpg.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="628" height="236" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/9.jpg.webp" class="vc_single_image-img attachment-full" alt="Варианты скриншотов в DevTools" /></a>
+			<div class="vc_figure-caption">Такие скриншоты можно сделать через DevTools</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<ul>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">«Capture area screenshot» — делает скриншоты определенной области экрана. Работает так: выбрали команду → выделили мышью нужную область для скриншота.</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">«Capture full size screenshot» — делает скриншот всей страницы. В него войдут все области страницы. Даже те, что не помещаются на вашем экране.</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">«Capture node screenshot» — делает скриншот элемента, который вы выделите на вкладке «Elements». Работает так: выбрали нужный элемент → нажали «Ctrl + Shift + P» и ввели команду «screenshot» → выбрали «Capture node screenshot».</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">«Capture screenshot» — делает скриншот отображаемой части страницы.</span></li>
+</ul>
+<p><span style="font-weight: 400;">Все варианты скриншотов сохраняются в формате PNG. </span></p>
+<p><span style="font-weight: 400;">В журнале «Конверт» мы также разбирали другие </span><a href="https://www.unisender.com/ru/blog/skrinshot/" data-wpel-link="internal" target="_blank"><span style="font-weight: 400;">инструменты для быстрого скриншотинга</span></a><span style="font-weight: 400;">. </span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="6">
+		<div class="wpb_wrapper">
+			<h2>Проверяем корректность загрузки кода сайта</h2>
+<p><span style="font-weight: 400;">На вкладке с консолью можно изучить, как работает JavaScript, и выполнять свой код для проверки страницы. А еще здесь можно увидеть проблемы с загрузкой стилей, шрифтов и картинок — ошибки отобразятся красным и появится подробное описание того, что не работает.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693916031722">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/10-2.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1048" height="621" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/10-2.png.webp" class="vc_single_image-img attachment-full" alt="Проверка сайта через «Console»" /></a>
+			<div class="vc_figure-caption">Проверка сайта через «Console»</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Полезные ссылки по работе с этой вкладкой:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/console/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как работать с панелью Console</span></a><span style="font-weight: 400;">.</span></li>
+<li><a href="https://developer.chrome.com/docs/devtools/console/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как правильно использовать панель Console</span></a><span style="font-weight: 400;">.</span></li>
+</ul>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="7">
+		<div class="wpb_wrapper">
+			<h2>Узнаем содержимое сайта</h2>
+<p><span style="font-weight: 400;">На вкладке «Sources» можно посмотреть все файлы из всех источников, к которым обращается сайт при работе.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693916112724">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/11-2.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1048" height="933" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/11-2.png.webp" class="vc_single_image-img attachment-full" alt="Как посмотреть содержимое сайта через DevTools" /></a>
+			<div class="vc_figure-caption">Смотрим содержимое сайта через DevTools</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Так, например, можно узнать, на какой CMS построен сайт. На скриншоте видно папки с приставкой wp — легко догадаться, что он сделан на WordPress. Если открыть сайт на CMS Bitrix, в «Sources» так же будет видна одноименная папка.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693916145068">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/13.jpg.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="899" height="229" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/13.jpg.webp" class="vc_single_image-img attachment-full" alt="Как узнать CMS сайта через DevTools" /></a>
+			<div class="vc_figure-caption">Проверяем, на какой CMS работает сайт</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Еще вкладка «Sources», например, позволяет узнать, какие пиксели установлены на сайте. Их можно заметить по словам «Analytics», «GTM», «Pixel» и т.д.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693916175739">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/14.jpg.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="646" height="576" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/14.jpg.webp" class="vc_single_image-img attachment-full" alt="Ищем пиксели через вкладку «Sources»" /></a>
+			<div class="vc_figure-caption">Ищем пиксели через вкладку «Sources»</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Второй вариант — изучить файловую систему и заметить папки «Google Analytics», «Google Tag Manager» и т.д.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693916204427">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/15.jpg.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="435" height="318" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/15.jpg.webp" class="vc_single_image-img attachment-full" alt="Ищем пиксели через файлы в «Sources»" /></a>
+			<div class="vc_figure-caption">Ищем пиксели через файлы в «Sources»</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Полезные ссылки по работе с вкладкой «Sources»:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/javascript/snippets/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как запускать фрагменты кода на любой странице</span></a><span style="font-weight: 400;">.</span></li>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/coverage/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как найти неиспользуемый JavaScript</span></a><span style="font-weight: 400;">.</span></li>
+</ul>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="8">
+		<div class="wpb_wrapper">
+			<h2>Проверяем скорость загрузки сайта</h2>
+<p><span style="font-weight: 400;">Эта вкладка —</span> <span style="font-weight: 400;">встроенный прокси-анализатор, который позволяет отслеживать HTTP-трафик страницы во время и после ее загрузки.</span></p>
+<p><span style="font-weight: 400;">Здесь можно отследить все запросы, которые делает сайт. Эта информация пригодится, чтобы снижать время загрузки сайта и мониторить выполнение различных запросов.</span></p>
+<p><span style="font-weight: 400;">Вкладка представлена в виде таблицы, в которой можно посмотреть статус запроса (выполняется он или нет), количество запросов, время загрузки всех данных. А также время загрузки DOM (программный интерфейс для HTML и XML документов, благодаря которому создаются скрипты) и ресурсов, которые участвуют в отображении сайта.</span></p>
+<p><span style="font-weight: 400;">На вкладке можно отследить скорость загрузки сразу всех элементов, а можно разбить их по группам — JavaScript-код, CSS-стили, картинки, шрифты и т.д.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693916279459">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/16-2.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1048" height="633" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/16-2.png.webp" class="vc_single_image-img attachment-full" alt="Как проверить скорость загрузки сайта с помощью DevTools" /></a>
+			<div class="vc_figure-caption">Проверяем скорость загрузки сайта</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Полезные ссылки по работе с вкладкой «Network»:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/network/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Начало работы с вкладкой Network</span></a><span style="font-weight: 400;">.</span></li>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/issues/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как решить проблемы с загрузкой файлов</span></a><span style="font-weight: 400;">.</span></li>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/network/reference/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как пользоваться панелью Network</span></a><span style="font-weight: 400;">.</span></li>
+</ul>
+
+		</div>
+	</div>
+    <div class="quote__place">
+        <div class="quote__info">
+                                                <a target="_blank" href="https://www.unisender.com/ru/blog/kak-proverit-skorost-zagruzki-sajta/" data-wpel-link="internal">Как проверить скорость загрузки сайта</a>
+                                    </div>
+    </div>
+
+    </div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="9">
+		<div class="wpb_wrapper">
+			<h2>Скачиваем картинки, видео и аудио</h2>
+<p><span style="font-weight: 400;">Это можно сделать также через вкладку «Network». Для этого нужно открыть нужную страницу, нажать «Ctrl + R» и из списка всех файлов выбрать нужное фото, видео или музыку. Чтобы искать было проще, можете выбрать «Img» для картинок и «Media» для видео и музыки.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693916462500">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/17.jpg.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1384" height="827" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/17.jpg.webp" class="vc_single_image-img attachment-full" alt="Как скачать картинку через DevTools" /></a>
+			<div class="vc_figure-caption">Как скачать картинку через DevTools</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">А чтобы не открывать все файлы сто раз в поиске нужного, в правом окне можете переключиться на вкладку «Preview».</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="10">
+		<div class="wpb_wrapper">
+			<h2>Узнаем, как сайт нагружает ПК пользователя</h2>
+<p><span style="font-weight: 400;">Для этого понадобится вкладка «Performance». Тут можно узнать, за какой период времени приходит ответ от сервера, как долго отрисовывается интерфейс, в какой момент становится доступен хотя бы один из элементов сайта и так далее. В общем, «Performance» помогает понять, как быстро работает сайт и как можно оптимизировать время загрузки.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693916839747">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/18-1.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1000" height="749" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/18-1.png.webp" class="vc_single_image-img attachment-full" alt="Проверка работы сайта через инструменты разработчика" /></a>
+			<div class="vc_figure-caption">Отслеживаем, как сайт нагружает устройство пользователя</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Полезные ссылки по работе с вкладкой «Performance»:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/speed/get-started/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как оптимизировать скорость сайта</span></a><span style="font-weight: 400;">.</span></li>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/evaluate-performance/reference/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Как пользоваться справочником анализа производительности</span></a><span style="font-weight: 400;">.</span></li>
+</ul>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="11">
+		<div class="wpb_wrapper">
+			<h2>Смотрим, сколько весит сайт</h2>
+<p><span style="font-weight: 400;">Для этого переходим во вкладку «Memory». Она помогает отслеживать, как JavaScript-код нагружает систему пользователя и сколько памяти съедает при этом. Подробно останавливаться на вкладке не будем, потому что она мало полезна маркетологу. </span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693916904988">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/19-1.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1049" height="684" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/19-1.png.webp" class="vc_single_image-img attachment-full" alt="Вкладка Memory в инструментах разработчика" /></a>
+			<div class="vc_figure-caption">Смотрим, сколько памяти занимает наш сайт</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Но если интересно — вот полезные ссылки по работе с вкладкой:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/memory-problems/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Устранение проблем с памятью — рекомендации от Google</span></a><span style="font-weight: 400;">.</span></li>
+<li><a href="https://learn.microsoft.com/ru-ru/microsoft-edge/devtools-guide-chromium/memory-problems/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Устранение проблем с памятью — рекомендации от Microsoft</span></a><span style="font-weight: 400;">.</span></li>
+</ul>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="12">
+		<div class="wpb_wrapper">
+			<h2>Чистим хранилище и кэш</h2>
+<p><span style="font-weight: 400;">На вкладке «Application» можно очищать хранилище и кэш, а также управлять базами данных.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693916981498">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/20-1.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1048" height="932" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/20-1.png.webp" class="vc_single_image-img attachment-full" alt="Вкладка Application в DevTools" /></a>
+			<div class="vc_figure-caption">Очищаем хранилище и кеш</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Чтобы очистить кэш сайта, нужно перейти в раздел «Storage» и кликнуть на «Clear site data». А чтобы удалить и куки, поставьте галочку напротив «including third-party cookies».</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693917016674">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/21.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1102" height="933" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/21.png.webp" class="vc_single_image-img attachment-full" alt="Как очистить кеш сайта с помощью DevTools" /></a>
+			<div class="vc_figure-caption">Чистим кеш сайта</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Полезные ссылки по работе с вкладкой «Application»:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/storage/localstorage/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Работа с хранилищем, базами данных и кэшами: инспекция и управление</span></a><span style="font-weight: 400;">.</span></li>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/storage/cookies/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Осмотр и чистка cookies</span></a><span style="font-weight: 400;">.</span></li>
+</ul>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="13">
+		<div class="wpb_wrapper">
+			<h2>Проверяем наличие сертификатов</h2>
+<p><span style="font-weight: 400;">На вкладке «Security» DevTools показывает результаты автоматической проверки сертификатов сайта</span> <span style="font-weight: 400;">и степень защищенности соединения. Сюда же попадает проверка всех подключаемых ресурсов.</span> <span style="font-weight: 400;">А еще здесь можно узнать, какие именно запросы не защищены.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693917076299">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/22.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1047" height="652" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/22.png.webp" class="vc_single_image-img attachment-full" alt="Как проверить наличие сертификата у любого сайта через DevTools" /></a>
+			<div class="vc_figure-caption">Проверяем наличие сертификатов у сайта</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="14">
+		<div class="wpb_wrapper">
+			<h2>Анализируем работу сайта</h2>
+<p><span style="font-weight: 400;">Вкладка «Lighthouse» — полноценный инструмент для аналитики сайта и выявления недостатков. Здесь можно отслеживать:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Скорость загрузки сайта и работы. </span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Адаптированность под смартфоны и компьютеры.</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Корректность верстки.</span></li>
+<li style="font-weight: 400;" aria-level="1"><a href="https://www.unisender.com/ru/glossary/chto-takoe-seo-optimizaciya/" data-wpel-link="internal" target="_blank"><span style="font-weight: 400;">SEO-оптимизацию</span></a><span style="font-weight: 400;">.</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Поддержку Progressive Web App — проверить сайт на код ответа 200. </span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Best Practices. Чтобы проверить безопасность сайта и выяснить, применяются ли современные стандарты веб-разработки.</span></li>
+</ul>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693917123714">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/23-1.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="1047" height="593" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/23-1.png.webp" class="vc_single_image-img attachment-full" alt="Проверка скорости работы сайта через Lighthouse" /></a>
+			<div class="vc_figure-caption">Запускаем проверку через Lighthouse</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Каждый показатель оценивается от 0 до 100 и подсвечивается разным цветом. Красный — ниже 49 баллов, оранжевый — 50–89 баллов, зеленый — 90–100 баллов.</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693917151812">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/24.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="842" height="721" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/24.png.webp" class="vc_single_image-img attachment-full" alt="Оценка сайта по Lighthouse" /></a>
+			<div class="vc_figure-caption">Оценка сайта по Lighthouse</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="15">
+		<div class="wpb_wrapper">
+			<h2>Проверяем, как сайт реагирует на действия пользователя</h2>
+<p><span style="font-weight: 400;">Вкладка «Recorder» позволяет записать, воспроизвести и измерить, как быстро сайт реагирует на действия пользователя (например, в процессе оформления заказа). Чтобы начать запись, выберите вкладку «Recorder» и нажмите «Start recording». </span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693917196012">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/25.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="600" height="932" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/25.png.webp" class="vc_single_image-img attachment-full" alt="Записываем отзывчивость сайта через DevTools" /></a>
+			<div class="vc_figure-caption">Записываем отзывчивость сайта</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">C ее помощью можно записать, как пользователь добавил товар в корзину, перешёл в корзину, начал оформлять заказ и т. д. Здесь же можно имитировать низкую скорость интернет-соединения и проверить, как сайт работает в этом случае. Чтобы включить имитацию, в правом верхнем углу вкладки откройте выпадающий список «▼».</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693917225385">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/26.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="597" height="577" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/26.png.webp" class="vc_single_image-img attachment-full" alt="Проверяем, как сайт работает на разных скоростях интернет-соединения" /></a>
+			<div class="vc_figure-caption">Проверяем, как сайт работает на разных скоростях интернет-соединения
+</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="16">
+		<div class="wpb_wrapper">
+			<h2>Снова измеряем скорость загрузки сайта</h2>
+<p><span style="font-weight: 400;">Вкладка «Performance Insights» в Chrome DevTools позволяет пользователям измерять скорость загрузки страницы. Для этого инструмент вычисляет время, которое нужно для отображения страницы, загрузки сетевых ресурсов загрузки интерактивных элементов.</span></p>
+<p><span style="font-weight: 400;">Для анализа DevTools посещает сайт от лица пользователя и взаимодействует с ним. </span></p>
+<p><span style="font-weight: 400;">Чтобы запустить анализ, выберите вкладку «Performance insights» и нажмите на кнопку «Measure page load».</span></p>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div  class="wpb_single_image wpb_content_element vc_align_none  vc_custom_1693917269236">
+		
+		<div class="wpb_wrapper vc_figure">
+			<a href="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/27.png.webp" target="_self" class="vc_single_image-wrapper   vc_box_border_grey"><img loading="lazy" decoding="async" width="599" height="429" src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2023/09/27.png.webp" class="vc_single_image-img attachment-full" alt="Проверка «Performance Insights» через инструменты разработчика" /></a>
+			<div class="vc_figure-caption">Запускаем проверку «Performance Insights»</div>
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" >
+		<div class="wpb_wrapper">
+			<p><span style="font-weight: 400;">Полезные ссылки по работе с вкладкой «Performance Insights»:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><a href="https://developer.chrome.com/docs/devtools/performance-insights/" data-wpel-link="external" target="_blank" rel="nofollow noopener noreferrer"><span style="font-weight: 400;">Полный гид по инструменту от Google</span></a><span style="font-weight: 400;">.</span></li>
+</ul>
+
+		</div>
+	</div>
+</div></div></div></div><div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column vc_column_container vc_col-sm-12"><div class="vc_column-inner"><div class="wpb_wrapper">
+	<div class="wpb_text_column wpb_content_element" id="17">
+		<div class="wpb_wrapper">
+			<h2>Коротко о главном</h2>
+<p><span style="font-weight: 400;">DevTools — это инструменты разработчика в браузерах, которые помогают в создании, тестировании, оптимизации сайтов.</span></p>
+<p><span style="font-weight: 400;">Инструменты разработчика можно запустить сочетанием клавиш «Ctrl + Shift + I», через основное или контекстное меню браузера (на примере Google Chrome — «Посмотреть код» или «Просмотр кода страницы»).</span></p>
+<p><span style="font-weight: 400;">DevTools могут пригодиться маркетологу для разных задач, например:</span></p>
+<ul>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Проверки адаптивности. Нужно нажать иконку Toggle device toolbar или нажать «Ctrl + Shift + M».</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Тестирования изменений в дизайне. Через редактирование кода на вкладке Elements.</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Составления и проверки XPath-запросов. Тоже на вкладке «Elements».</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Делать скриншоты, в том числе всей веб-страницы. Нужно нажать «Ctrl+Shift+P», написать «screenshot» и выбрать подходящий вариант.</span></li>
+<li style="font-weight: 400;" aria-level="1"><span style="font-weight: 400;">Узнать CMS сайта и какие там установлены счетчики и пиксели. С помощью вкладки «Sources».</span></li>
+</ul>
+
+		</div>
+	</div>
+</div></div></div></div>
+</div>
+                                        <div class="recommendations">
+                            <article class="post__item">
+        <div class="post__info">
+            <a href="https://www.unisender.com/ru/blog/razbory/" class="post__tag">Разборы</a>
+            <span class="post__date">18.09.2026</span>
+        </div>
+
+        <a href="https://www.unisender.com/ru/blog/marketing-nezavisimyh-knizhnyh/" class="recommendation__title">Маркетинг независимых книжных: как нишевые магазины выживают рядом с маркетплейсами</a>
+    </article>
+    <article class="post__item">
+        <div class="post__info">
+            <a href="https://www.unisender.com/ru/blog/news/" class="post__tag">Новости</a>
+            <span class="post__date">14:42</span>
+        </div>
+
+        <a href="https://www.unisender.com/ru/blog/news/rossiyane-rasskazali-kakaya-reklama-motiviruet-k-pokupke/" class="recommendation__title">Россияне рассказали, какая реклама мотивирует к покупке</a>
+    </article>
+    <article class="post__item">
+        <div class="post__info">
+            <a href="https://www.unisender.com/ru/blog/news/" class="post__tag">Новости</a>
+            <span class="post__date">08:10</span>
+        </div>
+
+        <a href="https://www.unisender.com/ru/blog/news/pochemu-sotrudniki-ne-vnedryayut-novye-tehnologii-issledovanie/" class="recommendation__title">Почему сотрудники не внедряют новые технологии: исследование</a>
+    </article>
+    <article class="post__item">
+        <div class="post__info">
+            <a href="https://www.unisender.com/ru/blog/kejsy/" class="post__tag">Кейсы</a>
+            <span class="post__date">25.08.2026</span>
+        </div>
+
+        <a href="https://www.unisender.com/ru/blog/kejs-biznes-logika/" class="recommendation__title">«Бизнес-Логика»: превратили вопросы клиентов в контент для сайта и рассылок и получили конверсию в покупку 23%</a>
+    </article>
+    <article class="post__item">
+        <div class="post__info">
+            <a href="https://www.unisender.com/ru/blog/tests/" class="post__tag">Тесты</a>
+            <span class="post__date">26.01.2026</span>
+        </div>
+
+        <a href="https://www.unisender.com/ru/blog/kak-ne-dopustit-oshibok-samozanyatym-test/" class="recommendation__title">Тест: работа с заказчиками: знаете ли вы, как избежать этих ошибок?</a>
+    </article>
+                    </div>
+                    
+                    
+                        <!-- случайный баннер из ротации --><div class="banner_constructor gtm-rotation-banner border-stamp banner_for_rotation"
+     style="background-color: #fff1fb">
+    <div class="text-block"
+        >
+                    <div class="ads">
+                <span id="banner-ads-content-1418fdb4" class="ads-content visually-hidden" aria-label="Информация о рекламодателе">ООО «Юнисендер СМАРТ», ИНН 9731091240, erid: 2VSb5xoF7HT</span>
+                <button
+                    class="ads-trigger"
+                    aria-label="Юридическая информация о рекламе"
+                    aria-describedby="banner-ads-content-1418fdb4"
+                    data-tippy-legal
+                >
+                    <span class="uni-label">Реклама</span>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <mask id="mask0_3670_272" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0"
+                              width="20" height="20">
+                            <rect x="20" width="20" height="20" transform="rotate(90 20 0)" fill="#D9D9D9"/>
+                        </mask>
+                        <g mask="url(#mask0_3670_272)">
+                            <path
+                                d="M8.33329 4.99992C8.33329 4.54159 8.49649 4.14922 8.82288 3.82284C9.14926 3.49645 9.54163 3.33325 9.99996 3.33325C10.4583 3.33325 10.8507 3.49645 11.177 3.82284C11.5034 4.14922 11.6666 4.54159 11.6666 4.99992C11.6666 5.45825 11.5034 5.85061 11.177 6.177C10.8507 6.50339 10.4583 6.66659 9.99996 6.66659C9.54163 6.66659 9.14926 6.50339 8.82288 6.177C8.49649 5.85061 8.33329 5.45825 8.33329 4.99992ZM8.33329 9.99992C8.33329 9.54159 8.49649 9.14922 8.82288 8.82284C9.14926 8.49645 9.54163 8.33325 9.99996 8.33325C10.4583 8.33325 10.8507 8.49645 11.177 8.82284C11.5034 9.14922 11.6666 9.54159 11.6666 9.99992C11.6666 10.4583 11.5034 10.8506 11.177 11.177C10.8507 11.5034 10.4583 11.6666 9.99996 11.6666C9.54163 11.6666 9.14926 11.5034 8.82288 11.177C8.49649 10.8506 8.33329 10.4583 8.33329 9.99992ZM8.33329 14.9999C8.33329 14.5416 8.49649 14.1492 8.82288 13.8228C9.14926 13.4964 9.54163 13.3333 9.99996 13.3333C10.4583 13.3333 10.8507 13.4964 11.177 13.8228C11.5034 14.1492 11.6666 14.5416 11.6666 14.9999C11.6666 15.4583 11.5034 15.8506 11.177 16.177C10.8507 16.5034 10.4583 16.6666 9.99996 16.6666C9.54163 16.6666 9.14926 16.5034 8.82288 16.177C8.49649 15.8506 8.33329 15.4583 8.33329 14.9999Z"
+                                fill="#2C2C2C"/>
+                        </g>
+                    </svg>
+                </button>
+            </div>
+                <div class="h4"
+             style="color: #2c2c2c">
+            Запуск рассылки через 3… 2… 1…        </div>
+        <div class="text-content"
+             style="color: #565656">
+            <p>Всё для быстрого старта в email-маркетинге: блочный редактор, 200 шаблонов, ИИ-помощник. 1500 писем бесплатно.</p>
+        </div>
+                    <a href="https://app.unisender.com/ru/v5/spa/registration/step/1?uni_plc=blog&#038;uni_object=banner&#038;uni_offer=registration&#038;uni_type=rotate&#038;uni_name=start_three_two_one&#038;erid=2VSb5xoF7HT"
+               target="_blank"
+                rel="noopener"               class="btn btn-secondary link-desktop"
+                 style=" color: #ffffff;background-color: #ff9f2b">
+                Попробовать            </a>
+            </div>
+            <div class="image-wrapper">
+            <img class="img-responsive" loading="lazy"
+                 width="363"
+                 height="363"
+                 src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2025/08/foni-papik-pro-fi9q-p-kartinki-kot-vzhukh-na-prozrachnom-fone-3-photoroom-1.png.webp"
+                 alt="Запуск рассылки через 3… 2… 1…">
+        </div>
+    </div>
+                    
+                    
+                    
+                                            <div class="article__share">
+                            <div class="share-title">Поделиться</div>
+                            <div class="article__share_links">
+                                <a href="#" data-social="vkontakte" aria-label="Поделиться статьёй в соцсети ВКонтакте">ВКонтакте</a>,
+                                <a href="#" data-social="telegram" aria-label="Поделиться статьёй в Телеграм">Telegram</a>
+                            </div>
+                        </div>
+                                    </div>
+
+            </div>
+        </section>
+
+            <section class="fresh">
+            <div class="container">
+                <h2 class="h1">Свежие статьи</h2>
+                <div class="tile">
+                    <article class="post__item">
+
+            <a href="https://www.unisender.com/ru/blog/krazha-12-tonn-kitkat-stala-reklamnoy-kampaniey/" class="post__image">
+            <img src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2026/09/oblozhka.png.webp" alt="Как кража 12 тонн KitKat стала рекламной кампанией" width="780" height="477"
+     class="img-responsive" loading="lazy" decoding="async">
+        </a>
+    
+    <div class="post__info">
+        <a href="https://www.unisender.com/ru/blog/tag/pr/" class="post__tag">PR</a>
+        <span class="post__date">25.09.2026</span>
+        			            </div>
+
+    <a href="https://www.unisender.com/ru/blog/krazha-12-tonn-kitkat-stala-reklamnoy-kampaniey/" class="h4 post__title">Как кража 12 тонн KitKat стала рекламной кампанией</a>
+</article><article class="post__item">
+
+            <a href="https://www.unisender.com/ru/blog/shrifty-dlya-tsifr/" class="post__image">
+            <img src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2026/09/12_krasivye-shrifty-dlya-cifr.png.webp" alt="Подборка шрифтов с цифрами красивыми" width="780" height="477"
+     class="img-responsive" loading="lazy" decoding="async">
+        </a>
+    
+    <div class="post__info">
+        <a href="https://www.unisender.com/ru/blog/tag/dizajn/" class="post__tag">Дизайн</a>
+        <span class="post__date">25.09.2026</span>
+        			            </div>
+
+    <a href="https://www.unisender.com/ru/blog/shrifty-dlya-tsifr/" class="h4 post__title">15 красивых шрифтов для цифр</a>
+</article><article class="post__item">
+
+            <a href="https://www.unisender.com/ru/blog/ugc-v-email-marketinge/" class="post__image">
+            <img src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2019/02/29_kak-ispolzovat-ugc-v-email.png.webp" alt="Пользовательский контент в email-маркетинге" width="780" height="477"
+     class="img-responsive" loading="lazy" decoding="async">
+        </a>
+    
+    <div class="post__info">
+        <a href="https://www.unisender.com/ru/blog/tag/email/" class="post__tag">Email</a>
+        <span class="post__date">25.09.2026</span>
+        							<span class="post__views">18</span>
+			            </div>
+
+    <a href="https://www.unisender.com/ru/blog/ugc-v-email-marketinge/" class="h4 post__title">Как использовать UGC в email-маркетинге</a>
+</article><article class="post__item">
+
+            <a href="https://www.unisender.com/ru/blog/kak-sinhronizirovat-telefon-s-kompyuterom/" class="post__image">
+            <img src="https://www.unisender.com/ru/blog/wp-content/uploads-webpc/uploads/2026/09/22-kak-sinhronizirovat-telefon-s-kompyuterom.png.webp" alt="Как синхронизировать телефон с компьютером" width="780" height="477"
+     class="img-responsive" loading="lazy" decoding="async">
+        </a>
+    
+    <div class="post__info">
+        <a href="https://www.unisender.com/ru/blog/tag/messendzhery/" class="post__tag">Мессенджеры</a>
+        <span class="post__date">24.09.2026</span>
+        			            </div>
+
+    <a href="https://www.unisender.com/ru/blog/kak-sinhronizirovat-telefon-s-kompyuterom/" class="h4 post__title">Как синхронизировать телефон с компьютером</a>
+</article>                </div>
+            </div>
+        </section>
+    
+    <section id="subscribe" class="subscription">
+        <div class="container">
+            <div class="empty border-stamp" aria-hidden="true"></div>
+
+            
+<div class="form_wrapper border-stamp single-page">
+            <h2 class="h3">«Честно» — рассылка о&nbsp;том, что волнует и&nbsp;бесит</h2>
+    
+            <p>Искренние письма о&nbsp;работе и&nbsp;жизни, эксклюзивные кейсы и&nbsp;интервью с&nbsp;экспертами диджитала.</p>
+    
+    <form data-form_type="digest_ru"
+          data-form_name="main_blog_footer"
+          class="form_subscription js_subscribe">
+
+        <input type="hidden" id="payload" name="payload" value="b84a4cbbe8" /><input type="hidden" name="_wp_http_referer" value="/ru/blog/gid-po-devtools-chrome-i-drugih-brauzerov/" />                <label style="display:none">
+            <input type="text" name="name" tabindex="-1" autocomplete="off">
+        </label>
+        <input type="email" name="email" placeholder="Ваш email" required>
+
+                    <label class="label-checkbox">
+                <span>Я даю <a href="https://chestno.unisender.com/personal_data/" class="link-purple" target="_blank" rel="noopener">согласие</a> на обработку персональных данных для подписки на рассылку «Честно»</span>
+                <input type="checkbox" name="privacy_permit" required>
+                <span class="checkmark"></span>
+            </label>
+        
+                    <label class="label-checkbox">
+                <span>Я даю <a href="https://chestno.unisender.com/agreement/" class="link-purple" target="_blank" rel="noopener">согласие</a> на получение рекламно-информационной рассылки «Честно»</span>
+                <input type="checkbox" name="marketing_permit" required>
+                <span class="checkmark"></span>
+            </label>
+        
+        <div class="error-form">
+            Наш юрист будет ругаться, если вы не примете :(         </div>
+
+        <div class="terms-text">
+            Нажимая «Подписаться», я принимаю <a href="https://chestno.unisender.com/oferta/" class="link-purple" target="_blank" rel="noopener">Правила использования</a> и подтверждаю, что ознакомлен с <a href="https://chestno.unisender.com/privacy/" class="link-purple" target="_blank" rel="noopener">Политикой обработки персональных данных</a>.        </div>
+
+        <button type="submit" class="btn btn-secondary" disabled>Подписаться</button>
+    </form>
+</div>
+            <div class="empty border-stamp" aria-hidden="true"></div>
+        </div>
+    </section>
+
+        <script>
+            var _nonce = '35c93e8b89';
+
+            var settings = {
+                "ajax_url": "https://www.unisender.com\/wp-admin\/admin-ajax.php",
+                "curr_post_ID": "52303",
+                "_nonce": "35c93e8b89"
+            };
+            /* ]]> */
+        </script>
+
+    
+</main>
+
+<script defer src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/single/js/single.min.js?v=99f0bf6e8223ed77d05abbf79613d9f5"></script>
+
+<script defer src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/js/share.min.js?v=89f9be2b9a4742d8a8aa56496b47991e"></script>
+
+
+
+<div class="footer-meta-warning d-none">
+    <div class="container">
+        <p style="margin-block: 1rem;"><small></small></p>
+    </div>
+</div>
+<script>
+    (function($) {
+        const META_WORDS = ['Instagram', 'Инстаграм', 'Facebook', 'Фейсбук', 'WhatsApp', 'Вотсап', 'Meta', 'Threads'];
+        const META_GROUP = `(${META_WORDS.join('|')})`;
+
+        const META_WITH_STAR_RE = new RegExp(`${META_GROUP}\\*`);
+        const META_NEEDS_STAR_RE = new RegExp(`\\b${META_GROUP}\\b(?!\\*)`, 'g');
+
+        const ALLOWED_PHRASES = ['Meta skills', 'SEO Meta', 'Meta SEO'];
+        const ALLOWED_RE = new RegExp(
+            ALLOWED_PHRASES
+                .map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                .join('|'),
+            'g'
+        );
+
+        // FILTER
+        function applyMetaWarningFilter(text) {
+            if (!text) return text;
+
+            const saved = [];
+            text = text.replace(ALLOWED_RE, (match) => {
+                const id = saved.length;
+                saved.push(match);
+                return `__SAFE_${id}__`;
+            });
+            text = text.replace(META_NEEDS_STAR_RE, '$1*');
+            text = text.replace(/__SAFE_(\d+)__/g, (_, i) => saved[i]);
+
+            return text;
+        }
+
+        // DETECTOR
+        function updateMetaWarning($scope) {
+            const text = $scope.clone().find('script').remove().end().text();
+            const hasMeta = META_WITH_STAR_RE.test(text);
+
+            if (hasMeta) {
+                $(".footer-meta-warning small").html(
+                    decodeURIComponent(escape(window.atob(
+                        'KiDigJQg0JrQvtC80L/QsNC90LjRjyBNZXRhIChJbnN0YWdyYW0sIEZhY2Vib29rLCBXaGF0c0FwcCkg0L/RgNC40LfQvdCw0L3QsCDRjdC60YHRgtGA0LXQvNC40YHRgtGB0LrQvtC5INC4INC30LDQv9GA0LXRidC10L3QsCDQvdCwINGC0LXRgNGA0LjRgtC+0YDQuNC4INCg0L7RgdGB0LjQuCDRgSAyMS4wMy4yMDIy'
+                    )))
+                );
+            }
+
+            $(".footer-meta-warning").toggleClass("d-none", !hasMeta);
+
+            return hasMeta;
+        }
+
+        // DOM PROCESSING
+        function processTextNodes($element) {
+            $element.find("*").addBack().contents().each(function() {
+                if (this.nodeType !== 3) return;
+
+                const newText = applyMetaWarningFilter(this.nodeValue);
+
+                if (newText !== this.nodeValue) {
+                    this.nodeValue = newText;
+                }
+            });
+        }
+
+        // INIT
+        processTextNodes($("body"));
+        updateMetaWarning($("body"));
+
+        // AJAX INSERT HELPERS
+        function insertWithMetaWarning($container, html, insertFn) {
+            html = applyMetaWarningFilter(html);
+            insertFn.call($container, html);
+
+            processTextNodes($container);
+            updateMetaWarning($container);
+        }
+
+        $.fn.appendDataWithMetaWarningCheck = function(data) {
+            return this.each(function() {
+                insertWithMetaWarning($(this), data, $.fn.append);
+            });
+        };
+
+        $.fn.replaceDataWithMetaWarningCheck = function(data) {
+            return this.each(function() {
+                insertWithMetaWarning($(this), data, $.fn.html);
+            });
+        };
+
+    })(jQuery);
+</script>
+
+<footer class="footer" id="footer">
+    <button class="scroll-top" aria-label="Прокрутить наверх">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <mask id="mask0_3168_3098" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+                <rect width="24" height="24"/>
+            </mask>
+            <g mask="url(#mask0_3168_3098)">
+                <path d="M11 18V8.8L7.4 12.4L6 11L12 5L18 11L16.6 12.4L13 8.8V18H11Z"/>
+            </g>
+        </svg>
+    </button>
+
+    <div class="container">
+		<div class="footer-top-with-form">
+			<div class="footer-form">
+				<div class="form__title h3">Станьте частью закрытого клуба Unisender PRO</div>
+				<div class="form__description">Эксклюзивные доступы, готовые шаблоны и скидки для роста конверсии.</div>
+				<form class="form js_subscribe_crm" novalidate>
+					<input type="hidden" id="payload" name="payload" value="c06fb05953" />										<label style="display:none">
+						<input type="text" name="name" tabindex="-1" autocomplete="off">
+					</label>
+
+					<input type="hidden" name="form_name" value="footer-subscribe-crm">
+
+					<fieldset class="form__fieldset form__row">
+						<label>
+							<input type="email"
+								   name="email"
+								   placeholder="Ваш еmail*"
+								   class="form__input"
+								   required>
+						</label>
+						<label>
+							<input type="tel"
+								   name="phone"
+								   placeholder="Телефон*"
+								   class="form__input"
+								   required>
+						</label>
+
+						<button type="submit" class="btn btn-secondary" disabled>Вступить в клуб</button>
+					</fieldset>
+
+					<label class="label-checkbox">
+						<input type="checkbox"
+							   name="privacy_permit"
+							   value="1"
+							   required>
+						<span class="checkmark"></span>
+						<span>
+							Я принимаю условия
+							<a href="https://crm.unisender.com/polzovatelskoe_soglashenie" target="_blank" rel="noopener" class="link-purple">Пользовательского соглашения</a>
+							и даю согласие на обработку персональных данных согласно
+							<a href="https://crm.unisender.com/politika_obrabotki_personalnyh_dannyx" target="_blank" rel="noopener" class="link-purple">Политике обработки персональных данных</a>
+							с целью подписки на рассылку.
+						</span>
+					</label>
+					<label class="label-checkbox">
+						<input type="checkbox"
+							   name="marketing_permit"
+							   value="1"
+							   required>
+						<span class="checkmark"></span>
+						<span>
+							Я соглашаюсь стать частью закрытого клуба Unisender, получать материалы, новости и
+							<a href="https://crm.unisender.com/soglasie-na-poluchenie-reklamnyh-soobshhenij/" target="_blank" rel="noopener" class="link-purple">рекламу</a>
+							Unisender.
+						</span>
+					</label>
+				</form>
+			</div>
+		</div>
+
+		
+        <div class="footer-top">
+            <div class="logo-wrapper">
+                <img src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/img/unisender-logo-footer.svg?v=40a23aa496010e9be0edd1abe4c6d4fd"
+                     alt="Unisender" width="279" height="258" class="unisender-logo-footer img-responsive" loading="lazy">
+            </div>
+
+            <div class="footer-menu">
+                                    <div class="footer-col">
+                        <div class="footer-title">Unisender</div>
+                        <ul id="menu-unisender" class="menu"><li id="menu-item-29107" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29107"><a href="/ru/about/">О нас</a></li>
+<li id="menu-item-29109" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29109"><a href="/ru/contacts/">Контакты</a></li>
+<li id="menu-item-29111" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29111"><a href="/ru/accounts/">Реквизиты</a></li>
+<li id="menu-item-29113" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29113"><a href="/ru/partners/">Партнёрам</a></li>
+<li id="menu-item-29115" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29115"><a href="/ru/otzivy/">Отзывы</a></li>
+<li id="menu-item-29117" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29117"><a href="/ru/about/career/">Карьера</a></li>
+<li id="menu-item-80310" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-80310"><a href="/ru/sitemap/">Карта сайта</a></li>
+</ul>                    </div>
+                
+                                    <div class="footer-col">
+                        <div class="footer-title">Информация</div>
+                        <ul id="menu-informacziya" class="menu"><li id="menu-item-29121" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29121"><a target="_blank" href="https://school.unisender.com/">Школа</a></li>
+<li id="menu-item-29123" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29123"><a href="/ru/support/">База знаний</a></li>
+<li id="menu-item-29125" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29125"><a href="/ru/glossary/">Словарь</a></li>
+<li id="menu-item-33440" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-33440"><a href="/ru/technical-support/">Техподдержка</a></li>
+<li id="menu-item-60625" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-60625"><a href="/ru/press/">Пресс-центр</a></li>
+<li id="menu-item-91542" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-91542"><a href="/ru/about/nko/">Поддержка НКО</a></li>
+</ul>                    </div>
+                
+                                    <div class="footer-col">
+                        <div class="footer-title">Компания</div>
+                        <ul id="menu-kompaniya" class="menu"><li id="menu-item-29129" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29129"><a href="/ru/terms/">Правила пользования</a></li>
+<li id="menu-item-29131" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29131"><a href="/ru/antispam/">Антиспам-политика</a></li>
+<li id="menu-item-29133" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29133"><a href="/ru/privacy-notice/">Политика обработки персональных данных</a></li>
+<li id="menu-item-29135" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29135"><a href="/ru/cookies-policy/">Политика cookie</a></li>
+<li id="menu-item-29137" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29137"><a href="/ru/refund/">Политика возврата средств</a></li>
+<li id="menu-item-74677" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-74677"><a href="/ru/about/secured/">Защита персональных данных</a></li>
+<li id="menu-item-102864" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-102864"><a href="/ru/soglasie-na-poluchenie-reklamnyh-soobshhenij/">Согласие на рекламу</a></li>
+<li id="menu-item-106197" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-106197"><a href="/ru/pravila-osushhestvleniya-sms-rassylok/">Правила SMS рассылок</a></li>
+</ul>                    </div>
+                
+                                    <div class="footer-col">
+                        <div class="footer-title">Инструменты</div>
+                        <ul id="menu-instrumenty" class="menu"><li id="menu-item-29139" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29139"><a href="/ru/features/email/konstruktor-pisem/">Конструктор писем</a></li>
+<li id="menu-item-29141" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29141"><a href="/ru/features/email/validator/">Валидатор email</a></li>
+<li id="menu-item-29143" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29143"><a href="/ru/templates/">Бесплатные шаблоны</a></li>
+<li id="menu-item-29145" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29145"><a href="/ru/features/email/avtomaticheskie-rassylki/">Автоматизация</a></li>
+<li id="menu-item-29147" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29147"><a href="/ru/features/email/analitika-rassylok/">Сводная статистика</a></li>
+<li id="menu-item-29149" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29149"><a href="/ru/support/category/integration/">Интеграции</a></li>
+</ul>                    </div>
+                
+                                    <div class="footer-col">
+                        <div class="footer-title">Журнал</div>
+                        <ul id="menu-zhurnal" class="menu"><li id="menu-item-83831" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-83831"><a href="https://www.unisender.com/ru/blog/pro-konvert/">О Конверте</a></li>
+<li id="menu-item-29151" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-29151"><a href="/ru/blog/">Читать</a></li>
+<li id="menu-item-29153" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-29153"><a href="https://www.unisender.com/ru/blog/author/">Редакция</a></li>
+<li id="menu-item-80311" class="menu-item menu-item-type-post_type menu-item-object-post menu-item-80311"><a href="https://www.unisender.com/ru/blog/ishchem-avtorov-kopirajterov-v-media-unisender/">Стать автором</a></li>
+<li id="menu-item-98295" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-98295"><a target="_blank" href="https://www.unisender.com/wp-content/uploads/o-kejsah-i-intervyu-dlya-bloga-unisender.pdf">Прислать кейс</a></li>
+<li id="menu-item-100727" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-100727"><a target="_blank" href="/wp-content/uploads/usloviya-ispolzovaniya-materialov-bloga-unisender.pdf">Условия перепечатки</a></li>
+<li id="menu-item-104536" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-104536"><a target="_blank" href="http://neiro.unisender.com/">Нейромедиа</a></li>
+<li id="menu-item-114512" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-114512"><a target="_blank" href="https://media.unisender.com/">Unisender медиа</a></li>
+</ul>                    </div>
+                
+                                    <div class="footer-col">
+                        <div class="footer-title">Техподдержка</div>
+                        <ul id="menu-tehpodderzhka" class="menu"><li id="menu-item-33403" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-33403"><a href="mailto:support@unisender.com">support@unisender.com</a></li>
+<li id="menu-item-80312" class="flag flag-ru menu-item menu-item-type-custom menu-item-object-custom menu-item-80312"><a href="tel:+78005516822">+7 800 551-68-22</a></li>
+<li id="menu-item-80313" class="flag flag-ru menu-item menu-item-type-custom menu-item-object-custom menu-item-80313"><a href="tel:+74991135280">+7 499 113-52-80</a></li>
+<li id="menu-item-80314" class="flag flag-by menu-item menu-item-type-custom menu-item-object-custom menu-item-80314"><a href="tel:+375173880509">+375 17 388-05-09</a></li>
+</ul>                    </div>
+                            </div>
+        </div>
+
+        <div class="footer-social">
+            <a href="https://vk.com/unisender" class="h1 title-icon gtm-social-footer"
+               target="_blank" aria-label="VK" rel="noopener">ВК</a>
+            <a href="tg://resolve?domain=unisender" class="h1 title-icon gtm-social-footer"
+               aria-label="Telegram" rel="noopener">TELEGRAM</a>
+            <a href="https://www.youtube.com/@newletter_unisender" class="h1 title-icon gtm-social-footer"
+               target="_blank" aria-label="Youtube" rel="noopener">YOUTUBE</a>
+            <a href="https://www.unisender.com/wp-content/uploads/unisender-mediakit.pdf" class="h1 title-icon gtm-social-footer"
+               target="_blank" aria-label="Реклама и сотрудничество" rel="noopener">Реклама</a>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="copyright">© 2008 — 2026 Unisender</div>
+        </div>
+    </div>
+</footer>
+
+	<div class="btn btn-floating btn-border" data-hash="16114d8a">
+					<a href="https://t.me/+7u4EI2nB7zE3Njc6" target="_blank"
+				rel="noopener">Наше комьюнити в ТГ ❤️</a>
+						<button type="button" class="btn-floating-close" aria-label="Скрыть это предложение">
+				<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<g clip-path="url(#clip0_3685_158)">
+						<mask id="mask0_3685_158" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20">
+							<path d="M20 0H0V20H20V0Z" fill="#D9D9D9" />
+						</mask>
+						<g mask="url(#mask0_3685_158)">
+							<path d="M5.33463 15.8337L4.16797 14.667L8.83463 10.0003L4.16797 5.33365L5.33463 4.16699L10.0013 8.83365L14.668 4.16699L15.8347 5.33365L11.168 10.0003L15.8347 14.667L14.668 15.8337L10.0013 11.167L5.33463 15.8337Z" fill="#565656" />
+						</g>
+					</g>
+					<defs>
+						<clipPath id="clip0_3685_158">
+							<rect width="20" height="20" fill="white" />
+						</clipPath>
+					</defs>
+				</svg>
+			</button>
+		    </div>
+
+<!-- Cookies Popup Start -->
+<div class="cookie_popup">
+    <div class="container">
+        <div class="cookie_text">
+            <p>Мы используем <a class="link-purple" href="/ru/cookies-policy/" target="_blank" rel="noopener">куки</a>, чтобы сайт хорошо работал.</p>
+<p>Продолжая им пользоваться, вы соглашаетесь на обработку ваших куки‑файлов.</p>
+        </div>
+        <button class="btn btn-purple btn-agree">Принято!</button>
+    </div>
+</div>
+<!-- Cookies Popup End -->
+
+<script defer src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/libs/headroom/headroom.min.js?v=d64d9a66f39f6755d93ac2c3710a2b96"></script>
+<script defer src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/libs/tippy/popper.min.js?v=31032b08bd8e72220462d3f54f8bd69a"></script>
+<script defer src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/libs/tippy/tippy-bundle.umd.min.js?v=ce4ac4900ffadd230729a33d52752440"></script>
+<script defer src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/js/common.min.js?v=b726fcb7e0bd44e938dbd1b8e8b1d9da"></script>
+
+
+<script>
+    (function ($) {
+        const ref_path = document.referrer;
+        const url_cont = ref_path.replace(/^[^:]+:\/\/[^/]+/, '').replace(/#.*/, '');
+        const sbjs_name = [ref_path.split('/')[2], 'referral', 'not set', url_cont, 'not set'];
+        const names = ['src', 'mdm', 'cmp', 'cnt', 'trm'];
+        for (let v = 0; v < names.length; v++) {
+            $('form:not(.search-form):not(.js_subscribe_crm)').append('<input type="hidden" name="' + names[v] + '" value="">');
+        }
+        if (sbjs.get.current.src === undefined) {
+            for (let i = 0; i < sbjs_name.length; i++) {
+                $('input[name=' + names[i] + ']').val(sbjs_name[i]);
+            }
+        } else {
+            for (let i = 0; i < names.length; i++) {
+                $('input[name=' + names[i] + ']').val(sbjs.get.current[names[i]]);
+            }
+        }
+    })(jQuery);
+</script>
+<!-- Google Tag Manager -->
+<script>
+    setTimeout(initGTM, 3500);
+
+    document.addEventListener('scroll', initGTMOnEvent);
+    document.addEventListener('mousemove', initGTMOnEvent);
+    document.addEventListener('touchstart', initGTMOnEvent);
+
+    function initGTMOnEvent(event) {
+        initGTM();
+        event.currentTarget.removeEventListener(event.type, initGTMOnEvent);
+    }
+
+    function initGTM() {
+        if (window.gtmDidInit) return;
+        window.gtmDidInit = true;
+
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            'gtm.start': new Date().getTime(),
+            event: 'gtm.js'
+        });
+
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-N5G7RB';
+        document.head.appendChild(script);
+    }
+</script>
+<!-- End Google Tag Manager -->
+<script id="magnific-popup-js" src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/templates/common/libs/Magnific-Popup-master/dist/jquery.magnific-popup.min.js?v=ba6cf724c8bb1cf5b084e79ff230626e"></script>
+<script id="uniblog-subscribe-form-script-js" src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/blocks/subscribe-form/subscribe-form.min.js?v=0be2627579a55642e4f040593cc1881d"></script>
+<script id="footer-subscribe-crm-js" src="https://www.unisender.com/ru/blog/wp-content/themes/uniblog/assets/js/footer-subscribe-crm.min.js?v=c3502c9bd23fd1c10787a8857142fa59"></script>
+<script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"/ru/blog/*"},{"not":{"href_matches":["/ru/blog/wp-*.php","/ru/blog/wp-admin/*","/ru/blog/wp-content/uploads/*","/ru/blog/wp-content/*","/ru/blog/wp-content/plugins/*","/ru/blog/wp-content/themes/uniblog/*","/ru/blog/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
+</script>
+<script type="text/html" id="wpb-modifications"> window.wpbCustomElement = 1; </script><script></script>
+</body>
+</html><!--
+Performance optimized by Redis Object Cache. Learn more: https://wprediscache.com
+
+Получено 8381 объектов (3 МБ) от Redis через PhpRedis (v5.3.7).
+-->

@@ -33,4 +33,11 @@ type TaskQueue interface {
 
 	// EnqueueImportBookmarks schedules an async batch import of captured web pages.
 	EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error
+
+	// EnqueueNormalizeNote schedules NLP-4 normalization for a note.
+	// Implementations no-op when the nlp.pipeline.enabled flag is off.
+	EnqueueNormalizeNote(ctx context.Context, noteID string) error
+
+	// EnqueueNlpArtifactsCleanup schedules removal of a note's nlp_artifacts.
+	EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error
 }

@@ -215,13 +215,6 @@
                 >
                   {t("note.editButton")}
                 </Button>
-                <Button
-                  variant="danger"
-                  onClick={() => (deleteConfirmOpen = true)}
-                  data-testid="delete-note-btn"
-                >
-                  {t("note.deleteButton")}
-                </Button>
               {/if}
               <Button variant="ghost" onClick={() => (createChildModalOpen = true)}>
                 {t("note.createChildButton")}
@@ -240,6 +233,17 @@
               >
                 {t("note.showConstellation")}
               </Button>
+
+              {#if isAuthenticated()}
+                <Button
+                  variant="ghost"
+                  class="delete-note-btn"
+                  onClick={() => (deleteConfirmOpen = true)}
+                  data-testid="delete-note-btn"
+                >
+                  {t("note.deleteButton")}
+                </Button>
+              {/if}
             </div>
           </div>
 
@@ -300,7 +304,9 @@
                   <span class="link-title">{related.title}</span>
                   <span
                     class="link-weight"
-                    title={t("note.linkWeight", { weight: related.weight.toFixed(2) })}
+                    title={t("note.linkWeight", { weight: related.weight.toFixed(2) }) +
+                      " — " +
+                      t("note.linkWeightHint")}
                   >
                     <span class="weight-fill" style="width: {related.weight * 100}%"></span>
                   </span>
@@ -483,11 +489,11 @@
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
   }
 
   .dot {
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
   }
 
   .note-content {
@@ -519,7 +525,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
     margin-right: 0.25rem;
   }
 
@@ -619,7 +625,7 @@
 
   .link-direction {
     font-weight: 700;
-    color: var(--carbon-text-dim, #5a5a6e);
+    color: var(--carbon-text-dim, #7a7a8e);
   }
 
   .link-emoji {
@@ -629,9 +635,8 @@
   .link-title {
     flex: 1;
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* UI-GRAPH-1: there is room — show the full title instead of truncating. */
+    overflow-wrap: break-word;
     font-weight: 500;
   }
 

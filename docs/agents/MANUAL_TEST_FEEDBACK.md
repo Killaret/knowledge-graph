@@ -176,6 +176,15 @@
 - **Status:** Devin cannot recover Docker Desktop from CLI; owner action required.
 - **Screenshot / Logs:** `docker ps` → `Docker Desktop is unable to start`; `docker desktop diagnose` bundle `C:\Users\89209\AppData\Local\Temp\E33C7E28-...\20260911110956.zip`.
 
+- **Case:** Cockpit details panel always shows "Links (0) / No links yet" (found during LINK-TYPES-1 live check)
+- **What:** `GET /api/v1/notes/{id}/links` returns `{data: {incoming: [...], outgoing: [...]}}`, but `getNoteLinks()` in `frontend/src/shared/api/links.ts` typed `data` as a flat `Link[]`. The panel received an object: `links.length` was `undefined` so the section silently rendered empty, and the new LINK-TYPES-1 `$derived` filters threw `e(...).filter is not a function` on every note open.
+- **Expected:** Panel lists the note's links and the "Requires / Needed for" dependency rows.
+- **Actual:** Links section permanently empty; pageerror in console. The unit test mocked `data: [...]` (flat array), so the suite stayed green while the real contract was different — a mocked lie, not a covered path.
+- **Hotfix applied:** `getNoteLinks` now accepts both shapes, merges `outgoing` + `incoming`, and dedupes by `id` (a self-loop appears in both lists).
+- **Regression tests:** `links.test.ts` — new case mocks the real `{incoming, outgoing}` envelope and asserts merge + self-loop dedupe; `src/shared/api/links.test.ts` 28/28 and `src/widgets/cosmic-cockpit/` 125/125 pass.
+- **Status:** fixed; frontend image rebuilt on the test stack and the panel now shows `Links (8)` with populated dependency sections (see LINK-TYPES-1 verification entry).
+- **Screenshot / Logs:** `docs/agents/screenshots/link-types-1/2d-cockpit-details.png` — panel with Links (8), "Requires: Seed star 001, Seed galaxy 004", "Needed for: Seed comet 003".
+
 ### Roadmap items
 
 <!-- Real feature work that is understood and has clear value. -->
@@ -460,3 +469,214 @@ Create a new bullet under the right section with:
 - **Cleanup:** `docker compose -p knowledge-graph -f docker-compose.personal.yml stop` — all containers stopped, named volumes untouched. The test stack (`kg-test-*`) was left running as before.
 - **Screenshot / Logs:** worker log lines and `ls -la` output above; file present at `C:\Users\89209\Desktop\my items\backup-personal-auto-2026-09-21-214357.sql.gz` (666 478 B).
 - **Note:** minting the JWT locally needed the owner's `JWT_SECRET` from `.env`; the token was used once for the PUT and expires 15 min after issue. No secret values were copied into docs or commits.
+
+## Verification
+
+### LINKS-2 (condition rework) — confirming and deleting links from the canvas
+
+- **Scope:** criterion 11 of `docs/tasks/LINKS-2-manual-link-over-gamma.md` and the condition from `docs/tasks/LINKS-2-review-findings.md`: deleting a link that carries model provenance must explain that the pair will be recorded as "not related".
+- **Date:** 2026-09-24
+- **Agent:** Claude Code (review of `bf790fe`)
+- **Environment:** isolated test stack from `bf790fe` (`start-test.ps1`, `SKIP_AUTH=true`), default seed: 100 notes, 251 links (191 model-proposed, 54 manual, 6 promoted by the seed).
+- **How the hover was driven:** node positions and transform from `window.__graphCanvas`; a point on the target link farther than 8 units from other links (`findLinkAtPosition` tolerance) received `mousemove`; tooltip and modal buttons were pressed with real clicks; the hovered link was matched to the database by note titles.
+- **Observed:**
+  - Model-proposed link: tooltip shows «Recommended», «Confirm link», «Not related». «Confirm link» → `POST /api/v1/links` 200, same row (`id`, `created_at`) now `source_type='user'` with `metadata.gamma`; the tooltip loses «Recommended».
+  - Model-proposed link, «Not related» → modal «Remove this suggested link? The pair will be marked as not related and will not be suggested again.» → «Confirm» → `DELETE` 204, row in `link_suppressions`.
+  - Manual link, «Delete» → no modal (expected), `DELETE` 204, no suppression.
+  - **Defect:** the link confirmed in the first step, «Delete» → **no modal**, `DELETE` 204 21 s after the confirmation, suppression recorded. The same for a seed-promoted link. Cause: `frontend/src/shared/services/graphLoader.ts:148–156` drops `gamma_origin`.
+  - Experiment: with one line `gamma_origin: link.gamma_origin` added in `graphLoader.ts` and only the frontend rebuilt, «Delete» on a promoted link shows the modal; «Cancel» keeps the link. Reverted, frontend rebuilt from clean source.
+- **Screenshot / Logs:** backend log lines `POST "/api/v1/links"` 200 at 15:38:55 UTC and `DELETE "/api/v1/links/32b83c36-…"` 204 at 15:39:16 UTC; `link_suppressions` rows at 15:30:59, 15:33:15, 15:39:16 UTC; modal text copied from the DOM above. Full table — `docs/tasks/LINKS-2-review-findings.md`, section «Ревью доработки — Claude Code, 2026-09-24».
+- **Result:** not accepted — the explanation never reaches promoted links on the canvas.
+- **Cleanup:** `stop-test.ps1` destroyed the test stack; Personal containers and volumes untouched.
+
+### UI-GRAPH-1 rework — selective labels on the home graph
+
+- **Scope:** the UI-GRAPH-1 rejection in `docs/tasks/UI-DESIGN-1-review-findings.md` — the absolute "degree >= 3" threshold captioned nearly every node on a normal-density graph.
+- **Date:** 2026-09-28 (local time 2026-09-26, `a14d640`)
+- **Agent:** Devin
+- **Environment:** isolated test stack (`start-test.ps1`, SKIP_AUTH=true), default seed: 100 notes, 241 graph links — same seed profile as the review (251 links). Headless Chromium 1280x720, page `/` **without** `stableRender` (snapshot mode intentionally labels every node, see `renderer-orchestrator.ts` disableVariation).
+- **Observed:**
+  - Before (labels.ts from `a14d640~`): ~40 overlapping captions on the canvas — the reviewer's complaint reproduced.
+  - After (`a14d640`): ~10 readable captions — top hubs only; `frontend.graph.label_hub_count=15`.
+- **Screenshot / Logs:** `docs/agents/screenshots/ui-graph-1/home-before.png`, `docs/agents/screenshots/ui-graph-1/home-after.png`; capture script `scripts/testing/temp/screenshot-home.mjs` (throwaway, not committed).
+- **Result:** criterion evidence — selective labels now bounded on a dense graph.
+
+### NOTE-QUALITY-1 rework — live assessment on the test stack
+
+- **Scope:** blocker 1 of `docs/tasks/NOTE-QUALITY-1-review-findings.md` — on the stand every assessment failed on `column "source_id" does not exist`; criterion 9 live run.
+- **Date:** 2026-09-28 (build `6806a85`)
+- **Agent:** Devin
+- **Environment:** isolated test stack (`start-test.ps1`, `SKIP_AUTH=true`, `NLP_PIPELINE_ENABLED=true`, `NLP_QUALITY_ENABLED=true`), seed: 20 notes, 10 links, 20 embeddings, 20 keyword notes.
+- **Observed:**
+  - Worker log at boot: `[Worker] NOTE-QUALITY-1 quality assessment enabled`; backend: `[Quality] NOTE-QUALITY-1 endpoints enabled`.
+  - `quality_log`: 22 records after auto assessments + 1 `trigger:"manual"` after `POST /api/v1/notes/7a3c8dfc-…/quality/assess` → `{"enabled":true,"enqueued":true}` (23 total).
+  - `nlp_artifacts`: 20/20 documents carry a `quality` stamp (reviewer had 0/101).
+  - `GET /api/v1/notes/f04dc990-…/quality` → `{"enabled":true,"quality":{"verdict":"create","signals":{"links":6,"keywords":5,"has_embedding":true,…}}}` — `links` is non-zero, the fixed `source_note_id`/`target_note_id` query works.
+  - Worker log: zero `42703`/ERROR lines (the review saw 1050).
+- **Screenshot / Logs:** mongosh counts and the API response quoted above; worker startup lines in `docker logs kg-test-worker`.
+- **Result:** criterion 9 verified live — assessment runs, writes Mongo, and serves the API.
+
+### NOTE-DELETE-1 — trash delete/restore live on the test stack
+
+- **Scope:** criterion 4 of `docs/tasks/NOTE-DELETE-1-soft-delete.md` — delete → restore on the stand.
+- **Date:** 2026-09-27
+- **Agent:** Devin
+- **Environment:** isolated test stack (`start-test.ps1 -Force`), seed: 100 notes, 60 links; backend/worker images built from this tree with migration 035.
+- **Observed:**
+  - Worker boot log: `[Worker] daily trash cleanup scheduled (retention 90 days)`; `links.deleted_via_note_id` present in `knowledge_test`.
+  - Note `d4a96761-…` had **12 live links**. `DELETE /api/v1/notes/{id}` → 204; `GET` → 404; `notes.deleted_at` set; all 12 link rows soft-deleted **with** `deleted_via_note_id` = the note id.
+  - `POST /api/v1/notes/{id}/restore` → 204; `GET` → 200 with the original content; all 12 links live again (`deleted_at` NULL, marker cleared). Note list total back to 100.
+- **Screenshot / Logs:** psql counts and HTTP codes quoted above; `docker logs kg-test-worker`.
+- **Result:** criterion 4 verified live — trash, restore with links, and the 90-day purge schedule all run on the stand. UI undo toast calls the same `restore` endpoint (existing `deleteNote`/`restoreNote` flow unchanged).
+
+### SYNC-1 A2 — transactional outbox live on the test stack
+
+- **Scope:** criterion 4 of the A2 stage in `docs/tasks/SYNC-1-graph-loading-and-sync-review.md` — the live event path after manual publishes were removed.
+- **Date:** 2026-09-27
+- **Agent:** Devin
+- **Environment:** isolated test stack, backend/worker images built from this tree with migration 036.
+- **Observed:**
+  - `POST /api/v1/notes` → 201 → `graph_outbox` row `NoteCreated` with payload `{"note_id":"15049e9d-…","user_id":…}` and `sent_at` set by the worker relayer within ~1 s (interval 500 ms).
+  - `redis-cli SUBSCRIBE graph:events` received `{"event":"NoteCreated","payload":{"note_id":"15049e9d-…"}}`; `docker logs kg-test-graph-service`: `Received event: NoteCreated` → `Cache invalidated` → `acknowledged`.
+  - `DELETE /api/v1/notes/{id}` → 204 → second row `NoteDeleted`, sent; graph-service `Received event: NoteDeleted` → `Cache invalidated`.
+  - Test-seed user has UUID `00000000-…`, so `user_id` in payloads is nil — faithful to the stored `creator_id`, not a defect.
+- **Screenshot / Logs:** psql `graph_outbox` rows and graph-service log lines quoted above.
+- **Result:** writes commit together with their outbox row and the relay delivers to Redis end-to-end — manual publish calls are gone and nothing is lost.
+
+### NOTE-QUALITY-1 and UI-GRAPH-1 reworks — reviewer live check
+
+- **Scope:** reviews of the NOTE-QUALITY-1 stage 1 rework (`c55ceb3`) and the UI-GRAPH-1 rework (`789494a`); verdicts in `docs/tasks/NOTE-QUALITY-1-review-findings.md` and `docs/tasks/UI-DESIGN-1-review-findings.md`.
+- **Date:** 2026-09-27 (build `3f79503`)
+- **Agent:** Claude Code
+- **Environment:** isolated test stack via `scripts/testing/start-test.ps1`, `SKIP_AUTH=true`, `NLP_PIPELINE_ENABLED=true`, `NLP_QUALITY_ENABLED=true`, `FRONTEND_PORT=13002`; standard seed (100 notes, 60 links, 248 graph links). Headless Chromium.
+- **Observed:**
+  - Worker: `[Worker] NOTE-QUALITY-1 quality assessment enabled`; zero `42703` and zero `ERROR` lines.
+  - Mongo `knowledge_test`: `nlp_artifacts` 100, all 100 with `quality`; `quality_log` 126 records, all `trigger=auto`, all `verdict=create`.
+  - `GET /api/v1/notes/{id}/quality` for the most linked note: `enabled=true`, signals with `links=15`, `keywords=5`, `has_embedding=true`.
+  - Cockpit note panel (list view → first card): quality row "looks fine" with "Re-assess"; tooltip lists the signals and `verdict=create`.
+  - Home graph at 1280×720: about 15 captions, all on the dense centre; the outer nodes carry none. Several centre captions overlap.
+- **Not covered:** criterion 9 import of three golden snapshots — the local snapshot server is blocked by this session's permissions; tracked as NOTE-QUALITY-1-TAIL.
+- **Screenshot / Logs:** `docs/agents/screenshots/note-quality-1/quality-indicator.png`; mongosh counts and the API response above.
+- **Result:** NOTE-QUALITY-1 stage 1 accepted with a tail; UI-GRAPH-1 accepted.
+
+### LINK-TYPES-1 — link-type merge and visuals live on the test stack
+
+- **Scope:** criterion 5 of `docs/tasks/LINK-TYPES-1-link-types-and-visuals.md` — 2D/3D rendering, legend, dependency panel sections, legacy-type normalization.
+- **Date:** 2026-09-27
+- **Agent:** Devin
+- **Environment:** isolated test stack (`start-test.ps1`), images built from this tree with migration 037; seed: 20 notes, 10 links; plus a `dependency` chain a→b→c→d and a cycle edge d→b created via the API. Headless Chromium, `?stableRender=true`.
+- **Observed:**
+  - DB: `links.link_type` default is `'related'`; live rows are `related`/`parent`/`child` only — no `reference`/`custom` remain.
+  - `POST /api/v1/links` with `"link_type":"reference"` → 201, persisted `link_type:"related"` — legacy input accepted and normalized.
+  - 2D graph: legend present with rows Dependency / Related / Parent / Child / **Auto link (model)** — no `reference`, no `custom`; Show all / Hide all and min-weight slider intact.
+  - 3D graph (`/graph/3d`): same legend rendered; honeycomb view loads.
+  - Cockpit details panel for a mid-chain note: `Links (8)`, **Requires: Seed star 001, Seed galaxy 004** (incoming deps a→b, d→b), **Needed for: Seed comet 003** (outgoing dep b→c).
+  - Defect found and fixed in-flight: cockpit `getNoteLinks` expected a flat array while the API returns `{incoming, outgoing}` — see the "Links (0)" entry under Urgent fixes.
+- **Not covered live:** dependency-chain hover highlight and red cycle marking (covered by `dependency-chain.test.ts` 13/13 and `link-renderers.test.ts` 15/15; live hover targeting is not automatable reliably).
+- **Screenshot / Logs:** `docs/agents/screenshots/link-types-1/` — `2d-graph.png`, `2d-legend.png`, `3d-graph.png`, `3d-legend.png`, `note-panel.png`, `2d-cockpit-details.png`.
+- **Result:** migration, normalization, legends and panel dependency sections verified live end-to-end.
+
+### GRAPH-LIGHT-1 — the light style becomes the default, before and after
+
+- **Scope:** criterion 6 of `docs/tasks/GRAPH-LIGHT-1-light-graph-and-list.md` — the default look switches to `"light"`; before/after pictures; criteria 3 and 4 re-checked live.
+- **Date:** 2026-09-29
+- **Agent:** Claude Code
+- **Environment:** isolated test stack (`start-test.ps1`, `SKIP_AUTH=false`), frontend built from this tree with `frontend.graph.style = "light"`; seed 20 notes / 10 links (`-Seed 42 -PublicPercent 50`) plus notes left by the real-auth suite, 27 in all; Playwright, headless Chromium, 1600×900. "Before" is the same build opened with `?graphStyle=classic`. Both series have the fog switched off with the top-bar button: headless draws below 25 frames per second, and the adaptive fog would hide most notes. Decision 85 keeps the fog; it is off here only to compare the looks.
+- **Observed:**
+  - Graph at rest: classic icons with captions cut to "…" → lights with halos, star spikes, comet tails, thin threads, whole captions.
+  - Hover: the neighbourhood lights up and the rest dims in both looks; recommendations show as pale dashes in the light one.
+  - Click on a lone note: the light look flies the camera in and rings the note; the details panel opens in both.
+  - `prefers-reduced-motion: reduce`: no redraws in 3 s at rest; list and the way back switch at once; the note clicked in the list lands in the middle (dx 0, dy 0).
+  - `chromium-real-auth` 31/31 with the light default; `visual` + `visual-real-auth` 18/20 — the two failures are the known one-shot session (A-1) and pass alone.
+- **Not covered:** Argos baselines — CI compares them against `main`, so the graph screens will differ there and need approving after the merge. Two old defects show in both looks: hovering a note at the end of a thread also shows that link's tooltip; the drag-to-delete black hole sits under the legend and grows out from behind it after the camera flies in.
+- **Screenshot / Logs:** `docs/agents/screenshots/graph-light-1/` — `before-graph.png`, `after-graph.png`, `before-hover.png`, `after-hover.png`, `before-selected.png`, `after-selected.png`.
+- **Result:** the light style is the default; the classic look stays available through `frontend.graph.style` and `?graphStyle=classic`.
+### NOTE-DELETE-1 — restore with real auth and recommendations filtering (review remediation)
+
+- **Scope:** the three blockers from `docs/tasks/NOTE-DELETE-1-review-findings.md` — restore with `SKIP_AUTH=false`, deleted targets in suggestions, the 90-day value under test.
+- **Date:** 2026-09-27
+- **Agent:** Devin
+- **Environment:** isolated test stack (`start-test.ps1`) with `SKIP_AUTH=false` in env; backend :18083; real JWT registration for two users (`notedel-a`, `notedel-b`); script `temp/check-note-delete-live.ps1` (temp, not committed).
+- **Observed (9/9 PASS):**
+  - create note → DELETE → GET returns 404;
+  - foreign user's POST /notes/:id/restore → 404 (IDOR closed);
+  - anonymous restore → 401;
+  - owner POST /notes/:id/restore → 204, subsequent GET returns the note with title intact;
+  - `note_recommendations` seeded directly: dead target (deleted) absent from GET /notes/:id/suggestions, live target present, no empty-title entry — response `{"suggestions":[{"note_id":"270cca99-…","title":"Stays alive","score":0.8}]}`.
+- **Unit/integration:** new middleware tests (`WriteIncludeDeleted`, unsupported-repo → 404), repo tests, SQLMock recommendations join test, payload test on `NewCleanupSoftDeletedTask`; mutations verified red: `days 90→1` fails the payload test, removing the trash-aware middleware branch fails the owner-restore test.
+- **Screenshot / Logs:** transcript above; stack stopped via `stop-test.ps1` after the run.
+- **Result:** all three review blockers reproduced-fixed-verified on a live stack with real auth.
+
+### NOTE-DELETE-1 — восстановление с авторизацией, ревью доработки
+
+- **Scope:** доработка `27ca46e`: восстановление из корзины при включённой авторизации, удалённые заметки в
+  подсказках; критерий 4 — кнопка «Восстановить» в интерфейсе.
+- **Date:** 2026-09-29
+- **Agent:** Claude Code
+- **Environment:** тест-стенд из `a53571a` через `start-test.ps1` с `SKIP_AUTH=false`, сид `seed-test-data.ps1`;
+  второй пользователь — одноразовый, создан скриптом.
+- **Observed:**
+  - API, 18/18: удаление — 204, чтение удалённой — 404, в списке её нет, связь скрыта; восстановление чужим — 404,
+    анонимом — 401, владельцем — 204; заметка и та же связь вернулись; удалённая заметка ушла из подсказок, пустых
+    названий нет.
+  - Браузер, 7/7: удаление из списка → «Note deleted. Restore» → `POST /notes/:id/restore` 204 → карточка снова в
+    списке, заметка снова на графе, ошибок на странице нет.
+- **Screenshot / Logs:** вывод обоих скриптов — в разборе `docs/tasks/NOTE-DELETE-1-review-findings.md`;
+  снимки уведомления и списка — в рабочем каталоге ревьюера, данные сида синтетические.
+- **Result:** принято; хвост — NOTE-DELETE-1-TAIL.
+
+
+### ISOLATION-1 — подсказки и автосвязи только среди своих заметок
+
+- **Scope:** критерий 5 постановки — живая проверка утечки похожих заметок между пользователями.
+- **Date:** 2026-09-30
+- **Agent:** Devin
+- **Environment:** изолированный тест-стек (`start-test.ps1`), `SKIP_AUTH=false` (пересозданы backend/frontend/worker), backend :18083, postgres :15434; два реальных пользователя `iso_a` / `iso_b` через `POST /api/v1/auth/register`.
+- **Observed:**
+  - Заметки: у `iso_a` — «Note A about anime» + «Note A2 about music» (другой текст); у `iso_b` — «Note B about anime» с текстом, идентичным заметке A. Векторы записаны конвейером NLP в `note_embeddings` для всех трёх.
+  - `GET /api/v1/notes/{A}/suggestions?limit=5` под `iso_a` → `{"suggestions":[{"note_id":"386e9680-…","title":"Note A2 about music","score":1}]}` — чужая заметка B (семантически ближайшая, текст дословно тот же) отсутствует. Заголовок `X-Recommendations-Source: graph-service`.
+  - `GET /api/v1/notes/{B}/suggestions?limit=5` под `iso_b` → `{"suggestions":[]}` — заметки `iso_a` не просачиваются (`X-Recommendations-Source: empty`).
+  - `GET /api/v1/notes` под `iso_a` — только две свои заметки, заметки B нет.
+  - Чужих автосвязей в базе: `cross_owner_links = 0`, связей всего 0.
+- **Unit/integration:** `TestEmbeddingRepository_OwnerIsolation` (оба запроса, красный на старом SQL — `leaked another user's note`), `TestGetSuggestions_SemanticFallback_OwnerIsolation`, `TestGammaLinkGenerator_OwnerIsolation` — все зелёные на реальной pgvector-БД.
+- **Screenshot / Logs:** транскрипт выше; стек остановлен после прогона.
+- **Result:** утечка не воспроизводится — похожие заметки и кандидаты автосвязей ограничены владельцем.
+
+### ISOLATION-1 и LINK-TYPES-1 — ревью, живая проверка
+
+- **Scope:** ISOLATION-1 (`1584906`) — похожие заметки только своего владельца; LINK-TYPES-1 (`f48aa77`) —
+  миграция 037 на пограничных случаях.
+- **Date:** 2026-09-30
+- **Agent:** Claude Code
+- **Environment:** тест-стенд из `1584906` через `start-test.ps1` с `SKIP_AUTH=false`, сид `seed-test-data.ps1`;
+  пользователи — одноразовые, созданы скриптом.
+- **Observed:**
+  - ISOLATION-1, 9/9: две заметки двух пользователей с косинусом 0,955; в подсказках каждого только свои заметки;
+    живых связей между владельцами на стенде — 0; автосвязь между двумя заметками одного владельца есть; чужая
+    заметка по прямому адресу — 404.
+  - LINK-TYPES-1: сценарий первого раунда плюс A′ и E′ на базе стенда, в транзакции с откатом; случаи A–F
+    исправлены; A′ — вес модели вместо веса пользователя; E′ — после «Восстановить» у пары нет живой связи.
+- **Screenshot / Logs:** таблицы результатов — в `docs/tasks/ISOLATION-1-review-findings.md` и
+  `docs/tasks/LINK-TYPES-1-review-findings.md`.
+- **Result:** ISOLATION-1 принято; LINK-TYPES-1 принято с хвостом LINK-TYPES-1-TAIL.
+
+### NOTES-LIMIT-1 и UX-3 — ревью, живая проверка
+
+- **Scope:** NOTES-LIMIT-1 (`d12968c`) — больше 300 заметок; UX-3 (`1ec4c89`, `77aef39`) — подсказка при наведении,
+  «чёрная дыра» у легенды, даты в «Сообществе».
+- **Date:** 2026-09-30
+- **Agent:** Claude Code
+- **Environment:** тест-стенд из `77aef39` через `start-test.ps1` с `SKIP_AUTH=false`, сид плюс заметки до 400 через
+  пакетное создание; Playwright, окно 1600 × 900.
+- **Observed:**
+  - NOTES-LIMIT-1: 400 заметок — на графе 400 из 400, в списке 400 из 400.
+  - UX-3, пункт 1: у 4 из 10 связанных заметок над заметкой всплыла подсказка чужой связи, проходящей в 0,3–4,6
+    единицы от центра; своя связь подсказку не даёт; середина связи вдали от заметок подсказку открывает.
+  - UX-3, пункт 2: при развёрнутой легенде цель стоит у её левого края, кольцо срезано на несколько пикселей;
+    бросок не проверен.
+  - UX-3, пункт 3: «Сообщество» — 20 карточек, «Invalid date» нет.
+  - Попутно: в английском интерфейсе кнопка тумана показывает сырой ключ `graphOverlay.fogRecovery` — ключа нет в
+    словаре en (I18N-1).
+- **Screenshot / Logs:** снимки у ревьюера; разбор — `docs/tasks/UX-3-review-findings.md`.
+- **Result:** NOTES-LIMIT-1 принято; UX-3 отклонено.
+

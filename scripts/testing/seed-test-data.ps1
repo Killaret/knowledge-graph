@@ -319,7 +319,9 @@ while ($linkIds.Count -lt $LinkCount -and $attempts -lt $maxAttempts) {
 
     $sourceId = $publicLinkPool[$sourceIndex]
     $targetId = $publicLinkPool[$targetIndex]
-    $pairKey = "$sourceId-$targetId"
+    # One edge per pair (decision 53): the backend answers 409 on the reversed
+    # pair too, so the dedupe key must be unordered.
+    $pairKey = (@($sourceId, $targetId) | Sort-Object) -join "-"
 
     if ($createdPairs.Contains($pairKey)) {
         continue

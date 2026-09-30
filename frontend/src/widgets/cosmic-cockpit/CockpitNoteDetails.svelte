@@ -14,11 +14,33 @@
   import IconButton from "$components/atoms/IconButton.svelte";
   import Chip from "$components/atoms/Chip.svelte";
   import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
+  import {
+    assessNoteQuality,
+    getNoteQuality,
+    refetchApply,
+    refetchPreview,
+    refetchRestore,
+    type QualityRecord,
+    type RefetchPreview,
+  } from "$shared/api/quality";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { computeDependencyCycleNodes } from "$entities/graph-canvas/lib/dependency-chain";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
+
+  interface NoteItem {
+    id: string;
+    title: string;
+    type?: string;
+  }
+
+  interface GraphLinkLike {
+    source: unknown;
+    target: unknown;
+    link_type?: string;
+  }
 
   interface Props {
     nodeId: string;
@@ -26,9 +48,22 @@
     onEdit?: (id: string) => void;
     onDelete?: (id: string) => void;
     onCreateChildNote?: (note: Note) => void;
+    /** Whole-graph data (needed to detect dependency cycles) — LINK-TYPES-1. */
+    notes?: NoteItem[];
+    links?: GraphLinkLike[];
+    onNodeSelect?: (id: string | null) => void;
   }
 
-  const { nodeId, onClose, onEdit, onDelete, onCreateChildNote }: Props = $props();
+  const {
+    nodeId,
+    onClose,
+    onEdit,
+    onDelete,
+    onCreateChildNote,
+    notes = [],
+    links: graphLinks = [],
+    onNodeSelect,
+  }: Props = $props();
 
   let note = $state<Note | null>(null);
   let links = $state<Link[]>([]);
@@ -41,12 +76,35 @@
   let savingLink = $state(false);
   let deletingLinkId = $state<string | null>(null);
 
+  // LINK-TYPES-1: dependency edges split by direction — the sources the note
+  // requires and the dependents that need it.
+  const depRequires = $derived(
+    links.filter((l) => l.link_type === "dependency" && l.target_note_id === nodeId)
+  );
+  const depNeededFor = $derived(
+    links.filter((l) => l.link_type === "dependency" && l.source_note_id === nodeId)
+  );
+  const depInCycle = $derived(computeDependencyCycleNodes(graphLinks).has(nodeId));
+
+  function noteTitle(id: string): string {
+    return notes.find((n) => n.id === id)?.title ?? id.slice(0, 8);
+  }
+
+  // NOTE-QUALITY-1: quality row state
+  let qualityEnabled = $state(false);
+  let quality = $state<QualityRecord | null>(null);
+  let qualityBusy = $state(false);
+  let refetchBusy = $state(false);
+  let preview = $state<RefetchPreview | null>(null);
+  let qualityError = $state("");
+
   const tags = $derived((note?.metadata?.tags ?? []) as string[]);
 
   $effect(() => {
     const id = nodeId;
     loadNote(id);
     loadLinks(id);
+    loadQuality(id);
   });
 
   async function loadNote(id: string) {
@@ -61,6 +119,103 @@
       loading = false;
     }
   }
+
+  // NOTE-QUALITY-1: the row stays hidden when the feature is off
+  // ({"enabled": false}) — the check costs one request per note open.
+  async function loadQuality(id: string) {
+    try {
+      const resp = await getNoteQuality(id);
+      qualityEnabled = resp.enabled;
+      quality = resp.quality;
+    } catch {
+      qualityEnabled = false;
+      quality = null;
+    }
+  }
+
+  function qualityStatusKey(q: QualityRecord): string {
+    const gates = q.gates ?? [];
+    if (gates.includes("mojibake")) return "cockpit.noteDetails.quality.mojibake";
+    if (gates.includes("empty")) return "cockpit.noteDetails.quality.empty";
+    if (q.signals?.kind === "stub") return "cockpit.noteDetails.quality.stub";
+    if (q.signals?.truncated_by_import) return "cockpit.noteDetails.quality.truncated";
+    return "cockpit.noteDetails.quality.ok";
+  }
+
+  function qualityTooltip(q: QualityRecord): string {
+    const s = q.signals;
+    if (!s) return "";
+    return [
+      `words=${s.words}`,
+      `prose_words=${s.prose_words}`,
+      `sentences=${s.sentences}`,
+      `fragment_share=${s.fragment_share.toFixed(2)}`,
+      `kind=${s.kind}`,
+      `verdict=${q.verdict}`,
+      `attempt=${q.attempt}`,
+    ].join("\n");
+  }
+
+  async function handleImprove() {
+    if (!note || qualityBusy) return;
+    qualityBusy = true;
+    qualityError = "";
+    try {
+      await assessNoteQuality(note.id);
+      // The worker runs async — give it a beat, then re-read.
+      setTimeout(() => note && loadQuality(note.id), 1500);
+    } catch {
+      qualityError = t("cockpit.noteDetails.quality.error");
+    } finally {
+      qualityBusy = false;
+    }
+  }
+
+  async function handleRefetchPreview() {
+    if (!note || refetchBusy) return;
+    refetchBusy = true;
+    qualityError = "";
+    try {
+      preview = await refetchPreview(note.id);
+    } catch {
+      qualityError = t("cockpit.noteDetails.quality.refetchError");
+    } finally {
+      refetchBusy = false;
+    }
+  }
+
+  async function handleRefetchApply() {
+    if (!note || refetchBusy) return;
+    refetchBusy = true;
+    qualityError = "";
+    try {
+      await refetchApply(note.id, preview?.suggested_title);
+      preview = null;
+      await loadNote(note.id);
+      await loadQuality(note.id);
+    } catch {
+      qualityError = t("cockpit.noteDetails.quality.refetchError");
+    } finally {
+      refetchBusy = false;
+    }
+  }
+
+  async function handleRefetchRestore() {
+    if (!note || refetchBusy) return;
+    refetchBusy = true;
+    qualityError = "";
+    try {
+      await refetchRestore(note.id);
+      await loadNote(note.id);
+      await loadQuality(note.id);
+    } catch {
+      qualityError = t("cockpit.noteDetails.quality.refetchError");
+    } finally {
+      refetchBusy = false;
+    }
+  }
+
+  const hasPreviousContent = $derived(Boolean(note?.metadata?.previous_content));
 
   async function loadLinks(id: string) {
     try {
@@ -235,6 +390,83 @@
         >
       </div>
 
+      {#if qualityEnabled && quality}
+        <div class="quality-row" data-testid="quality-row">
+          <span class="quality-label">{t("cockpit.noteDetails.quality.label")}</span>
+          <span
+            class="quality-status"
+            class:warn={quality.verdict !== "create"}
+            title={qualityTooltip(quality)}
+            data-testid="quality-status">{t(qualityStatusKey(quality))}</span
+          >
+          <button
+            type="button"
+            class="quality-action"
+            disabled={qualityBusy}
+            onclick={handleImprove}
+            data-testid="quality-improve">{t("cockpit.noteDetails.quality.improve")}</button
+          >
+          {#if quality.can_refetch}
+            <button
+              type="button"
+              class="quality-action"
+              disabled={refetchBusy}
+              onclick={handleRefetchPreview}
+              data-testid="quality-refetch">{t("cockpit.noteDetails.quality.refetch")}</button
+            >
+          {/if}
+          {#if hasPreviousContent}
+            <button
+              type="button"
+              class="quality-action"
+              disabled={refetchBusy}
+              onclick={handleRefetchRestore}
+              data-testid="quality-restore">{t("cockpit.noteDetails.quality.restore")}</button
+            >
+          {/if}
+          {#if qualityError}
+            <span class="quality-error" role="alert">{qualityError}</span>
+          {/if}
+        </div>
+
+        {#if preview}
+          <div class="refetch-preview" data-testid="refetch-preview">
+            <p class="preview-title">
+              {t("cockpit.noteDetails.quality.previewTitle", { title: preview.suggested_title })}
+            </p>
+            <p class="preview-length">
+              {t("cockpit.noteDetails.quality.previewLength", {
+                current: preview.current_runes,
+                next: preview.length_runes,
+              })}
+            </p>
+            {#if preview.outline && preview.outline.length > 0}
+              <ul class="preview-outline">
+                {#each preview.outline.slice(0, 8) as h}
+                  <li class={`lv${h.level}`}>{h.text}</li>
+                {/each}
+              </ul>
+            {/if}
+            <div class="preview-actions">
+              <button
+                type="button"
+                class="quality-action primary"
+                disabled={refetchBusy}
+                onclick={handleRefetchApply}
+                data-testid="refetch-apply">{t("cockpit.noteDetails.quality.refetchApply")}</button
+              >
+              <button
+                type="button"
+                class="quality-action"
+                onclick={() => (preview = null)}
+                data-testid="refetch-cancel"
+                >{t("cockpit.noteDetails.quality.refetchCancel")}</button
+              >
+            </div>
+          </div>
+        {/if}
+      {/if}
+
       <div class="content">{note.content}</div>
 
       {#if tags.length > 0}
@@ -261,6 +493,31 @@
         </div>
         {#if linkActionError}
           <div class="link-action-error" role="alert">{linkActionError}</div>
+        {/if}
+        {#if depInCycle}
+          <div class="dep-cycle-warning" role="alert" data-testid="dep-cycle-warning">
+            ⚠️ {t("cockpit.noteDetails.depCycleWarning")}
+          </div>
+        {/if}
+        {#if depRequires.length > 0}
+          <div class="dep-line" data-testid="dep-requires">
+            <span class="dep-label">{t("cockpit.noteDetails.requires")}:</span>
+            {#each depRequires as l}
+              <button type="button" class="dep-ref" onclick={() => onNodeSelect?.(l.source_note_id)}
+                >{noteTitle(l.source_note_id)}</button
+              >
+            {/each}
+          </div>
+        {/if}
+        {#if depNeededFor.length > 0}
+          <div class="dep-line" data-testid="dep-needed-for">
+            <span class="dep-label">{t("cockpit.noteDetails.neededFor")}:</span>
+            {#each depNeededFor as l}
+              <button type="button" class="dep-ref" onclick={() => onNodeSelect?.(l.target_note_id)}
+                >{noteTitle(l.target_note_id)}</button
+              >
+            {/each}
+          </div>
         {/if}
         {#if links.length === 0}
           <p class="no-links">{t("cockpit.noteDetails.noLinks")}</p>
@@ -503,6 +760,89 @@
     color: rgba(255, 255, 255, 0.5);
   }
 
+  .quality-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(45, 212, 191, 0.1);
+    font-size: 12px;
+  }
+
+  .quality-label {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .quality-status {
+    color: rgba(255, 255, 255, 0.85);
+    cursor: help;
+  }
+
+  .quality-status.warn {
+    color: #fbbf24;
+  }
+
+  .quality-action {
+    font-size: 12px;
+    padding: 3px 10px;
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+  }
+
+  .quality-action:hover:not(:disabled) {
+    background: rgba(45, 212, 191, 0.15);
+  }
+
+  .quality-action:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .quality-action.primary {
+    border-color: rgba(45, 212, 191, 0.7);
+    background: rgba(45, 212, 191, 0.12);
+  }
+
+  .quality-error {
+    color: #f87171;
+    font-size: 12px;
+  }
+
+  .refetch-preview {
+    margin: -8px 0 20px;
+    padding: 10px 12px;
+    border: 1px solid rgba(45, 212, 191, 0.25);
+    border-radius: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .refetch-preview .preview-title {
+    margin: 0 0 4px;
+    font-weight: 600;
+  }
+
+  .refetch-preview .preview-length {
+    margin: 0 0 8px;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .refetch-preview .preview-outline {
+    margin: 0 0 10px;
+    padding-left: 14px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .refetch-preview .preview-actions {
+    display: flex;
+    gap: 8px;
+  }
+
   .content {
     font-size: 14px;
     line-height: 1.7;
@@ -606,6 +946,46 @@
     border: 1px solid rgba(248, 113, 113, 0.2);
     border-radius: 6px;
     font-size: 12px;
+  }
+
+  .dep-cycle-warning {
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .dep-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 2px 8px;
+    font-size: 12px;
+  }
+
+  .dep-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+  }
+
+  .dep-ref {
+    padding: 2px 8px;
+    border: 1px solid rgba(255, 102, 0, 0.4);
+    border-radius: 10px;
+    background: rgba(255, 102, 0, 0.12);
+    color: #fdba74;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .dep-ref:hover {
+    background: rgba(255, 102, 0, 0.25);
   }
 
   .link-item {

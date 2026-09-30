@@ -61,6 +61,9 @@
     {#if isAuthenticated}
       <CockpitNoteDetails
         {nodeId}
+        {notes}
+        {links}
+        {onNodeSelect}
         onClose={handleClose}
         onEdit={handleEdit}
         onDelete={handleDelete}

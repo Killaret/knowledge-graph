@@ -11,6 +11,9 @@ import {
   isPointOverBlackHole,
   BLACK_HOLE_RADIUS,
   BLACK_HOLE_CATCH_RADIUS,
+  DEFAULT_LEGEND_WIDTH,
+  DEFAULT_LEGEND_MARGIN,
+  type LegendLayout,
 } from "./black-hole";
 import type { SimulationNode } from "./types";
 
@@ -114,5 +117,27 @@ describe("black-hole", () => {
     expect(
       isPointOverBlackHole(blackHole.x + blackHole.radius * 1.5 + 1, blackHole.y, blackHole)
     ).toBe(false);
+  });
+
+  it("shifts the black hole away from the expanded link-type legend (UX-3)", () => {
+    const blackHole = createBlackHole(800, 600);
+    const legend: LegendLayout = {
+      expanded: true,
+      width: DEFAULT_LEGEND_WIDTH,
+      height: 200,
+      margin: DEFAULT_LEGEND_MARGIN,
+    };
+    updateBlackHolePosition(blackHole, 800, 600, legend);
+    expect(blackHole.x + blackHole.radius).toBeLessThan(
+      800 - DEFAULT_LEGEND_MARGIN - DEFAULT_LEGEND_WIDTH
+    );
+    expect(blackHole.y + blackHole.radius).toBeLessThan(600 - DEFAULT_LEGEND_MARGIN - 200);
+  });
+
+  it("keeps the black hole in the corner when there is no legend", () => {
+    const blackHole = createBlackHole(800, 600);
+    updateBlackHolePosition(blackHole, 800, 600, null);
+    expect(blackHole.x).toBe(800 - 96);
+    expect(blackHole.y).toBe(600 - 96);
   });
 });

@@ -8,6 +8,10 @@
 даются — решение принимается по полной постановке. Постановка пишется сейчас, не после MODEL-1:
 от модели зависит только калибровка второго этапа.
 
+**Решение владельца (2026-09-26, URL-HEADING-1):** этап A — в работу, первой частью этапа 1
+NOTE-QUALITY-1 (решение 63); этап B — после выбора модели в MODEL-2. Дополнение от NOTE-QUALITY-1:
+при обрезке по бюджету (A4) импорт пишет `metadata.import_truncated = {"sections_dropped": N}`.
+
 Как читать: сначала постановка (этот раздел до «Гипотеза владельца»), ниже — материал, из
 которого она выросла: гипотеза 14.09, соображения владельца, результаты пробного прогона на 22
 страницах ([полный отчёт](URL-HEADING-1-findings-probe.md), [разбор ревью](URL-HEADING-1-review-findings.md)).
@@ -276,3 +280,124 @@ Devin прогнал временный Go-прототип на 22 URL из `bo
 - `backend/internal/application/import/service.go`
 - `backend/internal/interfaces/api/notehandler/note_handler.go`
 - `nlp-service/app/nlp_utils.py`
+
+---
+
+## Результаты этапа A (Devin, 2026-09-26)
+
+### Отчёт по золотому набору — 18/18 названий и оглавлений
+
+Все 18 оцениваемых страниц (17-й — 404-фикстура, не грейдится) дали ожидаемые
+название и оглавление. Столбцы: выбранное название, кандидат-источник, вырезано
+шумовых элементов, сброшено разделов бюджетом, сохранено `related_links`.
+
+| # | Название | Источник | ОК | Шум | Сброшено разделов | Links |
+|---|----------|----------|----|-----|-------------------|-------|
+| 01 | Auth Code Flow + PKCE | h1 | ✓ | 38 | 0 | 6 |
+| 02 | Keycloak Admin REST API | h1 | ✓ | 40 | 2144 | 0 |
+| 03 | JSON Web Token (JWT) Debugger | h1 | ✓ | 170 | 0 | 15 |
+| 04 | Auth Code Flow pt. 2 | h1 | ✓ | 38 | 0 | 6 |
+| 05 | Запуск Keycloak и подключение LDAP к нему (Atlassian) | h1 | ✓ | 194 | 0 | 0 |
+| 06 | OpenID Connect Dynamic Client Registration 1.0 | h1 | ✓ | 0 | 32 | 0 |
+| 07 | Introduction to JSON Web Tokens | h1 | ✓ | 12 | 0 | 12 |
+| 08 | JSON Formatter | h1 | ✓ | 710 | 0 | 7 |
+| 09 | Курсы Романа Горбачёва (Zenclass) | h1 | ✓ | 3 | 0 | 0 |
+| 10 | Профессиональное применение Chrome DevTools (Habr) | h1 | ✓ | 112 | 0 | 1 |
+| 11 | Гайд по DevTools (Яндекс Практикум) | h1 | ✓ | 381 | 0 | 19 |
+| 12 | Chrome DevTools (Skillbox) | h1 | ✓ | 132 | 0 | 20 |
+| 13 | Обзор инструментов разработчика (MDN) | h1 | ✓ | 75 | 0 | 11 |
+| 14 | Гид по инструментам разработчика (Unisender) | h1 | ✓ | 98 | 0 | 20 |
+| 15 | Главные ошибки при проектировании OpenAPI (Babok) | h1 | ✓ | 144 | 0 | 20 |
+| 16 | Тестирование ПО: Postman (Stepik) | h1 | ✓ | 82 | 0 | 9 |
+| 17 | — (404 при пробе, в грейдинге не участвует) | — | — | — | — | — |
+| 18 | API Design Patterns (Manning) | h1 | ✓ | 524 | 0 | 7 |
+| 19 | Системный дизайн (Карпов, Tilda) | h1 | ✓ | 1495 | 2 | 20 |
+
+На каждой странице победил первый кандидат — `h1` в контент-контейнере;
+`og:title` и `<title>` остаются запасными кандидатами в `title_candidates`.
+
+### Ловушки, найденные настройкой на золотом наборе
+
+- **`charset.DetermineEncoding` без декларации угадывает `windows-1252`
+  (`certain=false`)** — Atlassian (`<meta charset="">`) и Skillbox давали
+  кракозябры. По HTML5 при неуверенном сниффинге положен UTF-8: декодируем
+  только при `certain` (HTTP-заголовок или явный meta charset).
+- **BEM-модификатор ≠ шум:** `tm-page__main_has-sidebar` у Habr совпадал с
+  шумовым `sidebar` и вырезал всю статью — добавлен список исключений
+  `has-/with-/without-/no-`.
+- **`modal-content` и меню маскируются под контейнер:** фолбэк по классу
+  выбирает самый текстовый не-chrome кандидат, а фрагмент, не содержащий ни
+  одного заголовка при наличии ≥3 заголовков в документе, отбрасывается на
+  `<body>` (так ловится лэндинг Карпова: победитель `t978__content` — попап
+  меню, контент в `#allrecords`).
+- **Симметричные секции промотируют родителя:** Практикум режет статью на
+  сиблинги `<section id="post-content-text">` — при ≥2 сиблингах с одной
+  сигнатурой контейнером считается общий родитель.
+- **`_` — word char:** `\b` не срабатывает внутри `page__content`; разделители
+  классов заданы явно (`space _ - . /`).
+- **Суффикс `<title>` с хостом с TLD** (` - jwt.io`): сравнение идёт и с меткой
+  домена (`jwt`), и с полным хостом (`jwt.io`) — найдено тестом
+  `TestTitleSuffixStripping`.
+- **`<header>` — шум только как прямой потомок `<body>`-фолбэка:** внутри
+  контента header несёт h1 статьи (блог Babok); реализация `dropNoise` была
+  исправлена под задокументированную семантику — раньше флаг протекал на все
+  глубины.
+- **`og:site_name` и `application-name` — не отсев.** Практикум кладёт заголовок
+  статьи в `og:site_name` (~95 рун), Keycloak — в `application-name`; имя сайта
+  для отсева кандидата — только короткое (≤50 рун) `og:site_name` и метка
+  домена.
+
+### Мутации критерия 2 и 4 — все подтверждены красными
+
+| Мутация | Детектор |
+|---------|----------|
+| Отключить отрезание суффикса `<title>` | `TestTitleSuffixStripping` |
+| Убрать `promo\|subscribe` из шумового паттерна | `TestPromoHeadingsExcludedFromOutline` (синтетика — на реальном Skillbox subscribe-блоки сидят вне контейнера) |
+| Вырезать все `<header>` | золотой тест: фикстура 15 теряет h1 → MISS; `TestArticleHeaderKeepsH1` |
+| Обрезать внутри кодового блока / потерять закрывающий fence | `TestCodeFenceParityOnBudgetCut` (чётность ` ``` `) |
+| Бюджет вернуть к 5000 рун | `TestSectionBudgetReplacesOld5000Cap`, `TestImportFetcher_Extract_RuneSafeTextTruncation` |
+| Снять кап 20 у `related_links` | `TestRelatedLinksCapAndSchemeFilter` (приходит 25 → тест ждёт 20) |
+
+### Adversarial Phase — что нашла фаза
+
+1. **`stripSiteSuffix` не снимал суффикс с TLD** — ` - jwt.io` проходил мимо,
+   потому что сравнивалось только с меткой домена без TLD. Найдено тестом,
+   написанным как детектор мутации M1: сама мутация на золотом наборе не
+   краснела (h1 всегда сильнее `<title>`), а синтетический тест сразу показал
+   настоящий дефект. Исправлено сравнением с полным хостом.
+2. **Первая версия `TestPromoHeadingsExcludedFromOutline` не могла
+   упасть:** на снимке Skillbox subscribe-блоки лежат вне выбранного
+   контейнера, поэтому мутация «убрать promo|subscribe» оставалась зелёной.
+   Тест заменён на синтетический фикстурный случай — мутация подтверждена.
+3. **`dropNoise` терял семантику «прямой потомок body»:** флаг
+   `containerIsBody` передавался в рекурсию и `<header>` выпиливался на любой
+   глубине body-фолбэка, включая заголовочные блоки статей внутри `<body>`.
+   Исправлено — глубже первого уровня header не шум.
+4. **`TestCodeFenceParityOnBudgetCut` первой редакции пропускал M4:** два
+   незакрытых блока давали чётный счёт fence. Тест переписан на один блок с
+   точным ожиданием `== 2`.
+5. **`metadata.title_candidates` хранится как `[]string`, а не
+   `[]interface{}`** — `note.NewMetadata` сохраняет Go-тип, ассерт приведён к
+   реальному типу.
+6. **DTO `text` отсекает >50 000 раньше `BuildContent`:** обрезание сборного
+   тела на уровне хендлера недостижимо — остаётся на уровне
+   `TestBuildContent`; старый тест `TestBookmarklet_DefaultTypeAndTruncation`
+   был привязан к снятому лимиту 10 000 байт и обновлён.
+
+### Контракт и интеграция
+
+- `ExtractedPage` (`application/import/fetcher.go`): `title`, `text`,
+  `title_candidates`, `title_source` (`"rule"`), `outline`, `related_links`,
+  `noise_dropped`, `sections_dropped`.
+- `PreviewItem` отдаёт `title_candidates`, `outline`, `noise_dropped`,
+  `title_source`; `openAPI.yaml` синхронизирован (`TestRouterMatchesOpenAPISpec`
+  зелёный); фронтенд `routes/import/bookmarks/+page.svelte` показывает выпадающий
+  список кандидатов и свёрнутое оглавление; e2e —
+  `frontend/tests/import-preview-extraction.spec.ts` (route-mock фикстура,
+  как в IMP-3).
+- Импорт пишет `metadata.title_candidates`, `title_source`, `related_links`,
+  `import_truncated.sections_dropped` — `TestProcessImportTask_ExtractionMetadata`.
+- Бюджет тела: `IMPORT_CONTENT_MAX_RUNES` (дефолт 20 000), доменный лимит
+  `note.Content` остаётся 50 000 — `BuildContent` переведён на рунный подсчёт.
+- Тесты не ходят в сеть: золотой набор — локальные снимки `testdata/urlheading/`,
+  генератор снимков — `testdata/urlheading/capture/main.go`.

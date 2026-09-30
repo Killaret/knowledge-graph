@@ -16,12 +16,21 @@ import (
 
 // stubNoteRepo is a minimal note.Repository implementation for
 // access-control tests: it stores one note per id and ignores the rest.
+// Entries marked in `deleted` are invisible to FindByID but visible to
+// FindByIDIncludingDeleted — like the real repository's trash.
 type stubNoteRepo struct {
-	byID map[uuid.UUID]*note.Note
+	byID    map[uuid.UUID]*note.Note
+	deleted map[uuid.UUID]bool
 }
 
 func (s *stubNoteRepo) Save(context.Context, *note.Note) error { return nil }
 func (s *stubNoteRepo) FindByID(_ context.Context, id uuid.UUID) (*note.Note, error) {
+	if s.deleted[id] {
+		return nil, nil
+	}
+	return s.byID[id], nil
+}
+func (s *stubNoteRepo) FindByIDIncludingDeleted(_ context.Context, id uuid.UUID) (*note.Note, error) {
 	return s.byID[id], nil
 }
 func (s *stubNoteRepo) Delete(context.Context, uuid.UUID) error        { return nil }
@@ -186,6 +195,59 @@ func TestNoteAccessHelpers(t *testing.T) {
 	assert.True(t, creatorless.IsOwnedBy(uuid.Nil))
 	assert.True(t, public.IsPublic())
 	assert.False(t, private.IsPublic())
+}
+
+// NOTE-DELETE-1 regression: the restore route must reach a note that sits in
+// the trash. Plain NoteAccessWrite answers 404 because FindByID cannot see
+// deleted rows; the trash-aware level resolves ownership on the trashed row.
+func TestRequireNoteAccess_WriteIncludeDeleted(t *testing.T) {
+	owner := uuid.New()
+	stranger := uuid.New()
+	trashed := makeNote(t, owner, false)
+	repo := &stubNoteRepo{
+		byID:    map[uuid.UUID]*note.Note{trashed.ID(): trashed},
+		deleted: map[uuid.UUID]bool{trashed.ID(): true},
+	}
+
+	tests := []struct {
+		name   string
+		caller uuid.UUID
+		want   int
+	}{
+		{"owner reaches own trashed note → 200", owner, http.StatusOK},
+		{"stranger on foreign trashed note → 404", stranger, http.StatusNotFound},
+		{"anonymous on trashed note → 404", uuid.Nil, http.StatusNotFound},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := exercise(t, repo, NoteAccessWriteIncludeDeleted, http.MethodPost, trashed.ID().String(), tt.caller, false)
+			assert.Equal(t, tt.want, w.Code)
+		})
+	}
+
+	// The original defect shape: same request under the plain write level.
+	w := exercise(t, repo, NoteAccessWrite, http.MethodPost, trashed.ID().String(), owner, false)
+	assert.Equal(t, http.StatusNotFound, w.Code, "without the trash-aware level even the owner gets 404")
+}
+
+// A repository without FindByIDIncludingDeleted must fail loudly — a silent
+// FindByID fallback would resurrect the 404-on-restore defect.
+func TestRequireNoteAccess_WriteIncludeDeletedWithoutSupport(t *testing.T) {
+	type bareRepo struct{ note.Repository }
+	repo := &bareRepo{}
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set(ContextUserIDKey, uuid.New())
+		c.Next()
+	})
+	r.POST("/notes/:id/restore", RequireNoteAccess(repo, NoteAccessWriteIncludeDeleted),
+		func(c *gin.Context) { c.Status(http.StatusOK) })
+	req := httptest.NewRequest(http.MethodPost, "/notes/"+uuid.New().String()+"/restore", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
 // A Nil-id note belongs to the authenticated Nil-id test user: in the test

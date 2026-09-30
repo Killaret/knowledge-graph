@@ -54,7 +54,7 @@ func TestNoteRepository_Save_Create(t *testing.T) {
 	mock.ExpectBegin()
 
 	// Ожидаем запрос на проверку существования (GORM использует 2 аргумента: id и LIMIT 1)
-	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 AND "notes"."deleted_at" IS NULL ORDER BY "notes"."id" LIMIT \$2`).
 		WithArgs(n.ID(), 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
@@ -99,7 +99,7 @@ func TestNoteRepository_FindByID_Found(t *testing.T) {
 	now := time.Now()
 
 	// Ожидаем SELECT
-	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 AND "notes"."deleted_at" IS NULL ORDER BY "notes"."id" LIMIT \$2`).
 		WithArgs(id, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 			AddRow(id, "Test", "Content", "star", `{}`, now, now))
@@ -132,7 +132,7 @@ func TestNoteRepository_FindByID_NotFound(t *testing.T) {
 	id := uuid.New()
 
 	// Ожидаем SELECT с возвратом ErrRecordNotFound
-	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 AND "notes"."deleted_at" IS NULL ORDER BY "notes"."id" LIMIT \$2`).
 		WithArgs(id, 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
@@ -160,11 +160,13 @@ func TestNoteRepository_Delete_Unit(t *testing.T) {
 
 	id := uuid.New()
 
-	// Ожидаем DELETE
+	// NOTE-DELETE-1: мягкое удаление — связи уходят в корзину с маркером,
+	// заметка получает deleted_at, строка остаётся.
 	mock.ExpectBegin()
-	mock.ExpectExec(`DELETE FROM "notes" WHERE id = \$1`).
-		WithArgs(id).
+	mock.ExpectExec(`UPDATE "links" SET "deleted_at"=now\(\),"deleted_via_note_id"=CASE`).
 		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectQuery(`UPDATE "notes" SET "deleted_at"=\$1 WHERE id IN \(\$2\) AND "notes"."deleted_at" IS NULL RETURNING`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "creator_id"}).AddRow(id, nil))
 	mock.ExpectCommit()
 
 	ctx := context.Background()
@@ -189,7 +191,7 @@ func TestNoteRepository_FindAll(t *testing.T) {
 	now := time.Now()
 
 	// Ожидаем SELECT с ORDER BY
-	mock.ExpectQuery(`SELECT \* FROM "notes" ORDER BY created_at DESC`).
+	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE "notes"."deleted_at" IS NULL ORDER BY created_at DESC`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 			AddRow(uuid.New(), "Note 1", "Content 1", "star", `{}`, now, now).
 			AddRow(uuid.New(), "Note 2", "Content 2", "planet", `{}`, now, now))
@@ -219,12 +221,12 @@ func TestNoteRepository_List(t *testing.T) {
 	now := time.Now()
 
 	// FindAllPaginated выполняет COUNT без транзакции
-	mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE is_public = \$1.*`).
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE is_public = \$1 AND "notes"."deleted_at" IS NULL.*`).
 		WithArgs(true).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(10))
 
 	// Затем SELECT с фильтром по публичности, LIMIT и OFFSET
-	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE is_public = \$1.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE is_public = \$1 AND "notes"."deleted_at" IS NULL.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
 		WithArgs(true, 5, 10).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 			AddRow(uuid.New(), "Note 1", "Content 1", "star", `{}`, now, now).
@@ -266,7 +268,7 @@ func TestNoteRepository_Save_Update(t *testing.T) {
 	mock.ExpectBegin()
 
 	// Ожидаем запрос на проверку существования - запись найдена (GORM использует 2 аргумента)
-	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 AND "notes"."deleted_at" IS NULL ORDER BY "notes"."id" LIMIT \$2`).
 		WithArgs(n.ID(), 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 			AddRow(n.ID(), "Old Title", "Old Content", "star", `{}`, now, now))
@@ -299,7 +301,7 @@ func TestNoteRepository_FindByID_DBError(t *testing.T) {
 	id := uuid.New()
 
 	// Ожидаем SELECT с ошибкой БД
-	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 ORDER BY "notes"."id" LIMIT \$2`).
+	mock.ExpectQuery(`SELECT \* FROM "notes" WHERE id = \$1 AND "notes"."deleted_at" IS NULL ORDER BY "notes"."id" LIMIT \$2`).
 		WithArgs(id, 1).
 		WillReturnError(errors.New("database connection failed"))
 
@@ -404,10 +406,10 @@ func TestNoteRepository_UserScoping(t *testing.T) {
 		defer cleanup()
 		repo := NewNoteRepository(db, nil)
 
-		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE is_public = \$1.*`).
+		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE is_public = \$1 AND "notes"."deleted_at" IS NULL.*`).
 			WithArgs(true).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE is_public = \$1.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE is_public = \$1 AND "notes"."deleted_at" IS NULL.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
 			WithArgs(true, 5, 10).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 				AddRow(uuid.New(), "Public", "Content", "star", `{}`, now, now))
@@ -432,10 +434,10 @@ func TestNoteRepository_UserScoping(t *testing.T) {
 		defer cleanup()
 		repo := NewNoteRepository(db, nil)
 
-		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE creator_id = \$1.*`).
+		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE creator_id = \$1 AND "notes"."deleted_at" IS NULL.*`).
 			WithArgs(userID.String()).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE creator_id = \$1.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE creator_id = \$1 AND "notes"."deleted_at" IS NULL.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
 			WithArgs(userID.String(), 5, 10).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 				AddRow(uuid.New(), "User Note 1", "Content", "star", `{}`, now, now).
@@ -466,10 +468,10 @@ func TestNoteRepository_UserScoping(t *testing.T) {
 
 		ctx := context.WithValue(context.Background(), contextkeys.AuthenticatedKey, true)
 
-		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE creator_id = \$1.*`).
+		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE creator_id = \$1 AND "notes"."deleted_at" IS NULL.*`).
 			WithArgs(uuid.Nil.String()).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE creator_id = \$1.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
+		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE creator_id = \$1 AND "notes"."deleted_at" IS NULL.*ORDER BY created_at DESC LIMIT \$2 OFFSET \$3`).
 			WithArgs(uuid.Nil.String(), 5, 10).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 				AddRow(uuid.New(), "Own private", "Content", "star", `{}`, now, now))
@@ -495,10 +497,10 @@ func TestNoteRepository_UserScoping(t *testing.T) {
 		repo := NewNoteRepository(db, nil)
 
 		// Full-text count scoped by user: the generated SQL must reference creator_id.
-		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE .*creator_id.*`).
+		mock.ExpectQuery(`SELECT count\(\*\) FROM "notes" WHERE .*creator_id.*deleted_at.*`).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 		// Full-text find scoped by user.
-		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE .*creator_id.* LIMIT \$.* OFFSET \$.*`).
+		mock.ExpectQuery(`SELECT \* FROM "notes" WHERE .*creator_id.*deleted_at.* LIMIT \$.* OFFSET \$.*`).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "type", "metadata", "created_at", "updated_at"}).
 				AddRow(uuid.New(), "Searchable", "find me", "star", `{}`, now, now))
 

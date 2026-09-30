@@ -127,7 +127,9 @@
     if (id) {
       cockpitStore.openPanel("right");
     } else {
-      cockpitStore.closePanel("right");
+      // Click on an empty part of the graph dismisses every unpinned panel
+      // (UI-PANELS-1), not just the details panel.
+      cockpitStore.closeUnpinnedPanels();
     }
     onNodeSelect?.(id);
   }
@@ -150,14 +152,16 @@
       }
       cockpitStore.openPanel("right");
     } else {
-      cockpitStore.closePanel("right");
+      cockpitStore.closeUnpinnedPanels();
     }
   });
 
   function visibleSize(position: CockpitPanelPosition): number {
     if (cockpitStore.firstPerson) return 0;
     const panel = cockpitStore.panels[position];
-    return panel.open || panel.pinned || panel.hovering ? panelSizes[position] : COCKPIT_EDGE_SIZE;
+    // UI-PANELS-1: visibility follows explicit state only — hovering no
+    // longer inflates the frame inset.
+    return panel.open || panel.pinned ? panelSizes[position] : COCKPIT_EDGE_SIZE;
   }
 
   const topInset = $derived(visibleSize("top") + COCKPIT_PANEL_GAP);
@@ -175,9 +179,9 @@
   // that mismatch is what caused both the "abrupt" feel and the stray
   // empty gap between the frame edge and an still-opening/closing panel.
   const frameTransition = $derived(
-    cockpitStore.reducedMotion
+    cockpitStore.motionReduced
       ? "none"
-      : "top 0.3s ease, right 0.3s ease, bottom 0.3s ease, left 0.3s ease"
+      : "top 0.15s ease, right 0.15s ease, bottom 0.15s ease, left 0.15s ease"
   );
 
   $effect(() => {
@@ -185,15 +189,36 @@
   });
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === "Escape" && cockpitStore.firstPerson) {
+    if (e.key !== "Escape") return;
+    if (cockpitStore.firstPerson) {
       cockpitStore.exitFirstPerson();
       e.preventDefault();
+      return;
     }
+    // UI-PANELS-1: Escape dismisses unpinned panels — but never steals the
+    // key from a field the user is typing into (blur/ime menus handle it).
+    const target = e.target;
+    if (
+      target instanceof Element &&
+      target.closest("input, textarea, select, [contenteditable=true]")
+    )
+      return;
+    cockpitStore.closeUnpinnedPanels();
   }
 
   onMount(() => {
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    // Honour the OS-level reduced-motion preference in addition to the
+    // in-app toggle.
+    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    cockpitStore.setSystemReducedMotion(mq?.matches ?? false);
+    const onMqChange = (e: MediaQueryListEvent) => cockpitStore.setSystemReducedMotion(e.matches);
+    mq?.addEventListener?.("change", onMqChange);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      mq?.removeEventListener?.("change", onMqChange);
+      cockpitStore.setSystemReducedMotion(false);
+    };
   });
 </script>
 

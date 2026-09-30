@@ -86,6 +86,39 @@ describe("delta", () => {
     expect(restarted).toBe(true);
   });
 
+  it("preserves link identity and provenance during a delta restart", () => {
+    const state = createState();
+    const options = baseOptions(state);
+    options.nodes = [
+      { id: "n1", title: "One" },
+      { id: "n2", title: "Two" },
+    ] as SimulationNode[];
+
+    const restarted = applyDelta(
+      {
+        added_links: [
+          {
+            id: "promoted-link",
+            source: "n1",
+            target: "n2",
+            source_type: "user",
+            gamma_origin: true,
+          },
+        ],
+      },
+      options
+    );
+
+    expect(restarted).toBe(true);
+    expect(state.simLinks).toEqual([
+      expect.objectContaining({
+        id: "promoted-link",
+        source_type: "user",
+        gamma_origin: true,
+      }),
+    ]);
+  });
+
   it("updates existing simulation nodes during an incremental update", () => {
     const state = createState();
     const fakeNode = { id: "n1", title: "One", x: 10, y: 20 } as SimulationNode;
@@ -159,6 +192,12 @@ describe("types link helpers", () => {
   it("resolves an object reference directly", () => {
     const ref = nodes[0];
     expect(resolveLinkEndpoint(ref, nodes)).toBe(ref);
+  });
+
+  it("follows a moved copy from the node map instead of the linked object", () => {
+    const moved = { ...nodes[0], x: 500, y: 500 };
+    expect(resolveLinkEndpoint(nodes[0], nodes, new Map([["a", moved]]))).toBe(moved);
+    expect(resolveLinkEndpoint(nodes[1], nodes, new Map([["a", moved]]))).toBe(nodes[1]);
   });
 
   it("resolves a numeric index", () => {

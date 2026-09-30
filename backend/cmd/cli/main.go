@@ -9,6 +9,7 @@ import (
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/outbox"
 	"knowledge-graph/internal/infrastructure/queue"
 )
 
@@ -38,7 +39,7 @@ func main() {
 	log.Println("Database connected successfully")
 
 	// Create repositories
-	noteRepo := postgres.NewNoteRepository(database, nil)
+	noteRepo := outbox.NewNoteRepository(postgres.NewNoteRepository(database, nil), database)
 	ctx := context.Background()
 
 	// Fetch all notes
@@ -71,7 +72,7 @@ func main() {
 	}
 
 	// Create task queue client through the common port
-	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled)
+	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled, cfg.NLPQualityEnabled)
 	if err != nil {
 		log.Fatalf("Failed to create task queue client: %v", err)
 	}

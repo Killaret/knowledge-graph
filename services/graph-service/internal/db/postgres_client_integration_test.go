@@ -99,7 +99,7 @@ func TestPostgresClient_Integration(t *testing.T) {
 
 	_, err = pool.Exec(ctx, `
 		INSERT INTO links (id, source_note_id, target_note_id, link_type, weight, source_type, metadata) VALUES
-			('660e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001', 'related', 0.5, 'user', '{}'),
+			('660e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001', 'related', 0.5, NULL, '{}'),
 			('660e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'related', 0.7, 'gamma', '{}'),
 			('660e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440000', 'related', 0.9, 'user', '{"gamma": {"score": 0.95, "generated_at": "2026-09-23T00:00:00Z"}}');
 	`)
@@ -133,7 +133,7 @@ func TestPostgresClient_Integration(t *testing.T) {
 			byID[l.ID] = l
 		}
 
-		assert.False(t, byID["660e8400-e29b-41d4-a716-446655440000"].GammaOrigin, "pure user link")
+		assert.False(t, byID["660e8400-e29b-41d4-a716-446655440000"].GammaOrigin, "null source type defaults to user")
 		assert.True(t, byID["660e8400-e29b-41d4-a716-446655440001"].GammaOrigin, "live gamma link")
 		assert.True(t, byID["660e8400-e29b-41d4-a716-446655440002"].GammaOrigin, "promoted link keeps provenance")
 	})
@@ -142,7 +142,20 @@ func TestPostgresClient_Integration(t *testing.T) {
 		notes, links, err := client.GetNotes(ctx, NotesFilter{RootID: "550e8400-e29b-41d4-a716-446655440000", Depth: 2})
 		require.NoError(t, err)
 		assert.Greater(t, len(notes), 0)
-		assert.Greater(t, len(links), 0)
+		require.NotEmpty(t, links)
+		for _, l := range links {
+			require.NotEmpty(t, l.ID)
+		}
+		byID := make(map[string]*Link, len(links))
+		for _, l := range links {
+			byID[l.ID] = l
+		}
+		gammaLink, ok := byID["660e8400-e29b-41d4-a716-446655440001"]
+		require.True(t, ok)
+		promotedLink, ok := byID["660e8400-e29b-41d4-a716-446655440002"]
+		require.True(t, ok)
+		assert.True(t, gammaLink.GammaOrigin)
+		assert.True(t, promotedLink.GammaOrigin)
 	})
 
 	t.Run("GetEmbeddings", func(t *testing.T) {

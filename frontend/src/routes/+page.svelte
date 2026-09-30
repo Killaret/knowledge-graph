@@ -11,6 +11,14 @@
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
+  import { isLightStyle } from "$entities/graph-canvas/lib/light/style";
+  import {
+    LIST_MORPH_MS,
+    type ListMorphRequest,
+    type ListRow,
+    type ListWindow,
+  } from "$entities/graph-canvas/lib/light/morph";
+  import { tick } from "svelte";
   import FloatingAuthPanel from "$widgets/floating-auth-panel/FloatingAuthPanel.svelte";
 
   import SplashScreen from "$components/atoms/SplashScreen.svelte";
@@ -56,8 +64,78 @@
         openSearch: () => void;
         toggleFocus: () => void;
         toggleFog: () => void;
+        startMorph?: (request: ListMorphRequest) => void;
       }
     | undefined = $state(undefined);
+
+  // GRAPH-LIGHT-1: in the light style the graph turns into the list and back.
+  // The canvas stays mounted under the list so the way back is exact.
+  let morphPhase = $state<"idle" | "to-list" | "to-graph">("idle");
+  // Cards of a list the notes flew into skip their own entrance animation:
+  // the notes are the entrance, and the cards must sit still to be landed on.
+  let listArrivedByMorph = $state(false);
+
+  /** Where each card's note lands (its type icon) and the visible part of the list, in canvas pixels. */
+  function listGeometry(): { rows: ListRow[]; visible: ListWindow } {
+    const canvas = document.querySelector<HTMLCanvasElement>(".graph-view-wrapper canvas");
+    const list = document.querySelector<HTMLElement>('[data-testid="list-container"]');
+    if (!canvas || !list) return { rows: [], visible: { top: 0, bottom: 0 } };
+    const base = canvas.getBoundingClientRect();
+    const view = list.getBoundingClientRect();
+    const rows: ListRow[] = [];
+    for (const card of list.querySelectorAll<HTMLElement>(
+      '[data-testid="note-card"][data-note-id]'
+    )) {
+      const id = card.dataset.noteId;
+      if (!id) continue;
+      const icon = (card.querySelector(".note-card__emoji") ?? card).getBoundingClientRect();
+      rows.push({
+        id,
+        x: icon.left + icon.width / 2 - base.left,
+        y: icon.top + icon.height / 2 - base.top,
+      });
+    }
+    return { rows, visible: { top: view.top - base.top, bottom: view.bottom - base.top } };
+  }
+
+  async function toggleView(view: "graph" | "list" | "3d", focusId: string | null = null) {
+    if (morphPhase !== "idle") return;
+    const from = graphStore.currentView;
+    const startMorph = canvasController?.startMorph;
+    const between = (from === "graph" && view === "list") || (from === "list" && view === "graph");
+    if (!startMorph || !isLightStyle() || !between) {
+      listArrivedByMorph = false;
+      handleToggleView(view);
+      return;
+    }
+    if (view === "list") {
+      morphPhase = "to-list";
+      listArrivedByMorph = true;
+      handleToggleView("list");
+      await tick();
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+      startMorph({ ...listGeometry(), direction: "to-list", onDone: () => (morphPhase = "idle") });
+    } else {
+      const geometry = listGeometry();
+      morphPhase = "to-graph";
+      await tick();
+      startMorph({
+        ...geometry,
+        direction: "to-graph",
+        focusId,
+        onDone: () => {
+          morphPhase = "idle";
+          handleToggleView("graph");
+        },
+      });
+    }
+  }
+
+  /** A click on a card selects the note; in the light style the graph gathers around it. */
+  function openFromList(id: string) {
+    graphStore.selectedNodeId = id;
+    if (isLightStyle() && !homePage.selectionMode) void toggleView("graph", id);
+  }
 </script>
 
 <!-- Splash Screen on initial load -->
@@ -79,7 +157,7 @@
   {canvasController}
   onSearch={handleSearchQuery}
   onFilter={handleFilter}
-  onToggleView={handleToggleView}
+  onToggleView={toggleView}
   onToggleLayoutProvider={handleToggleLayoutProvider}
   onNodeSelect={(id) => (graphStore.selectedNodeId = id)}
   onNoteCreate={() => (homePage.showCreateModal = true)}
@@ -95,12 +173,14 @@
 >
   <!-- Graph/List Container -->
   <div class="graph-content" data-testid="graph-2d-container">
+    <!-- UI-LOAD-1: a corner chip, never a covering layer — the UI stays usable. -->
     {#if homePage.loading}
-      <div class="loading-overlay">
-        <div class="spinner"></div>
-        <p>{t("page.loadingNotes")}</p>
+      <div class="loading-chip" data-testid="loading-chip" aria-live="polite">
+        <span class="spinner"></span>
+        {t("page.loadingNotes")}
       </div>
-    {:else if homePage.apiError}
+    {/if}
+    {#if homePage.apiError}
       <ApiErrorDisplay error={homePage.apiError} onClose={clearApiError} />
       <button
         onclick={() => {
@@ -108,208 +188,228 @@
           loadData();
         }}>{t("page.retry")}</button
       >
-    {:else if graphStore.currentView === "graph"}
-      <!-- Debug info - remove in production -->
-      {#if import.meta.env.DEV}
-        <div
-          style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; z-index: 9999; max-width: 400px;"
-        >
-          <div>allNotes: {homePage.allNotes.length}</div>
-          <div>graphData.nodes: {homePage.graphData.nodes.length}</div>
-          <div>graphData.links: {homePage.graphData.links.length}</div>
-          <div>filtered: {homePage.filteredGraphData.nodes.length}</div>
-          <div>selectedType: {homePage.selectedType}</div>
-          <div>loading: {homePage.loading}</div>
-        </div>
-      {/if}
-      <!-- Fullscreen 2D Graph View -->
-      <div class="graph-view-wrapper">
-        <GraphCanvas
-          nodes={homePage.filteredGraphData.nodes}
-          links={homePage.filteredGraphData.links}
-          onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
-          onNoteCreate={handleNoteCreate}
-          onNoteDelete={handleDeleteRequest}
-          onCreateChildNote={handleCreateChildNote}
-          showLinkTypeLegend={false}
-          readonly={!isAuthenticated() || graphView.mode === "community"}
-          bind:controller={canvasController}
-        />
-      </div>
-    {:else if graphStore.currentView === "3d" && Graph3DViewer}
-      <!-- Fullscreen 3D Graph View -->
-      <div class="graph-view-wrapper">
-        <Graph3DViewer
-          nodes={homePage.filteredGraphData.nodes}
-          links={homePage.filteredGraphData.links}
-          centerNodeId={graphStore.selectedNodeId}
-          selectedNodeId={graphStore.selectedNodeId}
-          onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
-        />
-      </div>
-    {:else if graphStore.currentView === "list"}
-      <!-- List View -->
-      <div class="list-container" data-testid="list-container">
-        <div class="list-header">
-          <div class="list-controls">
-            {#if isAuthenticated() && graphView.mode === "personal"}
-              <button
-                class="list-control-btn"
-                data-testid="select-mode-toggle"
-                onclick={toggleSelectionMode}
-                aria-label={t("page.selectionToggle")}
-              >
-                {homePage.selectionMode ? t("page.cancelSelection") : t("page.select")}
-              </button>
-              {#if homePage.selectionMode}
-                <button
-                  class="list-control-btn"
-                  onclick={toggleSelectAll}
-                  aria-label={t("page.selectAllAria")}
-                >
-                  {homePage.selectedNoteIds.size === homePage.filteredNotes.length
-                    ? t("page.clearSelection")
-                    : t("page.selectAll")}
-                </button>
-              {/if}
-            {/if}
-          </div>
-          <div class="list-sort">
-            <label for="sort-select" class="sort-label">{t("page.sortBy")}</label>
-            <select
-              id="sort-select"
-              class="sort-select"
-              value={homePage.sortBy}
-              onchange={(e) => {
-                handleSortChange(e.currentTarget.value as typeof homePage.sortBy);
-              }}
-              aria-label={t("page.sortAriaLabel")}
-            >
-              {#each homePage.sortOptions as opt}
-                <option value={opt.id}>{opt.label}</option>
-              {/each}
-            </select>
-          </div>
-        </div>
-
-        {#if homePage.filteredNotes.length === 0}
-          <div class="empty-state" data-testid="empty-state">
-            <StateIllustration
-              type={!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
-                ? "empty"
-                : "no-results"}
-            />
-            <h2>
-              {!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
-                ? t("page.emptyListNoNotes")
-                : t("page.emptyListNoSearch")}
-            </h2>
-            <p>
-              {!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
-                ? t("page.emptyListPrompt")
-                : homePage.filterState.isSearchActive
-                  ? t("page.noSearchResults", {
-                      query: homePage.filterState.searchQuery.value,
-                    })
-                  : t("page.noTypeResults", {
-                      type:
-                        homePage.filterState
-                          .getSelectedTypeLabel(homePage.typeFilters)
-                          ?.toLowerCase() ?? "",
-                    })}
-            </p>
-            <button class="new-note-button" onclick={() => (homePage.showCreateModal = true)}>
-              {t("page.createFirstNote")}
-            </button>
-          </div>
-        {:else}
-          <div class="notes-grid" data-testid="notes-grid">
-            {#each homePage.filteredNotes as note, index (note.id)}
-              <NoteCard
-                {note}
-                animationIndex={index}
-                selected={homePage.selectedNoteIds.has(note.id)}
-                selectMode={homePage.selectionMode}
-                onSelect={handleNoteSelect}
-                onEdit={handleNoteEdit}
-                onDelete={handleNoteDelete}
-                onClick={() => (graphStore.selectedNodeId = note.id)}
-                highlightQuery={homePage.filterState.searchQuery.value}
-                readonly={!isAuthenticated() || graphView.mode === "community"}
-              />
-            {/each}
+    {:else}
+      {#if graphStore.currentView === "graph" || (graphStore.currentView === "list" && isLightStyle())}
+        <!-- Debug info - remove in production -->
+        {#if import.meta.env.DEV}
+          <div
+            style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; z-index: 9999; max-width: 400px;"
+          >
+            <div>allNotes: {homePage.allNotes.length}</div>
+            <div>graphData.nodes: {homePage.graphData.nodes.length}</div>
+            <div>graphData.links: {homePage.graphData.links.length}</div>
+            <div>filtered: {homePage.filteredGraphData.nodes.length}</div>
+            <div>selectedType: {homePage.selectedType}</div>
+            <div>loading: {homePage.loading}</div>
           </div>
         {/if}
-      </div>
+        <!-- Fullscreen 2D Graph View -->
+        <div
+          class="graph-view-wrapper"
+          class:graph-under-list={graphStore.currentView === "list"}
+          class:graph-hidden={graphStore.currentView === "list" && morphPhase === "idle"}
+        >
+          <GraphCanvas
+            nodes={homePage.filteredGraphData.nodes}
+            links={homePage.filteredGraphData.links}
+            onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+            onNoteCreate={handleNoteCreate}
+            onNoteDelete={handleDeleteRequest}
+            onCreateChildNote={handleCreateChildNote}
+            showLinkTypeLegend={true}
+            progressiveReveal={true}
+            underList={graphStore.currentView === "list"}
+            readonly={!isAuthenticated() || graphView.mode === "community"}
+            bind:controller={canvasController}
+          />
+        </div>
+      {/if}
+      {#if graphStore.currentView === "3d" && Graph3DViewer}
+        <!-- Fullscreen 3D Graph View -->
+        <div class="graph-view-wrapper">
+          <Graph3DViewer
+            nodes={homePage.filteredGraphData.nodes}
+            links={homePage.filteredGraphData.links}
+            centerNodeId={graphStore.selectedNodeId}
+            selectedNodeId={graphStore.selectedNodeId}
+            onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
+          />
+        </div>
+      {/if}
+      {#if graphStore.currentView === "list"}
+        <!-- List View -->
+        <div
+          class="list-container"
+          class:list-morphing={morphPhase === "to-list"}
+          class:list-leaving={morphPhase === "to-graph"}
+          style="--list-morph-ms: {LIST_MORPH_MS}ms"
+          data-testid="list-container"
+        >
+          <div class="list-header">
+            <div class="list-controls">
+              {#if isAuthenticated() && graphView.mode === "personal"}
+                <button
+                  class="list-control-btn"
+                  data-testid="select-mode-toggle"
+                  onclick={toggleSelectionMode}
+                  aria-label={t("page.selectionToggle")}
+                >
+                  {homePage.selectionMode ? t("page.cancelSelection") : t("page.select")}
+                </button>
+                {#if homePage.selectionMode}
+                  <button
+                    class="list-control-btn"
+                    onclick={toggleSelectAll}
+                    aria-label={t("page.selectAllAria")}
+                  >
+                    {homePage.selectedNoteIds.size === homePage.filteredNotes.length
+                      ? t("page.clearSelection")
+                      : t("page.selectAll")}
+                  </button>
+                {/if}
+              {/if}
+            </div>
+            <div class="list-sort">
+              <label for="sort-select" class="sort-label">{t("page.sortBy")}</label>
+              <select
+                id="sort-select"
+                class="sort-select"
+                value={homePage.sortBy}
+                onchange={(e) => {
+                  handleSortChange(e.currentTarget.value as typeof homePage.sortBy);
+                }}
+                aria-label={t("page.sortAriaLabel")}
+              >
+                {#each homePage.sortOptions as opt}
+                  <option value={opt.id}>{opt.label}</option>
+                {/each}
+              </select>
+            </div>
+          </div>
 
-      <!-- Floating batch delete panel -->
-      {#if homePage.selectionMode && homePage.selectedNoteIds.size > 0 && isAuthenticated() && graphView.mode === "personal"}
-        <div class="batch-panel">
-          <span class="batch-count"
-            >{t("page.selectedCount", {
-              count: homePage.selectedNoteIds.size.toString(),
-            })}</span
-          >
-          <button
-            class="batch-btn batch-btn--actions"
-            onclick={() => (homePage.showBulkActionsMenu = !homePage.showBulkActionsMenu)}
-            aria-label={t("page.bulkActionsToggle")}
-          >
-            {t("page.bulkActionsActions")}
-          </button>
-          <button
-            class="batch-btn batch-btn--delete"
-            onclick={handleBatchDelete}
-            aria-label={t("page.bulkActionsDelete")}
-          >
-            {t("page.bulkActionsDeleteSelected")}
-          </button>
-          <button
-            class="batch-btn batch-btn--cancel"
-            onclick={() => {
-              homePage.selectedNoteIds.clear();
-              homePage.selectionMode = false;
-            }}
-            aria-label={t("page.cancelSelection")}
-          >
-            {t("modal.cancel")}
-          </button>
+          {#if homePage.filteredNotes.length === 0}
+            <div class="empty-state" data-testid="empty-state">
+              <StateIllustration
+                type={!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
+                  ? "empty"
+                  : "no-results"}
+              />
+              <h2>
+                {!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
+                  ? t("page.emptyListNoNotes")
+                  : t("page.emptyListNoSearch")}
+              </h2>
+              <p>
+                {!homePage.filterState.isTypeActive && !homePage.filterState.isSearchActive
+                  ? t("page.emptyListPrompt")
+                  : homePage.filterState.isSearchActive
+                    ? t("page.noSearchResults", {
+                        query: homePage.filterState.searchQuery.value,
+                      })
+                    : t("page.noTypeResults", {
+                        type:
+                          homePage.filterState
+                            .getSelectedTypeLabel(homePage.typeFilters)
+                            ?.toLowerCase() ?? "",
+                      })}
+              </p>
+              <button class="new-note-button" onclick={() => (homePage.showCreateModal = true)}>
+                {t("page.createFirstNote")}
+              </button>
+            </div>
+          {:else}
+            <div
+              class="notes-grid"
+              class:arrived-by-morph={listArrivedByMorph}
+              data-testid="notes-grid"
+            >
+              {#each homePage.filteredNotes as note, index (note.id)}
+                <NoteCard
+                  {note}
+                  animationIndex={index}
+                  selected={homePage.selectedNoteIds.has(note.id)}
+                  selectMode={homePage.selectionMode}
+                  onSelect={handleNoteSelect}
+                  onEdit={handleNoteEdit}
+                  onDelete={handleNoteDelete}
+                  onClick={() => openFromList(note.id)}
+                  highlightQuery={homePage.filterState.searchQuery.value}
+                  readonly={!isAuthenticated() || graphView.mode === "community"}
+                />
+              {/each}
+            </div>
+          {/if}
         </div>
 
-        <!-- Bulk actions menu -->
-        {#if homePage.showBulkActionsMenu}
-          <div class="bulk-actions-menu">
-            <button
-              class="bulk-action-item"
-              onclick={() => {
-                homePage.showBulkActionsMenu = false;
-              }}
-              aria-label={t("page.bulkActionsMoveType")}
+        <!-- Floating batch delete panel -->
+        {#if homePage.selectionMode && homePage.selectedNoteIds.size > 0 && isAuthenticated() && graphView.mode === "personal"}
+          <div class="batch-panel">
+            <span class="batch-count"
+              >{t("page.selectedCount", {
+                count: homePage.selectedNoteIds.size.toString(),
+              })}</span
             >
-              <span class="bulk-action-icon">📂</span>
-              {t("page.bulkActionsMoveType")}
+            <button
+              class="batch-btn batch-btn--actions"
+              onclick={() => (homePage.showBulkActionsMenu = !homePage.showBulkActionsMenu)}
+              aria-label={t("page.bulkActionsToggle")}
+            >
+              {t("page.bulkActionsActions")}
             </button>
             <button
-              class="bulk-action-item"
-              onclick={() => {
-                homePage.showBulkActionsMenu = false;
-              }}
-              aria-label={t("page.bulkActionsAddTags")}
+              class="batch-btn batch-btn--delete"
+              onclick={handleBatchDelete}
+              aria-label={t("page.bulkActionsDelete")}
             >
-              <span class="bulk-action-icon">🏷️</span>
-              {t("page.bulkActionsAddTags")}
+              {t("page.bulkActionsDeleteSelected")}
             </button>
             <button
-              class="bulk-action-item"
+              class="batch-btn batch-btn--cancel"
               onclick={() => {
-                homePage.showBulkActionsMenu = false;
+                homePage.selectedNoteIds.clear();
+                homePage.selectionMode = false;
               }}
-              aria-label={t("page.bulkActionsExport")}
+              aria-label={t("page.cancelSelection")}
             >
-              <span class="bulk-action-icon">📤</span>
-              {t("page.bulkActionsExport")}
+              {t("modal.cancel")}
             </button>
           </div>
+
+          <!-- Bulk actions menu -->
+          {#if homePage.showBulkActionsMenu}
+            <div class="bulk-actions-menu">
+              <button
+                class="bulk-action-item"
+                onclick={() => {
+                  homePage.showBulkActionsMenu = false;
+                }}
+                aria-label={t("page.bulkActionsMoveType")}
+              >
+                <span class="bulk-action-icon">📂</span>
+                {t("page.bulkActionsMoveType")}
+              </button>
+              <button
+                class="bulk-action-item"
+                onclick={() => {
+                  homePage.showBulkActionsMenu = false;
+                }}
+                aria-label={t("page.bulkActionsAddTags")}
+              >
+                <span class="bulk-action-icon">🏷️</span>
+                {t("page.bulkActionsAddTags")}
+              </button>
+              <button
+                class="bulk-action-item"
+                onclick={() => {
+                  homePage.showBulkActionsMenu = false;
+                }}
+                aria-label={t("page.bulkActionsExport")}
+              >
+                <span class="bulk-action-icon">📤</span>
+                {t("page.bulkActionsExport")}
+              </button>
+            </div>
+          {/if}
         {/if}
       {/if}
     {/if}
@@ -376,6 +476,7 @@
 
 <style>
   .graph-content {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -392,6 +493,69 @@
     width: 100%;
   }
 
+  /* GRAPH-LIGHT-1: the graph waits under the list for the way back. */
+  .graph-view-wrapper.graph-under-list {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    transition:
+      opacity 0.25s ease,
+      visibility 0s linear 0s;
+  }
+
+  .graph-view-wrapper.graph-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.25s ease,
+      visibility 0s linear 0.25s;
+  }
+
+  /* Only the notes travel; the graph's own controls step aside at once. */
+  .graph-view-wrapper.graph-under-list > :global(:not(canvas)) {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* The list shows up while the first notes land on their cards. */
+  .list-container.list-morphing {
+    pointer-events: none;
+    animation: list-arrive var(--list-morph-ms, 1100ms) linear both;
+  }
+
+  @keyframes list-arrive {
+    0%,
+    55% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  .list-container.list-leaving {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .notes-grid.arrived-by-morph :global(.note-card:not(.exiting)) {
+    animation: none;
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .list-container,
+    .graph-view-wrapper.graph-under-list,
+    .graph-view-wrapper.graph-hidden {
+      transition: none;
+    }
+
+    .list-container.list-morphing {
+      animation: none;
+    }
+  }
+
   .graph-view-wrapper :global(canvas) {
     width: 100% !important;
     height: 100% !important;
@@ -399,6 +563,9 @@
 
   /* List Container */
   .list-container {
+    position: relative;
+    z-index: 1;
+    transition: opacity 0.25s ease;
     flex: 1 1 auto;
     min-height: 0;
     max-width: 1400px;
@@ -619,30 +786,30 @@
     opacity: 0.85;
   }
 
-  .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+  .loading-chip {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 30;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 16px;
-    z-index: 1000;
-    color: white;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    background: rgba(18, 18, 26, 0.85);
+    color: var(--carbon-text-dim, #7a7a8e);
+    font-size: 12px;
+    pointer-events: none;
   }
 
   .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #e2e8f0;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #e2e8f0;
     border-top-color: #3b82f6;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 16px;
   }
 
   @keyframes spin {

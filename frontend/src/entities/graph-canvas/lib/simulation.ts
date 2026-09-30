@@ -8,7 +8,7 @@ import type { SimulationNode, SimulationLink, SimulationState, TransformState } 
 
 export type { SimulationNode, SimulationLink, SimulationState, TransformState };
 
-function getLinkId(link: SimulationLink): string {
+export function getLinkId(link: SimulationLink): string {
   if (link.id) return link.id;
   const sourceId = getLinkEndpointId(link.source);
   const targetId = getLinkEndpointId(link.target);
@@ -96,7 +96,7 @@ function initializeOpacityMaps(
   });
 }
 
-function startFadeAnimation(
+export function startFadeAnimation(
   state: SimulationState,
   totalNodes: number,
   onStable?: () => void

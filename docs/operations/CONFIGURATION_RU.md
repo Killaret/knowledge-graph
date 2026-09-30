@@ -29,6 +29,13 @@ npm run build-config
 
 Примечание: редактируйте файлы в `config/*.json` и пересоздавайте `knowledge-graph.config.json` командой `npm run build-config`.
 
+**У фронтенда нет runtime-переменных окружения.** Ключи `frontend.*` и `ci_cd.*` вшиваются в бандл
+при сборке (`npm run build-config` + `npm run build` / сборка Docker-образа): правка `config/*.json`
+не действует на запущенный или уже собранный фронтенд — нужна пересборка. Полная карта ключей
+(кто читает, env-переопределение, compose, мёртвые ключи) — в
+[`CONFIG_REGISTRY.md`](CONFIG_REGISTRY.md): генерируется `scripts/testing/generate-config-registry.mjs`,
+сторож — `check-config-registry.mjs`.
+
 > **Отсутствующие ключи сохраняют дефолты из Go.** Файл десериализуется
 > поверх структуры, засеянной встроенными дефолтами (`defaultJSONConfig`,
 > CONFIG-1): ключ, которого в файле нет, получает дефолт, а заданные значения —
@@ -52,13 +59,14 @@ npm run build-config
     "graph": { ... },
     "embedding": { ... },
     "asynq": { ... },
+    "outbox": { "relay_interval_ms": 500, "batch_size": 100, "sent_retention_days": 30 },
     "redis": { ... },
     "auth": { ... }
   },
   "graph_service": { ... },
   "frontend": {
     "test": { ... },
-    "graph": { "2d": { ... }, "3d": { ... } },
+    "graph": { "label_hub_count": 15, "dependency_highlight_depth": 10, "style": "classic", "2d": { ... }, "3d": { ... } },
     "api": { ... },
     "achievements": { ... }
   },
@@ -82,6 +90,16 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 ```
 
 ---
+
+## Общие параметры графа (`frontend.graph`)
+
+| Параметр | Тип | По умолчанию | Где используется | Описание |
+|----------|-----|--------------|------------------|----------|
+| `label_hub_count` | integer | `15` | `entities/graph-canvas/lib/labels.ts` — общий для 2D-канваса и 3D-движка | Максимум подписей хабов при отдалении: top-N узлов по связности. Отбор относительный — абсолютный порог подписывал почти все узлы на плотном графе |
+| `dependency_highlight_depth` | integer | `10` | `entities/graph-canvas/lib/dependency-chain.ts` — общий для 2D-канваса и 3D-движка | Глубина подсветки цепочки `dependency` при наведении (LINK-TYPES-1): сколько шагов от заметки под курсором покрывает обход в обе стороны |
+| `style` | string | `"light"` | `entities/graph-canvas/lib/light/style.ts` — 2D-канвас | Вид 2D-графа: `"classic"` — значки, `"light"` — заметки как источники света (GRAPH-LIGHT-1, решение 83). Другой вид можно посмотреть, добавив к адресу `?graphStyle=light` или `?graphStyle=classic` |
+| `recommendations_on_hover` | integer | `4` | `widgets/graph-canvas/GraphCanvas.svelte` — 2D-канвас, светлый вид | Сколько рекомендаций заметки под курсором светлый вид рисует бледным пунктиром (решение 81); загружаются при наведении, хранятся минуту |
+| `ambient_max_nodes` | integer | `500` | `entities/graph-canvas/lib/light/style.ts` — 2D-канвас, светлый вид | Фоновое движение — «дыхание» ореолов, мерцание звёзд, пульс вокруг выбранной заметки — идёт только до этого числа заметок; выше, а также при `prefers-reduced-motion`, кадр рисуется только при изменениях (GRAPH-LIGHT-1) |
 
 ## Параметры 2D-графа (`frontend.graph.2d`)
 
@@ -201,7 +219,7 @@ cfg := config.Load()
 
 | Переменная | Описание | Умолчание |
 |-----------|----------|-----------|
-| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | Интервал опроса достижений | `0` |
+| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | ~~env~~ — только JSON-ключ `frontend.achievements.poll_interval_ms` в `knowledge-graph.config.json`; как env-переменная не читается | `0` |
 
 ### Типы условий достижений
 
@@ -267,13 +285,13 @@ cfg := config.Load()
 |-----------|----------|-----------|
 | `BACKUP_LOCAL_PATH` | Локальная директория для бэкапов воркера. В Personal-стеке — `/backups` (том `${KG_BACKUP_DIR}` примонтирован в `worker_personal`, BACKUP-3) | `./backups` |
 | `BACKUP_CLOUD_ENABLED` | Включить облачное резервирование | `false` |
-| `BACKUP_CLOUD_PROVIDER` | Провайдер облака (`yandex`) | `yandex` |
+| `BACKUP_CLOUD_PROVIDER` | Провайдер облака (реализован `yandex`; дефолт в коде `r2`) | `r2` |
 | `BACKUP_YANDEX_OAUTH_TOKEN` | OAuth-токен Яндекс.Диска | — |
 | `BACKUP_YANDEX_FOLDER` | Папка на Яндекс.Диске | `/KnowledgeGraphBackups` |
 | `BACKUP_YANDEX_MAX_BACKUPS` | Максимальное количество хранимых бэкапов | `10` |
 | `BACKUP_SCHEDULE` | Расписание cron | `0 2 * * *` |
 | `BACKUP_RETENTION_DAYS` | Срок хранения бэкапов (дни) | `7` |
-| `BACKUP_DRAFT_TTL_HOURS` | TTL черновиков в MongoDB | `168` |
+| `BACKUP_DRAFT_TTL_HOURS` | ~~env~~ — только JSON-ключ `backup.draft_ttl_hours`; парсится в структуру конфига, но код его пока не читает (TTL черновиков — фиксированные 7 дней) | `168` |
 
 ### Скрипты резервного копирования
 
@@ -319,6 +337,22 @@ MongoDB используется для хранения черновиков з
 
 ---
 
+## Удалённые заметки (срок хранения корзины)
+
+Удаление заметки мягкое: строка получает `deleted_at` и восстанавливается
+в течение окна хранения (см. ADR 004 и NOTE-DELETE-1).
+
+- **Срок хранения**: **90 дней**, фиксированный дефолт в `tasks.NewCleanupSoftDeletedTask`
+  (env/JSON-ключа пока нет).
+- **Расписание**: воркер ежедневно ставит задачу `cleanup:soft_deleted`;
+  `PurgeDeletedBefore` жёстко удаляет заметки старше горизонта вместе со связями
+  (FK-каскад).
+- **Восстановление**: `POST /api/v1/notes/{id}/restore` возвращает заметку вместе
+  со связями, удалёнными вместе с ней (`links.deleted_via_note_id`). Связи,
+  удалённые отдельно, — жёсткое удаление и не воскресают.
+
+---
+
 ## Обязательные переменные окружения
 
 Должны быть заданы исключительно через переменные окружения (не в JSON):
@@ -338,6 +372,7 @@ MongoDB используется для хранения черновиков з
 | `SERVER_PORT` | backend | Порт HTTP-сервера (Gin) | `8080` |
 | `REDIS_URL` | backend, worker | Адрес Redis для очередей asynq и кеша рекомендаций | `localhost:6379` |
 | `NLP_SERVICE_URL` | backend, worker | URL Python NLP-сервиса | `http://localhost:5000` |
+| `IMPORT_CONTENT_MAX_RUNES` | backend | URL-HEADING-1, этап A: бюджет извлечённого тела страницы в рунах — обрезка идёт по целым разделам (никогда внутри списка или кодового блока); число не вошедших разделов пишется в `metadata.import_truncated.sections_dropped` | `20000` |
 
 ### Детали компонентов
 
@@ -388,7 +423,7 @@ MongoDB используется для хранения черновиков з
 | `SERVER_RATE_LIMIT_REQUESTS` | Общий лимит запросов | `100` |
 | `SERVER_RATE_LIMIT_WINDOW_SECONDS` | Временное окно | `60` |
 | `SERVER_PORT` | Порт HTTP-сервера | `8080` |
-| `SERVER_FALLBACK_PORTS` | Резервные порты (через запятую) | `8081,8082` |
+| `SERVER_FALLBACK_PORTS` | ~~env~~ — только JSON-ключ `backend.server.rate_limit.fallback_ports` (массив, не env через запятую) | `["8081","8082"]` |
 
 ### Поведение rate limiting
 
@@ -525,7 +560,6 @@ score = α × explicit_score + β × semantic_score
 | Переменная | Описание | Умолчание |
 |-----------|----------|-----------|
 | `GRAPH_LOAD_DEPTH` | Глубина загрузки графа | `2` |
-| `GRAPH_MAX_NODES` | Максимальное количество узлов | `500` |
 | `GRAPH_DEFAULT_LIMIT` | Лимит узлов по умолчанию | `100` |
 | `GRAPH_MAX_LIMIT` | Максимальный лимит узлов | `1000` |
 | `GRAPH_LINK_DEFAULT_LIMIT` | Лимит связей по умолчанию | `500` |
@@ -613,7 +647,11 @@ score = α × explicit_score + β × semantic_score
     "max_text_length": 10000,
     "hf_home": "/root/.cache/huggingface",
     "hf_hub_disable_telemetry": true,
-    "hf_hub_offline": true
+    "hf_hub_offline": true,
+    "embed_chunking": false,
+    "pipeline": { "enabled": false },
+    "history": { "enabled": true },
+    "normalization": { "min_cosine": 0.7 }
   }
 }
 ```
@@ -627,6 +665,17 @@ score = α × explicit_score + β × semantic_score
 | `HF_HOME` | Путь к локальному кешу HuggingFace | `/root/.cache/huggingface` |
 | `HF_HUB_OFFLINE` | Работа в оффлайн-режиме (без интернета) | `true` |
 | `HF_HUB_DISABLE_TELEMETRY` | Отключить телеметрию HuggingFace | `true` |
+| `EMBED_CHUNKING` | Структурный чанкер в `/embed` и `_doc_vector` (CHUNK-1): `0/off` — как раньше; `1/on` — чанки → один пакетный encode → среднее + L2, заголовок в каждом чанке, в ответе `chunks` и `no_content`. Включать вместе со сменой модели (MODEL-2) | `0` |
+| `NLP_PIPELINE_ENABLED` | Конвейер нормализации (NLP-4): ставит `nlp:normalize` при создании/правке/импорте заметки — воркер пишет `nlp_artifacts` в MongoDB. Векторы по-прежнему строятся по сырому `notes.content`; включение — вместе с MODEL-2 | `false` |
+| `NLP_HISTORY_ENABLED` | Хранить superseded-версии `nlp_artifacts`; `false` — прежний документ удаляется вместо пометки `superseded` | `true` |
+| `NLP_NORMALIZATION_MIN_COSINE` | Предохранитель отката `/normalize` по косинусу: результат откатывается к исходнику, если `cos(emb(result), emb(source))` ниже порога. Зависит от шкалы модели (замерено на e5-base); перекалибровка — в MODEL-2. Значения вне `(0, 1]` заменяются умолчанием | `0.7` |
+| `NLP_QUALITY_ENABLED` | Конвейер качества заметки (NOTE-QUALITY-1, этап 1): ставит `quality:assess` после `nlp:normalize` и после задач обогащения; включает `GET /api/v1/notes/{id}/quality` и `POST .../quality/assess`. `false` — задачи не ставятся, API отвечает `{"enabled": false}` | `false` |
+| `NLP_QUALITY_COLLECTION_PROSE_SHARE` | Граница признака: доля прозы, ниже которой заметка считается `collection` | `0.3` |
+| `NLP_QUALITY_COLLECTION_MIN_LINKS` | Граница признака: минимум строк-ссылок/пунктов для `collection` | `3` |
+| `NLP_QUALITY_SENTENCE_MIN_WORDS` | Граница признака: минимум слов в засчитываемом предложении | `4` |
+| `NLP_QUALITY_FRAGMENT_MAX_WORDS` | Граница признака: строки до этого числа слов — обрывки | `3` |
+| `NLP_QUALITY_MOJIBAKE_SHARE` | Граница признака: доля символов замены/кракозябр для флага `mojibake` | `0.01` |
+| `NLP_QUALITY_LEGACY_TRUNCATED_RUNES` | Граница признака: объём всего содержимого в рунах, по которому старый (до URL-HEADING-1) импорт считается обрезанным | `4990` |
 
 ### Lazy-loading модели (обязательный паттерн)
 
@@ -656,7 +705,7 @@ def get_embedding_model():
   "graph_service": {
     "grpc_port": "9090",
     "http_port": "9091",
-    "full_limit": 1000,
+    "full_limit": 500,
     "default_depth": 2,
     "event_channel": "graph:events",
     "cache": {
@@ -828,6 +877,26 @@ def get_embedding_model():
 | `concurrency` | Количество параллельных воркеров обработки задач |
 | `queue_default` | Приоритет очереди по умолчанию |
 | `queue_max_len` | Максимальный размер очереди |
+
+### Транзакционный outbox (`backend.outbox`, SYNC-1 A2)
+
+```json
+{
+  "backend": {
+    "outbox": {
+      "relay_interval_ms": 500,
+      "batch_size": 100,
+      "sent_retention_days": 30
+    }
+  }
+}
+```
+
+| Параметр | Env | Описание |
+|----------|-----|----------|
+| `relay_interval_ms` | `OUTBOX_RELAY_INTERVAL_MS` | Интервал опроса таблицы `graph_outbox` ретранслятором воркера |
+| `batch_size` | `OUTBOX_BATCH_SIZE` | Сколько неотправленных строк забирается за одну транзакцию (`FOR UPDATE SKIP LOCKED`) |
+| `sent_retention_days` | `OUTBOX_SENT_RETENTION_DAYS` | Сколько дней хранятся отправленные строки до ежедневной чистки |
 
 ---
 

@@ -1,27 +1,33 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 
 	"knowledge-graph/internal/application/graph"
 	importer "knowledge-graph/internal/application/import"
 	"knowledge-graph/internal/application/linkweight"
+	appquality "knowledge-graph/internal/application/quality"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
+	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/infrastructure/backup"
 	infracache "knowledge-graph/internal/infrastructure/cache"
 	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/events"
+	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
+	"knowledge-graph/internal/infrastructure/outbox"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
 	"knowledge-graph/internal/infrastructure/web"
@@ -89,8 +95,12 @@ func main() {
 	// Клиент кэша
 	cacheClient := infracache.NewRedisCacheClient(redisClient)
 
-	// Репозитории
-	noteRepo := postgres.NewNoteRepository(database, cacheClient)
+	// Репозитории. SYNC-1 A2: записи заметок и связей идут через
+	// outbox-декораторы — событие графа пишется в той же транзакции, а
+	// ретранслятор доставляет его в Redis. Базовые репозитории остаются для
+	// мест, которым нужен конкретный тип (качество) или чтение без записи.
+	noteRepo := outbox.NewNoteRepository(postgres.NewNoteRepository(database, cacheClient), database)
+	linkRepo := outbox.NewLinkRepository(postgres.NewLinkRepository(database), database)
 	keywordRepo := postgres.NewKeywordRepository(database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database, cfg.NLPModelName)
 	recRepo := postgres.NewRecommendationRepository(database)
@@ -103,7 +113,7 @@ func main() {
 	nlpClient := nlp.NewNLPClient(nlpURL, redisClient, 24*time.Hour)
 
 	// Task queue client for the import worker to enqueue note processing tasks.
-	queueClient, err := queue.NewAsynqClient(redisAddr, cfg.BackupEnabled)
+	queueClient, err := queue.NewAsynqClient(redisAddr, cfg.BackupEnabled, cfg.NLPPipelineEnabled, cfg.NLPQualityEnabled)
 	if err != nil {
 		log.Printf("[Worker] WARNING: failed to create asynq client: %v", err)
 		queueClient = nil
@@ -118,23 +128,72 @@ func main() {
 
 	importSvc := importer.NewService(noteRepo, cacheClient, queueClient, web.NewImportFetcher())
 
-	linkRepo := postgres.NewLinkRepository(database)
-
-	// LINKS-1: gamma-link generation runs after a successful embedding upsert.
-	// LinkCreated events reach graph-service over the same Redis channel the
-	// API uses, so closure refresh and cache invalidation work unchanged.
+	// SYNC-1 A2: graph events no longer leave through handler calls — the
+	// outbox relayer drains graph_outbox to the Redis channel. Started here
+	// in the worker, the only long-running writer process.
 	var eventPublisher *events.Publisher
-	if cfg.EventChannel != "" {
+	if cfg.EventChannel != "" && redisClient != nil {
 		eventPublisher = events.NewPublisher(redisClient, cfg.EventChannel)
 	} else {
-		log.Println("[Worker] EVENT_CHANNEL not set, gamma-link events will not be published")
+		log.Println("[Worker] EVENT_CHANNEL not set or Redis unavailable — graph events will accumulate in graph_outbox")
 	}
+	relayer := outbox.NewRelayer(database, eventPublisher, cfg.OutboxRelayInterval, cfg.OutboxBatchSize)
+	relayCtx, stopRelay := context.WithCancel(context.Background())
+	defer stopRelay()
+	go relayer.Run(relayCtx)
+
 	gammaGen := recommendation.NewGammaLinkGenerator(embeddingRepo, linkRepo, 2, cfg.GammaLinkMinScore)
 	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
 
+	// NLP-4: artifacts live in MongoDB. The worker connects whenever Mongo
+	// is configured — even with the pipeline flag off — so nlp:normalize
+	// tasks enqueued manually (nlp-artifacts-recompute) and artifact
+	// cleanup on note deletion still work.
+	var artifactsStore queue.NlpArtifactsStore
+	var artifactsRepo *mongo.NlpArtifactsRepository
+	var mongoClient *mongo.Client
+	if cfg.MongoDBURL != "" {
+		mc, err := mongo.NewClient(context.Background(), cfg.MongoDBURL, cfg.MongoDBDatabase)
+		if err != nil {
+			log.Printf("[Worker] WARNING: failed to connect to MongoDB at %s: %v — NLP-4 artifacts disabled", maskURL(cfg.MongoDBURL), err)
+		} else {
+			mongoClient = mc
+			defer func() {
+				if err := mongoClient.Close(context.Background()); err != nil {
+					log.Printf("[MongoDB] Error closing client: %v", err)
+				}
+			}()
+			repo := mongo.NewNlpArtifactsRepository(mongoClient)
+			if err := repo.EnsureIndexes(context.Background()); err != nil {
+				log.Printf("[Worker] WARNING: failed to ensure nlp_artifacts indexes: %v", err)
+			}
+			artifactsRepo = repo
+			artifactsStore = repo
+			log.Printf("[MongoDB] Connected to %s/%s (nlp_artifacts store ready)", maskURL(cfg.MongoDBURL), cfg.MongoDBDatabase)
+		}
+	} else {
+		log.Println("[MongoDB] MONGO_URL not configured — NLP-4 artifacts disabled")
+	}
+
 	// Воркер (обработчик задач)
 	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc,
-		gammaGen, eventPublisher, queueClient, taskDelay)
+		gammaGen, queueClient, taskDelay,
+		artifactsStore, cfg.NLPHistoryEnabled, cfg.NLPModelName)
+
+	// MODEL-2: when the pipeline is on, embeddings are computed over the
+	// normalized nlp_artifacts text and normalize chains a re-embed.
+	if cfg.NLPPipelineEnabled {
+		worker.UseNlpPipeline(queueClient)
+	}
+
+	// NOTE-QUALITY-1: the assessor needs Mongo (quality_log + artifact
+	// stamps). Gated by nlp.quality.enabled — off means the handler no-ops
+	// and nothing is enqueued.
+	if installQualityPipeline(worker, cfg, mongoClient, noteRepo, artifactsRepo, postgres.NewQualityStatsRepository(database), nlpClient, queueClient) {
+		log.Println("[Worker] NOTE-QUALITY-1 quality assessment enabled")
+	} else if cfg.NLPQualityEnabled {
+		log.Println("[Worker] NLP_QUALITY_ENABLED set but MongoDB is unavailable — quality assessment disabled")
+	}
 
 	// Graph traversal service for recommendations
 	neighborLoader := graph.NewNeighborLoader(linkRepo, noteRepo)
@@ -201,11 +260,33 @@ func main() {
 	mux.HandleFunc(queue.TypeRecalculateLinkWeights, queue.RecalculateLinkWeightsHandler(weightRecalc))
 	mux.HandleFunc(queue.TypeRefreshRecommendations, queue.RefreshRecommendationsHandler(refreshSvc))
 	mux.HandleFunc(queue.TypeImportBookmarks, worker.HandleImportBookmarks)
+	mux.HandleFunc(queue.TypeNormalizeNote, worker.HandleNormalizeNote)
+	mux.HandleFunc(queue.TypeNlpArtifactsCleanup, worker.HandleNlpArtifactsCleanup)
+	mux.HandleFunc(queue.TypeAssessQuality, worker.HandleAssessQuality)
+	mux.HandleFunc(tasks.TypeCleanupSoftDeleted,
+		queue.CleanupSoftDeletedHandler(softDeletedCleanup{purger: noteRepo, db: database, outboxKeepDays: cfg.OutboxSentRetentionDays}))
 	if cfg.BackupEnabled {
 		mux.HandleFunc(queue.TypeDatabaseBackup, queue.BackupDatabaseHandler(backupRunner))
 		if backupSvc != nil {
 			mux.HandleFunc(queue.TypeBackupToCloud, queue.BackupToCloudHandler(backupSvc))
 		}
+	}
+
+	// NOTE-DELETE-1: daily trash purge — the task defaults to a 90-day
+	// retention window (see tasks.NewCleanupSoftDeletedTask).
+	scheduler := asynq.NewScheduler(asynq.RedisClientOpt{Addr: redisAddr}, nil)
+	if cleanupTask, err := tasks.NewCleanupSoftDeletedTask(0, nil); err != nil {
+		log.Printf("[Worker] WARNING: failed to build trash cleanup task: %v", err)
+	} else if _, err := scheduler.Register("@daily", cleanupTask); err != nil {
+		log.Printf("[Worker] WARNING: failed to schedule trash cleanup: %v", err)
+	} else {
+		go func() {
+			if err := scheduler.Run(); err != nil {
+				log.Printf("[Worker] scheduler stopped: %v", err)
+			}
+		}()
+		defer scheduler.Shutdown()
+		log.Println("[Worker] daily trash cleanup scheduled (retention 90 days)")
 	}
 
 	log.Printf("Worker started with config: Concurrency=%d, QueueMaxLen=%d", cfg.AsynqConcurrency, cfg.AsynqQueueMaxLen)
@@ -299,4 +380,31 @@ func findSubstring(s, substr string) int {
 		}
 	}
 	return -1
+}
+
+// installQualityPipeline wires the NOTE-QUALITY-1 assessor into the worker
+// when both the feature flag and its Mongo storage are present; otherwise
+// the worker stays a no-op for quality tasks and nothing is enqueued.
+// Returns whether the pipeline was installed.
+func installQualityPipeline(w *queue.Worker, cfg *config.Config, mongoClient *mongo.Client,
+	noteRepo note.Repository, artifactsRepo *mongo.NlpArtifactsRepository,
+	stats appquality.StatsReader, nlpClient *nlp.NLPClient, enq queue.QualityEnqueuer) bool {
+	if !cfg.NLPQualityEnabled || mongoClient == nil {
+		return false
+	}
+	qualityLog := mongo.NewQualityLogRepository(mongoClient)
+	if err := qualityLog.EnsureIndexes(context.Background()); err != nil {
+		log.Printf("[Worker] WARNING: failed to ensure quality_log indexes: %v", err)
+	}
+	assessor := queue.NewQualityAssessor(noteRepo, artifactsRepo, qualityLog, stats, nlpClient,
+		appquality.Thresholds{
+			CollectionProseShare: cfg.NLPQualityCollectionProseShare,
+			CollectionMinLinks:   cfg.NLPQualityCollectionMinLinks,
+			SentenceMinWords:     cfg.NLPQualitySentenceMinWords,
+			FragmentMaxWords:     cfg.NLPQualityFragmentMaxWords,
+			MojibakeShare:        cfg.NLPQualityMojibakeShare,
+			LegacyTruncatedRunes: cfg.NLPQualityLegacyTruncatedRunes,
+		})
+	w.UseQuality(assessor, enq)
+	return true
 }

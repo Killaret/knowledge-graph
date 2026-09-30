@@ -16,6 +16,14 @@ vi.mock("$shared/api/links", () => ({
   deleteLink: vi.fn(),
 }));
 
+vi.mock("$shared/api/quality", () => ({
+  getNoteQuality: vi.fn().mockResolvedValue({ enabled: false, quality: null }),
+  assessNoteQuality: vi.fn(),
+  refetchPreview: vi.fn(),
+  refetchApply: vi.fn(),
+  refetchRestore: vi.fn(),
+}));
+
 const mockNote = {
   id: "n1",
   title: "Alpha Centauri",

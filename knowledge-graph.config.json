@@ -84,6 +84,11 @@
     "redis": {
       "flush_on_startup": false
     },
+    "outbox": {
+      "relay_interval_ms": 500,
+      "batch_size": 100,
+      "sent_retention_days": 30
+    },
     "auth": {
       "jwt_secret": "",
       "jwt_access_ttl_seconds": 900,
@@ -146,6 +151,11 @@
       "mock_goto_delay_ms": 0
     },
     "graph": {
+      "label_hub_count": 15,
+      "dependency_highlight_depth": 10,
+      "style": "light",
+      "recommendations_on_hover": 4,
+      "ambient_max_nodes": 500,
       "2d": {
         "max_nodes": 500,
         "shadows_threshold": 100,
@@ -250,7 +260,8 @@
     "cache": {
       "note_layout_ttl_seconds": 300,
       "full_layout_ttl_seconds": 300,
-      "delta_ttl_seconds": 60
+      "delta_ttl_seconds": 60,
+      "snapshot_ttl_seconds": 900
     },
     "layout": {
       "2d_radius": 100,
@@ -271,6 +282,18 @@
     "max_text_length": 10000,
     "hf_home": "/root/.cache/huggingface",
     "hf_hub_disable_telemetry": true,
-    "hf_hub_offline": true
+    "hf_hub_offline": true,
+    "pipeline": {
+      "enabled": true
+    },
+    "quality": {
+      "enabled": false,
+      "collection_prose_share": 0.3,
+      "collection_min_links": 3,
+      "sentence_min_words": 4,
+      "fragment_max_words": 3,
+      "mojibake_share": 0.01,
+      "legacy_truncated_runes": 4990
+    }
   }
 }

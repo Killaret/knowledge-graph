@@ -8,7 +8,13 @@ This document describes how authentication and authorization work in the `servic
 
 ## Authentication Mechanisms
 
-### 1. JWT Bearer Token (`Authorization: Bearer <token>`) and HttpOnly Cookie
+### 1. JWT Bearer Token (`Authorization: Bearer <token>`)
+
+> **Correction 2026-09-30 (DOC-AUDIT-2):** graph-service reads only the
+> `Authorization: Bearer` header (and `X-Internal-Auth` internally) —
+> `services/graph-service/internal/api/auth.go` (`authenticateRequest`). The
+> HttpOnly `access_token` cookie is a **backend** mechanism; the cookie is not
+> accepted by graph-service (see "Known Limitations" item 4).
 
 - Uses the same `JWT_SECRET` as the main backend.
 - Token must have `token_type: "access"`.
@@ -55,7 +61,8 @@ The nginx browser-facing `/graph-service/` proxy always removes `X-Internal-Auth
 
 ## HTTP Endpoints
 
-- Direct: `http://127.0.0.1:29091/api/v1/graph/...`
+- Direct (dev stack): `http://127.0.0.1:9091/api/v1/graph/...`
+- Direct (test stack): `http://127.0.0.1:29091/api/v1/graph/...` (`docker-compose.test.yml` publishes `29091→9091`)
 - Via SvelteKit proxy (preferred in the browser): `http://127.0.0.1:3002/graph-service/api/v1/graph/...`
   - Proxy target is controlled by `VITE_API_TARGET` (backend) and `GRAPH_SERVICE_URL` (graph service) in `frontend/src/hooks.server.ts`.
 
@@ -63,9 +70,7 @@ The nginx browser-facing `/graph-service/` proxy always removes `X-Internal-Auth
 
 The following items were identified during a recent auth/token audit. They are **non-blocking** for real-auth manual testing but should be addressed before hardening the system.
 
-1. **JWT token accepted from query parameter.**
-   - `backend/internal/interfaces/api/middleware/jwt.go` falls back to `c.Query("token")`.
-   - Tokens in URLs can leak to browser history and server access logs; prefer header/cookie only.
+1. ~~JWT token accepted from query parameter~~ — **fixed**: `extractToken` in `jwt.go` now only accepts the `Authorization: Bearer` header (and the `access_token` cookie); no query-param fallback remains.
 
 2. **Refresh token returned in JSON response.**
    - `backend` returns `refresh_token` in the login/refresh JSON body even though it is already set as an HttpOnly cookie.

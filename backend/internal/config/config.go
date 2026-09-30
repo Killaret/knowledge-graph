@@ -85,6 +85,11 @@ type JSONConfig struct {
 			QueueDefault int `json:"queue_default"`
 			QueueMaxLen  int `json:"queue_max_len"`
 		} `json:"asynq"`
+		Outbox struct {
+			RelayIntervalMs   int `json:"relay_interval_ms"`
+			BatchSize         int `json:"batch_size"`
+			SentRetentionDays int `json:"sent_retention_days"`
+		} `json:"outbox"`
 		Redis struct {
 			FlushOnStartup bool `json:"flush_on_startup"`
 		} `json:"redis"`
@@ -136,6 +141,29 @@ type JSONConfig struct {
 		URL      string `json:"url"`
 		Database string `json:"database"`
 	} `json:"mongodb"`
+	// NLP — top-level section shared with the Python service. Only the
+	// keys the Go side consumes are mapped; the rest are read by nlp-service.
+	NLP struct {
+		Pipeline struct {
+			Enabled bool `json:"enabled"`
+		} `json:"pipeline"`
+		History struct {
+			Enabled bool `json:"enabled"`
+		} `json:"history"`
+		Normalization struct {
+			MinCosine float64 `json:"min_cosine"`
+		} `json:"normalization"`
+		// NOTE-QUALITY-1 stage 1: signals + gates, no score.
+		Quality struct {
+			Enabled              bool    `json:"enabled"`
+			CollectionProseShare float64 `json:"collection_prose_share"`
+			CollectionMinLinks   int     `json:"collection_min_links"`
+			SentenceMinWords     int     `json:"sentence_min_words"`
+			FragmentMaxWords     int     `json:"fragment_max_words"`
+			MojibakeShare        float64 `json:"mojibake_share"`
+			LegacyTruncatedRunes int     `json:"legacy_truncated_runes"`
+		} `json:"quality"`
+	} `json:"nlp"`
 }
 
 type Config struct {
@@ -166,9 +194,31 @@ type Config struct {
 	RedisFlushOnStartup bool
 	EventChannel        string
 
+	// Graph event outbox (SYNC-1 A2)
+	OutboxRelayInterval     time.Duration
+	OutboxBatchSize         int
+	OutboxSentRetentionDays int
+
 	// NLP
 	NLPServiceURL string
 	NLPModelName  string
+
+	// NLP-4 normalization pipeline (artifacts in MongoDB; vectors untouched
+	// MODEL-2: on by default — embeddings are computed over nlp_artifacts
+	// normalized text. Pipeline=false means no nlp:normalize tasks at all.
+	NLPPipelineEnabled        bool
+	NLPHistoryEnabled         bool    // keep superseded artifact versions
+	NLPNormalizationMinCosine float64 // rollback guard, model-scale dependent
+
+	// NOTE-QUALITY-1 stage 1 (assessment task + quality API). Disabled means
+	// no quality:assess tasks and {"enabled": false} from the endpoint.
+	NLPQualityEnabled              bool
+	NLPQualityCollectionProseShare float64
+	NLPQualityCollectionMinLinks   int
+	NLPQualitySentenceMinWords     int
+	NLPQualityFragmentMaxWords     int
+	NLPQualityMojibakeShare        float64
+	NLPQualityLegacyTruncatedRunes int
 
 	// Search
 	SearchFulltextLanguages []string
@@ -428,11 +478,14 @@ func resolveConfig(jsonCfg *JSONConfig) (*Config, error) {
 		DatabasePoolStatsIntervalSeconds:   getIntEnv("POSTGRES_POOL_STATS_INTERVAL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.StatsIntervalSeconds }, 300)),
 
 		// Redis & NLP
-		RedisURL:            getEnv("REDIS_URL", "localhost:6379"),
-		RedisFlushOnStartup: getBoolEnv("REDIS_FLUSH_ON_STARTUP", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Redis.FlushOnStartup }, false)),
-		EventChannel:        getEnv("EVENT_CHANNEL", "graph:events"),
-		NLPServiceURL:       getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
-		NLPModelName:        getEnv("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2"),
+		RedisURL:                getEnv("REDIS_URL", "localhost:6379"),
+		RedisFlushOnStartup:     getBoolEnv("REDIS_FLUSH_ON_STARTUP", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Redis.FlushOnStartup }, false)),
+		EventChannel:            getEnv("EVENT_CHANNEL", "graph:events"),
+		OutboxRelayInterval:     time.Duration(getIntEnv("OUTBOX_RELAY_INTERVAL_MS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Outbox.RelayIntervalMs }, 500))) * time.Millisecond,
+		OutboxBatchSize:         getIntEnv("OUTBOX_BATCH_SIZE", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Outbox.BatchSize }, 100)),
+		OutboxSentRetentionDays: getIntEnv("OUTBOX_SENT_RETENTION_DAYS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Outbox.SentRetentionDays }, 30)),
+		NLPServiceURL:           getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
+		NLPModelName:            getEnv("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2"),
 
 		// Search
 		SearchFulltextLanguages: getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Search.FulltextLanguages }, slices.Clone(defaultFulltextLanguages)),
@@ -487,6 +540,20 @@ func resolveConfig(jsonCfg *JSONConfig) (*Config, error) {
 		// MongoDB configuration
 		MongoDBURL:      getEnv("MONGO_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.URL }, "mongodb://localhost:27017")),
 		MongoDBDatabase: getEnv("MONGO_DATABASE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.Database }, "knowledge_graph")),
+
+		// NLP-4 pipeline flags
+		NLPPipelineEnabled:        getBoolEnv("NLP_PIPELINE_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.NLP.Pipeline.Enabled }, false)),
+		NLPHistoryEnabled:         getBoolEnv("NLP_HISTORY_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.NLP.History.Enabled }, true)),
+		NLPNormalizationMinCosine: resolveNormalizationMinCosine(jsonCfg),
+
+		// NOTE-QUALITY-1
+		NLPQualityEnabled:              getBoolEnv("NLP_QUALITY_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.NLP.Quality.Enabled }, false)),
+		NLPQualityCollectionProseShare: getFloatEnv("NLP_QUALITY_COLLECTION_PROSE_SHARE", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.NLP.Quality.CollectionProseShare }, 0.3)),
+		NLPQualityCollectionMinLinks:   getIntEnv("NLP_QUALITY_COLLECTION_MIN_LINKS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.NLP.Quality.CollectionMinLinks }, 3)),
+		NLPQualitySentenceMinWords:     getIntEnv("NLP_QUALITY_SENTENCE_MIN_WORDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.NLP.Quality.SentenceMinWords }, 4)),
+		NLPQualityFragmentMaxWords:     getIntEnv("NLP_QUALITY_FRAGMENT_MAX_WORDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.NLP.Quality.FragmentMaxWords }, 3)),
+		NLPQualityMojibakeShare:        getFloatEnv("NLP_QUALITY_MOJIBAKE_SHARE", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.NLP.Quality.MojibakeShare }, 0.01)),
+		NLPQualityLegacyTruncatedRunes: getIntEnv("NLP_QUALITY_LEGACY_TRUNCATED_RUNES", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.NLP.Quality.LegacyTruncatedRunes }, 4990)),
 
 		// Auth / App configuration
 		FrontendURL:                  getEnv("FRONTEND_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.FrontendURL }, "")),
@@ -574,6 +641,22 @@ func resolveGammaLinkMinScore(jsonCfg *JSONConfig) float64 {
 	return v
 }
 
+// resolveNormalizationMinCosine wires env -> JSON -> default 0.7, clamped to
+// (0, 1]: a threshold outside the cosine range would either roll back every
+// note (>1) or never fire (<=0) — both silently disable the guard it exists
+// to provide. Same reasoning as resolveGammaLinkMinScore.
+func resolveNormalizationMinCosine(jsonCfg *JSONConfig) float64 {
+	const fallback = 0.7
+	v := getFloatEnv("NLP_NORMALIZATION_MIN_COSINE", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 {
+		return j.NLP.Normalization.MinCosine
+	}, fallback))
+	if v <= 0 || v > 1 {
+		log.Printf("[Config] nlp.normalization.min_cosine resolved to %v (out of (0,1]); using default %v", v, fallback)
+		return fallback
+	}
+	return v
+}
+
 // Shared defaults for JSON config's complex types — one source for the
 // no-file path (resolveConfig else-branch), the seeded struct, and the helper
 // fallback argument.
@@ -655,6 +738,10 @@ func defaultJSONConfig() *JSONConfig {
 	cfg.Backend.Asynq.QueueDefault = 1
 	cfg.Backend.Asynq.QueueMaxLen = 10000
 
+	cfg.Backend.Outbox.RelayIntervalMs = 500
+	cfg.Backend.Outbox.BatchSize = 100
+	cfg.Backend.Outbox.SentRetentionDays = 30
+
 	cfg.Backend.Auth.JWTAccessTTLSeconds = 900
 	cfg.Backend.Auth.JWTRefreshTTLSeconds = 604800
 	cfg.Backend.Auth.Argon2Time = 3
@@ -674,6 +761,16 @@ func defaultJSONConfig() *JSONConfig {
 
 	cfg.MongoDB.URL = "mongodb://localhost:27017"
 	cfg.MongoDB.Database = "knowledge_graph"
+
+	cfg.NLP.History.Enabled = true
+	cfg.NLP.Normalization.MinCosine = 0.7
+
+	cfg.NLP.Quality.CollectionProseShare = 0.3
+	cfg.NLP.Quality.CollectionMinLinks = 3
+	cfg.NLP.Quality.SentenceMinWords = 4
+	cfg.NLP.Quality.FragmentMaxWords = 3
+	cfg.NLP.Quality.MojibakeShare = 0.01
+	cfg.NLP.Quality.LegacyTruncatedRunes = 4990
 
 	cfg.Backup.Cloud.Provider = "r2"
 	cfg.Backup.LocalPath = "./backups"

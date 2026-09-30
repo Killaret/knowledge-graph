@@ -143,6 +143,33 @@ describe("Home Page State", () => {
     return (globalThis as unknown as { __TEST_HOME_PAGE: HomePageState }).__TEST_HOME_PAGE;
   }
 
+  it("UI-LOAD-1: exposes the notes list before the graph resolves", async () => {
+    let releaseGraph: ((v: any) => void) | null = null;
+    vi.mocked(loadGraph).mockImplementation((options: any) => {
+      // The loader hands the notes over as soon as they arrive — long before
+      // the graph promise settles.
+      options?.onNotesReady?.(mockNotes);
+      return new Promise((resolve) => {
+        releaseGraph = resolve;
+      });
+    });
+
+    const homePage = await getHomePage();
+
+    await waitFor(() => expect(homePage.allNotes.length).toBeGreaterThan(0));
+    await waitFor(() => expect(homePage.filteredNotes.length).toBeGreaterThan(0));
+    // The graph is still loading — but nothing blocks the notes anymore.
+    expect(homePage.loading).toBe(true);
+    expect(homePage.graphData.nodes).toHaveLength(0);
+
+    releaseGraph!({
+      graph: { nodes: [], links: [], hash: "hash1" },
+      notes: mockNotes,
+      knowledgeCore: null,
+    });
+    await waitFor(() => expect(homePage.loading).toBe(false));
+  });
+
   it("loads data and exposes state", async () => {
     const homePage = await getHomePage();
     await waitFor(() => expect(homePage.loading).toBe(false));

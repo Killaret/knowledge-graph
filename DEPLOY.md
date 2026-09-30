@@ -411,6 +411,8 @@ The NLP service runs **offline** (`HF_HUB_OFFLINE=1`) and reads the model from t
 
 Set `HF_CACHE_DIR` in `.env` to share one cache across clones and stacks (e.g. `HF_CACHE_DIR=D:/kg-hf-cache`) — the mount then survives clone cleanup; Docker prunes never touch it. Default keeps the per-clone `./huggingface_cache`.
 
+The production compose uses the named volume `nlp_hf_cache` instead of a host bind mount. Its first start runs with `HF_HUB_OFFLINE=0`, downloads only the JSON/tokenizer/model-safetensors files required by the service, and reuses them on later starts. The image itself never contains the model; the server therefore needs network access only while populating an empty volume.
+
 ### Option A — with internet
 
 Download the model through the same container:

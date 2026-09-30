@@ -46,7 +46,24 @@ describe("NoteCard", () => {
 
     const dateElement = screen.getByTestId("note-date");
     expect(dateElement).toBeInTheDocument();
-    expect(dateElement.textContent).toMatch(/Star lit:/);
+    // UI-QUICK-1: the label is "Created", not the cryptic "Star lit".
+    expect(dateElement.textContent).toMatch(/Created:/);
+    expect(dateElement.textContent).not.toMatch(/Star lit/);
+  });
+
+  it("shows a hover tooltip on the new/updated indicator dot", () => {
+    const fresh = new Date();
+    render(NoteCard, {
+      props: {
+        note: createNote({ created_at: fresh.toISOString(), updated_at: fresh.toISOString() }),
+      },
+    });
+
+    const dot = document.querySelector(".note-card__indicator");
+    expect(dot).toBeTruthy();
+    // A sighted user must see the meaning on hover — aria-label alone is invisible.
+    expect(dot?.getAttribute("title")).toBeTruthy();
+    expect(dot?.getAttribute("title")).toBe(dot?.getAttribute("aria-label"));
   });
 
   it("renders different note types with correct styling", () => {
@@ -115,6 +132,17 @@ describe("NoteCard", () => {
 
     const indicator = container.querySelector(".note-card__indicator--updated");
     expect(indicator).not.toBeInTheDocument();
+  });
+
+  it("hides created date when created_at is missing (UX-3)", () => {
+    const note = createNote({
+      created_at: undefined as unknown as string,
+      updated_at: undefined as unknown as string,
+    });
+    render(NoteCard, { props: { note } });
+
+    expect(screen.queryByTestId("note-date")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Created:/)).not.toBeInTheDocument();
   });
 
   it("renders dust style for quick-capture notes", () => {

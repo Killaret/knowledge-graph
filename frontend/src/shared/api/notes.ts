@@ -21,15 +21,25 @@ export interface Suggestion {
 }
 
 // Получить все заметки (GET /notes)
-// API возвращает { notes: Note[], total, limit, offset }
+// API возвращает { notes: Note[], total, limit, offset }.
+// Backend clamps `limit` to pagination.max_limit — read all pages so a corpus
+// larger than the cap is not silently truncated (NOTES-LIMIT-1).
 export async function getNotes(): Promise<Note[]> {
-  const response = await api
-    .get("v1/notes", {
-      searchParams: { limit: 10000 },
-      cache: "no-store",
-    })
-    .json<{ notes: Note[]; total: number; limit: number; offset: number }>();
-  return response.notes;
+  const pageSize = 10000;
+  const all: Note[] = [];
+  let total = Infinity;
+  while (all.length < total) {
+    const response = await api
+      .get("v1/notes", {
+        searchParams: { limit: pageSize, offset: all.length },
+        cache: "no-store",
+      })
+      .json<{ notes: Note[]; total: number; limit: number; offset: number }>();
+    all.push(...response.notes);
+    total = response.total;
+    if (response.notes.length === 0) break;
+  }
+  return all;
 }
 
 // Получить одну заметку по ID
@@ -78,9 +88,15 @@ export async function unpublishNote(id: string): Promise<Note> {
   return api.post(`v1/notes/${id}/unpublish`).json<Note>();
 }
 
-// Получить рекомендации для заметки (похожие по явным связям и эмбеддингам)
+// Получить рекомендации для заметки (похожие по явным связям и эмбеддингам).
+// The API answers { suggestions, generated_at } (note_handler.go
+// SuggestionsResponse); a bare array is accepted too.
 export async function getSuggestions(id: string, limit = 10): Promise<Suggestion[]> {
-  return api.get(`v1/notes/${id}/suggestions`, { searchParams: { limit } }).json();
+  const body = await api
+    .get(`v1/notes/${id}/suggestions`, { searchParams: { limit } })
+    .json<{ suggestions?: Suggestion[] | null } | Suggestion[]>();
+  if (Array.isArray(body)) return body;
+  return body?.suggestions ?? [];
 }
 
 // Search response type

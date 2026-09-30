@@ -3,7 +3,7 @@
 <div align="center">
 
 [![CI](https://github.com/Killaret/knowledge-graph/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/Killaret/knowledge-graph/actions/workflows/main.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
 ![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)
 ![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
@@ -316,7 +316,9 @@ cd frontend && npm run check    # svelte-check
 
 ## 📄 Лицензия
 
-MIT — см. [`LICENSE`](LICENSE).
+[PolyForm Noncommercial 1.0.0](LICENSE): личное и другое некоммерческое использование разрешено;
+продавать проект или предлагать его как платный сервис нельзя. Версии до коммита `bcd092e`
+включительно опубликованы под лицензией MIT.
 
 ---
 

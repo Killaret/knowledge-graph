@@ -10,17 +10,22 @@ package "Interface Layer" {
     [HTTP Handlers] as API
 }
 
+' Примечание (DOC-AUDIT-2): Command/Query Bus в коде отсутствуют —
+' HTTP-хэндлеры вызывают application-сервисы напрямую. «Event Bus» —
+' это Publisher в Redis канал graph:events, а не in-memory шина.
+
+package "Interface Layer" {
+    [HTTP Handlers\n(notehandler, linkhandler, ...)] as API
+}
+
 package "Application Layer" {
-    [Command Bus] as CmdBus
-    [Query Bus] as QryBus
-    [Command Handlers] as CmdH
-    [Query Handlers] as QryH
-    [Event Bus] as EvtBus
+    [Application Services\n(note, linkweight, recommendation,\nimport, draft, ...)] as AppSvc
+    [Events Publisher\n(Redis graph:events)] as EvtBus
 }
 
 package "Domain Layer" {
     [Note & Link Aggregates] as Agg
-    [Graph Service] as Graph
+    [TraversalService (BFS)] as Graph
     [Specifications] as Spec
 }
 
@@ -29,36 +34,26 @@ package "Infrastructure Layer" {
     [Redis Cache] as Cache
     [Asynq Worker] as Worker
     [NLP Client] as NLP
+    [Graph-Service Client\n(HTTP :9091)] as GClient
 }
 
 ' === Вертикальные связи ===
-API --> CmdBus : dispatch
-API --> QryBus : ask
+API --> AppSvc : call
 
-CmdBus --> CmdH : execute
-QryBus --> QryH : execute
+AppSvc --> Agg : use
+AppSvc --> EvtBus : publish
+AppSvc --> DB : save
+AppSvc --> NLP : call
+AppSvc --> Worker : enqueue
+AppSvc --> GClient : graph queries
 
-CmdH --> Agg : use
-CmdH --> EvtBus : publish
-CmdH --> DB : save
-CmdH --> NLP : call
-CmdH --> Worker : enqueue
-
-QryH --> Graph : use
-QryH --> Spec : use
-QryH --> DB : find
-QryH --> Cache : get/set
-
-EvtBus --> Worker : schedule
-
-' === Внутри Domain ===
 Graph --> Agg
 Spec --> Agg
 
 ' === Реализации (пунктир) ===
 DB ..> Agg : implements
-Worker ..> CmdH : processes
-NLP ..> CmdH : called
-Cache ..> QryH : caches
+Worker ..> AppSvc : processes tasks
+NLP ..> AppSvc : called
+Cache ..> AppSvc : caches
 
 @enduml

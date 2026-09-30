@@ -13,6 +13,7 @@ import (
 
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/outbox"
 	"knowledge-graph/internal/infrastructure/queue"
 
 	"github.com/redis/go-redis/v9"
@@ -51,7 +52,7 @@ func RunPostSteps(ctx context.Context, database *gorm.DB, cfg *config.Config, dr
 	}
 
 	// Collect all live notes once; both follow-up passes need them.
-	noteRepo := postgres.NewNoteRepository(database, nil)
+	noteRepo := outbox.NewNoteRepository(postgres.NewNoteRepository(database, nil), database)
 	notes, err := noteRepo.FindAll(ctx)
 	if err != nil {
 		log.Fatalf("failed to list notes: %v", err)
@@ -68,7 +69,7 @@ func RunPostSteps(ctx context.Context, database *gorm.DB, cfg *config.Config, dr
 		}
 		log.Printf("Would delete %d rows from note_recommendations and enqueue refresh for %d notes", recCount, len(notes))
 	} else {
-		taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled)
+		taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled, cfg.NLPQualityEnabled)
 		if err != nil {
 			log.Fatalf("Failed to create task queue client: %v", err)
 		}

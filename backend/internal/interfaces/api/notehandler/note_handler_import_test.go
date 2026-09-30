@@ -716,3 +716,11 @@ func TestImportBatch_MissingNoteTitle(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, all, 0)
 }
+
+func (q *stubTaskQueue) EnqueueNormalizeNote(ctx context.Context, noteID string) error {
+	return nil
+}
+
+func (q *stubTaskQueue) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
+	return nil
+}

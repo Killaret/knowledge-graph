@@ -48,6 +48,9 @@ type DeltaResponse struct {
 	AddedLinks   []*LayoutLink `json:"added_links,omitempty"`
 	RemovedLinks []*LayoutLink `json:"removed_links,omitempty"`
 	CurrentHash  string        `json:"current_hash,omitempty"`
+	// Resync tells the client its version is unknown to the server (snapshot
+	// expired or never stored) and the graph must be reloaded wholesale.
+	Resync bool `json:"resync,omitempty"`
 }
 
 func ComputeDelta(oldLayout, newLayout *LayoutResponse) *DeltaResponse {
@@ -94,7 +97,11 @@ func ComputeDelta(oldLayout, newLayout *LayoutResponse) *DeltaResponse {
 	addedLinks := make([]*LayoutLink, 0)
 	removedLinks := make([]*LayoutLink, 0)
 	for key, link := range newLinkMap {
-		if _, exists := oldLinkMap[key]; !exists {
+		old, exists := oldLinkMap[key]
+		// Same key but different fields (weight recalculated, source_type
+		// promoted) is reported as an add: clients apply added_links with
+		// set-semantics, so the newer link object replaces the old one.
+		if !exists || old.Weight != link.Weight || old.SourceType != link.SourceType || old.GammaOrigin != link.GammaOrigin {
 			addedLinks = append(addedLinks, link)
 		}
 	}

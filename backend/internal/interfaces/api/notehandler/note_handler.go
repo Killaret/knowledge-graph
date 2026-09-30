@@ -13,7 +13,6 @@ import (
 	"knowledge-graph/internal/application/achievement"
 	appcache "knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"
-	appevents "knowledge-graph/internal/application/events"
 	importer "knowledge-graph/internal/application/import"
 	graphQueries "knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
@@ -44,7 +43,14 @@ type Handler struct {
 	graphCache         *appcache.GraphCache
 	achievementService *achievement.Service
 	importSvc          *importer.Service
-	eventPublisher     appevents.Publisher
+
+	// NOTE-QUALITY-1 — installed by SetQuality; disabled = zero deps.
+	qualityEnabled bool
+	qualityReader  QualityReader
+	qualityEnq     QualityEnqueuer
+
+	// Re-fetch (NOTE-QUALITY-1 part 3) — installed by SetRefetch.
+	refetchExtractor RefetchExtractor
 }
 
 // SuggestionsResponse represents the response for recommendations
@@ -82,11 +88,6 @@ func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *g
 		achievementService: achievementService,
 		importSvc:          importSvc,
 	}
-}
-
-// SetEventPublisher sets the optional graph event publisher for cache invalidation.
-func (h *Handler) SetEventPublisher(p appevents.Publisher) {
-	h.eventPublisher = p
 }
 
 // SetLinkRepository sets the optional link repository used by batch/import handlers.
@@ -172,7 +173,7 @@ type importBatchNoteItem struct {
 type importBatchLinkItem struct {
 	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
 	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
-	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom parent child"`
+	LinkType     string                 `json:"link_type" binding:"omitempty,oneof=reference dependency related custom parent child"`
 	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
 	Metadata     map[string]interface{} `json:"metadata"`
 }
@@ -305,11 +306,6 @@ func (h *Handler) Create(c *gin.Context) {
 	}
 
 	// Notify graph-service cache invalidation subscribers
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteCreated(context.Background(), newNote.ID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
-		}
-	}
 
 	// Ставим задачи в очередь
 	log.Printf("taskQueue is nil? %v", h.taskQueue == nil)
@@ -321,6 +317,9 @@ func (h *Handler) Create(c *gin.Context) {
 		}
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("Failed to enqueue compute embedding: %v", err)
+		}
+		if err := h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID); err != nil {
+			log.Printf("Failed to enqueue normalize note: %v", err)
 		}
 		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), newNote.ID(), h.taskDelay); err != nil {
 			log.Printf("Failed to enqueue link weight recalculation: %v", err)
@@ -464,11 +463,6 @@ func buildImportNote(item importBatchNoteItem, userID *uuid.UUID) (*note.Note, [
 
 // postprocessCreatedNote runs the standard background pipeline for a single note.
 func (h *Handler) postprocessCreatedNote(c *gin.Context, n *note.Note) {
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteCreated(context.Background(), n.ID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
-		}
-	}
 
 	if h.taskQueue != nil {
 		noteID := n.ID().String()
@@ -477,6 +471,9 @@ func (h *Handler) postprocessCreatedNote(c *gin.Context, n *note.Note) {
 		}
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("[NoteHandler] Failed to enqueue compute embedding for batch: %v", err)
+		}
+		if err := h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue normalize note for batch: %v", err)
 		}
 		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), n.ID(), h.taskDelay); err != nil {
 			log.Printf("[NoteHandler] Failed to enqueue link weight recalculation for batch: %v", err)
@@ -663,7 +660,11 @@ func (h *Handler) ImportBatch(c *gin.Context) {
 				}
 			}
 
-			linkType, err := link.NewLinkType(item.LinkType)
+			rawType := item.LinkType
+			if rawType == "" {
+				rawType = "related"
+			}
+			linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(rawType))
 			if err != nil {
 				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "link_type", Reason: string(apicommon.ReasonInvalidValue), Message: err.Error()})
 				continue
@@ -699,12 +700,6 @@ func (h *Handler) ImportBatch(c *gin.Context) {
 				}
 				failedLinks = append(failedLinks, batchItemError{Index: i, Message: apicommon.MsgFailedSaveLink})
 				continue
-			}
-
-			if h.eventPublisher != nil {
-				if err := h.eventPublisher.PublishLinkCreated(context.Background(), newLink.SourceNoteID().String(), newLink.TargetNoteID().String(), getUserIDString(c)); err != nil {
-					log.Printf("[NoteHandler] Failed to publish LinkCreated event for batch: %v", err)
-				}
 			}
 
 			createdLinks = append(createdLinks, importBatchLinkResponse{
@@ -831,12 +826,6 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		return
 	}
 
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteCreated(context.Background(), newNote.ID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
-		}
-	}
-
 	if h.taskQueue != nil {
 		noteID := newNote.ID().String()
 		if err := h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10); err != nil {
@@ -844,6 +833,9 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		}
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("Failed to enqueue compute embedding: %v", err)
+		}
+		if err := h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID); err != nil {
+			log.Printf("Failed to enqueue normalize note: %v", err)
 		}
 		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), newNote.ID(), h.taskDelay); err != nil {
 			log.Printf("Failed to enqueue link weight recalculation: %v", err)
@@ -1168,16 +1160,11 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), existing.ID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteUpdated event: %v", err)
-		}
-	}
-
 	if textChanged && h.taskQueue != nil {
 		noteID := existing.ID().String()
 		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
 		_ = h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID)
+		_ = h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID)
 		_ = h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), existing.ID(), h.taskDelay)
 	}
 
@@ -1257,12 +1244,6 @@ func (h *Handler) setNotePublic(c *gin.Context, isPublic bool) {
 	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedUpdateNote)
 		return
-	}
-
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), existing.ID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteUpdated event for publish/unpublish: %v", err)
-		}
 	}
 
 	h.invalidateGraphServiceCaches(c.Request.Context(), userID.String(), id.String())
@@ -1349,9 +1330,10 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteDeleted event: %v", err)
+	// NLP-4 cascade: drop the note's nlp_artifacts (no-op when absent).
+	if h.taskQueue != nil {
+		if err := h.taskQueue.EnqueueNlpArtifactsCleanup(c.Request.Context(), id.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue artifacts cleanup: %v", err)
 		}
 	}
 
@@ -1421,11 +1403,10 @@ func (h *Handler) DeleteBatch(c *gin.Context) {
 		return
 	}
 
-	if h.eventPublisher != nil {
-		userID := getUserIDString(c)
+	if h.taskQueue != nil {
 		for _, id := range ids {
-			if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), userID); err != nil {
-				log.Printf("[NoteHandler] Failed to publish NoteDeleted event for batch: %v", err)
+			if err := h.taskQueue.EnqueueNlpArtifactsCleanup(c.Request.Context(), id.String()); err != nil {
+				log.Printf("[NoteHandler] Failed to enqueue artifacts cleanup for batch: %v", err)
 			}
 		}
 	}
@@ -1462,12 +1443,6 @@ func (h *Handler) Restore(c *gin.Context) {
 		}
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
 		return
-	}
-
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), id.String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteUpdated event for restore: %v", err)
-		}
 	}
 
 	// Invalidate graph cache for the user
@@ -1565,13 +1540,14 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 				GeneratedAt: recs[0].UpdatedAt,
 			}
 			for _, rec := range recs {
-				title := ""
-				if noteEntity, err := h.repo.FindByID(ctx, rec.RecommendedNoteID); err == nil && noteEntity != nil {
-					title = noteEntity.Title().String()
+				noteEntity, err := h.repo.FindByID(ctx, rec.RecommendedNoteID)
+				if err != nil || noteEntity == nil {
+					// Deleted or gone — never suggest a trashed note.
+					continue
 				}
 				suggestionsResp.Suggestions = append(suggestionsResp.Suggestions, Suggestion{
 					NoteID: rec.RecommendedNoteID.String(),
-					Title:  title,
+					Title:  noteEntity.Title().String(),
 					Score:  rec.Score,
 				})
 			}
@@ -1611,13 +1587,13 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		if err == nil && len(neighbors) > 0 {
 			suggestions := make([]Suggestion, 0, len(neighbors))
 			for _, n := range neighbors {
-				title := ""
-				if noteEntity, err := h.repo.FindByID(ctx, n.NoteID); err == nil && noteEntity != nil {
-					title = noteEntity.Title().String()
+				noteEntity, err := h.repo.FindByID(ctx, n.NoteID)
+				if err != nil || noteEntity == nil {
+					continue
 				}
 				suggestions = append(suggestions, Suggestion{
 					NoteID: n.NoteID.String(),
-					Title:  title,
+					Title:  noteEntity.Title().String(),
 					Score:  n.Score,
 				})
 			}
@@ -1637,9 +1613,19 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		if err == nil && cached != "" {
 			var suggestions []Suggestion
 			if err := json.Unmarshal([]byte(cached), &suggestions); err == nil {
+				// The cache predates deletions — drop entries whose note is
+				// trashed or gone rather than serve a stale suggestion.
+				live := make([]Suggestion, 0, len(suggestions))
+				for _, s := range suggestions {
+					if sid, err := uuid.Parse(s.NoteID); err == nil {
+						if n, err := h.repo.FindByID(ctx, sid); err == nil && n != nil {
+							live = append(live, s)
+						}
+					}
+				}
 				c.Header("X-Recommendations-Source", "redis")
 				c.Header("X-Recommendations-Stale", "true")
-				c.JSON(200, SuggestionsResponse{Suggestions: suggestions})
+				c.JSON(200, SuggestionsResponse{Suggestions: live})
 				h.enqueueRefreshWithDelay(noteID)
 				return
 			}

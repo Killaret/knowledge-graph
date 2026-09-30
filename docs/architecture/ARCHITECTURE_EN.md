@@ -14,8 +14,8 @@ The system is built on **Clean Architecture** with 4 layers:
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              PRESENTATION LAYER                               │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐ │
-│  │  HTTP API    │  │  WebSocket   │  │  Static      │  │  E2E Tests         │ │
-│  │  (Gin)       │  │  (optional)  │  │  (frontend)  │  │  (Cucumber)        │ │
+│  │  HTTP API    │  │  SSE/WS (¹)  │  │  Static      │  │  E2E Tests         │ │
+│  │  (Gin)       │  │              │  │  (frontend)  │  │  (Cucumber)        │ │
 │  └──────────────┘  └──────────────┘  └──────────────┘  └────────────────────┘ │
 │                              ↕ interfaces/api/                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -48,7 +48,8 @@ The system is built on **Clean Architecture** with 4 layers:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Redis and Private Graph Cache [see ADR 014](decisions/014-event-driven-cache-invalidation.md)
+(¹) Server-push channel — not implemented (DOC-AUDIT-2, 2026-09-26). ADR 014 prescribes SSE;
+tracked in SYNC-1 stage C. Updates currently reach the client via polling. [see ADR 014](decisions/014-event-driven-cache-invalidation.md)
 - Redis is used for caching user's private graph alongside existing tokens, sessions, and queue data.
 - Route `/api/v1/me/graph/cached` returns instant graph from Redis.
 - Route `/api/v1/me/graph/fresh` computes fresh graph and can return `delta` for incremental UI updates.
@@ -67,8 +68,13 @@ The system is built on **Clean Architecture** with 4 layers:
 | Command | File | Purpose | Port |
 |---------|------|---------|------|
 | `server` | `cmd/server/main.go` | HTTP API server | 8080 |
-| `worker` | `cmd/worker/main.go` | Background job processor | — |
-| `cli` | `cmd/cli/main.go` | Admin CLI | — |
+| `worker` | `cmd/worker/main.go` | Background job processor (Asynq + outbox relayer) | — |
+| `cli` | `cmd/cli/main.go` | Recommendation precomputation CLI | — |
+
+Auxiliary commands (not part of the running system): `seed`, `checkconfig`,
+`checkmigrations`, `rotate-api-keys`, and the recompute batch —
+`embed-recompute`, `keyword-recompute`, `quality-recompute`,
+`nlp-artifacts-recompute`, `gamma-links-regenerate`.
 
 #### 1.2 Domain Layer (`internal/domain/`)
 
@@ -131,36 +137,20 @@ type Condition struct {
 ```
 
 **Files:**
-- `entity.go` — Achievement and UserAchievement entities
+- `entity.go` — Achievement and UserAchievement entities + `Repository` interface
 - `engine.go` — Condition evaluation logic
-- `repository.go` — Repository interface
+- `model.go` — Condition/trigger model types
 
-##### Draft Domain (`domain/draft/`) [see ADR 011](decisions/011-drafts-autosave-mongodb.md)
+##### Draft Domain [see ADR 011](decisions/011-drafts-autosave-mongodb.md)
 
-```go
-type Draft struct {
-    id        uuid.UUID
-    noteID    *uuid.UUID   // Nullable for new notes
-    userID    uuid.UUID
-    tenantID  uuid.UUID
-    content   DraftContent // Rich text content
-    metadata  Metadata
-    createdAt time.Time
-    updatedAt time.Time
-    expiresAt time.Time    // TTL for automatic cleanup
-}
+Drafts live inside the note domain, not a separate `domain/draft/`:
 
-type DraftContent struct {
-    title   string
-    body    string
-    format  string // "markdown", "richtext"
-}
-```
-
-**Files:**
-- `entity.go` — Draft entity with TTL logic
-- `repository.go` — Repository interface (MongoDB implementation)
-- `service.go` — Autosave coordination service
+- `domain/note/draft.go` — `Draft` entity (`noteID`, `userID`, `content`, `title`, `DraftState`,
+  timestamps; TTL-based cleanup of abandoned drafts)
+- `domain/note/draft_repository.go` — repository interface
+- `application/draft/service.go` — autosave coordination service
+- `infrastructure/mongo/draft_repo.go` — MongoDB implementation
+- `interfaces/api/handlers/draft/` — HTTP handlers (`/notes/:id/draft`, `/drafts/:id/*`)
 
 ##### Graph Domain (`domain/graph/`)
 
@@ -174,7 +164,7 @@ type DraftContent struct {
 
 **Tests:**
 - `traversal_test.go` — Unit tests
-- `traversal_integration_test.go` — Integration tests
+- `graph_extra_test.go` — Additional unit tests (matcher wiring, weights)
 
 ##### Keyword Similarity Architecture
 
@@ -308,7 +298,7 @@ AggregateWeighted(graphScore, semanticScore, keywordScore, alpha, beta, gamma)
 
 **Migrations:**
 - `migrations.go` — Migration runner
-- `../../migrations/` — 27 SQL migration files
+- `../../migrations/` — 72 SQL migration files (36 pairs, up to `036`)
 
 ##### NLP Client (`infrastructure/nlp/`)
 
@@ -350,7 +340,8 @@ AggregateWeighted(graphScore, semanticScore, keywordScore, alpha, beta, gamma)
 
 #### 1.5 Interfaces (HTTP Handlers) (`internal/interfaces/api/`)
 
-**REST API Endpoints:**
+**REST API Endpoints** (registered in `backend/cmd/server/router.go`; the full surface also
+covers auth, users, settings, drafts, share, import, tags, backup, refetch, quality):
 
 ```
 GET    /health              → Health check
@@ -362,14 +353,18 @@ DELETE /notes/:id           → Delete note
 GET    /notes/:id/suggestions → Get recommendations
 GET    /notes/search        → Full-text search
 
-GET    /links               → List links
 POST   /links               → Create link
 GET    /links/:id           → Get link
 PUT    /links/:id           → Update link
 DELETE /links/:id           → Delete link
+GET    /notes/:id/links     → Links of a note
+DELETE /notes/:id/links     → Delete links of a note
 
-GET    /graph               → Get graph data (nodes + edges)
-GET    /graph/3d            → 3D graph data (hierarchical)
+GET    /notes/:id/graph     → Graph data rooted at a note (depth-limited)
+GET    /graph/public        → Public graph (no auth)
+GET    /graph/analytics     → Graph analytics
+GET    /me/graph/cached     → Private graph from Redis cache
+GET    /me/graph/fresh      → Private graph computed fresh (delta-capable)
 
 GET    /achievements        → List all achievements
 GET    /users/me/achievements → Get user's achievements
@@ -386,52 +381,53 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 
 | Route | File | Purpose |
 |-------|------|---------|
-| `/` | `+page.svelte` | Main page with note list |
-| `/graph` | `graph/+page.svelte` | 2D interactive graph (D3.js) |
+| `/` | `+page.svelte` | Main page: note list + graph cockpit |
+| `/auth/login` | `auth/login/+page.svelte` | Login |
+| `/auth/register` | `auth/register/+page.svelte` | Registration |
+| `/auth/forgot-password` | `auth/forgot-password/+page.svelte` | Password reset request |
+| `/auth/reset-password` | `auth/reset-password/+page.svelte` | Password reset |
+| `/auth/yandex/callback` | `auth/yandex/callback/+page.svelte` | Yandex OAuth callback |
+| `/graph` | `graph/+page.svelte` | 2D interactive graph (D3-force) |
 | `/graph/3d` | `graph/3d/+page.svelte` | 3D graph (Three.js) |
 | `/graph/3d/:id` | `graph/3d/[id]/+page.svelte` | 3D graph focused on note |
 | `/graph/:id` | `graph/[id]/+page.svelte` | 2D graph focused |
+| `/import` | `import/+page.svelte` | Import hub |
+| `/import/bookmarks` | `import/bookmarks/+page.svelte` | Bookmark import |
 | `/notes/:id` | `notes/[id]/+page.svelte` | View note |
 | `/notes/:id/edit` | `notes/[id]/edit/+page.svelte` | Edit note |
 | `/notes/new` | `notes/new/+page.svelte` | Create note |
+| `/profile` | `profile/+page.svelte` | User profile and settings |
 | `/search` | `search/+page.svelte` | Full-text search |
+| `/test/*` | `test/**` | Isolated component test pages |
 
-#### 2.2 Components (`src/components/`)
+#### 2.2 UI Structure (FSD layers)
 
-**Core Components (46 total):**
+The frontend follows Feature-Sliced Design; components are distributed across layers, not in a
+single flat folder:
 
-| Component | Technology | Purpose | Status |
-|-----------|------------|---------|--------|
-| `GraphCanvas.svelte` | D3.js | 2D force-directed graph | Active |
-| `Graph3D.svelte` | Three.js | 3D celestial visualization [see ADR 017](decisions/017-color-palette-redesign.md) | **Frozen** |
-| `LazyGraph3D.svelte` | dynamic import | Lazy loading 3D | **Frozen** |
-| `SmartGraph.svelte` | D3+Svelte | Adaptive graph (2D/3D) | 2D only |
-| `NoteCard.svelte` | Svelte | Note card | Active |
-| `NoteEditor.svelte` | Svelte | WYSIWYG editor | Active |
-| `NoteSidePanel.svelte` | Svelte | Side panel details | Active |
-| `CreateNoteModal.svelte` | Svelte | Create modal | Active |
-| `EditNoteModal.svelte` | Svelte | Edit modal | Active |
-| `SearchBar.svelte` | Svelte | Search bar | Active |
-| `Sidebar.svelte` | Svelte | Navigation | Active |
-| `FloatingControls.svelte` | Svelte | Floating control buttons | Active |
-| `BackButton.svelte` | Svelte | Back navigation | Active |
-| `ConfirmModal.svelte` | Svelte | Action confirmation | Active |
-| `Modal.svelte` | Svelte | Base modal | Active |
-| `Button.svelte` | Svelte | UI Button | Active |
-| `TypeSelector.svelte` | Svelte | Node type selector (star/planet/moon) | Active |
-| `ToastNotification.svelte` | Svelte | Ephemeral notifications with galactic mode support | Active |
-| `ApiErrorDisplay.svelte` | Svelte | Error display with lexicon integration | Active |
-| `ShareModal.svelte` | Svelte | Share modal with lexicon integration | Active |
+| Layer | Location | Holds |
+|-------|----------|-------|
+| `widgets/` | `src/widgets/` | `graph-canvas/` (`GraphCanvas.svelte`, `SmartGraph.svelte`), `graph-3d-viewer/`, `notes/` (`NoteCard.svelte`), `cosmic-cockpit/`, `search/`, `quick-capture/`, `notification/`, `auth/`, `floating-auth-panel/`, `confirm/` |
+| `features/` | `src/features/` | `graph-3d/` (Three.js engine — see 2.6), `home-page/`, `graph-interaction/`, `graph-forms/`, `graph-canvas/`, `graph-ui/`, `cosmic-cockpit/`, `cosmic-ui/`, `preload/` |
+| `entities/` | `src/entities/` | `note/`, `achievement/` (model + UI), `link/`, `user/`, `graph/`, `graph-canvas/`, `search/`, `shared/` |
+| `components/` | `src/components/` | Atomic design: `atoms/` (Button, Modal, IconButton, SplashScreen, ApiErrorDisplay…), `molecules/` (TypeSelector, TagSelector, NoteForm, GraphNodeContextMenu…), `organisms/` (NoteEditor, LoginForm, RegisterForm, ProfileEditor, PreloadIndicator…) |
 
 #### 2.3 API Client (`src/shared/api/`)
 
 | File | Purpose |
 |------|---------|
 | `client.ts` | ky instance configuration |
+| `auth.ts` | Auth API (login, register, OAuth) |
 | `notes.ts` | Notes API (CRUD + search + suggestions) |
 | `links.ts` | Links API |
-| `graph.ts` | Graph data API |
-| `achievements.ts` | Achievements API |
+| `graph.ts` | Graph data API (full, delta, resync flag) |
+| `import.ts` | Bookmark/batch import API |
+| `sharing.ts` | Share links and shared-note access |
+| `users.ts` | User profile/settings API |
+| `quality.ts` | Note quality API |
+| `errorMessage.ts` | API error → message mapping |
+
+Achievement data lives in `entities/achievement/model/achievement.ts`, not `shared/api/`.
 
 #### 2.4 Utilities (`src/shared/utils/`)
 
@@ -451,30 +447,31 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 
 | File | Purpose |
 |------|---------|
-| `auth.svelte.js` | Authentication state |
+| `auth.svelte.ts` | Authentication state |
+| `auth-session.svelte.ts` | Auth session handling |
+| `graph.svelte.ts` | Graph UI state (auto-links toggle and related flags) |
+| `graph-view.svelte.ts` | Graph view mode (personal / community) |
 | `lexicon-settings.ts` | Lexicon locale and mode settings |
-| `achievements.ts` | Achievement polling and notification state |
 
-#### 2.6 3D Engine (frozen/removed for v1.0)
+Achievement state lives in `entities/achievement/`; note list state in `entities/note/`.
 
-> **🚫 FROZEN FEATURE:** 3D graph functionality has been temporarily frozen for version 1.0 to improve stability and reduce maintenance overhead. See CHANGELOG.md for details.
+#### 2.6 3D Engine (`src/features/graph-3d/`)
 
-| File | Purpose | Status |
-|------|---------|--------|
-| `scene.ts` | Three.js scene setup | Frozen |
-| `camera.ts` | Camera controls | Frozen |
-| `renderer.ts` | WebGL renderer | Frozen |
-| `graph3d.ts` | 3D graph visualization logic | Frozen |
-| `celestial.ts` | Celestial body rendering (stars, planets) [see ADR 017](decisions/017-color-palette-redesign.md) | Frozen |
-| `controls.ts` | OrbitControls wrapper | Frozen |
-| `animation.ts` | Animation loop | Frozen |
-| `types.ts` | TypeScript types | Frozen |
+The 3D graph is **active** — rendered by `features/graph-3d/` behind the
+`widgets/graph-3d-viewer/` widget on `/graph/3d` and `/graph/3d/:id`. (This section earlier
+described an older removed module as "frozen"; the current engine was built separately.)
 
-#### 2.5 State Management (`src/shared/stores/`)
-
-- `notes.ts` — Svelte store for notes
-- `graph.ts` — Graph state store
-- `ui.ts` — UI state (modals, selection)
+| File | Purpose |
+|------|---------|
+| `lib/engine.ts` | Render engine: scene lifecycle, apply data, selection |
+| `lib/scene.ts` | Three.js scene setup |
+| `lib/camera.ts` | Camera controls |
+| `lib/labels.ts` | `LabelManager` — selective node labels |
+| `lib/links.ts`, `lib/nodes.ts` | Link and node rendering |
+| `lib/fog.ts` | Fog parameters |
+| `lib/simulation.ts` | Force layout in 3D space |
+| `model/layout-provider.ts` | Layout data provider |
+| `ui/Graph3DScene.svelte` | Scene component |
 
 ---
 
@@ -490,16 +487,24 @@ POST   /users/me/achievements/:id/mark-seen → Mark achievement notification as
 GET  /health              → {status, model_loaded, version}
 POST /extract_keywords    → ExtractKeywordsResponse
 POST /embed               → EmbedResponse
+POST /normalize           → NormalizeResponse (keyword normalization)
+POST /similarity          → SimilarityResponse (pairwise similarity)
 ```
 
 #### 3.2 Models (`app/models.py`)
 
 ```python
-ExtractKeywordsRequest:  {text: str, top_n: int}
-ExtractKeywordsResponse: {keywords: [{keyword, weight}]}
-EmbedRequest:          {text: str}
-EmbedResponse:         {embedding: float[]}
+ExtractKeywordsRequest:  {text: str, top_n: int, title: str}
+ExtractKeywordsResponse: {extractor, keywords: [{keyword, surface, weight}]}
+EmbedRequest:          {text: str, title: str}
+EmbedResponse:         {embedding: float[], chunks?: int, no_content?: bool}
 ```
+
+`chunks`/`no_content` are returned only when `EMBED_CHUNKING=on` (CHUNK-1):
+`app/core/chunking.py` splits the note into structure-aware chunks, the service
+encodes them in one batched call, and the document vector is the L2-normalized
+mean. The note title is injected into every chunk's model input. Off is the
+default and preserves the legacy single-encode behavior.
 
 #### 3.3 NLP Utils (`app/nlp_utils.py`)
 
@@ -535,10 +540,10 @@ EmbedResponse:         {embedding: float[]}
 notes          — Notes
 links          — Links between notes
 note_embeddings — Vectors (384 dim)
-keywords       — Keywords
+note_keywords  — Keywords
 tags           — Tags
 note_tags      — Many-to-many
-recommendations — Precomputed recommendations
+note_recommendations — Precomputed recommendations
 users          — Users
 ```
 
@@ -550,25 +555,29 @@ users          — Users
 
 #### 4.3 Docker Compose
 
-**Services (dev stack):**
-1. `postgres` — pgvector (port 5432)
-2. `redis` — Redis 7 (port 6379)
-3. `nlp` — Python service (port 5000)
-4. `backend` — Go API (port 8080)
-5. `worker` — Background worker
-6. `frontend` — SvelteKit (port 3000)
+**Services (dev stack, `docker-compose.yml`; host port → container port):**
+1. `postgres` — pgvector (15432→5432)
+2. `redis` — Redis 7 (16379→6379)
+3. `mongo` — MongoDB 7 (27017→27017) — drafts and NLP artifacts
+4. `nlp` — Python service (5000)
+5. `backend` — Go API (9000→8080)
+6. `graph-service` — Graph layout service (9090 gRPC, 9091 HTTP)
+7. `worker` — Background worker
+8. `frontend` — SvelteKit (internal 3000; no direct host port — served via nginx)
+9. `nginx` — Reverse proxy (18080→8080, 18081→8081)
 
-**Services (personal stack):**
-1. `postgres_personal` — pgvector (port 5433)
-2. `redis_personal` — Redis 7 (port 6380)
-3. `mongo_personal` — MongoDB 7 (port 27018) [see ADR 011](decisions/011-drafts-autosave-mongodb.md) — drafts
-4. `nlp` — Python service (port 5001)
-5. `graph-service-personal` — Graph service (port 9092) [see ADR 013](decisions/013-graph-service-isolation.md)
-6. `backend_personal` — Go API (port 8080)
+**Services (personal stack, `docker-compose.personal.yml`; host port → container port):**
+1. `postgres_personal` — pgvector (5433→5432)
+2. `redis_personal` — Redis 7 (16380→6379)
+3. `mongo_personal` — MongoDB 7 (27018→27017) [see ADR 011](decisions/011-drafts-autosave-mongodb.md) — drafts
+4. `nlp` — Python service (5001→5000)
+5. `graph-service-personal` — Graph service (9092→9091) [see ADR 013](decisions/013-graph-service-isolation.md)
+6. `backend_personal` — Go API (18085→8080)
 7. `worker_personal` — Background worker
-8. `nginx_personal` — Reverse proxy (ports 18082, 18084)
-9. `frontend_personal` — SvelteKit (port 3001)
-10. `backup_scheduler` — Automatic backup service
+8. `cli_personal` — Recommendation precomputation CLI
+9. `nginx_personal` — Reverse proxy (ports 18082, 18084)
+10. `frontend_personal` — SvelteKit (3001→3000)
+11. `backup_scheduler` — Automatic backup service
 
 #### 4.4 Backup Service
 
@@ -633,9 +642,10 @@ users          — Users
 
 **Environment Variables:**
 - `BACKUP_CLOUD_ENABLED` — Enable cloud backup
-- `BACKUP_YANDEX_TOKEN` — Yandex.Disk OAuth token
+- `BACKUP_YANDEX_OAUTH_TOKEN` — Yandex.Disk OAuth token
 - `BACKUP_YANDEX_FOLDER` — Folder on Yandex.Disk
-- `BACKUP_DIR` — Local backup folder
+- `BACKUP_DIR` — Local backup folder (container-side path, `/backups`)
+- `KG_BACKUP_DIR` — Host-side backup folder (required by `backup-personal.ps1`)
 - `CLEANUP_OLD_BACKUPS` — Cleanup old backups
 
 **More details:** [`docs/operations/BACKUP.md`](../operations/BACKUP.md)
@@ -644,41 +654,52 @@ users          — Users
 
 ## 🔄 Data Flow
 
-### Creating note with recommendations
+### Creating a note
 
 ```
 1. User creates note (Frontend)
-   ↓ POST /notes
-2. HTTP Handler receives request
+   ↓ POST /api/v1/notes
+2. Handler: notehandler.Create (interfaces/api/notehandler)
+   ├─ Validate input, build note.Note aggregate
+   └─ noteRepo.Save — wrapped by the transactional outbox decorator
+      ├─ INSERT INTO notes
+      └─ INSERT INTO graph_outbox (NoteCreated) — same transaction
    ↓
-3. Application Service: CreateNote
-   ├─ Validate input
-   ├─ Create Note aggregate
-   ├─ Save to PostgreSQL (note_repo)
-   └─ Enqueue task: recommendation:refresh
+3. Handler enqueues Asynq tasks (fire-and-forget):
+   ├─ extract_keywords   → NLP /extract_keywords → note_keywords
+   ├─ compute_embedding  → NLP /embed → note_embeddings (pgvector)
+   ├─ normalize_note     → NLP /normalize (quality guardrails)
+   ├─ recalculate_link_weights (delayed)
+   └─ refresh_recommendations for affected notes (delayed)
+   Plus: backup-on-change enqueue, graph cache invalidation
    ↓
 4. Response: 201 Created
    ↓
-5. Worker picks up task (async)
-   ├─ Call NLP: /extract_keywords
-   ├─ Call NLP: /embed
-   ├─ Save embedding to pgvector
-   ├─ Calculate recommendations
-   │  ├─ Vector similarity search
-   │  ├─ Keyword matching
-   │  └─ Graph traversal (BFS)
-   └─ Save recommendations
+5. Worker (infrastructure/queue/worker.go) executes the tasks;
+   embedding writes feed:
+   ├─ recommendation refresh → note_recommendations table
+   └─ gamma link generation → links (source_type='gamma')
+6. Relayer (infrastructure/outbox/relay.go) drains graph_outbox
+   → Redis Pub/Sub channel graph:events
+   → graph-service subscriber invalidates its caches
 ```
 
 ### Requesting recommendations
 
 ```
-GET /notes/:id/suggestions
+GET /api/v1/notes/:id/suggestions
    ↓
-Query Handler: GetSuggestions
-   ├─ Check precomputed recommendations
-   ├─ If stale/empty → trigger refresh
-   └─ Return top-N suggestions
+Handler: notehandler.GetSuggestions — ordered fallbacks,
+X-Recommendations-Source header reports which one answered:
+   1. note_recommendations table (source: table);
+      stale rows → background refresh enqueued
+   2. graph-service live suggestions (source: graph-service)
+   3. semantic neighbors via pgvector (source: semantic,
+      flag RecommendationFallbackSemanticEnabled)
+   4. Redis cache recommendations:<note_id> (source: redis,
+      flag RecommendationFallbackEnabled)
+   ↓ none → empty list
+Every step resolves the target note and skips deleted entries.
 ```
 
 ### Graph search
@@ -739,9 +760,9 @@ github.com/google/uuid          # UUID generation
 
 ```
 svelte                          # Framework
-@threlte/core                   # Three.js for Svelte
 three                           # 3D engine
-d3                              # 2D graph visualization
+d3-force                        # 2D graph layout
+d3-force-3d                     # 3D graph layout
 ky                              # HTTP client
 ```
 
@@ -763,9 +784,9 @@ nltk                            # English lemmatization + stopwords
 
 ```bash
 docker-compose up -d
-# Or:
-make dev
 ```
+
+(The `Makefile` has no `dev` target — only cleanup helpers; see `COMMANDS.md` for the real commands.)
 
 ### Production Considerations
 
@@ -788,7 +809,7 @@ make dev
 
 ## 📚 Additional Documentation
 
-- `API_ERRORS.md` — API errors and codes
+- `docs/api/API_ERRORS_EN.md` — API errors and codes
 - `ROADMAP.md` — Development plans (moved to project root)
 - `WEIGHTS_CALCULATION.md` — Link weight calculation logic
 - `docs/architecture/c4/` — C4 Model diagrams
@@ -814,10 +835,11 @@ cmd/
 └── cli    → infrastructure/db (migrations)
 
 interfaces/api/
-├── handlers/note.go     → application/graph, domain/note
-├── handlers/link.go     → domain/link
-├── handlers/graph.go    → application/graph
-└── handlers/search.go   → domain/note (Search)
+├── notehandler/    → application/* (note use cases), domain/note
+├── linkhandler/    → domain/link
+├── graphhandler/   → application/graph
+├── taghandler/     → domain/note (tags)
+└── handlers/*      → auth, user, settings, draft, share, backup, achievement
 
 application/graph/
 ├── composite_loader.go  → domain/graph, domain/note, domain/link
@@ -840,12 +862,14 @@ infrastructure/
 
 | Component | Files | Complexity |
 |-----------|-------|------------|
-| Domain | 19 | Low (business logic) |
-| Application | 10 | Medium (orchestration) |
-| Infrastructure | 38 | High (technical details) |
-| Interfaces | 16 | Medium (HTTP) |
-| Frontend | 46 | Medium (UI) |
-| NLP | 4 | Low (models) |
+| Domain | 35 | Low (business logic) |
+| Application | 23 | Medium (orchestration) |
+| Infrastructure | 69 | High (technical details) |
+| Interfaces | 27 | Medium (HTTP) |
+| Frontend | 89 | Medium (UI) |
+| NLP | 7 | Low (models) |
+
+*(Non-test `.go` files per layer; frontend counted as `.svelte` files; NLP as `.py` under `app/` — 2026-09-26.)*
 
 ---
 
@@ -859,7 +883,7 @@ Graph Service is an independent microservice responsible for computing 2D/3D gra
 
 The Graph Service consists of:
 
-- **API Layer**: gRPC server (port 9090) and HTTP fallback (port 9091) [see ADR 013](decisions/013-graph-service-isolation.md)
+- **API Layer**: HTTP API (port 9091 — the consumed interface) and gRPC server (port 9090 — implemented, currently without callers) [see ADR 013](decisions/013-graph-service-isolation.md)
 - **Layout Engine**: 2D circular and 3D spiral layout algorithms with delta computation
 - **Cache Layer**: Redis-backed caching with configurable TTL
 - **Data Layer**: Direct PostgreSQL read access (notes, links, embeddings)
@@ -867,7 +891,7 @@ The Graph Service consists of:
 
 ### API Contracts
 
-#### gRPC API (Primary) [see ADR 013](decisions/013-graph-service-isolation.md)
+#### gRPC API [see ADR 013](decisions/013-graph-service-isolation.md)
 
 ```protobuf
 service GraphService {
@@ -877,12 +901,20 @@ service GraphService {
 }
 ```
 
-#### HTTP Fallback (Secondary)
+> Note (DOC-AUDIT-2, 2026-09-26): the gRPC server listens on :9090 and honors this contract,
+> but **no client in the repository calls it** — backend and frontend use HTTP. The owner's
+> intent is gRPC as an *overload fallback*, not a parallel primary transport; recorded in
+> [`DOC-AUDIT-2`](../tasks/DOC-AUDIT-2-docs-vs-code.md) for decision.
+
+#### HTTP API (the interface actually consumed)
 
 ```
 GET /api/v1/graph/note/:id?depth=2&user_id={userId}
 GET /api/v1/graph/full?limit=1000&user_id={userId}
 GET /api/v1/graph/delta?last_hash={hash}&user_id={userId}
+GET /api/v1/graph/public
+GET /api/v1/graph/path
+GET /api/v1/graph/recommendations
 GET /health
 ```
 
@@ -899,13 +931,24 @@ Supported events: `NoteCreated`, `NoteUpdated`, `NoteDeleted`, `LinkCreated`, `L
 
 ### Caching Strategy
 
-- `layout:note:{noteId}:depth-{depth}` - Note neighborhood layout (30 min TTL)
-- `layout:full:{userId}` - Full user graph layout (30 min TTL)
-- `layout:delta:{userId}:{lastHash}` - Delta between versions (5 min TTL)
+All keys live under the `graph-service:` prefix:
+
+- `graph-service:full:{userId}` - Current full-layout pointer (5 min TTL). Events delete it.
+- `graph-service:snapshot:{userId}:{dataHash}` - Immutable snapshot of the layout served under a data hash (15 min TTL, `CACHE_SNAPSHOT_TTL_SECONDS`). Events must NOT delete snapshots: a snapshot is the baseline the delta is computed against — the version the client actually holds, not whatever is cached as current.
+- `graph-service:delta:{userId}:{lastHash}` - Cached delta response (1 min TTL).
+- `graph-service:note:{userId}:{noteId}:depth-{d}` - Note neighborhood layout (5 min TTL).
+
+### Delta Contract (SYNC-1)
+
+- The graph version (`meta.hash`, `X-Layout-Hash`, `current_hash`) is a hash of the **served data** — sorted note/link fields — never of the computed layout, so a layout recalculation alone cannot roll the version forward.
+- `GET /api/v1/graph/delta?last_hash={hash}` diffs the current data against the snapshot stored under `{hash}`. If no snapshot exists, the response is `{"resync": true}` and the client reloads the graph wholesale — it must never pretend the whole graph was added.
+- Removals are explicit (`removed_nodes`, `removed_links`); a link that keeps its key but changes fields (weight, source_type, gamma_origin) is re-sent in `added_links` and replaces the old entry on the client.
+- On gRPC the same contract applies; a missing snapshot is answered with `NotFound` instead of a JSON flag.
+- Event publication is transactional (SYNC-1 stage A2): `infrastructure/outbox` decorators wrap the note/link repositories and insert a `graph_outbox` row in the same transaction as the write, so a write and its event commit or roll back together. A relayer in `cmd/worker` drains unsent rows to `graph:events` with at-least-once delivery (`FOR UPDATE SKIP LOCKED`, batched); sent rows are purged after `OUTBOX_SENT_RETENTION_DAYS` (30 days). Manual publishing outside the relay is forbidden — `scripts/testing/check-graph-write-paths.mjs` fails the build on a manual `Publish*` call or a repository constructed without the outbox decorator.
 
 ### Direct PostgreSQL Reading
 
-Graph Service reads directly from PostgreSQL as the single source of truth, eliminating the need for an Outbox pattern while maintaining consistency through event-driven cache invalidation [see ADR 014](decisions/014-event-driven-cache-invalidation.md).
+Graph Service reads directly from PostgreSQL as the single source of truth, and delivery of change events is guaranteed by the transactional outbox above — direct reads do not replace the outbox because a read answers "what is" but cannot answer "what changed since the client's version" [see ADR 014](decisions/014-event-driven-cache-invalidation.md).
 
 ---
 

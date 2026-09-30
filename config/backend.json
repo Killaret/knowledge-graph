@@ -84,6 +84,11 @@
     "redis": {
       "flush_on_startup": false
     },
+    "outbox": {
+      "relay_interval_ms": 500,
+      "batch_size": 100,
+      "sent_retention_days": 30
+    },
     "auth": {
       "jwt_secret": "",
       "jwt_access_ttl_seconds": 900,

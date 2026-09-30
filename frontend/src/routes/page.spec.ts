@@ -5,6 +5,7 @@ import { getNotes, createNote, deleteNote, deleteNotesBatch, restoreNote } from 
 import { getGraphWithPreload } from "$features/preload/hooks/usePreloadedData";
 import { authState } from "$shared/stores/auth-session.svelte";
 import { graphView } from "$shared/stores/graph-view.svelte";
+import { graphStore } from "$shared/stores/graph.svelte";
 vi.mock("$shared/api/notes", () => ({
   getNotes: vi.fn(),
   createNote: vi.fn(),
@@ -208,5 +209,53 @@ describe("Page list view - undo toast", () => {
 
     const undoToast = document.querySelector(".undo-toast");
     expect(undoToast).toBeNull();
+  });
+});
+
+describe("UI-LOAD-1: no blocking overlay while the graph loads", () => {
+  const mockNote = {
+    id: "n1",
+    title: "Pending Graph Note",
+    content: "Body",
+    type: "star",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    metadata: {},
+  };
+
+  beforeEach(() => {
+    authState.currentUser = { id: "u1", login: "test", role: "user" } as any;
+    authState.accessToken = "test-token";
+    graphView.clear();
+    vi.mocked(getNotes).mockResolvedValue([mockNote]);
+    // The graph promise never settles inside the test window.
+    vi.mocked(getGraphWithPreload).mockReturnValue(new Promise(() => {}));
+  });
+
+  it("renders the notes list with no covering overlay while the graph is pending", async () => {
+    render(Page);
+
+    // At no point may a full-screen .loading-overlay exist.
+    expect(document.querySelector(".loading-overlay")).toBeNull();
+
+    const listButton = screen.getByTestId("view-toggle-list");
+    await fireEvent.click(listButton);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("note-title")).toHaveLength(1);
+    });
+    expect(document.querySelector(".loading-overlay")).toBeNull();
+  });
+
+  it("lets the user open a note while the graph is still loading", async () => {
+    render(Page);
+
+    const listButton = screen.getByTestId("view-toggle-list");
+    await fireEvent.click(listButton);
+    await waitFor(() => expect(screen.getAllByTestId("note-title")).toHaveLength(1));
+
+    await fireEvent.click(screen.getByTestId("note-title"));
+    expect(graphStore.selectedNodeId).toBe("n1");
+    expect(document.querySelector(".loading-overlay")).toBeNull();
   });
 });

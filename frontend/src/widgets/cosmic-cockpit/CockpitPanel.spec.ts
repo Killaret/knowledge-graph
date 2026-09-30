@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/svelte";
 import CockpitPanel from "./CockpitPanel.svelte";
-import { cockpitStore } from "$features/cosmic-cockpit";
+import { COCKPIT_CLOSE_DELAY, COCKPIT_EDGE_SIZE, cockpitStore } from "$features/cosmic-cockpit";
 
 vi.mock("$app/environment", () => ({
   browser: true,
@@ -125,6 +125,103 @@ describe("CockpitPanel", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  // UI-PANELS-1: visibility must not depend on the bare `hovering` flag —
+  // a cursor resting on the edge never makes the panel start sliding.
+  it("does not slide out on a bare hover (flicker guard)", () => {
+    render(CockpitPanel, { props: { position: "right", size: 300, title: "Right" } });
+
+    const panel = screen.getByTestId("cockpit-panel-right");
+    fireEvent.mouseEnter(panel);
+
+    // No time passed yet — the handle is still the only visible part.
+    expect(cockpitStore.panels.right.open).toBe(false);
+    expect(screen.getByTestId("cockpit-handle-right")).toBeInTheDocument();
+    expect(panel.style.getPropertyValue("--panel-visible")).toBe(`${COCKPIT_EDGE_SIZE}px`);
+  });
+
+  it("cancels the delayed open when the cursor leaves before the delay", () => {
+    render(CockpitPanel, { props: { position: "right", size: 300, title: "Right" } });
+
+    const panel = screen.getByTestId("cockpit-panel-right");
+    fireEvent.mouseEnter(panel);
+    vi.advanceTimersByTime(100);
+    fireEvent.mouseLeave(panel);
+
+    vi.advanceTimersByTime(1000);
+    expect(cockpitStore.panels.right.open).toBe(false);
+  });
+
+  it("ignores hover-open entirely when auto-collapse is off", () => {
+    cockpitStore.autoCollapse = false;
+    render(CockpitPanel, { props: { position: "right", size: 300, title: "Right" } });
+
+    const panel = screen.getByTestId("cockpit-panel-right");
+    fireEvent.mouseEnter(panel);
+    vi.advanceTimersByTime(1000);
+
+    expect(cockpitStore.panels.right.open).toBe(false);
+    expect(screen.getByTestId("cockpit-handle-right")).toBeInTheDocument();
+  });
+
+  it("stays open on mouse leave when auto-collapse is off", () => {
+    cockpitStore.autoCollapse = false;
+    cockpitStore.setPanel("right", { open: true });
+    render(CockpitPanel, { props: { position: "right", size: 300, title: "Right" } });
+
+    const panel = screen.getByTestId("cockpit-panel-right");
+    fireEvent.mouseEnter(panel);
+    fireEvent.mouseLeave(panel);
+    vi.advanceTimersByTime(2000);
+
+    expect(cockpitStore.panels.right.open).toBe(true);
+  });
+
+  it("does not hide while a dropdown inside the panel is open", () => {
+    cockpitStore.setPanel("right", { open: true });
+    render(CockpitPanel, { props: { position: "right", size: 300, title: "Right" } });
+
+    const panel = screen.getByTestId("cockpit-panel-right");
+    const dropdown = document.createElement("div");
+    dropdown.setAttribute("aria-expanded", "true");
+    panel.appendChild(dropdown);
+
+    fireEvent.mouseLeave(panel);
+    vi.advanceTimersByTime(2000);
+
+    expect(cockpitStore.panels.right.open).toBe(true);
+  });
+
+  it("does not hide while focus is inside the panel", () => {
+    cockpitStore.setPanel("right", { open: true });
+    render(CockpitPanel, { props: { position: "right", size: 300, title: "Right" } });
+
+    const panel = screen.getByTestId("cockpit-panel-right");
+    const input = document.createElement("input");
+    panel.appendChild(input);
+    input.focus();
+
+    fireEvent.mouseLeave(panel);
+    vi.advanceTimersByTime(2000);
+
+    expect(cockpitStore.panels.right.open).toBe(true);
+  });
+
+  it("closes after the dwell delay once the cursor leaves and nothing inside holds it", () => {
+    cockpitStore.setPanel("right", { open: true });
+    render(CockpitPanel, { props: { position: "right", size: 300, title: "Right" } });
+
+    const panel = screen.getByTestId("cockpit-panel-right");
+    fireEvent.mouseEnter(panel);
+    fireEvent.mouseLeave(panel);
+
+    // Not hidden at the old 350ms cadence — the dwell must be ~600ms.
+    vi.advanceTimersByTime(COCKPIT_CLOSE_DELAY - 250);
+    expect(cockpitStore.panels.right.open).toBe(true);
+
+    vi.advanceTimersByTime(400);
+    expect(cockpitStore.panels.right.open).toBe(false);
+  });
+
   it("opens the panel after the configured hover delay", () => {
     render(CockpitPanel, { props: { position: "right", size: 300, title: "Right" } });
 
@@ -210,5 +307,16 @@ describe("CockpitPanel", () => {
 
     const panel = container.querySelector('[data-testid="cockpit-panel-right"]') as HTMLElement;
     expect(panel?.getAttribute("style") ?? "").toContain("transition: none");
+  });
+
+  it("removes panel transitions when the OS prefers reduced motion", () => {
+    cockpitStore.setSystemReducedMotion(true);
+    const { container } = render(CockpitPanel, {
+      props: { position: "right", size: 300, title: "Right" },
+    });
+
+    const panel = container.querySelector('[data-testid="cockpit-panel-right"]') as HTMLElement;
+    expect(panel?.getAttribute("style") ?? "").toContain("transition: none");
+    cockpitStore.setSystemReducedMotion(false);
   });
 });

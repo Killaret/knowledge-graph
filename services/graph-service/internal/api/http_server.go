@@ -2,9 +2,12 @@ package api
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -89,6 +92,36 @@ func parseLayout(r *http.Request) string {
 	return "2d"
 }
 
+// computeDataHash is the graph version the client holds: it depends only on the
+// served data (sorted note/link fields), never on computed positions, so a
+// layout recalculation alone cannot roll the version forward.
+func computeDataHash(notes []*db.Note, links []*db.Link) string {
+	type nodeRec struct {
+		ID, Title, Type string
+	}
+	type linkRec struct {
+		ID, Source, Target, LinkType, SourceType string
+		Weight                                   float64
+		GammaOrigin                              bool
+	}
+	ns := make([]nodeRec, len(notes))
+	for i, n := range notes {
+		ns[i] = nodeRec{ID: n.ID, Title: n.Title, Type: n.Type}
+	}
+	sort.Slice(ns, func(i, j int) bool { return ns[i].ID < ns[j].ID })
+	ls := make([]linkRec, len(links))
+	for i, l := range links {
+		ls[i] = linkRec{ID: l.ID, Source: l.Source, Target: l.Target, LinkType: l.LinkType, Weight: l.Weight, SourceType: l.SourceType, GammaOrigin: l.GammaOrigin}
+	}
+	sort.Slice(ls, func(i, j int) bool { return ls[i].ID < ls[j].ID })
+	data, _ := json.Marshal(struct {
+		Nodes []nodeRec `json:"n"`
+		Links []linkRec `json:"l"`
+	}{ns, ls})
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
 // GetNoteGraphHandler handles GET /api/v1/graph/note/:id
 func (s *HTTPServer) GetNoteGraphHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -152,27 +185,42 @@ func (s *HTTPServer) GetNoteGraphHandler(w http.ResponseWriter, r *http.Request)
 	s.sendGraphData(w, layout, hash)
 }
 
+// resolveLimit resolves the effective node cap for a full-graph request.
+// The configured limit (GRAPH_FULL_LIMIT / graph_service.full_limit) is the
+// canonical size. Returns (effective limit, canonical):
+//   - absent or non-positive ?limit → the configured cap, canonical
+//   - ?limit below the cap → the requested limit, not canonical (a narrower
+//     answer must not read from or overwrite the shared layout cache)
+//   - ?limit above the cap → clamped to the cap, canonical
+func (s *HTTPServer) resolveLimit(raw string) (int, bool) {
+	if l, err := strconv.Atoi(raw); err == nil && l > 0 {
+		if s.limit > 0 && l > s.limit {
+			l = s.limit
+		}
+		return l, s.limit > 0 && l == s.limit
+	}
+	return s.limit, true
+}
+
 // GetFullGraphHandler handles GET /api/v1/graph/full with chunked transfer
 func (s *HTTPServer) GetFullGraphHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	startTime := time.Now()
 
-	limit := 0
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil {
-			limit = l
-		}
-	} else if s.limit > 0 {
-		limit = s.limit
-	}
+	// CONFIG-AUDIT-1: the configured cap is the canonical size — it is the only
+	// request shape allowed to read or write the shared layout cache. An
+	// explicit narrower limit gets a fresh, truncated answer without touching
+	// the cache (a limited page must not overwrite the snapshot deltas are
+	// computed against); a wider one is clamped to the cap.
+	limit, canonical := s.resolveLimit(r.URL.Query().Get("limit"))
 	nocache := r.URL.Query().Get("nocache") == "1" || r.URL.Query().Get("nocache") == "true"
 
 	filter := s.notesFilter(ctx)
 	cacheUserID := s.cacheUserID(ctx)
 
-	log.Printf("[GraphService] HTTP GetFullGraph: userID=%s, public=%v, limit=%d, nocache=%v", filter.UserID, filter.IsPublic, limit, nocache)
+	log.Printf("[GraphService] HTTP GetFullGraph: userID=%s, public=%v, limit=%d, canonical=%v, nocache=%v", filter.UserID, filter.IsPublic, limit, canonical, nocache)
 
-	if !nocache {
+	if canonical && !nocache {
 		if cached, hash, err := s.cache.LoadFullLayout(ctx, cacheUserID); err == nil && cached != nil {
 			log.Printf("[GraphService] Cache hit for full graph user=%s (took %v)", cacheUserID, time.Since(startTime))
 			s.sendGraphData(w, cached, hash)
@@ -205,10 +253,17 @@ func (s *HTTPServer) GetFullGraphHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	layout := engine.Layout3D(notes, links)
-	hash := computeLayoutHash(layout)
+	hash := computeDataHash(notes, links)
 
-	if err := s.cache.SaveFullLayout(ctx, cacheUserID, layout, hash); err != nil {
-		log.Printf("[GraphService] Failed to cache full layout: %v", err)
+	if canonical {
+		if err := s.cache.SaveFullLayout(ctx, cacheUserID, layout, hash); err != nil {
+			log.Printf("[GraphService] Failed to cache full layout: %v", err)
+		}
+		// The served layout becomes the snapshot future deltas are computed
+		// against — keyed by the data hash the client will send as last_hash.
+		if err := s.cache.SaveSnapshot(ctx, cacheUserID, hash, "3d", layout); err != nil {
+			log.Printf("[GraphService] Failed to save layout snapshot: %v", err)
+		}
 	}
 
 	log.Printf("[GraphService] GetFullGraph completed in %v", time.Since(startTime))
@@ -220,23 +275,16 @@ func (s *HTTPServer) GetPublicGraphHandler(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	startTime := time.Now()
 
-	limit := 0
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil {
-			limit = l
-		}
-	} else if s.limit > 0 {
-		limit = s.limit
-	}
+	limit, canonical := s.resolveLimit(r.URL.Query().Get("limit"))
 	layoutType := parseLayout(r)
 
 	nocache := r.URL.Query().Get("nocache") == "1" || r.URL.Query().Get("nocache") == "true"
 
 	filter := db.NotesFilter{IsPublic: true}
 
-	log.Printf("[GraphService] HTTP GetPublicGraph: limit=%d, layout=%s", limit, layoutType)
+	log.Printf("[GraphService] HTTP GetPublicGraph: limit=%d, canonical=%v, layout=%s", limit, canonical, layoutType)
 
-	if !nocache {
+	if canonical && !nocache {
 		if cached, hash, err := s.cache.LoadFullLayout(ctx, "public"); err == nil && cached != nil {
 			log.Printf("[GraphService] Cache hit for public graph (took %v)", time.Since(startTime))
 			s.sendGraphData(w, cached, hash)
@@ -274,10 +322,15 @@ func (s *HTTPServer) GetPublicGraphHandler(w http.ResponseWriter, r *http.Reques
 	} else {
 		layout = engine.Layout2D(notes, links, "")
 	}
-	hash := computeLayoutHash(layout)
+	hash := computeDataHash(notes, links)
 
-	if err := s.cache.SaveFullLayout(ctx, "public", layout, hash); err != nil {
-		log.Printf("[GraphService] Failed to cache public layout: %v", err)
+	if canonical {
+		if err := s.cache.SaveFullLayout(ctx, "public", layout, hash); err != nil {
+			log.Printf("[GraphService] Failed to cache public layout: %v", err)
+		}
+		if err := s.cache.SaveSnapshot(ctx, "public", hash, layoutType, layout); err != nil {
+			log.Printf("[GraphService] Failed to save public layout snapshot: %v", err)
+		}
 	}
 
 	log.Printf("[GraphService] GetPublicGraph completed in %v", time.Since(startTime))
@@ -300,6 +353,22 @@ func (s *HTTPServer) GetDeltaHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[GraphService] HTTP GetDelta: userID=%s, public=%v, lastHash=%s", filter.UserID, filter.IsPublic, lastHash)
 
+	// The delta is always computed against the snapshot the client actually
+	// holds (keyed by the data hash it sent) — never against whatever happens
+	// to be cached as the current full layout. Events clear the "full" pointer
+	// but must not clear snapshots.
+	snap, err := s.cache.LoadSnapshot(ctx, cacheUserID, lastHash)
+	if err != nil {
+		log.Printf("[GraphService] Failed to load snapshot %s: %v", lastHash, err)
+	}
+	if snap == nil || snap.Layout == nil {
+		// The client's version is unknown — resync instead of pretending
+		// the whole graph was added.
+		log.Printf("[GraphService] No snapshot for hash %s — answering resync", lastHash)
+		s.sendDeltaData(w, &engine.DeltaResponse{Resync: true})
+		return
+	}
+
 	if delta, err := s.cache.LoadDelta(ctx, cacheUserID, lastHash); err == nil && delta != nil {
 		log.Printf("[GraphService] Cache hit for delta (took %v)", time.Since(startTime))
 		s.sendDeltaData(w, delta)
@@ -312,26 +381,27 @@ func (s *HTTPServer) GetDeltaHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to load current layout", http.StatusInternalServerError)
 		return
 	}
+	currentHash := computeDataHash(notes, links)
 
-	current := engine.Layout3D(notes, links)
-	currentHash := computeLayoutHash(current)
-
-	oldLayout, _, err := s.cache.LoadFullLayout(ctx, cacheUserID)
-	if err != nil {
-		delta := &engine.DeltaResponse{
-			AddedNodes:  current.Nodes,
-			AddedLinks:  current.Links,
-			CurrentHash: currentHash,
-		}
-		s.sendDeltaData(w, delta)
-		return
+	// Positions in the delta are meaningful only in the same layout kind the
+	// client's snapshot was computed in.
+	var current *engine.LayoutResponse
+	if snap.LayoutKind == "2d" {
+		current = engine.Layout2D(notes, links, "")
+	} else {
+		current = engine.Layout3D(notes, links)
 	}
 
-	delta := engine.ComputeDelta(oldLayout, current)
+	delta := engine.ComputeDelta(snap.Layout, current)
 	delta.CurrentHash = currentHash
 
 	if err := s.cache.SaveDelta(ctx, cacheUserID, lastHash, delta); err != nil {
 		log.Printf("[GraphService] Warning: failed to cache delta: %v", err)
+	}
+	// Keep a snapshot under the new hash too: the client's next poll diffs
+	// against this version.
+	if err := s.cache.SaveSnapshot(ctx, cacheUserID, currentHash, snap.LayoutKind, current); err != nil {
+		log.Printf("[GraphService] Warning: failed to save layout snapshot: %v", err)
 	}
 	if err := s.cache.SaveFullLayout(ctx, cacheUserID, current, currentHash); err != nil {
 		log.Printf("[GraphService] Warning: failed to update full layout cache: %v", err)

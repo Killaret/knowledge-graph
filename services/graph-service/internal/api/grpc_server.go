@@ -122,21 +122,33 @@ func (s *graphService) GetFullLayout(req *graphservice.FullLayoutRequest, stream
 	}
 
 	ctx := stream.Context()
-	limit := req.Limit
 
+	// CONFIG-AUDIT-1: same rule as the HTTP handler — the configured cap is
+	// canonical; a narrower explicit limit bypasses the shared cache (read and
+	// write), a wider one is clamped.
+	limit := req.Limit
+	canonical := true
 	if limit <= 0 {
 		limit = int32(s.fullLimit)
+	} else {
+		if s.fullLimit > 0 && int(limit) > s.fullLimit {
+			limit = int32(s.fullLimit)
+		}
+		canonical = s.fullLimit > 0 && int(limit) == s.fullLimit
 	}
 
 	cacheUserID := s.grpcUserID(ctx, req.UserId)
 	filter := s.grpcFilter(ctx, req.UserId)
 
-	log.Printf("[GraphService] GetFullLayout: userID=%s, limit=%d", cacheUserID, limit)
+	log.Printf("[GraphService] GetFullLayout: userID=%s, limit=%d, canonical=%v", cacheUserID, limit, canonical)
 
-	// Try cache first
-	if cached, hash, err := s.cache.LoadFullLayout(ctx, cacheUserID); err == nil && cached != nil {
-		log.Printf("[GraphService] Cache hit for full layout: user=%s", cacheUserID)
-		return s.streamLayout(cached, hash, stream)
+	// Try cache first — only for the canonical size; a cached full layout would
+	// silently ignore a narrower requested limit.
+	if canonical {
+		if cached, hash, err := s.cache.LoadFullLayout(ctx, cacheUserID); err == nil && cached != nil {
+			log.Printf("[GraphService] Cache hit for full layout: user=%s", cacheUserID)
+			return s.streamLayout(cached, hash, stream)
+		}
 	}
 
 	// Load from database
@@ -153,11 +165,17 @@ func (s *graphService) GetFullLayout(req *graphservice.FullLayoutRequest, stream
 
 	// Generate layout
 	layout := engine.Layout3D(notes, links)
-	hash := computeLayoutHash(layout)
+	hash := computeDataHash(notes, links)
 
-	// Cache the result
-	if err := s.cache.SaveFullLayout(ctx, cacheUserID, layout, hash); err != nil {
-		log.Printf("[GraphService] Warning: failed to cache full layout: %v", err)
+	// Cache the result — only the canonical layout; a truncated one would
+	// poison the snapshot future deltas are computed against.
+	if canonical {
+		if err := s.cache.SaveFullLayout(ctx, cacheUserID, layout, hash); err != nil {
+			log.Printf("[GraphService] Warning: failed to cache full layout: %v", err)
+		}
+		if err := s.cache.SaveSnapshot(ctx, cacheUserID, hash, "3d", layout); err != nil {
+			log.Printf("[GraphService] Warning: failed to save layout snapshot: %v", err)
+		}
 	}
 
 	return s.streamLayout(layout, hash, stream)
@@ -228,6 +246,17 @@ func (s *graphService) GetDelta(ctx context.Context, req *graphservice.DeltaRequ
 
 	log.Printf("[GraphService] GetDelta: userID=%s, lastHash=%s", cacheUserID, lastHash)
 
+	// Delta is computed against the client's own snapshot — see the HTTP
+	// handler for the contract. No snapshot means the version is unknown:
+	// NotFound tells the caller to resync wholesale.
+	snap, err := s.cache.LoadSnapshot(ctx, cacheUserID, lastHash)
+	if err != nil {
+		log.Printf("[GraphService] Failed to load snapshot %s: %v", lastHash, err)
+	}
+	if snap == nil || snap.Layout == nil {
+		return nil, status.Error(codes.NotFound, "snapshot not found: resync required")
+	}
+
 	// Try to load delta from cache first
 	if delta, err := s.cache.LoadDelta(ctx, cacheUserID, lastHash); err == nil && delta != nil {
 		log.Printf("[GraphService] Cache hit for delta: %s", lastHash)
@@ -240,29 +269,25 @@ func (s *graphService) GetDelta(ctx context.Context, req *graphservice.DeltaRequ
 		log.Printf("[GraphService] Failed to load current layout: %v", err)
 		return nil, status.Errorf(codes.Internal, "failed to load current layout: %v", err)
 	}
+	currentHash := computeDataHash(notes, links)
 
-	current := engine.Layout3D(notes, links)
-	currentHash := computeLayoutHash(current)
-
-	// Load old layout for comparison
-	oldLayout, _, err := s.cache.LoadFullLayout(ctx, cacheUserID)
-	if err != nil {
-		log.Printf("[GraphService] Failed to load old layout for delta: %v", err)
-		// If no old layout, return everything as added
-		return &graphservice.DeltaResponse{
-			AddedNodes:  convertLayoutNodes(current.Nodes),
-			AddedLinks:  convertLayoutLinks(current.Links),
-			CurrentHash: currentHash,
-		}, nil
+	var current *engine.LayoutResponse
+	if snap.LayoutKind == "2d" {
+		current = engine.Layout2D(notes, links, "")
+	} else {
+		current = engine.Layout3D(notes, links)
 	}
 
 	// Compute delta
-	delta := engine.ComputeDelta(oldLayout, current)
+	delta := engine.ComputeDelta(snap.Layout, current)
 	delta.CurrentHash = currentHash
 
 	// Cache the delta
 	if err := s.cache.SaveDelta(ctx, cacheUserID, lastHash, delta); err != nil {
 		log.Printf("[GraphService] Warning: failed to cache delta: %v", err)
+	}
+	if err := s.cache.SaveSnapshot(ctx, cacheUserID, currentHash, snap.LayoutKind, current); err != nil {
+		log.Printf("[GraphService] Warning: failed to save layout snapshot: %v", err)
 	}
 
 	// Update cached full layout

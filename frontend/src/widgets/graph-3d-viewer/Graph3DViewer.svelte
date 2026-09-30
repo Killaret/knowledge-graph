@@ -3,6 +3,7 @@
   import { browser } from "$app/environment";
   import { fade } from "svelte/transition";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { LinkTypeLegend } from "$features/graph-ui";
   import { isWebGLAvailable } from "$shared/lib/webgl-detector";
   import type { GraphNode, GraphLink } from "$shared/api/graph";
   import type { Component } from "svelte";
@@ -120,6 +121,13 @@
       onError={handleError}
     />
   {/if}
+
+  {#if isStable}
+    <!-- UI-GRAPH-1: 3D uses the same link-type colors as 2D — show the key. -->
+    <div class="graph-3d-legend" data-testid="graph-3d-legend">
+      <LinkTypeLegend collapsible={true} />
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -186,5 +194,12 @@
 
   .error-content p {
     color: #94a3b8;
+  }
+
+  .graph-3d-legend {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 10;
   }
 </style>

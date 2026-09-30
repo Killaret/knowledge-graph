@@ -87,6 +87,9 @@ func (r *accessGuardNoteRepo) Save(ctx context.Context, n *note.Note) error { re
 func (r *accessGuardNoteRepo) FindByID(ctx context.Context, id uuid.UUID) (*note.Note, error) {
 	return r.note, nil
 }
+func (r *accessGuardNoteRepo) FindByIDIncludingDeleted(ctx context.Context, id uuid.UUID) (*note.Note, error) {
+	return r.note, nil
+}
 func (r *accessGuardNoteRepo) Delete(ctx context.Context, id uuid.UUID) error { return nil }
 func (r *accessGuardNoteRepo) DeleteBatch(ctx context.Context, ids []uuid.UUID) error {
 	return nil

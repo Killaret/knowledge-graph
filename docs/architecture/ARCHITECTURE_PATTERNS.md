@@ -16,10 +16,10 @@
 - Template Method / Middleware: unified response middleware, auth middleware, error mapping.
 
 ## 3. Технические практики
-- Безопасность: RLS, JWT с refresh/blacklist, role/permissions в claims.
+- Безопасность: JWT с refresh/revocation; role в claims (permissions — нет; RLS — не реализовано, см. DOC-AUDIT-2).
 - Тестируемость: table-driven tests, interface mocks, integration tests for repo layer.
-- Resilience: circuit breakers (sony/gobreaker) и retry policies.
-- Observability: мониторинг очередей, CB, и метрик производительности.
+- Resilience: retry policies (backup upload). Circuit breakers (sony/gobreaker) — не реализовано (DOC-AUDIT-2).
+- Observability: логирование очередей и метрик производительности.
 
 ## 4. Соглашения по кодовой базе
 - Именования конструктора: `NewX` и `ReconstructX` для восстановления из DB.

@@ -275,7 +275,11 @@ while [ ${#LINK_IDS[@]} -lt $LINK_COUNT ] && [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
     SOURCE_ID=${PUBLIC_NOTE_IDS[$SOURCE_INDEX]}
     TARGET_ID=${PUBLIC_NOTE_IDS[$TARGET_INDEX]}
 
-    if echo "$CREATED_PAIRS" | jq -e --arg k "$SOURCE_ID-$TARGET_ID" 'has($k)' >/dev/null 2>&1; then
+    # One edge per pair (decision 53): the backend answers 409 on the reversed
+    # pair too, so the dedupe key must be unordered.
+    PAIR_KEY=$(printf '%s\n%s\n' "$SOURCE_ID" "$TARGET_ID" | sort | paste -sd- -)
+
+    if echo "$CREATED_PAIRS" | jq -e --arg k "$PAIR_KEY" 'has($k)' >/dev/null 2>&1; then
         continue
     fi
 
@@ -298,7 +302,7 @@ while [ ${#LINK_IDS[@]} -lt $LINK_COUNT ] && [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
 
     if [ -n "$LINK_ID" ] && [ "$LINK_ID" != "null" ]; then
         LINK_IDS+=("$LINK_ID")
-        CREATED_PAIRS=$(echo "$CREATED_PAIRS" | jq --arg k "$SOURCE_ID-$TARGET_ID" '.[$k] = true')
+        CREATED_PAIRS=$(echo "$CREATED_PAIRS" | jq --arg k "$PAIR_KEY" '.[$k] = true')
         if [ $(( ${#LINK_IDS[@]} % 10 )) -eq 0 ]; then
             echo "  Created ${#LINK_IDS[@]} links..."
         fi

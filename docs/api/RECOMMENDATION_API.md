@@ -21,9 +21,10 @@ Accept: application/json
 
 1. **Precomputed recommendations** — fast read from `note_recommendations`
 2. **Freshness check** — compare `updated_at` of recommendations vs note
-3. **Fallback to semantic neighbors** — if precomputed unavailable
-4. **Fallback to Redis** — if semantic disabled
-5. **HTTP 202 Accepted** — if nothing available, triggers background calculation
+3. **Live graph analytics** — graph-service over HTTP, with an in-memory BFS fallback inside the backend
+4. **Fallback to semantic neighbors** — if precomputed/live unavailable
+5. **Fallback to Redis** — if semantic disabled or empty
+6. **HTTP 202 Accepted** — if nothing available, triggers background calculation
 
 ### Success Response (200 OK)
 
@@ -47,12 +48,15 @@ The response body is a flat list under `suggestions`. Each item has `note_id`, `
 ### Response Headers
 
 ```http
-X-Recommendations-Stale: true                 # Precomputed data is stale; a refresh was enqueued
-X-Recommendations-Source: semantic-fallback   # Result came from the pgvector semantic fallback
-X-Recommendations-Source: redis-fallback      # Result came from the Redis cache fallback
+X-Recommendations-Stale: true          # Set on every response that serves potentially stale data
+X-Recommendations-Source: table        # Precomputed note_recommendations rows
+X-Recommendations-Source: graph-service # Live BFS via graph-service (or in-memory fallback)
+X-Recommendations-Source: semantic     # pgvector semantic neighbors
+X-Recommendations-Source: redis        # Redis fallback cache
+X-Recommendations-Source: empty        # Nothing available → 202 with empty list
 ```
 
-No `X-Recommendations-Source` header is set when the result comes from the precomputed `note_recommendations` table.
+`X-Recommendations-Source` is always set — including on the `table` path and the `empty` 202 path.
 
 ### Pending Response (202 Accepted)
 

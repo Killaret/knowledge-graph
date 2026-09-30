@@ -1,7 +1,17 @@
-import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, cleanup, fireEvent } from "@testing-library/svelte";
 import { tick } from "svelte";
 import type { GraphDeltaData, GraphNode, GraphLink } from "$shared/api/graph";
+import { transformRawGraph } from "$shared/services/graphLoader";
+
+import { getGraphStyle, setGraphStyle } from "$entities/graph-canvas/lib/light/style";
+
+// Classic look: these tests describe the classic renderer and its geometry
+// (fit capped at 1:1, icon drawers). The light style (GRAPH-LIGHT-1) has its
+// own tests in entities/graph-canvas/lib/light.
+const styleBefore = getGraphStyle();
+beforeAll(() => setGraphStyle("classic"));
+afterAll(() => setGraphStyle(styleBefore));
 
 // Shared state for the d3-force mock
 const mockState = {
@@ -468,13 +478,27 @@ describe("GraphCanvas events", () => {
     expect(container.querySelector('[data-testid="link-form"]')).toBeFalsy();
   });
 
-  it("edits and deletes a hovered link", async () => {
+  it("preserves promoted-link provenance from graph response to delete callback", async () => {
     const onLinkEdit = vi.fn();
     const onLinkDelete = vi.fn();
+    const graph = transformRawGraph({
+      nodes: mockNodes as GraphNode[],
+      links: [
+        {
+          id: "promoted-link",
+          source: "1",
+          target: "2",
+          link_type: "reference",
+          weight: 0.8,
+          source_type: "user",
+          gamma_origin: true,
+        },
+      ],
+    });
     const { rerender, container } = renderResult;
     rerender({
       nodes: mockNodes as GraphNode[],
-      links: mockLinks as GraphLink[],
+      links: graph.links,
       onLinkEdit,
       onLinkDelete,
     });
@@ -527,6 +551,7 @@ describe("GraphCanvas events", () => {
         target: "2",
         link_type: "reference",
         source_type: "user",
+        gamma_origin: true,
       })
     );
   });

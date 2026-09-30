@@ -240,6 +240,18 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-tasks-index.mjs .
 
+      - name: Check DOC-AUDIT-2 register
+        working-directory: .
+        run: node scripts/testing/check-doc-audit-2-register.mjs .
+
+      - name: Check SPEC-AUDIT-1 register
+        working-directory: .
+        run: node scripts/testing/check-spec-audit-1-register.mjs .
+
+      - name: Check CONFIG registry
+        working-directory: .
+        run: node scripts/testing/check-config-registry.mjs .
+
       - name: Check board size
         working-directory: .
         run: node scripts/testing/check-board-size.mjs .
@@ -251,6 +263,18 @@ jobs:
       - name: Run board limits guard tests
         working-directory: .
         run: node scripts/testing/check-board-limits.test.mjs
+
+      - name: Check graph write paths
+        working-directory: .
+        run: node scripts/testing/check-graph-write-paths.mjs .
+
+      - name: Run graph write-path guard tests
+        working-directory: .
+        run: node scripts/testing/check-graph-write-paths.test.mjs
+
+      - name: Run test stack ownership guard tests
+        working-directory: .
+        run: node scripts/testing/check-test-stack-ownership.test.mjs
 
       - name: Run docker skip reason tests
         working-directory: .

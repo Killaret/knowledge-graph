@@ -135,6 +135,8 @@ go run ./cmd/embed-recompute       # Пересчёт эмбеддингов (-d
 go run ./cmd/keyword-recompute     # Пересчёт ключевых слов (те же флаги; NLP-2)
 go run ./cmd/gamma-links-regenerate # Пересоздание автосвязей (-dry-run; LINKS-1)
 #   ⚠ до LINKS-3 не запускать: пакетный подбор соседей выбирает наименьшие UUID, а не ближайших
+go run ./cmd/nlp-artifacts-recompute # Бэкфилл nlp_artifacts (-dry-run; NLP-4)
+go run ./cmd/quality-recompute      # Бэкфилл оценок качества (-dry-run, -export; NOTE-QUALITY-1)
 ```
 
 ### Тестирование
@@ -272,11 +274,11 @@ docker compose logs backend | grep ERROR
 
 ### Health checks
 ```bash
-# Backend health endpoint
-curl http://localhost:8080/health
+# Backend health endpoint (host-published port is 9000; 8080 is in-container)
+curl http://localhost:9000/health
 
-# NLP service health
-curl http://localhost:8000/health
+# NLP service health (host-published port is 5000)
+curl http://localhost:5000/health
 ```
 
 ### Database

@@ -105,9 +105,10 @@ The `/suggestions` endpoint returns `X-Recommendations-*` headers to indicate da
 | Header | Value | Meaning |
 |--------|-------|---------|
 | `X-Recommendations-Source` | `table` | Data from `note_recommendations` table (precomputed) |
+| `X-Recommendations-Source` | `graph-service` | Live analytics via graph-service / in-memory BFS |
 | `X-Recommendations-Source` | `semantic` | Fallback to pgvector semantic similarity |
 | `X-Recommendations-Source` | `redis` | Fallback to Redis cache |
-| `X-Recommendations-Source` | `empty` | No data available, background task triggered |
+| `X-Recommendations-Source` | `empty` | No data available, background task triggered (HTTP 202) |
 | `X-Recommendations-Stale` | `true` | Data may be outdated (fallback sources always stale) |
 
 **Note:** `X-Recommendations-Stale` is only set when data is stale or from fallback sources. Fresh precomputed data has no `Stale` header.
@@ -116,12 +117,13 @@ The `/suggestions` endpoint returns `X-Recommendations-*` headers to indicate da
 
 ### Current State (Transition Period)
 
-The `/suggestions` API currently has 4 fallback levels:
+The `/suggestions` API currently has 5 levels (see `note_handler.go` `GetSuggestions`):
 
 1. **Table `note_recommendations`** — precomputed data (target state)
-2. **Semantic fallback** — fast pgvector query (to be removed)
-3. **Redis cache** — old synchronous results (to be removed)
-4. **Empty list + 202 Accepted** — background computation triggered
+2. **Graph-service live** — `suggestionsHandler` (graph-service analytics / in-memory BFS); always active when the handler is wired
+3. **Semantic fallback** — pgvector query, gated by `RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED` (to be removed)
+4. **Redis cache** — old synchronous results, gated by `RECOMMENDATION_FALLBACK_ENABLED` (to be removed)
+5. **Empty list + 202 Accepted** — background computation triggered
 
 ### Target Architecture (Pure Precomputed)
 
@@ -140,14 +142,14 @@ The `/suggestions` API currently has 4 fallback levels:
 
 ```bash
 # .env file
-RECOMMENDATION_FALLBACK_ENABLED=false  # Disable all synchronous fallbacks
+RECOMMENDATION_FALLBACK_ENABLED=false          # Disables the Redis-cache fallback
+RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED=false # Disables the pgvector semantic fallback
 ```
 
-When `false`:
-- API reads **only** from `note_recommendations` table
-- No pgvector queries on request path
-- No Redis cache lookups for recommendations
-- New notes return empty list until worker completes
+When **both** are `false`:
+- API reads `note_recommendations`, then tries **graph-service live** (level 2 is not gated by these toggles), then returns `empty`/202
+- No pgvector queries and no Redis cache lookups on the request path
+- New notes return an empty list until the worker completes
 
 ### Pros and Cons
 

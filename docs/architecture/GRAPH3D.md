@@ -8,10 +8,10 @@ The 3D graph provides an alternative, spatial way to explore the note graph. It 
 
 ## User-facing behavior
 
-- A **3D** toggle is available in `FloatingControls` alongside **2D** and **List**.
+- A **3D** toggle is available in `GraphTopBar` (`features/graph-ui/GraphTopBar.svelte`) alongside **2D** and **List**.
 - Selecting **3D** on the home page renders `Graph3DViewer` inside the existing `fullscreen-graph` container.
 - The 3D view respects the same `FilterState` (type filter and search) as the 2D graph.
-- Clicking a node fires `onNodeClick` and opens the existing `NoteSidePanel` via `graphStore.selectedNodeId`.
+- Clicking a node fires `onNodeClick` and opens the note details panel (`CockpitNoteDetails`) via `graphStore.selectedNodeId`.
 - Double-clicking a node focuses the camera on it.
 - `/graph/3d` and `/graph/3d/[id]` render the full graph or a centered ego-network.
 
@@ -47,7 +47,7 @@ shared/
 ### Domain alignment
 
 - Node colors, emissive glow, and emoji come from `CelestialBody`.
-- Link colors and weights come from `LinkType`.
+- Manual link colors and weights come from `LinkType`; model-suggested (`source_type = "gamma"`) links use `AUTO_LINK_COLOR` (`#4ade80`) — a hue no manual type has — with brightness still following the weight (LINK-TYPES-1).
 - Node/link data flows through `filterValidLinks` from `$shared/utils/graphUtils`.
 
 ## Shared graph state
@@ -74,7 +74,7 @@ This means the 2D canvas, the 3D viewer, and the list view all consume the same 
 
 `createLayoutProvider(runtime: Graph3DRuntimeConfig)` selects the active provider at runtime based on `frontend.graph.3d.layout_provider` in `knowledge-graph.config.json`. Routes `/graph/3d` and `/graph/3d/[id]` use `toRuntimeConfig()` + `createLayoutProvider()` instead of hard-coding a provider.
 
-On the home page, `FloatingControls` exposes a **D3 ↔ Graph-service** layout provider toggle when the 3D view is active. The toggle re-fetches graph data through the selected provider and updates the 3D scene.
+On the home page, `GraphTopBar` exposes a **D3 ↔ Graph-service** layout provider toggle when the 3D view is active. The toggle re-fetches graph data through the selected provider and updates the 3D scene.
 
 The backend `graph-service` HTTP server supports `?layout=3d` on `GET /api/v1/graph/note/:id` and invokes `engine.Layout3D` when requested. 2D results are still cached; 3D results bypass the 2D cache key.
 
@@ -82,7 +82,7 @@ The backend `graph-service` HTTP server supports `?layout=3d` on `GET /api/v1/gr
 
 `$shared/api/graph.ts` always attempts the `graph-service` first. If it returns a 5xx, 408, 429, timeout, or network error, `getFullGraphData`/`getGraphData` transparently fall back to the main backend endpoints (`/api/v1/graph/public` and `/api/v1/notes/:id/graph`). The graph-service HTTP server supports `?layout=3d` on `GET /api/v1/graph/note/:id` and invokes `engine.Layout3D` when requested. 2D results are still cached; 3D results bypass the 2D cache key.
 
-`Graph3DEngine` detects when all nodes already carry `x/y/z` coordinates and shortens `warmStartTicks` from the default 80 to 10, preserving the service layout while still allowing a brief physical relaxation.
+`warmStartTicks` (default 80) is declared in `config.ts`/`model/types.ts` but is **not consumed by the engine** — the documented "shorten to 10 when nodes carry `x/y/z`" behaviour is not implemented (DOC-AUDIT-2; awaiting owner decision).
 
 ## Fog and performance presets
 
@@ -97,6 +97,11 @@ Named fog presets and FPS-based performance presets are implemented and driven b
 - `deep-space` — no fog.
 
 `applyFogPreset(scene, presetName, config)` returns `{ initial, final }` so `Graph3DEngine` can smoothly interpolate density as the graph settles. The default preset is configured via `frontend.graph.3d.fog.default_preset`.
+
+## Legend and dependency chains (LINK-TYPES-1)
+
+- `Graph3DViewer` embeds `LinkTypeLegend` — the same legend as the 2D canvas: manual link types plus a static "Auto link (model)" row.
+- Hovering a node (`pointermove` → `NodeManager.raycast`) that carries `dependency` links highlights the whole chain through it in both directions: `LinkManager.applyChainHighlight` brightens chain links (cycle members turn red `#ef4444`) and dims the rest to ~0.08, while `NodeManager.applyChainVisibility` scales instance colours by BFS depth. The walk is bounded by `frontend.graph.dependency_highlight_depth` (default 10) and recomputes when the cursor moves to another chain node.
 
 ## Performance presets
 
