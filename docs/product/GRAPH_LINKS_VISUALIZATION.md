@@ -71,13 +71,12 @@ const baseOpacity = 0.4 + (weight ?? 0.5) * 0.4;
 
 ### Direct vs Recommended
 
-> **Implementation status (DOC-AUDIT-2, 2026-09-28):** recommendations live in
-> `note_recommendations` and are **not drawn on the graph** — the canvas renders
-> only `links` rows (user links and confirmed/promoted gamma links, which are
-> already a different entity). Drawing recommendations as a third line kind is
-> planned work (owner decision 81, LINK-TYPES-1: pale dashed lines on hover).
+> **Implementation status (DOC-AUDIT-2, 2026-09-30):** recommendations live in
+> `note_recommendations` and **are drawn** — since GRAPH-LIGHT-1 (2026-09-29,
+> owner decision 81) they render as a third line kind: pale dotted lines shown
+> on hover in the default light look (`entities/graph-canvas/lib/light/recommendations.ts`).
 
-| Feature | Direct link | Recommendation (not rendered today) |
+| Feature | Direct link | Recommendation |
 |---------|-------------|----------------|
 | **Source** | `links` table | `note_recommendations` table |
 | **Creation** | Manual via UI/API | Worker / NLP service |

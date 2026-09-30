@@ -8,7 +8,13 @@ This document describes how authentication and authorization work in the `servic
 
 ## Authentication Mechanisms
 
-### 1. JWT Bearer Token (`Authorization: Bearer <token>`) and HttpOnly Cookie
+### 1. JWT Bearer Token (`Authorization: Bearer <token>`)
+
+> **Correction 2026-09-30 (DOC-AUDIT-2):** graph-service reads only the
+> `Authorization: Bearer` header (and `X-Internal-Auth` internally) —
+> `services/graph-service/internal/api/auth.go` (`authenticateRequest`). The
+> HttpOnly `access_token` cookie is a **backend** mechanism; the cookie is not
+> accepted by graph-service (see "Known Limitations" item 4).
 
 - Uses the same `JWT_SECRET` as the main backend.
 - Token must have `token_type: "access"`.

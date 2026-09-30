@@ -142,16 +142,20 @@ function checkToken(raw) {
 // would flag the findings themselves.
 const register = readFileSync(registerPath, "utf8");
 const bad = new Map(); // token -> line number
+const noLineRef = []; // rows whose verdict is «верно» but evidence lacks file:line
 let evidenceCol = -1;
+let verdictCol = -1;
 register.split("\n").forEach((line, i) => {
   if (!line.trimStart().startsWith("|")) {
     evidenceCol = -1;
+    verdictCol = -1;
     return;
   }
   const cells = line.split("|").slice(1, -1).map((c) => c.trim());
   const headerIdx = cells.findIndex((c) => c === "Доказательство");
   if (headerIdx >= 0) {
     evidenceCol = headerIdx;
+    verdictCol = cells.findIndex((c) => c === "Вердикт");
     return;
   }
   if (evidenceCol < 0 || cells.every((c) => /^-+$/.test(c))) return;
@@ -164,8 +168,18 @@ register.split("\n").forEach((line, i) => {
       if (miss && !bad.has(miss)) bad.set(miss, i + 1);
     }
   }
+  // Reviewer demand (2026-09-29): a «верно» verdict must cite `file:line`,
+  // not a package name or «соответствует».
+  const verdict = verdictCol >= 0 ? (cells[verdictCol] ?? "") : "";
+  // Plans, historical notes and contract descriptions have nothing in code
+  // to point at — forcing file:line there would fabricate evidence.
+  const noCodeClaim = /план|историч|контракт|иде|спека|проверяется конфигурацией/.test(verdict);
+  if (verdict.includes("верно") && !noCodeClaim && !/`[^\s`]+:\d+/.test(cell)) {
+    noLineRef.push(i + 1);
+  }
 });
 
+let failed = false;
 if (bad.size) {
   console.log(
     `DOC-AUDIT-2 register: ${bad.size} referenced path(s) do not exist:`,
@@ -173,8 +187,16 @@ if (bad.size) {
   for (const [tok, line] of bad) {
     console.log(`  - line ${line}: ${tok}`);
   }
-  process.exit(1);
+  failed = true;
 }
+if (noLineRef.length) {
+  console.log(
+    `DOC-AUDIT-2 register: ${noLineRef.length} «верно» row(s) lack file:line evidence:`,
+  );
+  for (const line of noLineRef) console.log(`  - line ${line}`);
+  failed = true;
+}
+if (failed) process.exit(1);
 console.log(
-  `DOC-AUDIT-2 register integrity OK: ${files.length} files indexed, all references resolve.`,
+  `DOC-AUDIT-2 register integrity OK: ${files.length} files indexed, all references resolve, all «верно» rows carry file:line evidence.`,
 );
