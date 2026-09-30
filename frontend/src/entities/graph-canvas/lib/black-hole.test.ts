@@ -11,6 +11,7 @@ import {
   isPointOverBlackHole,
   BLACK_HOLE_RADIUS,
   BLACK_HOLE_CATCH_RADIUS,
+  BLACK_HOLE_VISUAL_FACTOR,
   DEFAULT_LEGEND_WIDTH,
   DEFAULT_LEGEND_MARGIN,
   type LegendLayout,
@@ -128,10 +129,48 @@ describe("black-hole", () => {
       margin: DEFAULT_LEGEND_MARGIN,
     };
     updateBlackHolePosition(blackHole, 800, 600, legend);
-    expect(blackHole.x + blackHole.radius).toBeLessThan(
-      800 - DEFAULT_LEGEND_MARGIN - DEFAULT_LEGEND_WIDTH
-    );
-    expect(blackHole.y + blackHole.radius).toBeLessThan(600 - DEFAULT_LEGEND_MARGIN - 200);
+    // The accretion ring and hover pulse draw beyond `radius`; the whole
+    // visual glyph must clear the legend and stay inside the canvas (UX-3).
+    const extent = blackHole.radius * BLACK_HOLE_VISUAL_FACTOR;
+    expect(blackHole.x + extent).toBeLessThan(800 - DEFAULT_LEGEND_MARGIN - DEFAULT_LEGEND_WIDTH);
+    expect(blackHole.y - extent).toBeGreaterThanOrEqual(0);
+    expect(blackHole.y + extent).toBeLessThanOrEqual(600);
+  });
+
+  it("clears the legend by the full ring extent, not just the core (UX-3)", () => {
+    // Legend left edge sits between the core edge (752) and the ring edge
+    // (~773): the bare-radius overlap test sees nothing and never shifts,
+    // so the ring ends up tucked under the legend.
+    const blackHole = createBlackHole(800, 600);
+    const legend: LegendLayout = {
+      expanded: true,
+      width: 800 - 760 - DEFAULT_LEGEND_MARGIN, // left edge at x=760
+      height: 100,
+      margin: DEFAULT_LEGEND_MARGIN,
+    };
+    updateBlackHolePosition(blackHole, 800, 600, legend);
+    const extent = blackHole.radius * BLACK_HOLE_VISUAL_FACTOR;
+    expect(blackHole.x + extent).toBeLessThan(760);
+    expect(blackHole.y - extent).toBeGreaterThanOrEqual(0);
+  });
+
+  it("stays fully on the canvas next to a tall legend (UX-3)", () => {
+    // A tall legend yields a huge overlap; a shift proportional to it would
+    // push the hole off the top edge. The hole must slide left along the
+    // bottom instead.
+    const blackHole = createBlackHole(1280, 720);
+    const legend: LegendLayout = {
+      expanded: true,
+      width: 245,
+      height: 331,
+      margin: DEFAULT_LEGEND_MARGIN,
+    };
+    updateBlackHolePosition(blackHole, 1280, 720, legend);
+    const extent = blackHole.radius * BLACK_HOLE_VISUAL_FACTOR;
+    expect(blackHole.y - extent).toBeGreaterThanOrEqual(0);
+    expect(blackHole.y + extent).toBeLessThanOrEqual(720);
+    expect(blackHole.x + extent).toBeLessThan(1280 - 245 - DEFAULT_LEGEND_MARGIN);
+    expect(blackHole.x - extent).toBeGreaterThanOrEqual(0);
   });
 
   it("keeps the black hole in the corner when there is no legend", () => {

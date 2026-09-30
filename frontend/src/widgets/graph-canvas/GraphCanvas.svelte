@@ -328,19 +328,34 @@
     }
   }
 
-  /** UX-3: measure the link-type legend so the black hole can avoid it. */
-  function legendLayout(el: { getContainer(): HTMLDivElement | null } | null, collapsed: boolean) {
-    if (!el) return null;
-    const container = el.getContainer();
-    if (!container) return null;
-    const rect = container.getBoundingClientRect();
+  /** UX-3: cached legend size so the black hole can avoid it; measured by
+   * ResizeObserver instead of a forced layout read every animation frame. */
+  let legendSize: { width: number; height: number } | null = null;
+  function legendLayout(collapsed: boolean) {
+    if (!legendSize) return null;
     return {
       expanded: !collapsed,
-      width: rect.width || DEFAULT_LEGEND_WIDTH,
-      height: rect.height || 40,
+      width: legendSize.width || DEFAULT_LEGEND_WIDTH,
+      height: legendSize.height || 40,
       margin: DEFAULT_LEGEND_MARGIN,
     };
   }
+
+  $effect(() => {
+    // (Re)observe the legend container when it binds or toggles collapsed.
+    void legendCollapsed;
+    const container = legendEl?.getContainer() ?? null;
+    legendSize = null;
+    if (!container) return;
+    const measure = () => {
+      const rect = container.getBoundingClientRect();
+      legendSize = { width: rect.width, height: rect.height };
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
+  });
 
   // GRAPH-LIGHT-1: the hover focus fades in and out, and the camera flies to
   // a clicked note and back to where it was on a click into empty space.
@@ -555,6 +570,7 @@
     window.__graphCanvas = {
       getSimulationNodes: () => getSimulationNodes(simState),
       transform,
+      getBlackHole: () => blackHole,
     };
 
     // SSR-safe: получаем контекст canvas
@@ -569,7 +585,7 @@
     particleSystem = new ParticleSystem(nodes.length);
     blackHole = createBlackHole(width, height);
     blackHole.label = t("graph.blackHole.tooltip");
-    updateBlackHolePosition(blackHole, width, height, legendLayout(legendEl, legendCollapsed));
+    updateBlackHolePosition(blackHole, width, height, legendLayout(legendCollapsed));
     ghostNode = createGhostNode(width, height, nodes);
     gravitySystem = createGravitySystem();
 
@@ -673,7 +689,7 @@
 
       // Update interactive element positions, zoom scale, and pulses
       updateBlackHoleZoom(blackHole, transform.k);
-      updateBlackHolePosition(blackHole, width, height, legendLayout(legendEl, legendCollapsed));
+      updateBlackHolePosition(blackHole, width, height, legendLayout(legendCollapsed));
       updateBlackHolePulse(blackHole, animationTime);
       updateGhostNodeZoom(ghostNode, transform.k);
       updateGhostNodePosition(ghostNode, width, height, nodes);

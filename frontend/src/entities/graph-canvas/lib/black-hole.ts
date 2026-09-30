@@ -23,6 +23,11 @@ export const BLACK_HOLE_RADIUS = BASE_NODE_RADIUS * 3;
 const MIN_ZOOM_SCALE = 0.4;
 const MAX_ZOOM_SCALE = 3;
 
+/** The accretion ring is drawn at 1.2·radius and the hover pulse scales the
+ *  glyph by up to 1.2 more, so the hole occupies radius * 1.44 on screen;
+ *  positioning must clear neighbours by that full extent (UX-3). */
+export const BLACK_HOLE_VISUAL_FACTOR = 1.2 * 1.2;
+
 /** Default legend width used when measuring legend footprint with no real canvas. */
 export const DEFAULT_LEGEND_WIDTH = 260;
 /** Default margin between the legend and the canvas edge. */
@@ -66,21 +71,24 @@ export function updateBlackHolePosition(
   state.y = height - inset;
 
   // UX-3: keep the black hole clear of the expanded link-type legend in the
-  // same corner. When collapsed, the header still occupies some space.
+  // same corner. When collapsed, the header still occupies some space. The
+  // ring and hover pulse draw beyond `radius`, so the overlap test uses the
+  // full visual extent, not the bare radius. An overlapping hole slides left
+  // of the legend while staying on the bottom edge — a diagonal shift
+  // proportional to the overlap could push it off the top of the canvas.
   if (legend) {
+    const extent = state.radius * BLACK_HOLE_VISUAL_FACTOR;
     const legendFootprint = legend.expanded ? legend.height : 40;
     const legendLeft = width - legend.width - legend.margin;
     const legendTop = height - legendFootprint - legend.margin;
-    const holeLeft = state.x - state.radius;
-    const holeTop = state.y - state.radius;
-    const holeRight = holeLeft + state.radius * 2;
-    const holeBottom = holeTop + state.radius * 2;
+    const holeRight = state.x + extent;
+    const holeBottom = state.y + extent;
     const overlapX = Math.max(0, holeRight - legendLeft);
     const overlapY = Math.max(0, holeBottom - legendTop);
     if (overlapX > 0 && overlapY > 0) {
-      const shift = Math.max(overlapX, overlapY);
-      state.x = legendLeft - shift - state.radius - SERVICE_TOOL_MARGIN / 2;
-      state.y = legendTop - shift - state.radius - SERVICE_TOOL_MARGIN / 2;
+      const gap = SERVICE_TOOL_MARGIN / 2;
+      state.x = Math.max(extent + gap, legendLeft - extent - gap);
+      state.y = height - extent - gap;
     }
   }
 }

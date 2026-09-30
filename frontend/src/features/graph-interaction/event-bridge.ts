@@ -293,14 +293,6 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
       return;
     }
 
-    const hovered = findLinkAtPosition(
-      pos.x,
-      pos.y,
-      context.simState.simLinks,
-      getSimulationNodes(context.simState),
-      context.transform
-    );
-
     let foundHoveredNode = false;
     let hoveredTechnicalNode: SimulationNode | null = null;
     const simNodes = getSimulationNodes(context.simState);
@@ -323,6 +315,13 @@ export function createGraphEventBridge(context: GraphCanvasEventContext): GraphE
     if (!foundHoveredNode) {
       clearNodeHover();
     }
+
+    // UX-3: a node under the cursor wins over every link — including a
+    // foreign link passing through it — so link lookup runs only when the
+    // cursor is on empty space.
+    const hovered = foundHoveredNode
+      ? null
+      : findLinkAtPosition(pos.x, pos.y, context.simState.simLinks, simNodes, context.transform);
 
     if (hoveredTechnicalNode) {
       context.hotkeysState.helpTooltipMessage = "Click to open help, or press ?";

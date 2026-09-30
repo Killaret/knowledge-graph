@@ -188,6 +188,17 @@ describe("event-bridge", () => {
     expect(context.getHoveredLink()).not.toBeNull();
   });
 
+  it("does not schedule link hover over a node a foreign link passes through (UX-3)", () => {
+    // The n1—n2 segment runs straight through n3 at (100,10); hovering n3
+    // must show the node, not the foreign link's tooltip.
+    context.simState.simulation.nodes().push({ id: "n3", x: 100, y: 10, title: "C" });
+    bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 100, clientY: 10 }));
+    vi.advanceTimersByTime(150);
+
+    expect(context.getHoveredNodeId()).toBe("n3");
+    expect(context.getHoveredLink()).toBeNull();
+  });
+
   it("carries id and gamma_origin into the hovered link", () => {
     bridge.onMouseMove(new MouseEvent("mousemove", { clientX: 100, clientY: 10 }));
     vi.advanceTimersByTime(150);

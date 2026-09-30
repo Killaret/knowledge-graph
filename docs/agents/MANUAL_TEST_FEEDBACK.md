@@ -680,3 +680,11 @@ Create a new bullet under the right section with:
 - **Screenshot / Logs:** снимки у ревьюера; разбор — `docs/tasks/UX-3-review-findings.md`.
 - **Result:** NOTES-LIMIT-1 принято; UX-3 отклонено.
 
+
+## Verification
+
+- **Case:** UX-3 — black hole beside the expanded link-type legend, live check
+- **What:** Verified on the isolated test stack (SKIP_AUTH, 20 seeded notes) that with the "Link types" legend expanded the black hole glyph — core plus accretion ring — is fully inside the canvas and clear of the legend, and that dragging a note onto it still opens the delete confirmation and removes the node.
+- **Expected:** `hole.x ± radius × 1.44` within the canvas bounds and left of the legend; a dropped note triggers `confirm-modal-confirm` and the node count decreases.
+- **Actual:** All assertions hold (`frontend/tests/ux3-blackhole.spec.ts`, `chromium-skip-auth`, 2/2 passed). Fixed two defects: overlap now measured by the full visual extent (the bare-radius test let the ring tuck under the legend), and the overlap-proportional diagonal shift — which could push the hole off the canvas top on a tall legend — replaced by a slide left along the bottom edge.
+- **Screenshot / Logs:** `docs/agents/screenshots/ux-3/ux3-blackhole-legend.png`, `ux3-blackhole-drop.png`; `npx vitest run` — `black-hole.test.ts` 14/14, `event-bridge.test.ts` 27/27; mutations red: `extent=radius`, old diagonal shift, link search before node hit.
