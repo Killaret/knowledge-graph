@@ -191,3 +191,40 @@
    рядом с DOC-AUDIT-2).
 
 Новая выборка — на следующем ревью.
+
+## Ревью доработки 3 этапа A — Claude Code, 2026-09-30
+
+Доработка: Devin, `fd42449`. **Вердикт: этап A отклонён — по одной причине, и она не в реестре.** Сам реестр
+выдержал выборку 10 из 10: A-1.5 теперь называет «3D Graph - renders 3D view» (`visual-authenticated.spec.ts:144`),
+тест ждёт `data-test-stable="true"` у `data-testid="graph-3d-viewer"` — это тот самый элемент
+`Graph3DViewer.svelte:86-89`; SYNC-A.4 называет тест, который краснел на мутации ревью.
+
+### Блокер: шаг CI без строки в `core-checks.tsv`
+
+Коммит добавил шаг «Check SPEC-AUDIT-1 register» в `.github/workflows/_core-checks.yml`, но не добавил строку в
+`scripts/testing/core-checks.tsv`. Первая фаза `check-all.ps1` — «Core workflow sync» — красная: «Workflow-only
+steps: frontend-checks::Check SPEC-AUDIT-1 register». У соседнего сторожа DOC-AUDIT-2 есть и шаг, и строка —
+образец рядом. После починки этап принимается без новой выборки: эта засчитана.
+
+### Выборка — 10 из 21 строки «есть+тест» (зерно 20260930)
+
+| Строка | Мутация | Результат |
+|---|---|---|
+| UI-D.1 | верхняя полоса срабатывания вдвое шире | красная: «rejects pointer outside the top edge band» |
+| SYNC-A.4 | повторная загрузка не заменяет сохранённый граф | красная: «PUB-2 discards a private delta after public cache replaces its source» — названный тест |
+| E2E-C.4 | `graph-empty-state` переименован | красная: e2e «empty public graph shows empty state and no canvas controls» против dev-сервера из рабочего каталога |
+| SYNC-A.1 | неизвестный снимок отвечает пустой дельтой, а не `resync` | красная: `TestGetDeltaHandler_UnknownSnapshotAnswersResync` |
+| UI-D.4 | полный перезапуск вместо мягкого подогрева | красная: «reheats instead of restarting» |
+| SYNC-A2.1-5 | запись события в пяти методах заменена пустой функцией | все пять красные — мутации 29.09; код outbox с тех пор не менялся |
+| UI-D.3 | подписи ещё у пяти хабов | красные оба названных теста — 2D и 3D |
+| A-1.1 | неподвижный кадр рисуется дважды | красная: «renders exactly once when animation is disabled, before onReady fires» |
+| VIS-1.7 | поиск без входа теряет исключение из проверки JWT | красная: `TestJWTAuthSkipGETPaths/anonymous_GET_search` |
+| UX-2.1 | страница 500 не на весь экран | красная: «500 error page covers the full viewport» против dev-сервера |
+
+10 из 10.
+
+### Мелочь
+
+- E2E-C.4: в реестре место — `routes/+page.svelte`, а `graph-empty-state` стоит в `routes/graph/+page.svelte:444`.
+
+`check-all.ps1` на `17288b1`: 28 из 33 зелёные, `golangci-lint` пропущен (локально не установлен). Красные: «Core workflow sync» — шаг SPEC-AUDIT-1 в `_core-checks.yml` без строки в `core-checks.tsv` (`fd42449`); «Generated config sync» и юнит- и интеграционные тесты бэкенда — `TestNLP4Config` ждёт выключенный конвейер, `knowledge-graph.config.json` правлен мимо `config/` (`cb8a0a6`, MODEL-2).
