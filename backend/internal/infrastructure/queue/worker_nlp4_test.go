@@ -47,6 +47,7 @@ func (r *contentGuardRepo) DeleteBatch(ctx context.Context, ids []uuid.UUID) err
 type fakeNlpArtifactsStore struct {
 	currentHash      string
 	found            bool
+	current          *mongo.NlpArtifact
 	saved            []*mongo.NlpArtifact
 	savedWithHistory []bool
 	deleted          []uuid.UUID
@@ -54,6 +55,10 @@ type fakeNlpArtifactsStore struct {
 
 func (f *fakeNlpArtifactsStore) FindCurrentSourceHash(ctx context.Context, noteID uuid.UUID, pipelineVersion string) (string, bool, error) {
 	return f.currentHash, f.found, nil
+}
+
+func (f *fakeNlpArtifactsStore) FindCurrent(ctx context.Context, noteID uuid.UUID, pipelineVersion string) (*mongo.NlpArtifact, error) {
+	return f.current, nil
 }
 
 func (f *fakeNlpArtifactsStore) SaveCurrent(ctx context.Context, doc *mongo.NlpArtifact, historyEnabled bool) error {
@@ -289,4 +294,100 @@ func TestAsynqClient_NormalizeEnqueuedWhenEnabled(t *testing.T) {
 	var payload NormalizeNotePayload
 	require.NoError(t, json.Unmarshal(tasks[0].Payload, &payload))
 	assert.Equal(t, noteID, payload.NoteID)
+}
+
+// fakeEmbedEnqueuer records EnqueueComputeEmbedding calls.
+type fakeEmbedEnqueuer struct {
+	enqueued []string
+}
+
+func (f *fakeEmbedEnqueuer) EnqueueComputeEmbedding(ctx context.Context, noteID string) error {
+	f.enqueued = append(f.enqueued, noteID)
+	return nil
+}
+
+// MODEL-2 criterion 1: pipeline on → the vector is computed over the
+// artifact's normalized text; pipeline off → the previous raw-content path.
+func TestWorker_EmbedTextForNote(t *testing.T) {
+	n := newNlp4Note(t)
+	title, content := n.Title().String(), n.Content().String()
+	fresh := &mongo.NlpArtifact{
+		NoteID:         n.ID(),
+		SourceHash:     nlpArtifactsSourceHash(title, content),
+		NormalizedText: "cleaned text",
+	}
+	stale := &mongo.NlpArtifact{
+		NoteID:         n.ID(),
+		SourceHash:     "other-hash",
+		NormalizedText: "cleaned text",
+	}
+
+	for _, tt := range []struct {
+		name     string
+		pipeline bool
+		store    *fakeNlpArtifactsStore
+		want     string
+	}{
+		{"pipeline off keeps raw content", false, &fakeNlpArtifactsStore{current: fresh}, content},
+		{"pipeline on, fresh artifact → normalized", true, &fakeNlpArtifactsStore{current: fresh}, "cleaned text"},
+		{"pipeline on, stale artifact → raw", true, &fakeNlpArtifactsStore{current: stale}, content},
+		{"pipeline on, no artifact → raw", true, &fakeNlpArtifactsStore{}, content},
+		{"pipeline on, nil store → raw", true, nil, content},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var store NlpArtifactsStore
+			if tt.store != nil {
+				store = tt.store
+			}
+			w := NewWorker(nil, nil, nil, nil, nil, nil, nil, nil, 0, store, false, "")
+			if tt.pipeline {
+				w.UseNlpPipeline(&fakeEmbedEnqueuer{})
+			}
+			assert.Equal(t, tt.want, w.embedTextForNote(context.Background(), n.ID(), title, content))
+		})
+	}
+}
+
+// The stored artifact becomes the embedding source: after SaveCurrent the
+// handler enqueues a re-embed so a raw-content vector written earlier does
+// not survive the pipeline.
+func TestWorker_HandleNormalizeNote_EnqueuesReembed(t *testing.T) {
+	repo := new(mockNoteRepoForWorker)
+	n := newNlp4Note(t)
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+
+	normalizeCalls := 0
+	server := newNormalizeServer(t, &normalizeCalls)
+	defer server.Close()
+
+	store := &fakeNlpArtifactsStore{}
+	enq := &fakeEmbedEnqueuer{}
+	nlpClient := nlp.NewNLPClient(server.URL, nil, 0)
+	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, 0, store, false, "test-model")
+	w.UseNlpPipeline(enq)
+
+	payload, _ := json.Marshal(NormalizeNotePayload{NoteID: n.ID().String()})
+	require.NoError(t, w.HandleNormalizeNote(context.Background(), asynq.NewTask(TypeNormalizeNote, payload)))
+
+	require.Equal(t, []string{n.ID().String()}, enq.enqueued)
+	require.Len(t, store.saved, 1)
+}
+
+// Pipeline off: normalize writes the artifact but nothing is re-embedded.
+func TestWorker_HandleNormalizeNote_NoReembedWithoutPipeline(t *testing.T) {
+	repo := new(mockNoteRepoForWorker)
+	n := newNlp4Note(t)
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+
+	normalizeCalls := 0
+	server := newNormalizeServer(t, &normalizeCalls)
+	defer server.Close()
+
+	store := &fakeNlpArtifactsStore{}
+	nlpClient := nlp.NewNLPClient(server.URL, nil, 0)
+	w := NewWorker(repo, nil, nil, nlpClient, nil, nil, nil, nil, 0, store, false, "test-model")
+
+	payload, _ := json.Marshal(NormalizeNotePayload{NoteID: n.ID().String()})
+	require.NoError(t, w.HandleNormalizeNote(context.Background(), asynq.NewTask(TypeNormalizeNote, payload)))
+	require.Len(t, store.saved, 1)
 }

@@ -204,7 +204,8 @@ type Config struct {
 	NLPModelName  string
 
 	// NLP-4 normalization pipeline (artifacts in MongoDB; vectors untouched
-	// until MODEL-2). Pipeline=false means no nlp:normalize tasks at all.
+	// MODEL-2: on by default — embeddings are computed over nlp_artifacts
+	// normalized text. Pipeline=false means no nlp:normalize tasks at all.
 	NLPPipelineEnabled        bool
 	NLPHistoryEnabled         bool    // keep superseded artifact versions
 	NLPNormalizationMinCosine float64 // rollback guard, model-scale dependent

@@ -40,8 +40,15 @@ type RecommendationsEnqueuer interface {
 // production; fakes in tests). Nil store = pipeline storage unavailable.
 type NlpArtifactsStore interface {
 	FindCurrentSourceHash(ctx context.Context, noteID uuid.UUID, pipelineVersion string) (string, bool, error)
+	FindCurrent(ctx context.Context, noteID uuid.UUID, pipelineVersion string) (*mongo.NlpArtifact, error)
 	SaveCurrent(ctx context.Context, doc *mongo.NlpArtifact, historyEnabled bool) error
 	DeleteByNoteID(ctx context.Context, noteID uuid.UUID) (int64, error)
+}
+
+// EmbeddingEnqueuer schedules compute:embedding — used by HandleNormalizeNote
+// to re-embed the note once its artifact is fresh (MODEL-2).
+type EmbeddingEnqueuer interface {
+	EnqueueComputeEmbedding(ctx context.Context, noteID string) error
 }
 
 type Worker struct {
@@ -61,6 +68,17 @@ type Worker struct {
 	// NOTE-QUALITY-1: installed by UseQuality; nil = quality pass disabled.
 	qualityAssessor *appquality.Assessor
 	qualityEnq      QualityEnqueuer
+
+	// MODEL-2: installed by UseNlpPipeline; nil = embeddings keep using raw
+	// note content and normalize does not chain a re-embed.
+	embedEnq EmbeddingEnqueuer
+}
+
+// UseNlpPipeline turns on the MODEL-2 embedding source: compute:embedding
+// reads nlp_artifacts normalized text when it is fresh for the note, and
+// nlp:normalize enqueues a re-embed after storing a new artifact.
+func (w *Worker) UseNlpPipeline(enq EmbeddingEnqueuer) {
+	w.embedEnq = enq
 }
 
 // NlpPipelineVersion identifies the normalizer ruleset; bump on rule changes
@@ -200,7 +218,9 @@ func (w *Worker) HandleComputeEmbedding(ctx context.Context, t *asynq.Task) erro
 		return w.embeddingRepo.Delete(ctx, noteID)
 	}
 
-	embedding, err := w.nlpClient.Embed(ctx, content, title)
+	embedText := w.embedTextForNote(ctx, noteID, title, content)
+
+	embedding, err := w.nlpClient.Embed(ctx, embedText, title)
 	if err != nil {
 		log.Printf("HandleComputeEmbedding: failed to compute embedding: %v", err)
 		return fmt.Errorf("failed to compute embedding: %w", err)
@@ -288,6 +308,24 @@ func (w *Worker) HandleImportBookmarks(ctx context.Context, t *asynq.Task) error
 	return w.importSvc.ProcessImportTask(ctx, userID, p.TaskID, items)
 }
 
+// embedTextForNote returns the artifact's normalized text when the MODEL-2
+// pipeline is on and the artifact matches the note's current content; the raw
+// content otherwise. A missing store or read error falls back to raw.
+func (w *Worker) embedTextForNote(ctx context.Context, noteID uuid.UUID, title, content string) string {
+	if w.embedEnq == nil || w.artifactsStore == nil {
+		return content
+	}
+	artifact, err := w.artifactsStore.FindCurrent(ctx, noteID, NlpPipelineVersion)
+	if err != nil {
+		log.Printf("embedTextForNote: artifact read failed for %s, embedding raw text: %v", noteID, err)
+		return content
+	}
+	if artifact != nil && artifact.SourceHash == nlpArtifactsSourceHash(title, content) && artifact.NormalizedText != "" {
+		return artifact.NormalizedText
+	}
+	return content
+}
+
 // HandleNormalizeNote runs NLP-4 for one note: /normalize via the NLP
 // service, then the artifact lands in Mongo as the single current document
 // for (note_id, pipeline_version). Unchanged source_hash skips the call —
@@ -358,6 +396,15 @@ func (w *Worker) HandleNormalizeNote(ctx context.Context, t *asynq.Task) error {
 	}
 	log.Printf("HandleNormalizeNote: stored artifact for note %s (rolled_back=%v, chunks=%d)",
 		noteID, res.RolledBack, len(res.Chunks))
+
+	// MODEL-2: the stored artifact is now the embedding source — re-embed so
+	// the vector reflects the normalized text even when compute:embedding ran
+	// before this artifact existed. Best-effort: a queue error is logged.
+	if w.embedEnq != nil {
+		if err := w.embedEnq.EnqueueComputeEmbedding(ctx, noteID.String()); err != nil {
+			log.Printf("HandleNormalizeNote: failed to enqueue re-embed for %s: %v", noteID, err)
+		}
+	}
 	// NOTE-QUALITY-1: the artifact changed — a fresh assessment is due.
 	w.scheduleQuality(ctx, noteID)
 	return nil

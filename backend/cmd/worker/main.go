@@ -180,6 +180,12 @@ func main() {
 		gammaGen, queueClient, taskDelay,
 		artifactsStore, cfg.NLPHistoryEnabled, cfg.NLPModelName)
 
+	// MODEL-2: when the pipeline is on, embeddings are computed over the
+	// normalized nlp_artifacts text and normalize chains a re-embed.
+	if cfg.NLPPipelineEnabled {
+		worker.UseNlpPipeline(queueClient)
+	}
+
 	// NOTE-QUALITY-1: the assessor needs Mongo (quality_log + artifact
 	// stamps). Gated by nlp.quality.enabled — off means the handler no-ops
 	// and nothing is enqueued.

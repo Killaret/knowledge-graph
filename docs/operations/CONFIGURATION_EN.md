@@ -631,8 +631,8 @@ Used by `List` and `Search` endpoints for note pagination.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NLP_MODEL_NAME` | HuggingFace model name | `paraphrase-multilingual-MiniLM-L12-v2` |
-| `EMBED_CHUNKING` | Structural chunker in `/embed` and `_doc_vector` (CHUNK-1): `0` — legacy behaviour; `1` — chunks → one batched encode → mean + L2, note title injected into every chunk, response adds `chunks`/`no_content`. Enable only together with the model change (MODEL-2) | `0` |
-| `NLP_PIPELINE_ENABLED` | Normalization pipeline (NLP-4): enqueue `nlp:normalize` on note create/update/import so workers write `nlp_artifacts` to MongoDB. Vectors still use raw `notes.content` — activation waits for MODEL-2 | `false` |
+| `EMBED_CHUNKING` | Structural chunker in `/embed` and `_doc_vector` (CHUNK-1): `0` — legacy behaviour; `1` — chunks → one batched encode → mean + L2, note title injected into every chunk, response adds `chunks`/`no_content`. On by default since MODEL-2; turn off only together with `NLP_PIPELINE_ENABLED=false` | `1` |
+| `NLP_PIPELINE_ENABLED` | Normalization pipeline (NLP-4): enqueue `nlp:normalize` on note create/update/import so workers write `nlp_artifacts` to MongoDB. On by default since MODEL-2: `compute:embedding` vectors use the artifact normalized text | `true` |
 | `NLP_HISTORY_ENABLED` | Keep superseded `nlp_artifacts` versions; `false` deletes the previous document instead of marking it `superseded` | `true` |
 | `NLP_NORMALIZATION_MIN_COSINE` | Cosine rollback guard for `/normalize`: result rolled back to source when `cos(emb(result), emb(source))` is below this value. Model-scale dependent (measured on e5-base); recalibrated in MODEL-2. Values outside `(0, 1]` fall back to the default | `0.7` |
 | `NLP_QUALITY_ENABLED` | Note quality pipeline (NOTE-QUALITY-1 stage 1): enqueues `quality:assess` after `nlp:normalize` and after note enrichment tasks; enables `GET /api/v1/notes/{id}/quality` and `POST .../quality/assess`. `false` — nothing is enqueued, the API answers `{"enabled": false}` | `false` |
@@ -772,20 +772,20 @@ GRAPH_LINK_MAX_LIMIT=5000
 # Embedding
 EMBEDDING_SIMILARITY_LIMIT=30
 
-# NLP service (CHUNK-1): structural chunker switch, off by default.
+# NLP service (CHUNK-1): structural chunker switch, on since MODEL-2.
 # on — /embed chunks text, one batched encode, mean + L2 normalize,
 # note title injected into every chunk; response adds chunks/no_content.
-# Enable only together with the model change (MODEL-2).
-EMBED_CHUNKING=0
+# Turn off only together with NLP_PIPELINE_ENABLED=false.
+EMBED_CHUNKING=1
 
 # NLP-4 normalization pipeline (worker + backend):
 # NLP_PIPELINE_ENABLED — enqueue nlp:normalize on note create/update/import
-#   so workers store nlp_artifacts in MongoDB. Vectors still use raw
-#   notes.content; activation waits for MODEL-2.
+#   so workers store nlp_artifacts in MongoDB. On since MODEL-2: embeddings
+#   are computed over the artifact normalized text.
 # NLP_HISTORY_ENABLED — keep superseded nlp_artifacts versions.
 # NLP_NORMALIZATION_MIN_COSINE — cosine rollback guard for /normalize
 #   (e5-base scale, recalibrated in MODEL-2; values outside (0,1] fall back).
-NLP_PIPELINE_ENABLED=false
+NLP_PIPELINE_ENABLED=true
 NLP_HISTORY_ENABLED=true
 NLP_NORMALIZATION_MIN_COSINE=0.7
 

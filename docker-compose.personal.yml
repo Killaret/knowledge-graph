@@ -54,7 +54,7 @@ services:
       - "5001:5000"
     environment:
       - NLP_MODEL_NAME=${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
-      - EMBED_CHUNKING=${EMBED_CHUNKING:-0}
+      - EMBED_CHUNKING=${EMBED_CHUNKING:-1}
       - HF_HOME=/root/.cache/huggingface
       - HF_HUB_DISABLE_TELEMETRY=1
       - HF_HUB_OFFLINE=1
@@ -114,7 +114,7 @@ services:
       REDIS_FLUSH_ON_STARTUP: "false"
       NLP_SERVICE_URL: http://nlp-personal:5000
       NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
-      NLP_PIPELINE_ENABLED: ${NLP_PIPELINE_ENABLED:-false}
+      NLP_PIPELINE_ENABLED: ${NLP_PIPELINE_ENABLED:-true}
       NLP_QUALITY_ENABLED: ${NLP_QUALITY_ENABLED:-false}
       APP_ENV: development
       SKIP_AUTH: ${SKIP_AUTH:-false}
@@ -156,7 +156,7 @@ services:
       NLP_MODEL_NAME: ${NLP_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
       MONGO_URL: mongodb://mongo_personal:27017
       MONGO_DATABASE: ${PERSONAL_MONGO_DATABASE:-knowledge_personal}
-      NLP_PIPELINE_ENABLED: ${NLP_PIPELINE_ENABLED:-false}
+      NLP_PIPELINE_ENABLED: ${NLP_PIPELINE_ENABLED:-true}
       NLP_QUALITY_ENABLED: ${NLP_QUALITY_ENABLED:-false}
       NLP_HISTORY_ENABLED: ${NLP_HISTORY_ENABLED:-true}
       NLP_NORMALIZATION_MIN_COSINE: ${NLP_NORMALIZATION_MIN_COSINE:-0.7}

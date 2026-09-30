@@ -102,3 +102,37 @@
   (0.90–0.95). Для D — 0.65 при покрытии 0.42.
 - «Не менять модель» — законный исход: D уже на готовом конвейере,
   прирост над A измерен, стоимость миграции ноль.
+
+---
+
+## Включение конвейера (Devin, 2026-09-30)
+
+Пункт 1 постановки — конвейер включён по умолчанию:
+
+- `HandleComputeEmbedding` считает вектор по `nlp_artifacts.NormalizedText`,
+  когда конвейер включён (`UseNlpPipeline`, гейт `NLP_PIPELINE_ENABLED`) и
+  артефакт свежий — `source_hash` совпадает с текущими title+content
+  (`worker.go`, `embedTextForNote`). Устаревший/отсутствующий артефакт →
+  прежний путь по сырому тексту.
+- `HandleNormalizeNote` после сохранения артефакта ставит `compute:embedding` —
+  вектор не может остаться от сырого текста: embed перед normalize сначала
+  пишет сырой, затем normalize ставит повторный embed поверх артефакта.
+- Дефолты: `EMBED_CHUNKING=1` и `NLP_PIPELINE_ENABLED=true` в `.env.example`,
+  всех compose-файлах и `knowledge-graph.config.json` (`nlp.pipeline.enabled`).
+  `NLP_HISTORY_ENABLED`, модель и `vector(384)` не менялись.
+- Выключатель цел: `NLP_PIPELINE_ENABLED=false` возвращает старое поведение —
+  тест `pipeline off keeps raw content` (`worker_nlp4_test.go`).
+
+Тесты: `TestWorker_EmbedTextForNote` (5 кейсов — off/fresh/stale/missing/nil),
+`TestWorker_HandleNormalizeNote_EnqueuesReembed` и `…_NoReembedWithoutPipeline`
+(цепочка normalize→embed только при включённом конвейере). Пакет queue зелёный.
+
+Риски и что осталось за владельцем/стендом (критерии 2 и 4 постановки):
+
+- `NLP_NORMALIZATION_MIN_COSINE=0.7` калиброван на шкале e5-base; на текущей
+  MiniLM косинусы в среднем выше — откаты маловероятны, но замер нормализации
+  на живом корпусе покажет фактическую долю `rolled_back`.
+- Один пересчёт: `nlp-artifacts-recompute` (заполняет артефакты), затем
+  `embed-recompute` (вектора по нормализованному тексту), затем
+  `gamma-links-regenerate`. Прогон на Personal-стеке — операция владельца;
+  разметка ~25 пар «было → стало» — тоже.
