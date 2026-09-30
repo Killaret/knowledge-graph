@@ -191,6 +191,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | NOTE-QUALITY-1-quality-loop.md | не начат |
 | NOTE-QUALITY-1-review-findings.md | не начат |
 | NOTES-LIMIT-1-notes-list-cap.md | не начат |
+| NOTES-LIMIT-1-review-findings.md | разбор — пагинация `getNotes` до `total`, граф без фильтров не теряет узлы |
 | NOTE-TYPES-1-type-taxonomy-review.md | не начат |
 | NOTE-TYPE-TAXONOMY.md | не начат |
 | PROMISES-1-user-promises.md | не начат |

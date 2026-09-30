@@ -94,6 +94,10 @@ export class FilterState {
   ): GraphData {
     if (!graphData.nodes.length) return graphData;
 
+    // NOTES-LIMIT-1: with no filter selected the graph must not drop nodes
+    // whose notes are absent from the list (e.g. beyond a page cap).
+    if (!this.isTypeActive && !this.isSearchActive) return graphData;
+
     const allowedIds = new Set(
       allNotes
         .filter((n) => this.matchesType(n, getNoteType) && this.matchesSearch(n))

@@ -44,6 +44,41 @@ describe("notes API", () => {
 
       expect(result).toEqual([mockNote]);
     });
+
+    // NOTES-LIMIT-1: backend clamps limit to max_limit — getNotes must page
+    // until total, not return the first page.
+    it("should fetch all pages when total exceeds the first page", async () => {
+      const page1 = { ...mockNote, id: "1" };
+      const page2 = { ...mockNote, id: "2" };
+      const page3 = { ...mockNote, id: "3" };
+      const pages: Record<string, Note[]> = { "0": [page1, page2], "2": [page3] };
+
+      server.use(
+        http.get("http://localhost:8080/api/v1/notes", ({ request }) => {
+          const offset = new URL(request.url).searchParams.get("offset") ?? "0";
+          const notes = pages[offset] ?? [];
+          return HttpResponse.json({ notes, total: 3, limit: 2, offset: Number(offset) });
+        })
+      );
+
+      const result = await getNotes();
+
+      expect(result.map((n) => n.id)).toEqual(["1", "2", "3"]);
+    });
+
+    it("should stop when a page comes back empty", async () => {
+      server.use(
+        http.get("http://localhost:8080/api/v1/notes", ({ request }) => {
+          const offset = Number(new URL(request.url).searchParams.get("offset") ?? "0");
+          const notes = offset === 0 ? [mockNote] : [];
+          return HttpResponse.json({ notes, total: 5, limit: 300, offset });
+        })
+      );
+
+      const result = await getNotes();
+
+      expect(result).toHaveLength(1);
+    });
   });
 
   describe("getNote", () => {
