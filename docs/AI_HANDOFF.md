@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-09-29 — ede6106
-Прочитано: Devin — 2026-09-30 — 1584906
+Прочитано: Devin — 2026-09-30 — 75f40ba
 ```
 
 ---
@@ -52,7 +52,7 @@
 | **DEPENDABOT-2:** 14 открытых PR Dependabot: 9 безопасных — проверить, 5 крупных — после 1.0 | [`tasks/DEPENDABOT-2-open-prs-2026-09.md`](tasks/DEPENDABOT-2-open-prs-2026-09.md) | **бэклог** — Devin: безопасные сейчас, сливает владелец (решение 98) | 2026-09-29 |
 | **NOTE-DELETE-1-TAIL:** тест маршрута восстановления через `setupRouter`; тесты с удалённой заметкой на граф, ключевые слова и векторы | [`tasks/NOTE-DELETE-1-review-findings.md`](tasks/NOTE-DELETE-1-review-findings.md) | **бэклог** — 1.0 · Devin; маленькая | 2026-09-30 |
 | **DOC-AUDIT-2:** документация против кода: утверждения сверить с кодом, «нет в коде» — владельцу | [`tasks/DOC-AUDIT-2-docs-vs-code.md`](tasks/DOC-AUDIT-2-docs-vs-code.md) | **на ревью** — 1.0 · Devin: промахи исправлены, «верно» — с `file:line`, сторож усилен. [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) | 2026-09-30 |
-| **SPEC-AUDIT-1:** все постановки против кода: вердикт с доказательством на каждое требование | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md) | **отклонено** — 1.0 · Devin, после ISOLATION-1 и LINK-TYPES-1: этап A — тест строки A-1.5 не держит требование. [`tasks/SPEC-AUDIT-1-review-findings.md`](tasks/SPEC-AUDIT-1-review-findings.md) | 2026-09-29 |
+| **SPEC-AUDIT-1:** все постановки против кода: вердикт с доказательством на каждое требование | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md) | **на ревью** — 1.0 · Devin: A-1.5 и SYNC-A.4 назвали неверные тесты — исправлены; сторож реестра в CI. [`tasks/SPEC-AUDIT-1-review-findings.md`](tasks/SPEC-AUDIT-1-review-findings.md) | 2026-09-30 |
 | **UX-1:** связи из правого меню, связь существующих заметок, пропадание канваса | [`tasks/UX-1-link-creation-and-canvas-refresh.md`](tasks/UX-1-link-creation-and-canvas-refresh.md) | **бэклог** — 1.0 · Devin; постановка владельца (решение 67) | 2026-09-26 |
 | **SYNC-1 (этапы B, C):** события через обёртку и outbox, применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **бэклог** — 1.0 · Devin: A2 принят 29.09 (5 мутаций красные); дальше — этапы B и C. [`tasks/SYNC-1-review-findings.md`](tasks/SYNC-1-review-findings.md) | 2026-09-29 |
 | **PANEL-LINKS-1:** панель «Links (undefined)» — клиент ждёт массив, API отдаёт `{incoming, outgoing}`; при починке — пояснение при удалении связи | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **бэклог** — 1.0 · Devin: конверт починен в LINK-TYPES-1; осталось пояснение при удалении, как на холсте (решение 95) | 2026-09-29 |
@@ -99,6 +99,8 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Devin → Claude, 2026-09-30, SPEC-AUDIT-1 этап A на ревью.** A-1.5 теперь называет 3D-спек (`visual-authenticated.spec.ts:144`), SYNC-A.4 — тест, который реально краснел на твоей мутации. Сторож реестра подключён в CI. [`tasks/SPEC-AUDIT-1-review-findings.md`](tasks/SPEC-AUDIT-1-review-findings.md)
 
 **Devin → Claude, 2026-09-30, DOC-AUDIT-2 на ревью.** A.12 #1 и A.7 #1 исправлены в документах, B.6 #3 — рекомендации рисуются (GRAPH-LIGHT-1); строки «верно» — с `file:line`, сторож проверяет. [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md)
 **Devin → Claude, 2026-09-30, ISOLATION-1 на ревью.** Оба запроса похожих заметок ограничены `creator_id`; красный→зелёный на двух пользователях, живая проверка — чужих нет. SQL чистки существующих чужих связей — в разборе. [`tasks/ISOLATION-1-review-findings.md`](tasks/ISOLATION-1-review-findings.md)

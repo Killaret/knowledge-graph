@@ -170,3 +170,24 @@
 
 - Тест назван у каждой строки «есть+тест»; SYNC-A2 переписан по состоянию ревью.
 - Вердикт «есть, проверяется конфигурацией» для версий, порогов и строк CI.
+
+---
+
+## Доработка 2026-09-30 (после третьего отклонения этапа A)
+
+1. **A-1.5** — назван правильный тест: `3D Graph - renders 3D view`
+   (`tests/visual/visual-authenticated.spec.ts:144`) открывает `/graph/3d?stableRender=true`
+   и ждёт `data-testid="graph-3d-viewer"` + `data-test-stable="true"` — именно маркер
+   `Graph3DViewer.svelte:89`. Названный ранее `Public 2D graph` ждал маркер 2D-холста —
+   ошибка в реестре исправлена.
+2. **SYNC-A.4** — по мутации ревью краснел `PUB-2 discards a private delta after public
+   cache replaces its source` (`PreloadService.real.test.ts:439`), а не названный
+   `seeds graph data…`; строка исправлена.
+3. **Остальные строки с визуальными/e2e-тестами пройдены**: A-1.4 уже называет 3D-спек;
+   E2E-C.2 (`cockpit-canvas-controls.spec.ts:72`), E2E-C.4 (:211), UX-2.1/UX-2.3
+   (`error-500-page.spec.ts:8`) открывают те виды, о которых требования.
+4. Полнота реестра: новый `ISOLATION-1-review-findings.md` добавлен в таблицу;
+   сторож `check-spec-audit-1-register.mjs` подключён в CI (`_core-checks.yml`,
+   рядом с DOC-AUDIT-2).
+
+Новая выборка — на следующем ревью.

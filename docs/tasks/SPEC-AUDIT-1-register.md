@@ -60,7 +60,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | A-1.2 | В `disableAnimation`-ветке рендер после `simulateToStable`, затем `finishLoading` | есть+тест | `engine.ts:150-156`; тот же тест `renders exactly once when animation is disabled…` (`engine.performance.test.ts:166`) — onReady вызывается один раз после покраски |
 | A-1.3 | `finishLoading` после рендера кадра, а не до | есть+тест | `engine.ts:212-228` (renderOnce :223 → finishLoading :228); тот же тест `engine.performance.test.ts:166` — комментарий :178 фиксирует контракт «onReady = кадр покрашен» |
 | A-1.4 | Признак теста — URL-параметр `stableRender`, не `process.env.VITEST` | есть+тест | `widgets/graph-3d-viewer/Graph3DViewer.svelte:49`; спек `3D Graph - renders 3D view` (`tests/visual/visual-authenticated.spec.ts:144`) ходит по `?stableRender=true`. Оговорка: склейка параметра с query сломана в трёх сценариях — дефект F-1 |
-| A-1.5 | Маркер `data-test-stable` | есть+тест | `Graph3DViewer.svelte:89`; спеки ждут `[data-testid="graph-canvas"][data-test-stable="true"]` (`visual-anonymous.spec.ts:40`, тест `Public 2D graph` :62 и др.) |
+| A-1.5 | Маркер `data-test-stable` | есть+тест | `Graph3DViewer.svelte:89`; тест `3D Graph - renders 3D view` (`tests/visual/visual-authenticated.spec.ts:144`) открывает `/graph/3d?stableRender=true` и ждёт `data-testid="graph-3d-viewer"` + `data-test-stable="true"`; 2D-спеки ждут свой маркер на `graph-canvas` (`visual-anonymous.spec.ts:40`) |
 | A-1.6 | `OrbitControls.enableDamping` off при stableRender | есть, без теста | `features/graph-3d/lib/scene.ts:56` — строка есть, именованного теста на неё нет; косвенно держится визуальными спеками |
 | A-1.7 | Детерминизм: сид `Math.random`, reducedMotion, связи в публичном сидере | есть, проверяется конфигурацией | `tests/visual/visual-anonymous.spec.ts:25-31` (seeded `Math.random` в `beforeEach`), `scripts/testing/seed-test-data.*` — 20% публичных |
 
@@ -100,7 +100,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | SYNC-A.1 | Дельта от снимка клиента, `resync` без снимка | есть+тест | `graph-service` snapshot-ключи `snapshot:{user}:{hash}`; тесты `internal/api/http_server_test.go`: `TestGetDeltaHandler_UsesClientSnapshotNotCurrentCache` :261, `TestGetDeltaHandler_UnknownSnapshotAnswersResync` :368; живой прогон ревьюера — `SYNC-1-review-findings.md` |
 | SYNC-A.2 | `removed_links` в дельте | есть+тест | `ComputeDelta`; тест `TestGetDeltaHandler_RemovedLinkReachesClient` (`http_server_test.go:315`); мутация красная (findings) |
 | SYNC-A.3 | События на всех путях записи + сторож | есть+тест | этап A: ручные `Publish*` + сторож `scripts/testing/check-graph-write-paths.mjs` с тестами `check-graph-write-paths.test.mjs`; этап A2 заменил механизм на outbox |
-| SYNC-A.4 | resync заменяет граф | есть+тест | `PreloadService` `seedGraph`; тест `seeds graph data from an external source` (`shared/services/PreloadService.real.test.ts:68`) + ещё 30 тестов файла |
+| SYNC-A.4 | resync заменяет граф | есть+тест | `PreloadService` `seedGraph`; тест `PUB-2 discards a private delta after public cache replaces its source` (`shared/services/PreloadService.real.test.ts:439`) — мутация ревью на нём красная |
 | SYNC-A2.1-5 | outbox-таблица, декораторы, ретранслятор, запрет ручной публикации, манифест+CI | есть+тест | миграция `036_graph_outbox`, `infrastructure/outbox/`; интеграционные `outbox_integration_test.go`: `TestOutbox_NoteWritesRecordEvents`, `TestOutbox_LinkWritesRecordEvents`, `TestOutbox_SaveUserLinkRecordsEvent`, `TestOutbox_DeleteAndSuppressRecordsEvent`, `TestOutbox_DeleteBySourceRecordsEvents`, `TestOutbox_DeleteBySourceTypeRecordsEvents`, `TestOutbox_PurgeDeletedBeforeRecordsEvents`, `TestOutbox_RollbackRemovesWriteAndEvent`, `TestOutbox_RelayDeliversAfterCrash`, `TestOutbox_RelayRetriesAfterPublishFailure` — все мутации красные; **на ревью — приёмка не состоялась** |
 | SYNC-B | Применение дельты по месту 2D/3D без перезапуска | не сделано | бэклог (решение 69 — в 1.0 вместе с SSE) |
 | SYNC-C | SSE-доставка + переподключение | не сделано | бэклог (решение 69) |
@@ -258,6 +258,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | AUD-2-review-findings.md | не начат |
 | AUD-2-seeder-issue.md | не начат |
 | ISOLATION-1-similar-notes-owner-scope.md | не начат |
+| ISOLATION-1-review-findings.md | разбор доработки — `creator_id`-scope в обоих запросах |
 | DEPENDABOT-2-open-prs-2026-09.md | не начат |
 | AUD-3-token-transport.md | не начат |
 | AUD-4-yandex-oauth-contract.md | не начат |
