@@ -13,7 +13,7 @@
 // Stdout (for the drift checker): --check
 
 import { readFileSync, readdirSync, writeFileSync, existsSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, relative } from "node:path";
 import { execSync } from "node:child_process";
 
 const repoRoot = resolve(process.argv[2] ?? ".");
@@ -123,11 +123,38 @@ while ((am = aliasRe.exec(feConfigSrc))) {
   aliases.push({ name: am[1], prefix: am[2].replace(/\["([^"]+)"\]/g, ".$1") });
 }
 
+// rg is not guaranteed to exist (CI runners do not ship it), so fall back to
+// a plain Node walk when the binary is absent.
+let rgAvailable = null;
 function rgFiles(pattern, dir) {
-  try {
-    return execSync(`rg -l --no-messages "${pattern}" "${dir}"`, { cwd: repoRoot, encoding: "utf8" })
-      .split("\n").filter(Boolean).map((p) => p.replace(/\\/g, "/"));
-  } catch { return []; }
+  if (rgAvailable === null) {
+    try {
+      execSync("rg --version", { cwd: repoRoot, stdio: "ignore" });
+      rgAvailable = true;
+    } catch {
+      rgAvailable = false;
+    }
+  }
+  if (rgAvailable) {
+    try {
+      return execSync(`rg -l --no-messages "${pattern}" "${dir}"`, { cwd: repoRoot, encoding: "utf8" })
+        .split("\n").filter(Boolean).map((p) => p.replace(/\\/g, "/"));
+    } catch { return []; }
+  }
+  const re = new RegExp(pattern);
+  const out = [];
+  const walk = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (e.name === "node_modules" || e.name.startsWith(".")) continue;
+      const p = join(d, e.name);
+      if (e.isDirectory()) { walk(p); continue; }
+      try {
+        if (re.test(readFileSync(p, "utf8"))) out.push(relative(repoRoot, p).replace(/\\/g, "/"));
+      } catch { /* unreadable or binary */ }
+    }
+  };
+  walk(join(repoRoot, dir));
+  return out.sort();
 }
 
 function frontendReaders(key) {
