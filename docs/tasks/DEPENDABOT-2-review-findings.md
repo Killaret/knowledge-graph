@@ -54,3 +54,44 @@
 4. **`npm audit` на корневых dev-deps:** после установки #129 отчёт показывает 4
    уязвимости (3 low, 1 high). Информационно для владельца — зависимости инструментов
    разработки, не блокер слияния, но стоит посмотреть при удобном случае.
+
+## Слияние в main (2026-09-30, Devin — по просьбе владельца)
+
+Все девять PR обработаны:
+
+| PR | Итог |
+|---|---|
+| #115 x/text, #117 x/net, #118 grpc, #119 mongo, #121 pgx, #124 checkout, #125 setup-go, #129 root-deps | **смержены** в `main` (merge commit) |
+| #120 x/crypto | Dependabot закрыл сам: x/crypto 0.57 подтянулся транзитивно через x/net 0.59 |
+
+### Выход из строя main и починка
+
+x/text 0.42, x/net 0.59, x/crypto 0.57 декларируют `go 1.26.0` и подняли `go`
+в `backend/go.mod` до 1.26.0; CI держит `go-version: '1.25'` + `GOTOOLCHAIN: local` →
+все Go-джобы на main красные. Локально проверка не ловила — toolchain 1.26
+скачивался автоматически.
+
+Фикс: PR #133 — `go 1.25.0`, x/crypto 0.55.0, x/net 0.58.0, x/text 0.41.0 +
+транзитивные x/mod 0.38, x/sync 0.22, x/sys 0.47, x/tools 0.48;
+pgx 5.11.0 и mongo-driver 1.17.10 сохранены (совместимы с Go 1.25).
+
+Дополнительно PR #134 — регенерация `docs/tasks/README.md` на main
+(дрейф даты LINKS-2, красный «Check task index»).
+
+### Итог CI на main после #134
+
+Core Checks зелёные целиком (frontend, backend, integration, graph-service,
+NLP, migration drift, config, stacks identity). Осталось два **флага, не от
+мержей**:
+
+- `Full Test Suite`: 2 красных `auth-functional.spec.ts` (SKIP_AUTH) — те же
+  падали 24.09 (run 36011499757), до всех мержей.
+- `Production Deployment`: `container kg-nlp is unhealthy` на старте deploy-стека —
+  красный с ~23.09 (30 ранов подряд), до мержей.
+
+### Рекомендация владельцу
+
+Пока проект на Go 1.25 — добавить в `dependabot.yml` `ignore` для
+`golang.org/x/*` (или поднимать тулчейн до 1.26 отдельной задачей: Dockerfile,
+CI `go-version`, `.windsurfrules`, локальные установки). Иначе Dependabot
+пришлёт те же бампы заново.
