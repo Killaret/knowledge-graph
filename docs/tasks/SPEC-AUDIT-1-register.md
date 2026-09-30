@@ -43,6 +43,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | UX-2-500-error-page.md | разобран — принято; новая находка F-2 |
 | UX-2-review-findings.md | разобран — хвостов нет |
 | UX-3-canvas-hover-and-black-hole.md | не начат |
+| UX-3-review-findings.md | не начат |
 | VIS-1-split-visual-baselines.md | разобран — разделение есть; открыт дефект F-1 |
 | VIS-1-review-findings.md | разобран — находки закрыты в `2eb3216` |
 | VIS-1-round2-review-findings.md | разобран — блокеры 1 и 3 устранены, блокер 2 жив (F-1) |
