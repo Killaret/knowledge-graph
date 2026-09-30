@@ -190,6 +190,7 @@ graph-service; NLP-сервис: env > дефолт в коде; фронтен�
 | `nlp.hf_home` | nlp.json | — | — | — | — | мёртвый |
 | `nlp.hf_hub_disable_telemetry` | nlp.json | — | — | — | — | мёртвый |
 | `nlp.hf_hub_offline` | nlp.json | — | — | — | — | мёртвый |
+| `nlp.pipeline.enabled` | nlp.json | backend config.go → NLPPipelineEnabled | `NLP_PIPELINE_ENABLED` | compose.deploy, compose.personal, compose.test, compose | + | ok |
 | `nlp.quality.enabled` | nlp.json | backend config.go → NLPQualityEnabled | `NLP_QUALITY_ENABLED` | compose.deploy, compose.personal, compose.test, compose | + | ok |
 | `nlp.quality.collection_prose_share` | nlp.json | backend config.go → NLPQualityCollectionProseShare | `NLP_QUALITY_COLLECTION_PROSE_SHARE` | — | + | ok |
 | `nlp.quality.collection_min_links` | nlp.json | backend config.go → NLPQualityCollectionMinLinks | `NLP_QUALITY_COLLECTION_MIN_LINKS` | — | + | ok |

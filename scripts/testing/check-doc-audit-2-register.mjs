@@ -171,9 +171,10 @@ register.split("\n").forEach((line, i) => {
   // Reviewer demand (2026-09-29): a «верно» verdict must cite `file:line`,
   // not a package name or «соответствует».
   const verdict = verdictCol >= 0 ? (cells[verdictCol] ?? "") : "";
-  // Plans, historical notes and contract descriptions have nothing in code
-  // to point at — forcing file:line there would fabricate evidence.
-  const noCodeClaim = /план|историч|контракт|иде|спека|проверяется конфигурацией/.test(verdict);
+  // Plans, historical notes, contract descriptions and pure
+  // existence claims («файл есть») have nothing in code to point
+  // at — forcing file:line there would fabricate evidence.
+  const noCodeClaim = /план|историч|контракт|иде|спека|проверяется конфигурацией|файл есть|файлы есть/.test(verdict);
   if (verdict.includes("верно") && !noCodeClaim && !/`[^\s`]+:\d+/.test(cell)) {
     noLineRef.push(i + 1);
   }

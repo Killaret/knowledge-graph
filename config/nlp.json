@@ -5,6 +5,9 @@
     "hf_home": "/root/.cache/huggingface",
     "hf_hub_disable_telemetry": true,
     "hf_hub_offline": true,
+    "pipeline": {
+      "enabled": true
+    },
     "quality": {
       "enabled": false,
       "collection_prose_share": 0.3,

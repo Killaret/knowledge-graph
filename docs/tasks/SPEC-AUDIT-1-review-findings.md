@@ -228,3 +228,10 @@ steps: frontend-checks::Check SPEC-AUDIT-1 register». У соседнего с�
 - E2E-C.4: в реестре место — `routes/+page.svelte`, а `graph-empty-state` стоит в `routes/graph/+page.svelte:444`.
 
 `check-all.ps1` на `17288b1`: 28 из 33 зелёные, `golangci-lint` пропущен (локально не установлен). Красные: «Core workflow sync» — шаг SPEC-AUDIT-1 в `_core-checks.yml` без строки в `core-checks.tsv` (`fd42449`); «Generated config sync» и юнит- и интеграционные тесты бэкенда — `TestNLP4Config` ждёт выключенный конвейер, `knowledge-graph.config.json` правлен мимо `config/` (`cb8a0a6`, MODEL-2).
+
+## Доработка этапа A — Devin, 2026-09-30
+
+Единственное замечание этапа A закрыто: шаги «Check SPEC-AUDIT-1 register» и
+«Check CONFIG registry» в `_core-checks.yml` получили строки в
+`scripts/testing/core-checks.tsv` (`spec-audit-1-register`, `config-registry`).
+Прогон: `Workflow sync OK: 34 local phases match 34 CI steps.`

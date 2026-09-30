@@ -15,8 +15,9 @@ This file covers July 2026 onward. Earlier history lives in the git log.
   environment variable across `nlp-service`, `backend` and `graph-service`.
 - Agent working protocol, shared handoff board and transition log, so work passes between
   contributors through the repository instead of chat.
-- `LICENSE` (MIT). The README had advertised MIT for months without the file, which legally
-  meant all rights reserved.
+- `LICENSE` (PolyForm Noncommercial 1.0.0). The README had advertised MIT for months without the
+  file, which legally meant all rights reserved; the added file is PolyForm Noncommercial, and the
+  README badge/section now match it.
 - Guard that blocks destructive Docker commands against personal-stack volumes unless a fresh
   non-empty backup exists.
 - CI drift guard for build configuration, after a silent revert of 3D fog densities went unnoticed.

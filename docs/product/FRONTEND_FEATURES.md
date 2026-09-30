@@ -133,7 +133,7 @@ Added global box-sizing for better responsive behavior:
 **Location:** `frontend/src/widgets/cosmic-cockpit/CockpitNoteDetails.svelte` (renamed from `NoteSidePanel.svelte` — the cockpit redesign moved it)
 
 **Changes:**
-- Changed `height: 100vh` to `max-height: 100vh`
+- Panel content uses `height: 100%` with `overflow: hidden` on `.note-details` (current code, 2026-09-30; the earlier `max-height: 100vh` rule no longer exists)
 - Prevents overflow issues on smaller screens
 
 ### Benefits

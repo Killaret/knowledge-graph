@@ -278,14 +278,14 @@
     "database": "knowledge_graph"
   },
   "nlp": {
-    "pipeline": {
-      "enabled": true
-    },
     "model_name": "paraphrase-multilingual-MiniLM-L12-v2",
     "max_text_length": 10000,
     "hf_home": "/root/.cache/huggingface",
     "hf_hub_disable_telemetry": true,
     "hf_hub_offline": true,
+    "pipeline": {
+      "enabled": true
+    },
     "quality": {
       "enabled": false,
       "collection_prose_share": 0.3,
