@@ -51,10 +51,11 @@ func TestJaccardSimilarity(t *testing.T) {
 			tolerance: 0.0001,
 		},
 		{
-			name:      "both empty",
-			source:    []string{},
-			target:    []string{},
-			expected:  1.0,
+			name:   "both empty",
+			source: []string{},
+			target: []string{},
+			// P11-3: two keywordless notes are not similar — both are unprocessed.
+			expected:  0.0,
 			tolerance: 0.0001,
 		},
 		{
@@ -136,10 +137,11 @@ func TestOverlapSimilarity(t *testing.T) {
 			tolerance: 0.0001,
 		},
 		{
-			name:      "both empty",
-			source:    []string{},
-			target:    []string{},
-			expected:  1.0,
+			name:   "both empty",
+			source: []string{},
+			target: []string{},
+			// P11-3: two keywordless notes are not similar — both are unprocessed.
+			expected:  0.0,
 			tolerance: 0.0001,
 		},
 	}
@@ -205,7 +207,7 @@ func TestTverskySimilarity(t *testing.T) {
 			sim:       tverskyJaccard,
 			source:    []string{},
 			target:    []string{},
-			expected:  1.0,
+			expected:  0.0,
 			tolerance: 0.0001,
 		},
 		{
@@ -296,6 +298,25 @@ func TestWeightedJaccardSimilarity(t *testing.T) {
 			expected:      0.0,
 			tolerance:     0.0001,
 		},
+		{
+			// P11-3: две пустые заметки не похожи — обе не готовы.
+			name:          "both empty with weights",
+			source:        []string{},
+			target:        []string{},
+			weightsSource: map[string]float64{},
+			weightsTarget: map[string]float64{},
+			expected:      0.0,
+			tolerance:     0.0001,
+		},
+		{
+			name:          "both empty falls back to jaccard",
+			source:        []string{},
+			target:        []string{},
+			weightsSource: nil,
+			weightsTarget: nil,
+			expected:      0.0,
+			tolerance:     0.0001,
+		},
 	}
 
 	for _, tt := range tests {
@@ -379,7 +400,7 @@ func TestCosineSimilarity(t *testing.T) {
 			target:        []string{},
 			weightsSource: map[string]float64{},
 			weightsTarget: map[string]float64{},
-			expected:      1.0,
+			expected:      0.0,
 			tolerance:     0.0001,
 		},
 		{
