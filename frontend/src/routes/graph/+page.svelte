@@ -407,17 +407,7 @@
   onRegister={() => goto("/auth/register")}
 >
   <div class="graph-cockpit-content">
-    {#if loading}
-      <div class="loading-overlay" data-testid="loading-overlay">
-        <div class="spinner"></div>
-        <p>{t("graph.loading")}</p>
-      </div>
-    {:else if error}
-      <div class="error">
-        <p>{error}</p>
-        <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
-      </div>
-    {:else if graphData.nodes.length > 0}
+    {#if graphData.nodes.length > 0}
       {#key graphData.nodes.length + "-" + graphData.links.length}
         <div class="graph-view-wrapper">
           <GraphCanvas
@@ -440,6 +430,38 @@
           />
         </div>
       {/key}
+      <!-- UX-1: a refresh after a mutation must not blank the canvas — a
+           corner chip, never a covering layer (same contract as the home
+           page's loading-chip). -->
+      {#if loading}
+        <div class="refresh-chip" data-testid="refresh-chip" aria-live="polite">
+          <span class="spinner"></span>
+          {t("graph.loading")}
+        </div>
+      {/if}
+      {#if error}
+        <div class="refresh-chip refresh-chip-error" role="alert" data-testid="refresh-error">
+          {error}
+          <button
+            type="button"
+            class="refresh-chip-close"
+            aria-label={t("close")}
+            onclick={() => (error = "")}
+          >
+            ×
+          </button>
+        </div>
+      {/if}
+    {:else if loading}
+      <div class="loading-overlay" data-testid="loading-overlay">
+        <div class="spinner"></div>
+        <p>{t("graph.loading")}</p>
+      </div>
+    {:else if error}
+      <div class="error">
+        <p>{error}</p>
+        <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
+      </div>
     {:else}
       <div class="empty" data-testid="graph-empty-state">
         <StateIllustration type="no-links" />
@@ -517,6 +539,44 @@
     flex: 1 1 auto;
     min-height: 0;
     width: 100%;
+  }
+
+  .refresh-chip {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(10, 15, 30, 0.9);
+    border: 1px solid rgba(45, 212, 191, 0.3);
+    border-radius: 20px;
+    color: #e0e0e0;
+    font-size: 13px;
+    z-index: 900;
+  }
+
+  .refresh-chip .spinner {
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
+  }
+
+  .refresh-chip-error {
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #ef4444;
+  }
+
+  .refresh-chip-close {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
   }
 
   .loading-overlay {

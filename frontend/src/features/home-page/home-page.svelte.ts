@@ -532,6 +532,27 @@ export function createHomePageState() {
     }
   }
 
+  async function handleLinkCreate(link: {
+    source: string;
+    target: string;
+    link_type: string;
+    weight: number;
+  }) {
+    try {
+      await createLink({
+        source_note_id: link.source,
+        target_note_id: link.target,
+        link_type: link.link_type,
+        weight: link.weight,
+      });
+      await refreshAfterMutation();
+    } catch {
+      if (browser) {
+        alert(t("note.createChildLinkError"));
+      }
+    }
+  }
+
   async function handleNoteCreate(data: { title: string; content: string; type: string }) {
     try {
       await createNote({
@@ -788,6 +809,7 @@ export function createHomePageState() {
     handleNoteDelete,
     handleUndoRestore,
     handleNoteCreate,
+    handleLinkCreate,
     handleNoteCreated,
     handleCreateChildNote,
     resetCreateChildParent,

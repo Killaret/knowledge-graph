@@ -208,7 +208,12 @@ export const en: Record<string, string> = {
   "graph.autoLinks.toggle": "Suggested links (model)",
   "graph.contextMenu.ariaLabel": "Node actions",
   "graph.contextMenu.createChildNote": "Create child note",
+  "graph.contextMenu.linkTo": "Link to…",
   "graph.contextMenu.viewDetails": "View details",
+  // Link target picker
+  "graph.linkPicker.title": "Link to note",
+  "graph.linkPicker.placeholder": "Search notes…",
+  "graph.linkPicker.empty": "No matching notes",
   // Black hole drop zone
   "graph.blackHole.tooltip": "Drop here to delete",
   // Graph overlay
@@ -440,7 +445,12 @@ export const ru: Record<string, string> = {
   "graph.autoLinks.toggle": "Предложения модели",
   "graph.contextMenu.ariaLabel": "Действия с узлом",
   "graph.contextMenu.createChildNote": "Создать дочернюю заметку",
+  "graph.contextMenu.linkTo": "Связать с…",
   "graph.contextMenu.viewDetails": "Открыть детали",
+  // Link target picker
+  "graph.linkPicker.title": "Связать с заметкой",
+  "graph.linkPicker.placeholder": "Поиск заметок…",
+  "graph.linkPicker.empty": "Подходящих заметок нет",
   // Black hole drop zone
   "graph.blackHole.tooltip": "Перетащите сюда для удаления",
   // Graph overlay

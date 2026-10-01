@@ -6,6 +6,7 @@
   import type { GraphDeltaData } from "$shared/api/graph";
   import { GraphCanvasOverlay, GraphCanvasModals, LinkTypeLegend } from "$features/graph-ui";
   import GraphNodeContextMenu from "$components/molecules/GraphNodeContextMenu.svelte";
+  import LinkTargetPicker from "$components/molecules/LinkTargetPicker.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
   import HelpHotkeysModal from "$components/organisms/HelpHotkeysModal.svelte";
   import { ParticleSystem } from "$entities/graph-canvas/lib/particle-system";
@@ -111,6 +112,7 @@
   import {
     createLinkFormState,
     createLink,
+    openLinkForm,
     closeLinkForm,
     type LinkFormState,
   } from "$features/graph-forms/link-form";
@@ -509,6 +511,20 @@
     x: 0,
     y: 0,
     node: null,
+  });
+
+  // UX-1: "Link to…" picker — choose an existing note as the link target,
+  // then the regular link form opens on the selected pair.
+  let linkPicker = $state<{
+    visible: boolean;
+    x: number;
+    y: number;
+    source: { id: string; title: string; type?: string } | null;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    source: null,
   });
 
   // Hotkeys state (FSD)
@@ -1228,6 +1244,19 @@
     }
     contextMenu = { ...contextMenu, visible: false };
   }}
+  onLinkTo={readonly || !onLinkCreate
+    ? undefined
+    : () => {
+        if (contextMenu.node) {
+          linkPicker = {
+            visible: true,
+            x: contextMenu.x,
+            y: contextMenu.y,
+            source: contextMenu.node,
+          };
+        }
+        contextMenu = { ...contextMenu, visible: false };
+      }}
   onViewDetails={() => {
     if (contextMenu.node && onNodeClick) {
       onNodeClick(contextMenu.node);
@@ -1235,6 +1264,21 @@
     }
     contextMenu = { ...contextMenu, visible: false };
   }}
+/>
+
+<LinkTargetPicker
+  x={linkPicker.x}
+  y={linkPicker.y}
+  visible={linkPicker.visible}
+  sourceId={linkPicker.source?.id ?? ""}
+  {nodes}
+  onSelect={(target) => {
+    if (linkPicker.source) {
+      openLinkForm(linkFormState, linkPicker.source.id, target.id, linkPicker.x, linkPicker.y);
+      scheduleRedraw();
+    }
+  }}
+  onClose={() => (linkPicker = { ...linkPicker, visible: false })}
 />
 
 <!-- UI-LOAD-1: unobtrusive "N of M" progress while batches still arrive -->

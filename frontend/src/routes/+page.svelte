@@ -216,6 +216,7 @@
             onNoteCreate={handleNoteCreate}
             onNoteDelete={handleDeleteRequest}
             onCreateChildNote={handleCreateChildNote}
+            onLinkCreate={homePage.handleLinkCreate}
             showLinkTypeLegend={true}
             progressiveReveal={true}
             underList={graphStore.currentView === "list"}
