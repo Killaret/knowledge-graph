@@ -11,6 +11,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 
+	"knowledge-graph/internal/application/comet"
 	"knowledge-graph/internal/application/graph"
 	importer "knowledge-graph/internal/application/import"
 	"knowledge-graph/internal/application/linkweight"
@@ -24,6 +25,7 @@ import (
 	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/email"
 	"knowledge-graph/internal/infrastructure/events"
 	"knowledge-graph/internal/infrastructure/mongo"
 	"knowledge-graph/internal/infrastructure/nlp"
@@ -263,6 +265,18 @@ func main() {
 	mux.HandleFunc(queue.TypeNormalizeNote, worker.HandleNormalizeNote)
 	mux.HandleFunc(queue.TypeNlpArtifactsCleanup, worker.HandleNlpArtifactsCleanup)
 	mux.HandleFunc(queue.TypeAssessQuality, worker.HandleAssessQuality)
+	// COMET-1 stage C: comet reminders. In-app delivery is unconditional;
+	// email goes only when SMTP is configured (Console sender otherwise).
+	{
+		notificationRepo := postgres.NewNotificationRepository(database)
+		userRepo := postgres.NewUserRepository(database, postgres.NewRoleRepository(database))
+		var emailSender comet.ReminderEmailSender
+		if cfg.SMTPHost != "" {
+			emailSender = email.FromConfig(cfg)
+		}
+		reminderSvc := comet.NewReminderService(noteRepo, notificationRepo, userRepo, emailSender)
+		mux.HandleFunc(queue.TypeCometRemind, queue.CometRemindHandler(reminderSvc))
+	}
 	mux.HandleFunc(tasks.TypeCleanupSoftDeleted,
 		queue.CleanupSoftDeletedHandler(softDeletedCleanup{purger: noteRepo, db: database, outboxKeepDays: cfg.OutboxSentRetentionDays}))
 	if cfg.BackupEnabled {

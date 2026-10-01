@@ -493,3 +493,7 @@ func (q *mockTaskQueue) EnqueueNormalizeNote(ctx context.Context, noteID string)
 func (q *mockTaskQueue) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
 	return nil
 }
+
+func (q *mockTaskQueue) EnqueueCometRemind(ctx context.Context, noteID uuid.UUID, remindAt time.Time) error {
+	return nil
+}

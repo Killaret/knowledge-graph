@@ -126,6 +126,22 @@ func (h *Handler) enqueueBackupOnNoteChange(ctx context.Context) {
 	}
 }
 
+// enqueueCometReminder schedules comet:remind when the note has a reminder
+// moment (COMET-1 stage C). Stale tasks no-op at fire time, so re-enqueueing
+// on every save is the reschedule mechanism — no cancellation needed.
+func (h *Handler) enqueueCometReminder(ctx context.Context, n *note.Note) {
+	if h.taskQueue == nil || n == nil || n.DoneAt() != nil {
+		return
+	}
+	remindAt := n.RemindAt()
+	if remindAt == nil {
+		return
+	}
+	if err := h.taskQueue.EnqueueCometRemind(ctx, n.ID(), *remindAt); err != nil {
+		log.Printf("[NoteHandler] Failed to enqueue comet reminder for %s: %v", n.ID(), err)
+	}
+}
+
 // nullableTime distinguishes "key absent" from "key null" in JSON: absent keeps
 // the stored value, null or "" clears it, an RFC 3339 string sets it.
 // COMET-1 этап A.
@@ -398,6 +414,9 @@ func (h *Handler) Create(c *gin.Context) {
 	// Enqueue recommendation refresh tasks for affected notes
 	h.enqueueRecommendationTasks(c.Request.Context(), newNote.ID())
 
+	// COMET-1 stage C: schedule the reminder when the comet has one.
+	h.enqueueCometReminder(c.Request.Context(), newNote)
+
 	// Schedule backup after note change
 	h.enqueueBackupOnNoteChange(c.Request.Context())
 
@@ -559,6 +578,7 @@ func (h *Handler) postprocessCreatedNote(c *gin.Context, n *note.Note) {
 	}
 
 	h.enqueueRecommendationTasks(c.Request.Context(), n.ID())
+	h.enqueueCometReminder(c.Request.Context(), n)
 }
 
 // CreateBatch creates a batch of notes synchronously.
@@ -1273,6 +1293,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	h.enqueueRecommendationTasks(c.Request.Context(), existing.ID())
 	h.enqueueBackupOnNoteChange(c.Request.Context())
+	h.enqueueCometReminder(c.Request.Context(), existing)
 
 	// Invalidate graph cache for the user
 	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {

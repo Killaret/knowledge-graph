@@ -59,6 +59,7 @@ func TestRouterMatchesOpenAPISpec(t *testing.T) {
 		apiKeyConfig,
 		skipAuthConfig,
 		nil,
+		nil,
 	)
 
 	routerOps := make(map[string]bool)

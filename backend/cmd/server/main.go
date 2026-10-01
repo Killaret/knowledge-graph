@@ -347,6 +347,7 @@ func run(
 		apiKeyConfig,
 		skipAuthConfig,
 		noteRepo,
+		postgres.NewNotificationRepository(database),
 	)
 
 	// Create HTTP server

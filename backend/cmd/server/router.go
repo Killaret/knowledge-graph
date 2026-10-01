@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"knowledge-graph/internal/interfaces/api/notificationhandler"
+
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -11,6 +13,7 @@ import (
 
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/note"
+	"knowledge-graph/internal/domain/notification"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
 	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
@@ -62,6 +65,7 @@ func setupRouter(
 	apiKeyConfig *middleware.APIKeyConfig,
 	skipAuthConfig *middleware.SkipAuthConfig,
 	noteRepo note.Repository,
+	notificationRepo notification.Repository,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -203,6 +207,13 @@ func setupRouter(
 		v1.GET("/notes/search", cacheControlMiddleware(30), noteHandler.Search)
 		// COMET-1: «Ближайшие дела» — overdue/upcoming/undated groups.
 		v1.GET("/notes/comets", cacheControlMiddleware(30), noteHandler.Comets)
+
+		// COMET-1 stage C: in-app notifications (comet reminders).
+		if notificationRepo != nil {
+			notificationHandler := notificationhandler.New(notificationRepo)
+			v1.GET("/notifications", cacheControlMiddleware(30), notificationHandler.List)
+			v1.POST("/notifications/:id/read", writeLimiter, notificationHandler.MarkRead)
+		}
 
 		v1.POST("/links", writeLimiter, linkHandler.Create)
 		v1.GET("/links/:id", linkHandler.Get)

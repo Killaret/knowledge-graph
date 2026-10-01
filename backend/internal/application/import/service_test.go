@@ -474,6 +474,10 @@ func (q *fakeTaskQueue) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID s
 	return nil
 }
 
+func (q *fakeTaskQueue) EnqueueCometRemind(ctx context.Context, noteID uuid.UUID, remindAt time.Time) error {
+	return nil
+}
+
 // fakeExtractor returns a fixed extraction result (URL-HEADING-1 stage A).
 type fakeExtractor struct {
 	page *ExtractedPage

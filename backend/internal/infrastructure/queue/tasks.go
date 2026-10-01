@@ -17,6 +17,8 @@ const (
 	TypeNlpArtifactsCleanup = "nlp:artifacts-cleanup"
 	// TypeAssessQuality — NOTE-QUALITY-1: compute signals/gates for a note
 	TypeAssessQuality = "quality:assess"
+	// TypeCometRemind — COMET-1 stage C: deliver a comet reminder when due
+	TypeCometRemind = "comet:remind"
 )
 
 // ExtractKeywordsTaskPayload contains data for the keyword extraction task

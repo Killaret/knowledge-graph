@@ -164,6 +164,10 @@ func (m *mockEmailSender) SendPasswordReset(ctx context.Context, to, resetLink s
 	return m.Called(ctx, to, resetLink).Error(0)
 }
 
+func (m *mockEmailSender) SendCometReminder(ctx context.Context, to, noteTitle string, dueAt time.Time) error {
+	return m.Called(ctx, to, noteTitle, dueAt).Error(0)
+}
+
 type mockOAuthProvider struct {
 	mock.Mock
 }

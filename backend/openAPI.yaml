@@ -1402,6 +1402,61 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/notifications:
+    get:
+      summary: In-app notifications — newest first plus unread count (COMET-1 stage C)
+      description: |
+        Returns up to 50 of the caller's notifications, newest first, and the
+        unread count. Comet reminders land here (`type: comet_reminder`).
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Notifications list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string, format: uuid }
+                        note_id: { type: string, format: uuid, nullable: true }
+                        type: { type: string }
+                        title: { type: string }
+                        body: { type: string }
+                        created_at: { type: string, format: date-time }
+                        read_at: { type: string, format: date-time, nullable: true }
+                  unread_count:
+                    type: integer
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notifications/{id}/read:
+    post:
+      summary: Mark a notification as read (owner only)
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: Marked as read
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Notification not found or belongs to another user
+
   /api/v1/links:
     post:
       summary: Create link

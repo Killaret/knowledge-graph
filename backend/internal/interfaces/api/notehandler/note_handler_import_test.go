@@ -760,3 +760,7 @@ func (q *stubTaskQueue) EnqueueNormalizeNote(ctx context.Context, noteID string)
 func (q *stubTaskQueue) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
 	return nil
 }
+
+func (q *stubTaskQueue) EnqueueCometRemind(ctx context.Context, noteID uuid.UUID, remindAt time.Time) error {
+	return nil
+}

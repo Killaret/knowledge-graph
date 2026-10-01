@@ -39,6 +39,7 @@ func TestSetupRouter(t *testing.T) {
 		apiKeyConfig,
 		skipAuthConfig,
 		nil,
+		nil,
 	)
 
 	require.NotNil(t, r)
@@ -145,6 +146,7 @@ func TestNoteIDRoutesRequireAccessGuard(t *testing.T) {
 		apiKeyConfig,
 		skipAuthConfig,
 		&accessGuardNoteRepo{note: foreignNote},
+		nil,
 	)
 
 	type noteRoute struct {
@@ -271,6 +273,7 @@ func TestRestoreRouteSeesTrashedNote(t *testing.T) {
 		apiKeyConfig,
 		skipAuthConfig,
 		&trashAwareNoteRepo{note: trashed},
+		nil,
 	)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/notes/"+noteID.String()+"/restore", nil)

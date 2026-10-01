@@ -258,6 +258,26 @@ without a resulting `due_at` is a `400`. `GET /notes/comets` orders dated comets
 ascending (most overdue on top) and keeps undated ones in a separate group; done
 comets are excluded entirely.
 
+## 12.1 Comet reminders and in-app notifications (COMET-1 stage C)
+
+When a comet has `due_at` + `remind_before_seconds`, saving it enqueues the
+asynq task `comet:remind` for `due_at − remind_before_seconds`. The task is
+self-checking at fire time — a note that was rescheduled, cleared, completed or
+deleted turns the fired task into a no-op, so rescheduling is simply
+re-enqueueing on every save. Delivery:
+
+- **In-app** — always. A row in `notifications` (`type: comet_reminder`) with a
+  `dedupe_key` (`comet:<note_id>:<remind_at>`) that makes retried/duplicated
+  tasks idempotent.
+- **Email** — only when SMTP is configured (`SMTP_HOST`); the recipient is the
+  note owner's account email. Email failures are logged, not retried into
+  duplicates.
+
+```bash
+GET  /api/v1/notifications              # {items:[], unread_count} — 50 newest
+POST /api/v1/notifications/{id}/read    # 204; 404 for missing or foreign
+```
+
 ## Notes for maintainers
 
 - The Swagger UI bundle is embedded via `swaggo/gin-swagger` and reads

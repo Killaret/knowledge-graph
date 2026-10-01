@@ -177,6 +177,21 @@ func (c *AsynqClient) EnqueueNotification(ctx context.Context, payload []byte) e
 	return err
 }
 
+// EnqueueCometRemind schedules a comet:remind task for the exact moment the
+// reminder is due (COMET-1 stage C). A remindAt in the past fires immediately.
+func (c *AsynqClient) EnqueueCometRemind(ctx context.Context, noteID uuid.UUID, remindAt time.Time) error {
+	task, err := tasks.NewCometRemindTask(noteID, remindAt)
+	if err != nil {
+		return err
+	}
+	var opts []asynq.Option
+	if delay := time.Until(remindAt); delay > 0 {
+		opts = append(opts, asynq.ProcessIn(delay))
+	}
+	_, err = c.client.EnqueueContext(ctx, task, opts...)
+	return err
+}
+
 // EnqueueImportBookmarks schedules an async batch import of captured web pages.
 func (c *AsynqClient) EnqueueImportBookmarks(ctx context.Context, userID uuid.UUID, taskID string, items []byte) error {
 	payload, err := json.Marshal(ImportBookmarksPayload{

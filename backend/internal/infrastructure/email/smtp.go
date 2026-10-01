@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/smtp"
+	"time"
 )
 
 // SMTPSender sends emails via an SMTP server.
@@ -31,6 +32,28 @@ func NewSMTP(host string, port int, user, password, from string) Sender {
 func (s *SMTPSender) SendPasswordReset(ctx context.Context, to, resetLink string) error {
 	subject := "Password reset request"
 	body := fmt.Sprintf("Click the link to reset your password: %s", resetLink)
+	msg := []byte("To: " + to + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"\r\n" +
+		body + "\r\n")
+
+	addr := fmt.Sprintf("%s:%d", s.host, s.port)
+	var auth smtp.Auth
+	if s.user != "" && s.password != "" {
+		auth = smtp.PlainAuth("", s.user, s.password, s.host)
+	}
+
+	if s.sendMailFunc != nil {
+		return s.sendMailFunc(addr, auth, s.from, []string{to}, msg)
+	}
+
+	return smtp.SendMail(addr, auth, s.from, []string{to}, msg)
+}
+
+// SendCometReminder sends a comet reminder email via SMTP (COMET-1 stage C).
+func (s *SMTPSender) SendCometReminder(ctx context.Context, to, noteTitle string, dueAt time.Time) error {
+	subject := "Reminder: " + noteTitle
+	body := fmt.Sprintf("Your comet %q is due at %s.", noteTitle, dueAt.Format(time.RFC3339))
 	msg := []byte("To: " + to + "\r\n" +
 		"Subject: " + subject + "\r\n" +
 		"\r\n" +

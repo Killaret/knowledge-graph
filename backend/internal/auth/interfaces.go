@@ -42,11 +42,14 @@ type RefreshTokenRepository interface {
 	Create(ctx context.Context, token *RefreshToken) error
 }
 
-// EmailSender abstracts sending password-reset emails.
+// EmailSender abstracts sending password-reset and notification emails.
 type EmailSender interface {
 	// SendPasswordReset sends a password-reset email to the given address.
 	// The resetLink is a fully qualified URL that the user should follow.
 	SendPasswordReset(ctx context.Context, to, resetLink string) error
+	// SendCometReminder sends a comet reminder email (COMET-1 stage C).
+	// Only invoked when SMTP is configured; in-app delivery is unconditional.
+	SendCometReminder(ctx context.Context, to, noteTitle string, dueAt time.Time) error
 }
 
 // OAuthUserInfo represents the subset of an OAuth provider profile needed by auth handlers.

@@ -127,10 +127,16 @@ func (m *embeddingRepoMock) FindSimilarNotesBatch(ctx context.Context, noteIDs [
 	return nil, nil
 }
 
+type cometRemindCall struct {
+	noteID   uuid.UUID
+	remindAt time.Time
+}
+
 type taskQueueMock struct {
 	mock.Mock
-	normalizeCalls []string
-	cleanupCalls   []string
+	normalizeCalls   []string
+	cleanupCalls     []string
+	cometRemindCalls []cometRemindCall
 }
 
 func (m *taskQueueMock) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
@@ -1234,6 +1240,13 @@ func (m *taskQueueMock) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID s
 	return nil
 }
 
+// COMET-1 stage C: recorded so tests can assert a comet with a reminder
+// enqueues comet:remind and a note without one does not.
+func (m *taskQueueMock) EnqueueCometRemind(ctx context.Context, noteID uuid.UUID, remindAt time.Time) error {
+	m.cometRemindCalls = append(m.cometRemindCalls, cometRemindCall{noteID: noteID, remindAt: remindAt})
+	return nil
+}
+
 // --- COMET-1: поля планирования и «Ближайшие дела» ---
 
 func TestCreateNote_CometFields(t *testing.T) {
@@ -1283,6 +1296,49 @@ func TestCreateNote_NegativeRemind_BadRequest(t *testing.T) {
 	h.Create(c)
 
 	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+}
+
+// COMET-1 stage C: creating a comet with due_at + reminder enqueues
+// comet:remind for due_at − remind_before.
+func TestCreateNote_CometEnqueuesReminder(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueNormalizeNote", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+	tq.On("EnqueueRefreshRecommendations", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	due := time.Date(2026, 10, 5, 10, 0, 0, 0, time.UTC)
+	body := fmt.Sprintf(`{"title":"Дело","content":"x","type":"comet","due_at":%q,"remind_before_seconds":3600}`, due.Format(time.RFC3339))
+	_, c := newContext(t, http.MethodPost, "/notes", body, userID)
+	h.Create(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	require.Len(t, tq.cometRemindCalls, 1, "comet with due_at + reminder must enqueue comet:remind")
+	assert.Equal(t, due.Add(-time.Hour), tq.cometRemindCalls[0].remindAt)
+}
+
+// A comet without a reminder must not enqueue comet:remind.
+func TestCreateNote_CometWithoutReminderNoEnqueue(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueNormalizeNote", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+	tq.On("EnqueueRefreshRecommendations", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	body := `{"title":"Дело","content":"x","type":"comet","due_at":"2026-10-05T10:00:00Z"}`
+	_, c := newContext(t, http.MethodPost, "/notes", body, userID)
+	h.Create(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	assert.Empty(t, tq.cometRemindCalls)
 }
 
 func TestUpdateNote_CometFieldsMergeAndClear(t *testing.T) {

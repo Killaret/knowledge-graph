@@ -40,4 +40,8 @@ type TaskQueue interface {
 
 	// EnqueueNlpArtifactsCleanup schedules removal of a note's nlp_artifacts.
 	EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error
+
+	// EnqueueCometRemind schedules a comet reminder for the given moment
+	// (COMET-1 stage C). Rescheduling = a new task; stale tasks no-op.
+	EnqueueCometRemind(ctx context.Context, noteID uuid.UUID, remindAt time.Time) error
 }
