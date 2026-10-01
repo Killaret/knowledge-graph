@@ -212,7 +212,13 @@
     }
   }
 
-  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
+  async function handleNoteCreate(data: {
+    title: string;
+    content: string;
+    type: string;
+    due_at?: string | null;
+    remind_before_seconds?: number | null;
+  }) {
     try {
       await createNote(data);
       await loadGraphData({ nocache: true });

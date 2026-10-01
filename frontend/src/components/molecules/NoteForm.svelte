@@ -1,8 +1,10 @@
 <script lang="ts">
   import Button from "$components/atoms/Button.svelte";
   import TypeSelector from "$components/molecules/TypeSelector.svelte";
+  import CometFields from "$components/molecules/CometFields.svelte";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import type { RemindChoice } from "$shared/utils/comet";
   import type { ErrorResponse } from "$shared/types/errors";
 
   const locale = getCurrentLocale();
@@ -39,6 +41,10 @@
     contentTestId?: string;
     submitTestId?: string;
     cancelTestId?: string;
+    // COMET-1: показываются только при type === "comet"
+    dueAtLocal?: string;
+    remindChoice?: RemindChoice;
+    customMinutes?: number;
   }
 
   /* eslint-disable prefer-const -- Svelte 5 $bindable() requires let, not const, see: https://svelte.dev/docs/svelte/$bindable */
@@ -65,6 +71,9 @@
     contentTestId = "note-content-input",
     submitTestId = "note-submit",
     cancelTestId = "note-cancel",
+    dueAtLocal = $bindable(""),
+    remindChoice = $bindable("none" as RemindChoice),
+    customMinutes = $bindable(60),
   }: Props = $props();
 
   const MAX_TITLE_LENGTH = 200;
@@ -109,6 +118,10 @@
     <label for="note-type">{typeLabel}</label>
     <TypeSelector id="note-type" bind:selected={type} {types} />
   </div>
+
+  {#if type === "comet"}
+    <CometFields bind:dueAtLocal bind:remindChoice bind:customMinutes disabled={loading} />
+  {/if}
 
   <div class="form-group">
     <label for="note-content">{contentLabel}</label>

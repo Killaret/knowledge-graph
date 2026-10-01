@@ -574,12 +574,20 @@ export function createHomePageState() {
     }
   }
 
-  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
+  async function handleNoteCreate(data: {
+    title: string;
+    content: string;
+    type: string;
+    due_at?: string | null;
+    remind_before_seconds?: number | null;
+  }) {
     try {
       await createNote({
         title: data.title,
         content: data.content,
         type: data.type,
+        due_at: data.due_at,
+        remind_before_seconds: data.remind_before_seconds,
       });
       await refreshAfterMutation();
     } catch {

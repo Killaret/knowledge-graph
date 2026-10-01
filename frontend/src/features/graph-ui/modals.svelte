@@ -73,6 +73,9 @@
         bind:title={noteFormState.newNoteTitle}
         bind:content={noteFormState.newNoteContent}
         bind:type={noteFormState.newNoteType}
+        bind:dueAtLocal={noteFormState.newDueAtLocal}
+        bind:remindChoice={noteFormState.newRemindChoice}
+        bind:customMinutes={noteFormState.newCustomMinutes}
         onSubmit={() => onSave("note")}
         onCancel={() => onCancel("note")}
         titlePlaceholder={t("graphModals.noteTitlePlaceholder")}

@@ -4,6 +4,14 @@
   import Modal from "$components/atoms/Modal.svelte";
   import TypeSelector from "$components/molecules/TypeSelector.svelte";
   import ApiErrorDisplay from "$components/atoms/ApiErrorDisplay.svelte";
+  import CometFields from "$components/molecules/CometFields.svelte";
+  import {
+    isoToLocalInput,
+    localInputToIso,
+    remindChoiceToSeconds,
+    secondsToRemindChoice,
+    type RemindChoice,
+  } from "$shared/utils/comet";
   import type { ErrorResponse } from "$shared/types/errors";
   import { getMessage, mode } from "$shared/stores/lexicon-settings";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
@@ -23,6 +31,12 @@
   let title = $state("");
   let content = $state("");
   let type = $state<string>(CelestialBody.STAR.type);
+  // COMET-1
+  let dueAtLocal = $state("");
+  let remindChoice = $state<RemindChoice>("none");
+  let customMinutes = $state(60);
+  let done = $state(false);
+  let doneAtIso = $state<string | null>(null);
   let loading = $state(false);
   let saving = $state(false);
   let apiError = $state<ErrorResponse | null>(null);
@@ -79,6 +93,13 @@
       title = note.title;
       content = note.content || "";
       type = note.type || CelestialBody.STAR.type;
+      // COMET-1
+      dueAtLocal = isoToLocalInput(note.due_at);
+      const r = secondsToRemindChoice(note.remind_before_seconds);
+      remindChoice = r.choice;
+      customMinutes = r.customMinutes;
+      done = note.done_at != null;
+      doneAtIso = note.done_at ?? null;
     } catch (err: unknown) {
       apiError = toErrorResponse(err, "note.loadError");
     } finally {
@@ -103,6 +124,15 @@
         content: content.trim(),
         type: type,
         metadata: {},
+        // COMET-1: у кометы форма владеет полями — шлём явно, null очищает.
+        // done=true без сохранённого done_at ставит «сейчас».
+        ...(type === "comet"
+          ? {
+              due_at: localInputToIso(dueAtLocal),
+              remind_before_seconds: remindChoiceToSeconds(remindChoice, customMinutes),
+              done_at: done ? (doneAtIso ?? new Date().toISOString()) : null,
+            }
+          : {}),
       });
 
       onSuccess?.(note);
@@ -146,6 +176,18 @@
         <label for="edit-note-type">{typeLabel}</label>
         <TypeSelector id="edit-note-type" bind:selected={type} types={CelestialBody.UI_TYPES} />
       </div>
+
+      {#if type === "comet"}
+        <CometFields
+          bind:dueAtLocal
+          bind:remindChoice
+          bind:customMinutes
+          bind:done
+          showDone
+          disabled={saving}
+          testIdPrefix="edit-comet"
+        />
+      {/if}
 
       <div class="form-group">
         <label for="edit-note-content">{contentLabel}</label>

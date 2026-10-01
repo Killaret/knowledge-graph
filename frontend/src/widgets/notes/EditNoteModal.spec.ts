@@ -290,4 +290,97 @@ describe("EditNoteModal", () => {
     // Проверяем что Comet выбран
     expect(cometButton).toHaveAttribute("aria-pressed", "true");
   });
+
+  // COMET-1 этап B: в редактировании у кометы есть дата, напоминание и «Сделано».
+  it("populates comet scheduling fields and marks the note done", async () => {
+    const dueIso = new Date("2026-03-01T12:00").toISOString();
+    mockGetNote.mockResolvedValueOnce({
+      ...mockNote,
+      type: "comet",
+      due_at: dueIso,
+      remind_before_seconds: 3600,
+      done_at: null,
+    });
+    mockUpdateNote.mockResolvedValueOnce(mockNote);
+
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Existing Note")).toBeInTheDocument();
+    });
+
+    const due = document.querySelector('[data-testid="edit-comet-due"]') as HTMLInputElement;
+    expect(due).toBeTruthy();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const d = new Date(dueIso);
+    const expectedLocal = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    expect(due.value).toBe(expectedLocal);
+
+    const remind = document.querySelector('[data-testid="edit-comet-remind"]') as HTMLSelectElement;
+    expect(remind.value).toBe("1h");
+
+    const doneCheckbox = document.querySelector(
+      '[data-testid="edit-comet-done"]'
+    ) as HTMLInputElement;
+    expect(doneCheckbox.checked).toBe(false);
+    await fireEvent.click(doneCheckbox);
+    await tick();
+
+    const submitButton = screen.getByRole("button", { name: "Save Changes" });
+    await fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockUpdateNote).toHaveBeenCalled();
+    });
+    const payload = mockUpdateNote.mock.calls[0][1];
+    expect(payload.due_at).toBe(dueIso);
+    expect(payload.remind_before_seconds).toBe(3600);
+    // done=true без сохранённого done_at ставит «сейчас»
+    expect(typeof payload.done_at).toBe("string");
+  });
+
+  it("clears done_at when the done checkbox is unchecked", async () => {
+    mockGetNote.mockResolvedValueOnce({
+      ...mockNote,
+      type: "comet",
+      due_at: null,
+      remind_before_seconds: null,
+      done_at: "2026-01-10T09:00:00.000Z",
+    });
+    mockUpdateNote.mockResolvedValueOnce(mockNote);
+
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Existing Note")).toBeInTheDocument();
+    });
+
+    const doneCheckbox = document.querySelector(
+      '[data-testid="edit-comet-done"]'
+    ) as HTMLInputElement;
+    expect(doneCheckbox.checked).toBe(true);
+    await fireEvent.click(doneCheckbox);
+    await tick();
+
+    const submitButton = screen.getByRole("button", { name: "Save Changes" });
+    await fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockUpdateNote).toHaveBeenCalled();
+    });
+    const payload = mockUpdateNote.mock.calls[0][1];
+    expect(payload.done_at).toBeNull();
+  });
+
+  it("does not render comet fields for a non-comet note", async () => {
+    mockGetNote.mockResolvedValueOnce(mockNote);
+
+    render(EditNoteModal, { props: { open: true, noteId: "456" } });
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Existing Note")).toBeInTheDocument();
+    });
+
+    expect(document.querySelector('[data-testid="edit-comet-fields"]')).toBeNull();
+  });
 });

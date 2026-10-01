@@ -9,8 +9,27 @@ export interface Note {
   metadata: Record<string, unknown>;
   type?: string;
   is_public?: boolean;
+  // COMET-1: поля планирования — null, когда не заданы
+  due_at?: string | null;
+  remind_before_seconds?: number | null;
+  done_at?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// COMET-1: поля, которые можно передать при создании/обновлении.
+// Семантика обновления — merge по присутствию ключа: null очищает.
+export interface CometFields {
+  due_at?: string | null;
+  remind_before_seconds?: number | null;
+  done_at?: string | null;
+}
+
+// «Ближайшие дела» — ответ GET /api/v1/notes/comets
+export interface CometsResponse {
+  overdue: Note[];
+  upcoming: Note[];
+  undated: Note[];
 }
 
 // Тип рекомендации (похожая заметка)
@@ -49,13 +68,23 @@ export async function getNote(id: string): Promise<Note> {
 }
 
 // Создать новую заметку
-export async function createNote(data: {
-  title: string;
-  content: string;
-  type?: string;
-  metadata?: Record<string, unknown>;
-}): Promise<Note> {
+export async function createNote(
+  data: {
+    title: string;
+    content: string;
+    type?: string;
+    metadata?: Record<string, unknown>;
+  } & CometFields
+): Promise<Note> {
   return api.post("v1/notes", { json: data }).json();
+}
+
+// COMET-1: «Ближайшие дела» — незакрытые кометы пользователя по группам.
+export async function listComets(): Promise<CometsResponse> {
+  const body = await api.get("v1/notes/comets", { cache: "no-store" }).json<{
+    data: CometsResponse;
+  }>();
+  return body.data;
 }
 
 // Обновить существующую заметку

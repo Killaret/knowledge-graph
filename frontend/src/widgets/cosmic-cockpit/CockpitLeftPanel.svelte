@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { isAuthenticated, currentUser, logout } from "$shared/stores/auth.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { listComets, type CometsResponse, type Note } from "$shared/api/notes";
 
   interface NoteItem {
     id: string;
@@ -43,6 +44,42 @@
 
   function toggleNoteList() {
     noteListOpen = !noteListOpen;
+  }
+
+  // COMET-1: «Ближайшие дела» — подгружается при входе; закрытые кометы
+  // отсекает бэкенд.
+  let comets = $state<CometsResponse | null>(null);
+  let cometsOpen = $state(true);
+
+  $effect(() => {
+    if (!authenticated) {
+      comets = null;
+      return;
+    }
+    let cancelled = false;
+    let promise: Promise<CometsResponse>;
+    try {
+      // В unit-спеках мок $shared/api/notes может не экспортировать listComets —
+      // тогда секция просто не показывается.
+      promise = listComets();
+    } catch {
+      return;
+    }
+    promise
+      .then((c) => {
+        if (!cancelled) comets = c;
+      })
+      .catch(() => {
+        if (!cancelled) comets = null;
+      });
+    return () => {
+      cancelled = true;
+    };
+  });
+
+  function cometDueLabel(n: Note): string {
+    if (!n.due_at) return t("comet.noDate");
+    return new Date(n.due_at).toLocaleString(locale);
   }
 
   const navItems = [
@@ -122,6 +159,62 @@
         />
         <span>{t("graph.showAllNotes")}</span>
       </label>
+    </section>
+  {/if}
+
+  {#if authenticated && comets && (comets.overdue.length > 0 || comets.upcoming.length > 0 || comets.undated.length > 0)}
+    <section class="left-section" class:collapsed={!cometsOpen} aria-labelledby="comets-heading">
+      <button
+        type="button"
+        class="section-heading section-heading--toggle cockpit-gradient-text"
+        id="comets-heading"
+        onclick={() => (cometsOpen = !cometsOpen)}
+        aria-expanded={cometsOpen}
+        aria-controls="comets-content"
+      >
+        <span>{t("comet.upcoming")}</span>
+        <span class="toggle-icon" aria-hidden="true">{cometsOpen ? "▼" : "▶"}</span>
+      </button>
+      <div class="note-tree" id="comets-content" class:collapsed={!cometsOpen}>
+        {#each comets.overdue as comet (comet.id)}
+          <button
+            type="button"
+            class="tree-item tree-item--overdue"
+            onclick={() => onNoteSelect?.(comet.id)}
+            data-testid="comet-item-overdue"
+          >
+            <span class="tree-emoji">☄️</span>
+            <span class="tree-title">{comet.title}</span>
+            <span class="comet-due comet-due--overdue">
+              {cometDueLabel(comet)} · {t("comet.overdue")}
+            </span>
+          </button>
+        {/each}
+        {#each comets.upcoming as comet (comet.id)}
+          <button
+            type="button"
+            class="tree-item"
+            onclick={() => onNoteSelect?.(comet.id)}
+            data-testid="comet-item-upcoming"
+          >
+            <span class="tree-emoji">☄️</span>
+            <span class="tree-title">{comet.title}</span>
+            <span class="comet-due">{cometDueLabel(comet)}</span>
+          </button>
+        {/each}
+        {#each comets.undated as comet (comet.id)}
+          <button
+            type="button"
+            class="tree-item"
+            onclick={() => onNoteSelect?.(comet.id)}
+            data-testid="comet-item-undated"
+          >
+            <span class="tree-emoji">☄️</span>
+            <span class="tree-title">{comet.title}</span>
+            <span class="comet-due">{t("comet.noDate")}</span>
+          </button>
+        {/each}
+      </div>
     </section>
   {/if}
 
@@ -385,5 +478,25 @@
     color: rgba(255, 255, 255, 0.4);
     font-size: 12px;
     text-align: center;
+  }
+
+  .tree-item {
+    flex-wrap: wrap;
+  }
+
+  .comet-due {
+    flex-basis: 100%;
+    padding-left: 24px;
+    font-size: 11px;
+    color: var(--carbon-text-dim, #7a7a8e);
+  }
+
+  .comet-due--overdue {
+    color: var(--carbon-glow-red, #ff3a2f);
+    font-weight: 600;
+  }
+
+  .tree-item--overdue {
+    border-color: rgba(255, 58, 47, 0.35);
   }
 </style>
