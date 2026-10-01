@@ -1,9 +1,16 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { graphStore } from "./graph.svelte";
+import { isGraph3DEnabled } from "$shared/config/config";
+
+vi.mock("$shared/config/config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("$shared/config/config")>()),
+  isGraph3DEnabled: vi.fn(() => true),
+}));
 
 describe("graphStore", () => {
   beforeEach(() => {
     graphStore.reset();
+    vi.mocked(isGraph3DEnabled).mockReturnValue(true);
   });
 
   it("has default state", () => {
@@ -42,6 +49,13 @@ describe("graphStore", () => {
 
     graphStore.searchQuery = "black hole";
     expect(graphStore.searchQuery).toBe("black hole");
+  });
+
+  it("FREEZE-3D-1: a stored '3d' view opens as 'graph' while 3D is disabled", () => {
+    vi.mocked(isGraph3DEnabled).mockReturnValue(false);
+
+    graphStore.currentView = "3d";
+    expect(graphStore.currentView).toBe("graph");
   });
 
   it("filters type and weight", () => {

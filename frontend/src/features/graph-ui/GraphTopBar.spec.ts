@@ -2,7 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/svelte";
 import GraphTopBar from "./GraphTopBar.svelte";
 import { graphStore } from "$shared/stores/graph.svelte";
+import { isGraph3DEnabled } from "$shared/config/config";
 import { LinkType } from "$entities";
+
+vi.mock("$shared/config/config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("$shared/config/config")>()),
+  isGraph3DEnabled: vi.fn(() => true),
+}));
 
 describe("GraphTopBar", () => {
   const typeFilters = [
@@ -15,6 +21,7 @@ describe("GraphTopBar", () => {
     cleanup();
     vi.clearAllMocks();
     graphStore.reset();
+    vi.mocked(isGraph3DEnabled).mockReturnValue(true);
   });
 
   it("renders authenticated view with stats and view toggles", () => {
@@ -34,6 +41,26 @@ describe("GraphTopBar", () => {
     expect(screen.getByTestId("view-toggle-graph")).toBeInTheDocument();
     expect(screen.getByTestId("view-toggle-3d")).toBeInTheDocument();
     expect(screen.getByTestId("view-toggle-list")).toBeInTheDocument();
+  });
+
+  it("FREEZE-3D-1: hides the 3D toggle while frontend.graph.3d.enabled is false", () => {
+    vi.mocked(isGraph3DEnabled).mockReturnValue(false);
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph", onToggleView: vi.fn() },
+    });
+
+    expect(screen.getByTestId("view-toggle-graph")).toBeInTheDocument();
+    expect(screen.getByTestId("view-toggle-list")).toBeInTheDocument();
+    expect(screen.queryByTestId("view-toggle-3d")).toBeNull();
+  });
+
+  it("FREEZE-3D-1: shows the 3D toggle when enabled", () => {
+    vi.mocked(isGraph3DEnabled).mockReturnValue(true);
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph", onToggleView: vi.fn() },
+    });
+
+    expect(screen.getByTestId("view-toggle-3d")).toBeInTheDocument();
   });
 
   it("switches views and calls onToggleView", async () => {

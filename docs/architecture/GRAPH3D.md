@@ -2,13 +2,19 @@
 
 This document describes the SvelteKit/Three.js 3D graph view in the Knowledge Graph frontend.
 
+> **Frozen until the 2D graph is ready (decision 82, FREEZE-3D-1).** With
+> `frontend.graph.3d.enabled = false` (the default) the **3D** toggle is hidden,
+> `/graph/3d` and `/graph/3d/[id]` redirect to the 2D routes, and a remembered
+> `graphStore.currentView = "3d"` reads as `"graph"`. All 3D code and tests stay
+> in the repository and keep running in CI — nothing here is deleted.
+
 ## Overview
 
 The 3D graph provides an alternative, spatial way to explore the note graph. It renders notes as glowing celestial bodies and links as light rays in a 3D force-directed simulation. The 3D scene is lazy-loaded so the 2D graph bundle is not penalized.
 
 ## User-facing behavior
 
-- A **3D** toggle is available in `GraphTopBar` (`features/graph-ui/GraphTopBar.svelte`) alongside **2D** and **List**.
+- A **3D** toggle is available in `GraphTopBar` (`features/graph-ui/GraphTopBar.svelte`) alongside **2D** and **List** — only while `frontend.graph.3d.enabled` is `true`.
 - Selecting **3D** on the home page renders `Graph3DViewer` inside the existing `fullscreen-graph` container.
 - The 3D view respects the same `FilterState` (type filter and search) as the 2D graph.
 - Clicking a node fires `onNodeClick` and opens the note details panel (`CockpitNoteDetails`) via `graphStore.selectedNodeId`.

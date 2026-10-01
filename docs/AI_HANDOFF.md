@@ -56,7 +56,7 @@
 | **SYNC-1 (этапы B, C):** применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **в работе** — 1.0 · Devin: B+C готовы, ждёт слот ревью (5/5) | 2026-10-01 |
 | **PANEL-LINKS-1:** панель «Links (undefined)» — клиент ждёт массив, API отдаёт `{incoming, outgoing}`; при починке — пояснение при удалении связи | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **в работе** — 1.0 · Devin: пояснение при удалении = холст; массовое — без решения; ждёт слот ревью (5/5) | 2026-10-01 |
 | **NOTE-HEALTH-1:** здоровье заметки: техническое и пользовательское раздельно; этап 0 — скрыть «HEALTH», «Качество» → «Обработка» | [`tasks/NOTE-HEALTH-1-technical-and-user-health.md`](tasks/NOTE-HEALTH-1-technical-and-user-health.md) | **в работе** — 1.0 · Devin: этап 0 готов (HEALTH скрыт, строка при проблеме); ждёт слот ревью (5/5) | 2026-10-01 |
-| **FREEZE-3D-1:** 3D заморожен до готовности 2D: переключатель 3D выключен настройкой, код и тесты остаются | [`tasks/FREEZE-3D-1-hide-3d-view.md`](tasks/FREEZE-3D-1-hide-3d-view.md) | **бэклог** — 1.0 · Devin; маленькая, после порядка владельца (решение 82) | 2026-09-28 |
+| **FREEZE-3D-1:** 3D заморожен до готовности 2D: переключатель 3D выключен настройкой, код и тесты остаются | [`tasks/FREEZE-3D-1-hide-3d-view.md`](tasks/FREEZE-3D-1-hide-3d-view.md) | **в работе** — 1.0 · Devin: `3d.enabled=false`, кнопки нет, `/graph/3d` → 2D; ждёт слот ревью (5/5) | 2026-10-01 |
 | **P11-3:** нормализация ключевых слов закрыта NLP-2; остаток — два пустых набора ключевых слов дают полное сходство во всех четырёх метриках | [`tasks/P11-3-keyword-normalization.md`](tasks/P11-3-keyword-normalization.md) | **бэклог** — 1.0 · Devin; маленькая | 2026-09-27 |
 | **P11-4:** кластеризация графа: гибрид векторов и связей, два уровня с семантическим масштабом, цветные области, имена по леммам | [`tasks/P11-4-graph-clustering.md`](tasks/P11-4-graph-clustering.md) | **бэклог** — 1.0 · Devin; после MODEL-2 (решения 28, 79) | 2026-09-27 |
 | **COMET-1:** кометы — дела с необязательной датой и напоминанием: поля, напоминание, `.ics`, «Ближайшие дела», комета «приближается» на графе | [`tasks/COMET-1-event-reminder-fields.md`](tasks/COMET-1-event-reminder-fields.md) | **бэклог** — 1.0 · Devin (решение 78) | 2026-09-27 |
@@ -98,6 +98,8 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Devin → Claude, 2026-10-01, FREEZE-3D-1 — ждёт слот ревью.** `frontend.graph.3d.enabled=false`; кнопка «3D» скрыта, `/graph/3d*` редиректит на 2D до загрузки провайдера, запомненный «3d» читается «graph». Код и тесты 3D на месте (32/32). Снимок панели — `screenshots/freeze-3d-1/`. [`tasks/FREEZE-3D-1-hide-3d-view.md`](tasks/FREEZE-3D-1-hide-3d-view.md)
 
 **Devin → Claude, 2026-10-01, NOTE-HEALTH-1 этап 0 — ждёт слот ревью.** HEALTH скрыт (проп HUD опционален); «Качество» → «Обработка», строка только при проблеме. Живой снимок `screenshots/note-health-1/`. [`tasks/NOTE-HEALTH-1-technical-and-user-health.md`](tasks/NOTE-HEALTH-1-technical-and-user-health.md)
 

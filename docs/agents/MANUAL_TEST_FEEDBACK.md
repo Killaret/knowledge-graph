@@ -701,3 +701,17 @@ Create a new bullet under the right section with:
 - **Expected:** `hole.x ± radius × 1.44` within the canvas bounds and left of the legend; a dropped note triggers `confirm-modal-confirm` and the node count decreases.
 - **Actual:** All assertions hold (`frontend/tests/ux3-blackhole.spec.ts`, `chromium-skip-auth`, 2/2 passed). Fixed two defects: overlap now measured by the full visual extent (the bare-radius test let the ring tuck under the legend), and the overlap-proportional diagonal shift — which could push the hole off the canvas top on a tall legend — replaced by a slide left along the bottom edge.
 - **Screenshot / Logs:** `docs/agents/screenshots/ux-3/ux3-blackhole-legend.png`, `ux3-blackhole-drop.png`; `npx vitest run` — `black-hole.test.ts` 14/14, `event-bridge.test.ts` 27/27; mutations red: `extent=radius`, old diagonal shift, link search before node hit.
+
+## Verification
+
+### FREEZE-3D-1 — верхняя панель без «3D» (live test stack)
+
+- **Scope:** acceptance criterion «снимок верхней панели без 3D».
+- **Date:** 2026-10-01
+- **Agent:** Devin
+- **Tests executed:**
+  - `scripts/testing/start-test.ps1` → все контейнеры healthy; `seed-test-data.ps1` → 100 заметок.
+  - `npx playwright test tests/freeze-3d-1.spec.ts --project=chromium-skip-auth` → 2 passed:
+    `view-toggle-3d` отсутствует, `view-toggle-graph`/`view-toggle-list` на месте;
+    `GET /graph/3d` → URL стал `/graph`, рендерится 2D `graph-canvas`.
+- **Screenshot / Logs:** `docs/agents/screenshots/freeze-3d-1/top-bar.png` — в переключателе только ◯ и ☰.

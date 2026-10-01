@@ -29,3 +29,25 @@
 
 - [`RELEASE-TEST-1-manual-run-1.0.md`](RELEASE-TEST-1-manual-run-1.0.md), пункт 5.3.
 - [`UI-DESIGN-1-app-design-review.md`](UI-DESIGN-1-app-design-review.md) — история потерянной загрузки из тумана.
+
+## Исполнение (Devin, 2026-10-01)
+
+- `frontend.graph.3d.enabled` (`config/frontend.json` → `npm run build-config`), по умолчанию `false`;
+  читалка — `isGraph3DEnabled()` в `$shared/config/config` (функция, чтобы спеки стабили без
+  ремока всего конфига).
+- `GraphTopBar`: пункт «3D» рендерится только при `isGraph3DEnabled()` — иначе в переключателе
+  остаются «2D» и «Список».
+- `/graph/3d` и `/graph/3d/[id]` при выключенном 3D делают `goto` на `/graph` / `/graph/[id]`
+  с `replaceState` до `initAuth` и до загрузки layout-провайдера — стрелок «назад» в 3D не остаётся.
+- `graphStore.currentView`: нормализация только в геттере — записанное «3d» читается как «graph»
+  (двойная нормализация в сеттере оказалась непроверяемой мутацией, убрана).
+
+**Тесты:** TopBar — кнопка есть/нет по флагу (мутация «всегда» красная); стор — записанный «3d»
+читается «graph» (мутация геттера красная); оба маршрута — редирект и `load` не вызывается
+(мутация красная). `features/graph-3d` + `graph-3d-viewer` — 32/32, код и тесты в репозитории.
+
+**Живой прогон:** `tests/freeze-3d-1.spec.ts` на тест-стеке — 2/2; снимок верхней панели без «3D» —
+`docs/agents/screenshots/freeze-3d-1/top-bar.png`, запись в MANUAL_TEST_FEEDBACK.
+
+Документы: `GRAPH3D.md` (пометка о заморозке), `CONFIGURATION_EN/RU` (параметр `3d.enabled`),
+`CONFIG_REGISTRY.md` — регенерирован (180 записей).

@@ -78,6 +78,8 @@ export interface Config {
         };
       };
       "3d": {
+        /** FREEZE-3D-1 (решение 82): 3D is frozen until 2D is ready. */
+        enabled: boolean;
         max_nodes: number;
         layout_provider: "d3" | "graph-service";
         fog: {
@@ -154,6 +156,11 @@ export const graphRecommendationsOnHover = config.frontend.graph.recommendations
 export const graphAmbientMaxNodes = config.frontend.graph.ambient_max_nodes ?? 500;
 export const graphConfig3D = config.frontend.graph["3d"];
 export const graphPerformanceConfig = config.frontend.graph["3d"].performance;
+/** FREEZE-3D-1 (решение 82): 3D view frozen until 2D is ready. Function form
+ *  so tests can stub the gate without re-mocking the whole config object. */
+export function isGraph3DEnabled(): boolean {
+  return config.frontend.graph["3d"].enabled;
+}
 export const anomalyConfig = config.frontend.graph.anomaly;
 export const ACHIEVEMENT_POLL_INTERVAL_MS = config.frontend.achievements.poll_interval_ms;
 

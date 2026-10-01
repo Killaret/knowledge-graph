@@ -532,11 +532,15 @@ See also: [RECOMMENDATION_ARCHITECTURE.md](../architecture/RECOMMENDATION_ARCHIT
   "frontend": {
     "graph": {
       "2d": { "shadows_threshold": 100 },
-      "3d": { "max_nodes": 500 }
+      "3d": { "enabled": false, "max_nodes": 500 }
     }
   }
 }
 ```
+
+| Parameter | Type | Default | Used in | Description |
+|-----------|------|---------|---------|-------------|
+| `frontend.graph.3d.enabled` | boolean | `false` | `isGraph3DEnabled()` — `GraphTopBar`, `graphStore`, `/graph/3d` routes | FREEZE-3D-1 (decision 82): 3D is frozen until 2D is ready. `false` hides the 3D view toggle, redirects `/graph/3d*` to 2D, and reads a stored `"3d"` view as `"graph"`. 3D code and tests remain in the repo |
 
 ### Environment Variable Overrides
 

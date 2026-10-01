@@ -1,4 +1,5 @@
 import type { GraphData } from "$shared/api/graph";
+import { isGraph3DEnabled } from "$shared/config/config";
 
 /**
  * Cross-view graph UI state shared between 2D canvas, 3D viewer and list view.
@@ -54,7 +55,10 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
     },
 
     get currentView() {
-      return currentView;
+      // FREEZE-3D-1: a remembered "3d" view opens as "graph" while 3D is frozen.
+      // Normalization lives only in the getter: writes keep the raw value,
+      // reads always answer the view that is actually allowed.
+      return currentView === "3d" && !isGraph3DEnabled() ? "graph" : currentView;
     },
     set currentView(value: "graph" | "list" | "3d") {
       currentView = value;

@@ -162,6 +162,7 @@
         }
       },
       "3d": {
+        "enabled": false,
         "max_nodes": 500,
         "layout_provider": "graph-service",
         "fog": {

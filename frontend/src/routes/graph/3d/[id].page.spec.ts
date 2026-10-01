@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, waitFor } from "@testing-library/svelte";
 import { readable } from "svelte/store";
 import Page from "./[id]/+page.svelte";
+import { goto } from "$app/navigation";
+import { isGraph3DEnabled } from "$shared/config/config";
 
 // Same regression guard as ../page.spec.ts: the focused 3D page must wait
 // for initAuth() before loading, otherwise an in-flight session refresh
@@ -44,11 +46,30 @@ vi.mock("$widgets/graph-3d-viewer/Graph3DViewer.svelte", () => ({
   default: null,
 }));
 
+vi.mock("$shared/config/config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("$shared/config/config")>()),
+  isGraph3DEnabled: vi.fn(() => true),
+}));
+
 describe("Graph 3D focused page - auth ordering", () => {
   beforeEach(() => {
     loadMock.mockReset();
     initAuthMock.mockReset();
+    vi.mocked(isGraph3DEnabled).mockReturnValue(true);
     loadMock.mockResolvedValue({ nodes: [], links: [] });
+  });
+
+  it("FREEZE-3D-1: redirects to the 2D focused graph when 3D is disabled", async () => {
+    vi.mocked(isGraph3DEnabled).mockReturnValue(false);
+    initAuthMock.mockResolvedValue(undefined);
+
+    render(Page);
+
+    await waitFor(() =>
+      expect(vi.mocked(goto)).toHaveBeenCalledWith("/graph/note-1", { replaceState: true })
+    );
+    await Promise.resolve();
+    expect(loadMock).not.toHaveBeenCalled();
   });
 
   it("does not call layoutProvider.load until initAuth resolves", async () => {

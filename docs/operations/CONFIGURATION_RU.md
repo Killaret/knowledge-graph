@@ -538,11 +538,15 @@ score = α × explicit_score + β × semantic_score
         "hover_delay_ms": 150,
         "visual_fx_threshold": 100
       },
-      "3d": { "max_nodes": 500 }
+      "3d": { "enabled": false, "max_nodes": 500 }
     }
   }
 }
 ```
+
+| Параметр | Тип | Умолчание | Где используется | Описание |
+|-----------|------|-----------|------------------|----------|
+| `frontend.graph.3d.enabled` | boolean | `false` | `isGraph3DEnabled()` — `GraphTopBar`, `graphStore`, маршруты `/graph/3d` | FREEZE-3D-1 (решение 82): 3D заморожен до готовности 2D. `false` скрывает переключатель 3D, перенаправляет `/graph/3d*` на 2D и читает запомненный вид `«3d»` как `«graph»`. Код и тесты 3D остаются в репозитории |
 
 ### Переопределение через переменные окружения
 

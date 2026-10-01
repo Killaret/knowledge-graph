@@ -4,6 +4,7 @@
   import { graphStore } from "$shared/stores/graph.svelte";
   import { graphView, type GraphViewMode } from "$shared/stores/graph-view.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { isGraph3DEnabled } from "$shared/config/config";
   import GraphStats from "$features/graph-ui/GraphStats.svelte";
   import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
 
@@ -71,11 +72,16 @@
   let typeDropdownOpen = $state(false);
   let linkDropdownOpen = $state(false);
 
-  const viewOptions: { id: "graph" | "list" | "3d"; label: string; icon: string }[] = [
-    { id: "graph", label: t("controls.view2D"), icon: "◯" },
-    { id: "3d", label: t("controls.view3D"), icon: "△" },
-    { id: "list", label: t("controls.viewList"), icon: "☰" },
-  ];
+  // FREEZE-3D-1: the 3D toggle disappears while frontend.graph.3d.enabled=false.
+  const viewOptions = $derived(
+    (
+      [
+        { id: "graph", label: t("controls.view2D"), icon: "◯" },
+        ...(isGraph3DEnabled() ? [{ id: "3d", label: t("controls.view3D"), icon: "△" }] : []),
+        { id: "list", label: t("controls.viewList"), icon: "☰" },
+      ] as const
+    ).map((o) => ({ ...o })) as { id: "graph" | "list" | "3d"; label: string; icon: string }[]
+  );
 
   const layoutOptions: { id: "d3" | "graph-service"; label: string; title: string }[] = [
     { id: "d3", label: t("controls.layoutD3"), title: t("controls.layoutD3Title") },
