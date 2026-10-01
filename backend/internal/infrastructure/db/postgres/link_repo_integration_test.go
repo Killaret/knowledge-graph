@@ -472,6 +472,39 @@ func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_PromotesGammaRever
 	s.Require().Len(pairBack, 1)
 }
 
+// TestSaveUserLink_PromotesGammaBidirectional — gamma создала строки на паре
+// в обе стороны (X→Y и Y→X). Ручная X→Y повышает свою направленную строку без
+// столкновения unique constraint; встречная gamma не переживает подтверждение.
+func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_PromotesGammaBidirectional() {
+	linkType, _ := link.NewLinkType("related")
+	gammaWeight, _ := link.NewWeight(0.6)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	forward := link.NewGammaLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, gammaWeight, md)
+	s.Require().NoError(s.repo.Save(s.ctx, forward))
+	md2, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	s.Require().NoError(s.repo.Save(s.ctx,
+		link.NewGammaLink(s.targetNote.ID(), s.sourceNote.ID(), linkType, gammaWeight, md2)))
+
+	userWeight, _ := link.NewWeight(0.9)
+	reqMD, _ := link.NewMetadata(nil)
+	manual := link.NewLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, userWeight, reqMD)
+
+	saved, created, err := s.repo.SaveUserLink(s.ctx, manual)
+	s.Require().NoError(err)
+	s.False(created, "promotion must not insert a new row")
+	s.Equal(forward.ID(), saved.ID(), "the same-direction row must be promoted")
+	s.Equal("user", saved.SourceType().String())
+	s.Equal(s.sourceNote.ID(), saved.SourceNoteID())
+	s.Equal(s.targetNote.ID(), saved.TargetNoteID())
+
+	pairF, err := s.repo.FindByPair(s.ctx, s.sourceNote.ID(), s.targetNote.ID())
+	s.Require().NoError(err)
+	s.Require().Len(pairF, 1)
+	pairB, err := s.repo.FindByPair(s.ctx, s.targetNote.ID(), s.sourceNote.ID())
+	s.Require().NoError(err)
+	s.Empty(pairB, "the reverse-direction gamma row must not survive")
+}
+
 // TestSaveUserLink_ManualConflictReverse — ручная поверх ручной во встречном
 // направлении тоже конфликт: одно ребро на пару.
 func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_ManualConflictReverse() {

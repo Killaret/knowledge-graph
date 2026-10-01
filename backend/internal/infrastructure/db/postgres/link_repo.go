@@ -206,7 +206,13 @@ func (r *LinkRepository) SaveUserLink(ctx context.Context, l *link.Link) (*link.
 				if m.SourceType == "user" {
 					return link.ErrDuplicateLink
 				}
-				sameType = &models[i]
+				// Gamma can sit on the pair in both directions; promote the row
+				// already matching the request — rewriting a reverse-direction
+				// row would collide with the same-direction one.
+				if sameType == nil ||
+					(m.SourceNoteID == l.SourceNoteID() && m.TargetNoteID == l.TargetNoteID()) {
+					sameType = &models[i]
+				}
 			}
 			if m.SourceType == "gamma" {
 				gammas = append(gammas, m)
