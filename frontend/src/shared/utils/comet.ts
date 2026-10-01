@@ -50,3 +50,35 @@ export function secondsToRemindChoice(seconds: number | null | undefined): {
   }
   return { choice: "custom", customMinutes: Math.round(seconds / 60) };
 }
+
+/**
+ * COMET-1 stage E: визуальная метафора «приближается».
+ * urgency — 0..1: чем ближе срок, тем выше. done/просроченная — тусклая (0).
+ * Без даты — null (рисуем как обычную комету).
+ * Полное приближение считаем за 7 дней до срока.
+ */
+export function cometUrgency(
+  dueAt: string | null | undefined,
+  doneAt: string | null | undefined,
+  now: number = Date.now()
+): number | null {
+  if (doneAt) return 0;
+  if (!dueAt) return null;
+  const due = new Date(dueAt).getTime();
+  if (Number.isNaN(due)) return null;
+  if (due <= now) return 0; // прошла — тусклая
+  const week = 7 * 24 * 60 * 60 * 1000;
+  const left = due - now;
+  return Math.min(1, Math.max(0, 1 - left / week));
+}
+
+/** Комета «прошла» или «сделано» — можно предлагать архив (debris). */
+export function isCometSettled(
+  dueAt: string | null | undefined,
+  doneAt: string | null | undefined
+): boolean {
+  if (doneAt) return true;
+  if (!dueAt) return false;
+  const due = new Date(dueAt).getTime();
+  return !Number.isNaN(due) && due <= Date.now();
+}

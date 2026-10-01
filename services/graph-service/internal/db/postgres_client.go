@@ -16,6 +16,10 @@ type Note struct {
 	Type    string
 	Creator string
 	Public  bool
+	// COMET-1 stage E: comet scheduling fields ride the node payload so the
+	// 2D canvas can draw the "approaching" metaphor. Nil for non-dated notes.
+	DueAt  *time.Time
+	DoneAt *time.Time
 }
 
 type Link struct {
@@ -93,11 +97,11 @@ func (c *postgresClient) GetNotes(ctx context.Context, filter NotesFilter) ([]*N
 func (c *postgresClient) loadRooted(ctx context.Context, filter NotesFilter) ([]*Note, []*Link, error) {
 	noteVis, noteArgs := noteVisibilitySQLWithAlias(filter, 2, "n")
 	query := fmt.Sprintf(`WITH RECURSIVE nodes AS (
-    SELECT n.id, n.title, n.type, 0 AS level
+    SELECT n.id, n.title, n.type, n.due_at, n.done_at, 0 AS level
     FROM notes n
     WHERE n.id = $1 AND n.deleted_at IS NULL AND %s
   UNION ALL
-    SELECT n.id, n.title, n.type, nodes.level + 1
+    SELECT n.id, n.title, n.type, n.due_at, n.done_at, nodes.level + 1
     FROM nodes
     JOIN links l ON (l.source_note_id = nodes.id OR l.target_note_id = nodes.id)
     JOIN notes n ON n.id = CASE
@@ -107,7 +111,7 @@ func (c *postgresClient) loadRooted(ctx context.Context, filter NotesFilter) ([]
       AND n.deleted_at IS NULL AND %s
     WHERE nodes.level < $2 AND l.deleted_at IS NULL
   )
-  SELECT DISTINCT id, title, type FROM nodes ORDER BY id;`, noteVis, noteVis)
+  SELECT DISTINCT id, title, type, due_at, done_at FROM nodes ORDER BY id;`, noteVis, noteVis)
 
 	args := []interface{}{filter.RootID, filter.Depth}
 	args = append(args, noteArgs...)
@@ -121,7 +125,7 @@ func (c *postgresClient) loadRooted(ctx context.Context, filter NotesFilter) ([]
 	notes := make([]*Note, 0)
 	for rows.Next() {
 		var note Note
-		if err := rows.Scan(&note.ID, &note.Title, &note.Type); err != nil {
+		if err := rows.Scan(&note.ID, &note.Title, &note.Type, &note.DueAt, &note.DoneAt); err != nil {
 			return nil, nil, err
 		}
 		notes = append(notes, &note)
@@ -144,7 +148,7 @@ func (c *postgresClient) loadRooted(ctx context.Context, filter NotesFilter) ([]
 
 func (c *postgresClient) loadAll(ctx context.Context, filter NotesFilter) ([]*Note, []*Link, error) {
 	noteVis, noteArgs := noteVisibilitySQL(filter, 0)
-	notesQuery := fmt.Sprintf(`SELECT id, title, type FROM notes WHERE deleted_at IS NULL AND %s ORDER BY id`, noteVis)
+	notesQuery := fmt.Sprintf(`SELECT id, title, type, due_at, done_at FROM notes WHERE deleted_at IS NULL AND %s ORDER BY id`, noteVis)
 
 	noteArgSlice := make([]interface{}, 0, len(noteArgs))
 	noteArgSlice = append(noteArgSlice, noteArgs...)
@@ -158,7 +162,7 @@ func (c *postgresClient) loadAll(ctx context.Context, filter NotesFilter) ([]*No
 	notes := make([]*Note, 0)
 	for notesRows.Next() {
 		var note Note
-		if err := notesRows.Scan(&note.ID, &note.Title, &note.Type); err != nil {
+		if err := notesRows.Scan(&note.ID, &note.Title, &note.Type, &note.DueAt, &note.DoneAt); err != nil {
 			return nil, nil, err
 		}
 		notes = append(notes, &note)

@@ -57,6 +57,10 @@ export const en: Record<string, string> = {
   "comet.noDate": "no date",
   "comet.addToCalendar": "Add to calendar (.ics)",
   "comet.empty": "No comets yet — record a task.",
+  "comet.settled.done": "Done.",
+  "comet.settled.passed": "The date has passed.",
+  "comet.settled.suggest": "Move it to the debris archive?",
+  "comet.settled.archive": "Move to debris",
   // Main page (+page.svelte)
   "page.deleteError": "Failed to delete note",
   "page.batchDeleteError": "Failed to delete selected notes",
@@ -245,6 +249,10 @@ export const ru: Record<string, string> = {
   "comet.noDate": "без даты",
   "comet.addToCalendar": "Добавить в календарь (.ics)",
   "comet.empty": "Комет пока нет — запишите дело.",
+  "comet.settled.done": "Сделано.",
+  "comet.settled.passed": "Дата прошла.",
+  "comet.settled.suggest": "Убрать в архив (debris)?",
+  "comet.settled.archive": "В debris",
   // Main page (+page.svelte)
   "page.deleteError": "Не удалось удалить заметку",
   "page.batchDeleteError": "Не удалось удалить выбранные заметки",

@@ -13,12 +13,13 @@ import { seededRand } from "../renderer-utils";
 import { lightFrame } from "./style";
 import { lightCoreRadius, lightTypeColor, mixRgb, rgba, WHITE, type Rgb } from "./palette";
 import { haloSprite, paintHalo, sphereSprite } from "./sprites";
+import { cometUrgency, isCometSettled } from "$shared/utils/comet";
 
 const TAU = Math.PI * 2;
 const DARK_CORE: Rgb = [3, 4, 9];
 /** Comet tails share one direction, like a solar wind: up and to the left. */
 const COMET_TAIL_DIRECTION: readonly [number, number] = [-0.72, -0.69];
-/** Tail length for comets without a due date yet (COMET-1 brings the date). */
+/** Tail length for comets without a due date. */
 const COMET_DEFAULT_URGENCY = 0.55;
 
 type LightGlyph = (
@@ -183,26 +184,31 @@ const nebula: LightGlyph = (ctx, c, color, core) => {
 };
 
 const comet: LightGlyph = (ctx, c, color, core) => {
-  const u = COMET_DEFAULT_URGENCY;
-  const b = breath(c);
+  // COMET-1 stage E: real urgency from due/done dates — approaching comets
+  // flare up, settled ones fade to a faint core without a tail.
+  const settled = isCometSettled(c.dueAt, c.doneAt);
+  const u = settled ? 0 : (cometUrgency(c.dueAt, c.doneAt) ?? COMET_DEFAULT_URGENCY);
+  const b = breath(c) * (settled ? 0.4 : 1);
   const [dx, dy] = COMET_TAIL_DIRECTION;
   withLighter(ctx, () => {
-    const length = core * (3 + 12 * u);
-    const width = core * 0.95;
-    const tx = c.x + dx * length;
-    const ty = c.y + dy * length;
-    const g = ctx.createLinearGradient(c.x, c.y, tx, ty);
-    g.addColorStop(0, rgba(mixRgb(color, WHITE, 0.4), 0.25 + 0.5 * u));
-    g.addColorStop(1, rgba(color, 0));
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.moveTo(c.x - dy * width, c.y + dx * width);
-    ctx.lineTo(tx, ty);
-    ctx.lineTo(c.x + dy * width, c.y - dx * width);
-    ctx.closePath();
-    ctx.fill();
+    if (!settled) {
+      const length = core * (3 + 12 * u);
+      const width = core * 0.95;
+      const tx = c.x + dx * length;
+      const ty = c.y + dy * length;
+      const g = ctx.createLinearGradient(c.x, c.y, tx, ty);
+      g.addColorStop(0, rgba(mixRgb(color, WHITE, 0.4), 0.25 + 0.5 * u));
+      g.addColorStop(1, rgba(color, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(c.x - dy * width, c.y + dx * width);
+      ctx.lineTo(tx, ty);
+      ctx.lineTo(c.x + dy * width, c.y - dx * width);
+      ctx.closePath();
+      ctx.fill();
+    }
     halo(ctx, c.x, c.y, core * (2.2 + 2 * u), color, (0.2 + 0.35 * u) * b);
-    disc(ctx, c.x, c.y, core * 0.6, mixRgb(color, WHITE, 0.85), 1);
+    disc(ctx, c.x, c.y, core * 0.6, mixRgb(color, WHITE, settled ? 0.4 : 0.85), settled ? 0.45 : 1);
   });
 };
 

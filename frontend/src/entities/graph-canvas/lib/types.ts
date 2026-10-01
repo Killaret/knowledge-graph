@@ -14,6 +14,9 @@ export interface SimulationNode extends SimulationNodeDatum {
   color?: string;
   /** Optional custom glow color; computed from fill if omitted. */
   glowColor?: string;
+  /** COMET-1: scheduling fields for the comet metaphor on 2D canvas. */
+  due_at?: string | null;
+  done_at?: string | null;
 }
 
 export interface SimulationLink extends SimulationLinkDatum<SimulationNode> {

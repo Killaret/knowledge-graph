@@ -19,6 +19,9 @@ export interface GraphNode {
   color?: string;
   /** Optional custom glow color; computed from color if omitted. */
   glowColor?: string;
+  /** COMET-1: scheduling fields riding the graph payload for comet nodes. */
+  due_at?: string | null;
+  done_at?: string | null;
 }
 
 // Ребро графа – связь между заметками
@@ -51,6 +54,8 @@ export function normalizeNode(node: Partial<GraphNode>): GraphNode {
     y: node.y,
     z: node.z,
     size: node.size,
+    due_at: node.due_at,
+    done_at: node.done_at,
   };
 }
 

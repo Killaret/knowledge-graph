@@ -6,7 +6,7 @@ import * as notesApi from "$shared/api/notes";
 import * as linksApi from "$shared/api/links";
 import * as qualityApi from "$shared/api/quality";
 
-vi.mock("$shared/api/notes", () => ({ getNote: vi.fn() }));
+vi.mock("$shared/api/notes", () => ({ getNote: vi.fn(), updateNote: vi.fn() }));
 vi.mock("$shared/api/links", () => ({
   getNoteLinks: vi.fn(),
   deleteAllNoteLinks: vi.fn(),

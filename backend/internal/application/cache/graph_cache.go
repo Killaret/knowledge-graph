@@ -45,6 +45,9 @@ type GraphNode struct {
 	Type  string  `json:"type"`
 	X     float64 `json:"x,omitempty"` // Cached position for instant visual stability
 	Y     float64 `json:"y,omitempty"`
+	// COMET-1 stage E: scheduling fields must survive the cache round-trip.
+	DueAt  *time.Time `json:"due_at,omitempty"`
+	DoneAt *time.Time `json:"done_at,omitempty"`
 }
 
 // GraphLink represents a cached link

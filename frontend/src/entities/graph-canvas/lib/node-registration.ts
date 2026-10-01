@@ -52,7 +52,19 @@ export function registerCelestialBodyDrawers(): void {
   };
 
   CelestialBody.COMET.drawFunction = (ctx, c) => {
-    drawComet(ctx, c.x, c.y, c.r, c.angle, c.variation, c.nodeId, c.nodeCount, c.time);
+    drawComet(
+      ctx,
+      c.x,
+      c.y,
+      c.r,
+      c.angle,
+      c.variation,
+      c.nodeId,
+      c.nodeCount,
+      c.time,
+      c.dueAt,
+      c.doneAt
+    );
   };
 
   CelestialBody.GALAXY.drawFunction = (ctx, c) => {

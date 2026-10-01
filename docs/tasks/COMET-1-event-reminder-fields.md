@@ -1,6 +1,6 @@
 # COMET-1. Кометы — дела с необязательной датой и напоминанием
 
-Статус: **в работе — 1.0 · Devin (этапы A–D сделаны, коммиты 1240ad4, 02126af, 1c34811 и ниже).** Постановка —
+Статус: **в работе — 1.0 · Devin (этапы A–E сделаны, коммиты 1240ad4, 02126af, 1c34811, 466ed90 и ниже).** Постановка —
 Claude Code, 2026-09-27, по разговору с владельцем. Черновик обсуждения 14.09 — в конце файла,
 как история.
 
@@ -159,6 +159,49 @@ VALARM, экранирование `;,\\n`, свёртка длинных стр
 стаб-репозиторий уведомлений, чтобы маршруты этапа C участвовали в сверке.
 
 **Не в этапе D:** метафора графа (E), живой прогон `.ics` в календаре (F).
+
+## Разбор этапа E (Devin, 2026-10-01)
+
+**Сделано.** Метафора «комета приближается» — критерий 7, плюс предложение архива — критерий 6.
+
+*Проводка данных.* `due_at`/`done_at` доезжают до узлов графа по всей цепочке: SQL в
+graph-service (`postgres_client.go` — поля в SELECT и модель `Note`) → `engine.LayoutNode`
+(`layout.go`, `layout_2d.go`, `layout_3d.go` — поле `DueAt`/`DoneAt` в HTTP-ответе) → бэкендовый
+`GraphNode` (`graphhandler/models.go` + `graph_handler.go`, 3 точки сборки) + кэш
+(`application/cache/graph_cache.go` — поля в сериализации, иначе кэш их обрезал бы) → фронтенд
+`GraphNode`/`SimulationNode` (`shared/api/graph.ts`, `lib/types.ts`) → `CelestialBodyDrawContext.dueAt/doneAt`
+(`renderer-orchestrator.ts` отдаёт в `body.draw`). gRPC-прото graph-service не трогал: HTTP-путь
+`v1/graph/full` отдаёт `engine.LayoutNode` напрямую; регенерации protoc нет — фронтенд по gRPC не ходит.
+
+*Хелперы* (`shared/utils/comet.ts`): `cometUrgency(dueAt, doneAt)` — `null` без даты, `0` для
+прошедшей/сделанной, иначе `1 − left/7d` с клэмпом [0,1] (неделя горизонта — комета за месяц
+ещё «далеко»); `isCometSettled(dueAt, doneAt)` — сделана или срок прошёл.
+
+*Рендер.* `drawComet` (classic): settled → `globalAlpha 0.35`, хвост не рисуется; urgency
+масштабирует длину хвоста `60·(1+0.9u)` и ширину свечения. Light-стиль (`light/glyphs.ts`)
+использовал константу-заглушку `COMET_DEFAULT_URGENCY=0.55` — теперь считает по-настоящему:
+settled → без хвоста и тусклое ядро (breath ×0.4, disc alpha 0.45), иначе длина хвоста и
+яркость по `u` (у недатированной остаётся базовая 0.55).
+
+*Архив.* В `CockpitNoteDetails` у settled-кометы блок `comet-archive-suggestion` и кнопка
+`comet-archive-btn` — `updateNote(id, {type:"debris"})` по явному клику, локальная заметка
+обновляется; автоматически ничего не архивируется. i18n en+ru.
+
+**Тесты.** `comet.test.ts`: urgency — null/0/клэмп/рост при приближении, settled — done/past/
+active/undated. `GraphCanvas.node-types.spec.ts`: длинный хвост у срочной vs базовая
+(один id — один `sizeMultiplier`), dimming у done и past-due, нет `quadraticCurveTo` у settled.
+`light-style.test.ts`: settled — нет хвоста (`createLinearGradient` не вызван), живая — есть.
+`CockpitNoteDetails.comet.spec.ts` 4: предложение у done и past-due, нет у активной,
+клик → `updateNote` с `type:"debris"`. Мок `updateNote` дописан в quality-спеке.
+
+**Мутации (красные).** Classic: «хвост у settled» (снятие `!dimmed`) и «settled без `done_at`» —
+красные. Light: «хвост у settled» — красная.
+
+**Прогоны.** `svelte-check` 0/0; vitest 70/70 по затронутым спекам (node-types, light-style,
+comet utils, note-details comet+quality); `go test` — graphhandler, cache и все пакеты
+graph-service зелёные.
+
+**Не в этапе E:** живой прогон метафоры и снимки «через месяц/завтра/прошла» — этап F.
 
 **Решение владельца (2026-09-27, COMET-1):** комета — дело, которое нужно записать и не забыть: визит к
 врачу, сходить в кино, посмотреть фильм. Дата необязательна, напоминание — по желанию, повторов в 1.0

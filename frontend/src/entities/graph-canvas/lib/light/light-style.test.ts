@@ -128,6 +128,31 @@ describe("light glyphs", () => {
     expect(ctx.createLinearGradient).toHaveBeenCalled();
   });
 
+  it("COMET-1: a settled comet has no tail, a live one does", () => {
+    ensureCelestialBodyDrawers();
+    const settled = createMockCanvasContext();
+    CelestialBody.COMET.drawFunction!(settled, {
+      x: 0,
+      y: 0,
+      r: 16,
+      angle: 0,
+      nodeId: "c",
+      doneAt: new Date(Date.now() - 60_000).toISOString(),
+    });
+    expect(settled.createLinearGradient).not.toHaveBeenCalled();
+
+    const live = createMockCanvasContext();
+    CelestialBody.COMET.drawFunction!(live, {
+      x: 0,
+      y: 0,
+      r: 16,
+      angle: 0,
+      nodeId: "c",
+      dueAt: new Date(Date.now() + 3600_000).toISOString(),
+    });
+    expect(live.createLinearGradient).toHaveBeenCalled();
+  });
+
   it("keeps the halo still in snapshot mode and lets it breathe otherwise", () => {
     ensureCelestialBodyDrawers();
     const drawAt = (time: number, stable: boolean) => {

@@ -24,6 +24,9 @@ export interface CelestialBodyDrawContext {
   /** Whether the global shadow setting is active for this frame. */
   enableShadows?: boolean;
   focusMode?: boolean;
+  /** COMET-1 stage E: scheduling fields for the "approaching" comet metaphor. */
+  dueAt?: string | null;
+  doneAt?: string | null;
 }
 
 export type CelestialBodyDrawFunction = (

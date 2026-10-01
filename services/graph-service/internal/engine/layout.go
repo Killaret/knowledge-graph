@@ -1,5 +1,7 @@
 package engine
 
+import "time"
+
 // Layout type/node constants used by both 2D and 3D engines.
 const (
 	NodeTypeNote = "note"
@@ -24,6 +26,9 @@ type LayoutNode struct {
 	Y     float64 `json:"y"`
 	Z     float64 `json:"z"`
 	Size  float64 `json:"size"`
+	// COMET-1 stage E: optional scheduling fields for the comet metaphor.
+	DueAt  *time.Time `json:"due_at,omitempty"`
+	DoneAt *time.Time `json:"done_at,omitempty"`
 }
 
 type LayoutLink struct {

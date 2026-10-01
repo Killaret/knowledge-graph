@@ -266,6 +266,8 @@ export function drawNode(
     disableVariation,
     enableShadows: effectiveEnableShadows,
     focusMode,
+    dueAt: node.due_at,
+    doneAt: node.done_at,
   });
   ctx.shadowBlur = 0;
 }

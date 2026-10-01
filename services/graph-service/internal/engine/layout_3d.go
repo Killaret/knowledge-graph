@@ -18,13 +18,15 @@ func Layout3D(notes []*db.Note, links []*db.Link) *LayoutResponse {
 			nodeType = NodeTypeNote
 		}
 		nodes = append(nodes, &LayoutNode{
-			ID:    note.ID,
-			Title: note.Title,
-			Type:  nodeType,
-			X:     math.Cos(theta) * Layout3DRadius,
-			Y:     math.Sin(theta) * Layout3DRadius,
-			Z:     float64(i) * Layout3DZStep,
-			Size:  DefaultNodeSize,
+			ID:     note.ID,
+			Title:  note.Title,
+			Type:   nodeType,
+			X:      math.Cos(theta) * Layout3DRadius,
+			Y:      math.Sin(theta) * Layout3DRadius,
+			Z:      float64(i) * Layout3DZStep,
+			Size:   DefaultNodeSize,
+			DueAt:  note.DueAt,
+			DoneAt: note.DoneAt,
 		})
 	}
 

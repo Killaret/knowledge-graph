@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getNote, type Note } from "$shared/api/notes";
+  import { getNote, updateNote, type Note } from "$shared/api/notes";
   import {
     getNoteLinks,
     deleteAllNoteLinks,
@@ -29,6 +29,7 @@
     needsLinkDeleteConfirm,
     linkDeleteConfirmKey,
   } from "$entities/graph-canvas/lib/link-delete";
+  import { isCometSettled } from "$shared/utils/comet";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -146,6 +147,25 @@
     if (q.signals?.kind === "stub") return "cockpit.noteDetails.quality.stub";
     if (q.signals?.truncated_by_import) return "cockpit.noteDetails.quality.truncated";
     return "cockpit.noteDetails.quality.ok";
+  }
+
+  // COMET-1 stage E: «прошла»/«сделано» — предлагаем убрать в debris.
+  // Предлагает, само не убирает: только по клику пользователя.
+  const cometSettled = $derived(
+    note?.type === "comet" && isCometSettled(note.due_at, note.done_at)
+  );
+  let archiveBusy = $state(false);
+
+  async function archiveComet() {
+    if (!note || archiveBusy) return;
+    archiveBusy = true;
+    try {
+      note = await updateNote(note.id, { type: "debris" });
+    } catch {
+      error = t("cockpit.noteDetails.loadError");
+    } finally {
+      archiveBusy = false;
+    }
   }
 
   // NOTE-HEALTH-1 этап 0: the row is technical "Обработка" — visible only when
@@ -425,6 +445,24 @@
           >{t("cockpit.noteDetails.updated", { date: formatDate(note.updated_at) })}</span
         >
       </div>
+
+      {#if cometSettled}
+        <div class="comet-archive" data-testid="comet-archive-suggestion">
+          <span class="comet-archive-text">
+            {note.done_at ? t("comet.settled.done") : t("comet.settled.passed")}
+            {t("comet.settled.suggest")}
+          </span>
+          <button
+            type="button"
+            class="comet-archive-btn"
+            disabled={archiveBusy}
+            onclick={archiveComet}
+            data-testid="comet-archive-btn"
+          >
+            {t("comet.settled.archive")}
+          </button>
+        </div>
+      {/if}
 
       {#if showQualityRow && quality}
         <div class="quality-row" data-testid="quality-row">
@@ -806,6 +844,40 @@
   .date {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.5);
+  }
+
+  .comet-archive {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 10px 12px;
+    border: 1px solid rgba(232, 121, 249, 0.3);
+    border-radius: 8px;
+    background: rgba(232, 121, 249, 0.06);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .comet-archive-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    background: rgba(232, 121, 249, 0.15);
+    border: 1px solid rgba(232, 121, 249, 0.5);
+    border-radius: 6px;
+    color: #e879f9;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .comet-archive-btn:hover:not(:disabled) {
+    background: rgba(232, 121, 249, 0.3);
+  }
+
+  .comet-archive-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 
   .quality-row {
