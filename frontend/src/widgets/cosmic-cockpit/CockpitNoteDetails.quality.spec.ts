@@ -94,11 +94,24 @@ describe("Quality row", () => {
     expect(queryByTestId("quality-row")).toBeNull();
   });
 
-  it("shows 'looks fine' for a clean verdict", async () => {
+  it("hides the row for a clean verdict — no problems, no 'Обработка'", async () => {
     vi.mocked(qualityApi.getNoteQuality).mockResolvedValue({ enabled: true, quality: record() });
-    const { findByTestId } = render(CockpitNoteDetails, { props: { nodeId: "n1" } });
-    const status = await findByTestId("quality-status");
-    expect(status.textContent).toMatch(/looks fine|в порядке/);
+    const { queryByTestId } = render(CockpitNoteDetails, { props: { nodeId: "n1" } });
+    await waitFor(() => expect(qualityApi.getNoteQuality).toHaveBeenCalled());
+    // NOTE-HEALTH-1 этап 0: при «в порядке» строки нет.
+    await waitFor(() => expect(queryByTestId("quality-row")).toBeNull());
+  });
+
+  it("labels the row 'Processing' when a problem is present", async () => {
+    vi.mocked(qualityApi.getNoteQuality).mockResolvedValue({
+      enabled: true,
+      quality: record({ kind: "stub" }, ["stub"], "enrich"),
+    });
+    const { findByTestId, getByText } = render(CockpitNoteDetails, {
+      props: { nodeId: "n1" },
+    });
+    await findByTestId("quality-row");
+    expect(getByText(/Processing|Обработка/)).toBeInTheDocument();
   });
 
   it("shows 'link only' for a stub note", async () => {
@@ -132,7 +145,11 @@ describe("Quality row", () => {
   });
 
   it("enqueues a manual assessment on 'Re-assess'", async () => {
-    vi.mocked(qualityApi.getNoteQuality).mockResolvedValue({ enabled: true, quality: record() });
+    // NOTE-HEALTH-1: the row (and its actions) only render on problems.
+    vi.mocked(qualityApi.getNoteQuality).mockResolvedValue({
+      enabled: true,
+      quality: record({ kind: "stub" }, ["stub"], "enrich"),
+    });
     const { findByTestId } = render(CockpitNoteDetails, { props: { nodeId: "n1" } });
     await fireEvent.click(await findByTestId("quality-improve"));
     await waitFor(() => expect(qualityApi.assessNoteQuality).toHaveBeenCalledWith("n1"));
@@ -195,7 +212,10 @@ describe("Quality row", () => {
       },
     };
     vi.mocked(notesApi.getNote).mockResolvedValue(noteWithPrev as any);
-    vi.mocked(qualityApi.getNoteQuality).mockResolvedValue({ enabled: true, quality: record() });
+    vi.mocked(qualityApi.getNoteQuality).mockResolvedValue({
+      enabled: true,
+      quality: record({ truncated_by_import: true }, ["truncated"], "enrich"),
+    });
     vi.mocked(qualityApi.refetchRestore).mockResolvedValue({ restored: true });
 
     const { findByTestId } = render(CockpitNoteDetails, { props: { nodeId: "n1" } });

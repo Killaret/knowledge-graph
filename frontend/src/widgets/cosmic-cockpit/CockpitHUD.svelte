@@ -6,10 +6,12 @@
     nodeCount?: number;
     linkCount?: number;
     cluster?: string | null;
-    health?: number;
+    // NOTE-HEALTH-1 этап 0: null/undefined hides the decorative HEALTH block
+    // until a real metric lands (этап 2).
+    health?: number | null;
   }
 
-  const { nodeCount = 0, linkCount = 0, cluster = null, health = 100 }: Props = $props();
+  const { nodeCount = 0, linkCount = 0, cluster = null, health = null }: Props = $props();
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -25,8 +27,9 @@
   });
 
   const healthColor = $derived(() => {
-    if (health >= 80) return "#2dd4bf";
-    if (health >= 50) return "#facc15";
+    const value = health ?? 0;
+    if (value >= 80) return "#2dd4bf";
+    if (value >= 50) return "#facc15";
     return "#f87171";
   });
 
@@ -57,13 +60,15 @@
       <span class="hud-value">{linkCount}</span>
     </div>
 
-    <div class="hud-item health" data-testid="hud-health">
-      <span class="hud-label">{t("cockpit.hud.health")}</span>
-      <div class="health-bar">
-        <div class="health-fill" style="width:{health}%;background:{healthColor()}"></div>
+    {#if health != null}
+      <div class="hud-item health" data-testid="hud-health">
+        <span class="hud-label">{t("cockpit.hud.health")}</span>
+        <div class="health-bar">
+          <div class="health-fill" style="width:{health}%;background:{healthColor()}"></div>
+        </div>
+        <span class="hud-value">{health}%</span>
       </div>
-      <span class="hud-value">{health}%</span>
-    </div>
+    {/if}
 
     <div class="hud-item" data-testid="hud-fps">
       <span class="hud-label">{t("cockpit.hud.fps")}</span>

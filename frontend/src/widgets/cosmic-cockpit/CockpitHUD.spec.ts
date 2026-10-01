@@ -51,6 +51,11 @@ describe("CockpitHUD", () => {
     expect(clusterValue).toHaveTextContent(/Unknown|unknown/);
   });
 
+  it("hides the health block when no health prop is given (NOTE-HEALTH-1 stage 0)", () => {
+    render(CockpitHUD, { props: { nodeCount: 5, linkCount: 3 } });
+    expect(screen.queryByTestId("hud-health")).toBeNull();
+  });
+
   it("renders different health color bands", () => {
     const { rerender } = render(CockpitHUD, { props: { health: 30 } });
     const healthFill = () =>

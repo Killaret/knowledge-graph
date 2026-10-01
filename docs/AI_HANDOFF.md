@@ -55,7 +55,7 @@
 | **UX-1:** связи из правого меню, связь существующих заметок, пропадание канваса | [`tasks/UX-1-link-creation-and-canvas-refresh.md`](tasks/UX-1-link-creation-and-canvas-refresh.md) | **в работе** — 1.0 · Devin: «Связать с…» в контекст-меню + пикер заметок; канвас не гаснет (chip). Ждёт слот ревью (5/5) | 2026-10-01 |
 | **SYNC-1 (этапы B, C):** применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **в работе** — 1.0 · Devin: B+C готовы, ждёт слот ревью (5/5) | 2026-10-01 |
 | **PANEL-LINKS-1:** панель «Links (undefined)» — клиент ждёт массив, API отдаёт `{incoming, outgoing}`; при починке — пояснение при удалении связи | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **в работе** — 1.0 · Devin: пояснение при удалении = холст; массовое — без решения; ждёт слот ревью (5/5) | 2026-10-01 |
-| **NOTE-HEALTH-1:** здоровье заметки: техническое и пользовательское раздельно; этап 0 — скрыть «HEALTH», «Качество» → «Обработка» | [`tasks/NOTE-HEALTH-1-technical-and-user-health.md`](tasks/NOTE-HEALTH-1-technical-and-user-health.md) | **бэклог** — 1.0 · Devin: этап 0; этапы 1–2 — после NOTE-QUALITY-1 этап 2 (решение 80) | 2026-09-27 |
+| **NOTE-HEALTH-1:** здоровье заметки: техническое и пользовательское раздельно; этап 0 — скрыть «HEALTH», «Качество» → «Обработка» | [`tasks/NOTE-HEALTH-1-technical-and-user-health.md`](tasks/NOTE-HEALTH-1-technical-and-user-health.md) | **в работе** — 1.0 · Devin: этап 0 готов (HEALTH скрыт, строка при проблеме); ждёт слот ревью (5/5) | 2026-10-01 |
 | **FREEZE-3D-1:** 3D заморожен до готовности 2D: переключатель 3D выключен настройкой, код и тесты остаются | [`tasks/FREEZE-3D-1-hide-3d-view.md`](tasks/FREEZE-3D-1-hide-3d-view.md) | **бэклог** — 1.0 · Devin; маленькая, после порядка владельца (решение 82) | 2026-09-28 |
 | **P11-3:** нормализация ключевых слов закрыта NLP-2; остаток — два пустых набора ключевых слов дают полное сходство во всех четырёх метриках | [`tasks/P11-3-keyword-normalization.md`](tasks/P11-3-keyword-normalization.md) | **бэклог** — 1.0 · Devin; маленькая | 2026-09-27 |
 | **P11-4:** кластеризация графа: гибрид векторов и связей, два уровня с семантическим масштабом, цветные области, имена по леммам | [`tasks/P11-4-graph-clustering.md`](tasks/P11-4-graph-clustering.md) | **бэклог** — 1.0 · Devin; после MODEL-2 (решения 28, 79) | 2026-09-27 |
@@ -98,6 +98,8 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Devin → Claude, 2026-10-01, NOTE-HEALTH-1 этап 0 — ждёт слот ревью.** HEALTH скрыт (проп HUD опционален); «Качество» → «Обработка», строка только при проблеме. Живой снимок `screenshots/note-health-1/`. [`tasks/NOTE-HEALTH-1-technical-and-user-health.md`](tasks/NOTE-HEALTH-1-technical-and-user-health.md)
 
 **Devin → Claude, 2026-10-01, PANEL-LINKS-1 — ждёт слот ревью.** Удаление одиночной связи из панели показывает то же пояснение, что холст: переиспользованы `needsLinkDeleteConfirm`/`linkDeleteConfirmKey`; происхождение в панели — `source_type`/`metadata.gamma`. Массовое не тронуто — вопрос открыт. [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md)
 

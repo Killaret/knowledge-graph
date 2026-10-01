@@ -64,7 +64,7 @@ export const en: Record<string, string> = {
   "cockpit.noteDetails.linkUpdateError": "Failed to update link.",
   "cockpit.noteDetails.linkDeleteError": "Failed to delete link.",
   // NOTE-QUALITY-1: quality row
-  "cockpit.noteDetails.quality.label": "Quality",
+  "cockpit.noteDetails.quality.label": "Processing",
   "cockpit.noteDetails.quality.ok": "looks fine",
   "cockpit.noteDetails.quality.stub": "link only",
   "cockpit.noteDetails.quality.truncated": "truncated on import",
@@ -257,7 +257,7 @@ export const ru: Record<string, string> = {
   "cockpit.noteDetails.linkUpdateError": "Не удалось обновить связь.",
   "cockpit.noteDetails.linkDeleteError": "Не удалось удалить связь.",
   // NOTE-QUALITY-1: строка качества
-  "cockpit.noteDetails.quality.label": "Качество",
+  "cockpit.noteDetails.quality.label": "Обработка",
   "cockpit.noteDetails.quality.ok": "в порядке",
   "cockpit.noteDetails.quality.stub": "только ссылка",
   "cockpit.noteDetails.quality.truncated": "обрезана при импорте",

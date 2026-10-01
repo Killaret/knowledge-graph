@@ -338,6 +338,19 @@
 - **Automated regression:** HTTP and gRPC tests reject a forged user header when trust is disabled. Mutation back to unconditional HTTP trust makes `TestAuthMiddlewareIgnoresInternalUserHeaderByDefault` fail with `expected 401 ... got 200`.
 - **Screenshot / Logs:** before/after `curl -D -` output, live node counts, mutation output, and test command output recorded in the implementing session; no screenshot applies to this transport-level finding.
 
+## Verification
+
+### NOTE-HEALTH-1 этап 0 — нижняя панель без «HEALTH» (live test stack)
+
+- **Scope:** acceptance criterion «нижняя панель без HEALTH» + снимок.
+- **Date:** 2026-10-01
+- **Agent:** Devin
+- **Tests executed:**
+  - `scripts/testing/start-test.ps1` → все 10 контейнеров `kg-test-*` healthy; `seed-test-data.ps1` → 100 заметок / 60 связей.
+  - `npx playwright test tests/note-health-1.spec.ts --project=chromium-skip-auth` → 2 passed: `hud-health` отсутствует в `cockpit-bottom-panel`, `hud-node-count`/`hud-link-count` на месте.
+- **Screenshot / Logs:** `docs/agents/screenshots/note-health-1/bottom-panel.png` — элементный снимок панели: `CLUSTER Deep Space · NOTES 100 · LINKS 246 · FPS 0 · SYNC Idle · FIRST PERSON`, блока HEALTH нет; `page.png` — полная страница.
+- **Note:** строка «Обработка» в панели заметки покрыта компонентными тестами (`CockpitNoteDetails.quality.spec.ts`): чистый вердикт → строки нет, проблемный → «Processing/Обработка» с причиной; в сиде проблемных записей качества нет.
+
 ## Findings (Personal stack, 2026-09-10)
 
 ### Semantic "similar notes" section in the note card

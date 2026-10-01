@@ -148,6 +148,14 @@
     return "cockpit.noteDetails.quality.ok";
   }
 
+  // NOTE-HEALTH-1 этап 0: the row is technical "Обработка" — visible only when
+  // something is wrong; a clean note shows no row at all.
+  const showQualityRow = $derived(
+    qualityEnabled &&
+      quality !== null &&
+      qualityStatusKey(quality) !== "cockpit.noteDetails.quality.ok"
+  );
+
   function qualityTooltip(q: QualityRecord): string {
     const s = q.signals;
     if (!s) return "";
@@ -418,7 +426,7 @@
         >
       </div>
 
-      {#if qualityEnabled && quality}
+      {#if showQualityRow && quality}
         <div class="quality-row" data-testid="quality-row">
           <span class="quality-label">{t("cockpit.noteDetails.quality.label")}</span>
           <span
