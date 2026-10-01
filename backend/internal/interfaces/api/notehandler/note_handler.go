@@ -126,11 +126,66 @@ func (h *Handler) enqueueBackupOnNoteChange(ctx context.Context) {
 	}
 }
 
+// nullableTime distinguishes "key absent" from "key null" in JSON: absent keeps
+// the stored value, null or "" clears it, an RFC 3339 string sets it.
+// COMET-1 этап A.
+type nullableTime struct {
+	present bool
+	value   *time.Time
+}
+
+func (n *nullableTime) UnmarshalJSON(b []byte) error {
+	n.present = true
+	var s string
+	if string(b) != "null" {
+		if err := json.Unmarshal(b, &s); err != nil {
+			return fmt.Errorf("must be an RFC 3339 datetime string or null")
+		}
+	}
+	if s == "" {
+		n.value = nil
+		return nil
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return fmt.Errorf("must be an RFC 3339 datetime: %w", err)
+	}
+	n.value = &t
+	return nil
+}
+
+// nullableInt64 — same presence semantics for integer fields; rejects negative
+// values (a reminder offset cannot be negative).
+type nullableInt64 struct {
+	present bool
+	value   *int64
+}
+
+func (n *nullableInt64) UnmarshalJSON(b []byte) error {
+	n.present = true
+	if string(b) == "null" {
+		n.value = nil
+		return nil
+	}
+	var v int64
+	if err := json.Unmarshal(b, &v); err != nil {
+		return fmt.Errorf("must be a non-negative integer number of seconds or null")
+	}
+	if v < 0 {
+		return fmt.Errorf("must not be negative")
+	}
+	n.value = &v
+	return nil
+}
+
 type createNoteRequest struct {
-	Title    string                 `json:"title" binding:"required,max=200"`
-	Content  string                 `json:"content" binding:"omitempty,max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
-	Metadata map[string]interface{} `json:"metadata"`
+	Title               string                 `json:"title" binding:"required,max=200"`
+	Content             string                 `json:"content" binding:"omitempty,max=50000"`
+	Type                string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Metadata            map[string]interface{} `json:"metadata"`
+	DueAt               nullableTime           `json:"due_at"`
+	RemindBeforeSeconds nullableInt64          `json:"remind_before_seconds"`
+	DoneAt              nullableTime           `json:"done_at"`
 }
 
 type deleteBatchRequest struct {
@@ -202,14 +257,17 @@ type importBatchResponse struct {
 }
 
 type noteResponse struct {
-	ID        string                 `json:"id"`
-	Title     string                 `json:"title"`
-	Content   string                 `json:"content"`
-	Type      string                 `json:"type"`
-	Metadata  map[string]interface{} `json:"metadata"`
-	IsPublic  bool                   `json:"is_public"`
-	CreatedAt time.Time              `json:"created_at"`
-	UpdatedAt time.Time              `json:"updated_at"`
+	ID                  string                 `json:"id"`
+	Title               string                 `json:"title"`
+	Content             string                 `json:"content"`
+	Type                string                 `json:"type"`
+	Metadata            map[string]interface{} `json:"metadata"`
+	IsPublic            bool                   `json:"is_public"`
+	DueAt               *time.Time             `json:"due_at"`
+	RemindBeforeSeconds *int64                 `json:"remind_before_seconds"`
+	DoneAt              *time.Time             `json:"done_at"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
 }
 
 //nolint:unused
@@ -300,6 +358,15 @@ func (h *Handler) Create(c *gin.Context) {
 		newNote = note.NewNote(title, content, noteType, metadata)
 	}
 
+	// COMET-1: scheduling fields — validated even for non-comet types so a
+	// reminder can never exist without a date.
+	if err := newNote.SetCometFields(req.DueAt.value, req.RemindBeforeSeconds.value, req.DoneAt.value); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("remind_before_seconds", apicommon.ReasonInvalidValue, err.Error(), req.RemindBeforeSeconds.value),
+		})
+		return
+	}
+
 	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
 		return
@@ -341,30 +408,41 @@ func (h *Handler) Create(c *gin.Context) {
 		}
 	}
 
-	responseData := gin.H{
-		"id":         newNote.ID(),
-		"title":      newNote.Title().String(),
-		"content":    newNote.Content().String(),
-		"type":       newNote.Type(),
-		"metadata":   newNote.Metadata().Value(),
-		"is_public":  newNote.IsPublic(),
-		"created_at": newNote.CreatedAt(),
-		"updated_at": newNote.UpdatedAt(),
+	apicommon.JSONWithMessage(c, 201, noteResponseData(newNote), apicommon.MsgResourceCreated)
+}
+
+// noteResponseData renders a domain note as the response payload. Used by
+// Create, Update and publish toggles so new fields land in all three.
+func noteResponseData(n *note.Note) gin.H {
+	return gin.H{
+		"id":                    n.ID(),
+		"title":                 n.Title().String(),
+		"content":               n.Content().String(),
+		"type":                  n.Type(),
+		"metadata":              n.Metadata().Value(),
+		"is_public":             n.IsPublic(),
+		"due_at":                n.DueAt(),
+		"remind_before_seconds": n.RemindBeforeSeconds(),
+		"done_at":               n.DoneAt(),
+		"created_at":            n.CreatedAt(),
+		"updated_at":            n.UpdatedAt(),
 	}
-	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
 
 // toNoteResponse converts a domain note to the handler note response.
 func toNoteResponse(n *note.Note) noteResponse {
 	return noteResponse{
-		ID:        n.ID().String(),
-		Title:     n.Title().String(),
-		Content:   n.Content().String(),
-		Type:      n.Type(),
-		Metadata:  n.Metadata().Value(),
-		IsPublic:  n.IsPublic(),
-		CreatedAt: n.CreatedAt(),
-		UpdatedAt: n.UpdatedAt(),
+		ID:                  n.ID().String(),
+		Title:               n.Title().String(),
+		Content:             n.Content().String(),
+		Type:                n.Type(),
+		Metadata:            n.Metadata().Value(),
+		IsPublic:            n.IsPublic(),
+		DueAt:               n.DueAt(),
+		RemindBeforeSeconds: n.RemindBeforeSeconds(),
+		DoneAt:              n.DoneAt(),
+		CreatedAt:           n.CreatedAt(),
+		UpdatedAt:           n.UpdatedAt(),
 	}
 }
 
@@ -1045,10 +1123,13 @@ func (h *Handler) ImportBookmarksStatus(c *gin.Context) {
 }
 
 type updateNoteRequest struct {
-	Title    string                 `json:"title" binding:"omitempty,max=200"`
-	Content  string                 `json:"content" binding:"omitempty,max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
-	Metadata map[string]interface{} `json:"metadata"`
+	Title               string                 `json:"title" binding:"omitempty,max=200"`
+	Content             string                 `json:"content" binding:"omitempty,max=50000"`
+	Type                string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Metadata            map[string]interface{} `json:"metadata"`
+	DueAt               nullableTime           `json:"due_at"`
+	RemindBeforeSeconds nullableInt64          `json:"remind_before_seconds"`
+	DoneAt              nullableTime           `json:"done_at"`
 }
 
 func (h *Handler) Update(c *gin.Context) {
@@ -1155,6 +1236,28 @@ func (h *Handler) Update(c *gin.Context) {
 		existing.SetType(noteType)
 	}
 
+	// COMET-1: merge semantics — an absent key keeps the stored value, null or
+	// "" clears it. remind_before merged against the resulting due_at.
+	if req.DueAt.present || req.RemindBeforeSeconds.present || req.DoneAt.present {
+		dueAt, doneAt := existing.DueAt(), existing.DoneAt()
+		remindBefore := existing.RemindBeforeSeconds()
+		if req.DueAt.present {
+			dueAt = req.DueAt.value
+		}
+		if req.RemindBeforeSeconds.present {
+			remindBefore = req.RemindBeforeSeconds.value
+		}
+		if req.DoneAt.present {
+			doneAt = req.DoneAt.value
+		}
+		if err := existing.SetCometFields(dueAt, remindBefore, doneAt); err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("remind_before_seconds", apicommon.ReasonInvalidValue, err.Error(), req.RemindBeforeSeconds.value),
+			})
+			return
+		}
+	}
+
 	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedUpdateNote)
 		return
@@ -1178,17 +1281,60 @@ func (h *Handler) Update(c *gin.Context) {
 		}
 	}
 
-	responseData := gin.H{
-		"id":         existing.ID(),
-		"title":      existing.Title().String(),
-		"content":    existing.Content().String(),
-		"type":       existing.Type(),
-		"metadata":   existing.Metadata().Value(),
-		"is_public":  existing.IsPublic(),
-		"created_at": existing.CreatedAt(),
-		"updated_at": existing.UpdatedAt(),
+	apicommon.JSONWithMessage(c, 200, noteResponseData(existing), apicommon.MsgResourceUpdated)
+}
+
+// cometRepository — the narrow capability this endpoint needs. Implemented by
+// the Postgres repository and its outbox decorator; kept out of
+// note.Repository like FindByIDIncludingDeleted.
+type cometRepository interface {
+	FindComets(ctx context.Context, userID uuid.UUID) ([]*note.Note, error)
+}
+
+// cometsResponse — «Ближайшие дела»: overdue comets first (most overdue on
+// top), then upcoming by date, then undated as a separate group.
+type cometsResponse struct {
+	Overdue  []noteResponse `json:"overdue"`
+	Upcoming []noteResponse `json:"upcoming"`
+	Undated  []noteResponse `json:"undated"`
+}
+
+// Comets lists the caller's non-done comets split into overdue/upcoming/undated.
+// COMET-1 этап A.
+func (h *Handler) Comets(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "list_comets")
+
+	repo, ok := h.repo.(cometRepository)
+	if !ok {
+		apicommon.InternalErrorWithMessage(c, "Comets listing is not supported")
+		return
 	}
-	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
+
+	userID, _ := middleware.GetUserID(c)
+	comets, err := repo.FindComets(c.Request.Context(), userID)
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNotes)
+		return
+	}
+
+	now := time.Now()
+	resp := cometsResponse{
+		Overdue:  []noteResponse{},
+		Upcoming: []noteResponse{},
+		Undated:  []noteResponse{},
+	}
+	for _, n := range comets {
+		switch {
+		case n.DueAt() == nil:
+			resp.Undated = append(resp.Undated, toNoteResponse(n))
+		case n.DueAt().Before(now):
+			resp.Overdue = append(resp.Overdue, toNoteResponse(n))
+		default:
+			resp.Upcoming = append(resp.Upcoming, toNoteResponse(n))
+		}
+	}
+	apicommon.JSON(c, 200, resp)
 }
 
 // Publish makes a note publicly visible.
@@ -1254,17 +1400,7 @@ func (h *Handler) setNotePublic(c *gin.Context, isPublic bool) {
 		}
 	}
 
-	responseData := gin.H{
-		"id":         existing.ID(),
-		"title":      existing.Title().String(),
-		"content":    existing.Content().String(),
-		"type":       existing.Type(),
-		"metadata":   existing.Metadata().Value(),
-		"is_public":  existing.IsPublic(),
-		"created_at": existing.CreatedAt(),
-		"updated_at": existing.UpdatedAt(),
-	}
-	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
+	apicommon.JSONWithMessage(c, 200, noteResponseData(existing), apicommon.MsgResourceUpdated)
 }
 
 func (h *Handler) invalidateGraphServiceCaches(ctx context.Context, userID, noteID string) {

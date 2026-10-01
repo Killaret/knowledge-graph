@@ -1363,6 +1363,45 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/notes/comets:
+    get:
+      summary: Upcoming tasks — the caller's non-done comets (COMET-1)
+      description: |
+        Returns comets in three groups: `overdue` (due_at < now, most overdue
+        first), `upcoming` (due_at >= now, nearest first), `undated` (no due
+        date). Done comets (done_at set) and other users' comets are excluded.
+      tags: [Notes]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Grouped comets
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          overdue:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Note'
+                          upcoming:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Note'
+                          undated:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Note'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/v1/links:
     post:
       summary: Create link
@@ -2461,6 +2500,22 @@ components:
           type: object
         is_public:
           type: boolean
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Due date/time (COMET-1). Stored in UTC; the browser supplies its timezone.
+        remind_before_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          nullable: true
+          description: Reminder offset in seconds; only meaningful with due_at.
+        done_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the task was marked done.
         created_at:
           type: string
           description: ISO 8601 timestamp with timezone
@@ -2484,6 +2539,22 @@ components:
           enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
         metadata:
           type: object
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Due date/time (COMET-1). Stored in UTC; the browser supplies its timezone.
+        remind_before_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          nullable: true
+          description: Reminder offset in seconds; only meaningful with due_at.
+        done_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the task was marked done.
 
     BookmarkletRequest:
       type: object
@@ -2696,6 +2767,22 @@ components:
           maxLength: 50000
         metadata:
           type: object
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Due date/time (COMET-1). Stored in UTC; the browser supplies its timezone.
+        remind_before_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          nullable: true
+          description: Reminder offset in seconds; only meaningful with due_at.
+        done_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the task was marked done.
 
     DeleteBatchRequest:
       type: object

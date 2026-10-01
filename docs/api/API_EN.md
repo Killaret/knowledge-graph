@@ -241,6 +241,23 @@ and stores the previous body in `metadata.previous_content`; restore uses that f
 A fetch failure leaves the note unchanged. Refetch is offered for `stub`/`truncated`
 verdicts when `source_url` is present.
 
+## 12. Comets — task fields and the upcoming list (COMET-1 stage A)
+
+A comet is a task ("дело"). Three nullable fields live on the note row itself
+(migration 038) — `due_at`, `remind_before_seconds`, `done_at`:
+
+```bash
+POST /api/v1/notes        # ...,"due_at":"2026-10-05T10:00:00Z","remind_before_seconds":3600
+PUT  /api/v1/notes/{id}   # same fields; absent key keeps the value, null or "" clears it
+GET  /api/v1/notes/comets # {overdue, upcoming, undated} — the caller's non-done comets
+```
+
+Update semantics are merge-by-presence: an absent key keeps the stored value,
+explicit `null` or `""` clears it. `remind_before_seconds`
+without a resulting `due_at` is a `400`. `GET /notes/comets` orders dated comets
+ascending (most overdue on top) and keeps undated ones in a separate group; done
+comets are excluded entirely.
+
 ## Notes for maintainers
 
 - The Swagger UI bundle is embedded via `swaggo/gin-swagger` and reads

@@ -78,6 +78,14 @@ func (m *noteRepoMock) FindAllPaginated(ctx context.Context, userID uuid.UUID, l
 	return nil, int64(0), nil
 }
 
+func (m *noteRepoMock) FindComets(ctx context.Context, userID uuid.UUID) ([]*note.Note, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*note.Note), args.Error(1)
+}
+
 type recRepoMock struct{ mock.Mock }
 
 func (m *recRepoMock) Count(ctx context.Context, noteID uuid.UUID) (int64, error) {
@@ -1225,3 +1233,150 @@ func (m *taskQueueMock) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID s
 	m.cleanupCalls = append(m.cleanupCalls, noteID)
 	return nil
 }
+
+// --- COMET-1: поля планирования и «Ближайшие дела» ---
+
+func TestCreateNote_CometFields(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	var saved *note.Note
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).
+		Run(func(args mock.Arguments) { saved = args.Get(1).(*note.Note) }).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+	tq.On("EnqueueRefreshRecommendations", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	body := `{"title":"Дело","content":"Сходить к врачу","type":"comet","due_at":"2026-10-05T10:00:00Z","remind_before_seconds":3600}`
+	w, c := newContext(t, http.MethodPost, "/notes", body, userID)
+	h.Create(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	require.NotNil(t, saved)
+	require.NotNil(t, saved.DueAt())
+	assert.Equal(t, int64(3600), *saved.RemindBeforeSeconds())
+	assert.Nil(t, saved.DoneAt())
+	assert.Contains(t, w.Body.String(), "due_at")
+}
+
+func TestCreateNote_RemindWithoutDue_BadRequest(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+	_ = tq
+	userID := uuid.New()
+
+	body := `{"title":"Дело","content":"x","type":"comet","remind_before_seconds":3600}`
+	_, c := newContext(t, http.MethodPost, "/notes", body, userID)
+	h.Create(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+	repo.AssertNotCalled(t, "Save")
+	tq.AssertNotCalled(t, "EnqueueExtractKeywords")
+}
+
+func TestCreateNote_NegativeRemind_BadRequest(t *testing.T) {
+	h, _, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	body := `{"title":"Дело","content":"x","type":"comet","due_at":"2026-10-05T10:00:00Z","remind_before_seconds":-5}`
+	_, c := newContext(t, http.MethodPost, "/notes", body, userID)
+	h.Create(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+}
+
+func TestUpdateNote_CometFieldsMergeAndClear(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	n := newTestNote(t, "Comet", "Content", "comet")
+	due := time.Now().Add(24 * time.Hour).UTC().Truncate(time.Second)
+	var remind int64 = 900
+	require.NoError(t, n.SetCometFields(&due, &remind, nil))
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+
+	// Only done_at present — due_at and remind keep their stored values.
+	body := `{"done_at":"` + time.Now().UTC().Format(time.RFC3339) + `"}`
+	_, c := newContext(t, http.MethodPut, "/notes/"+n.ID().String(), body, userID)
+	withID(c, n.ID())
+	h.Update(c)
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.NotNil(t, n.DoneAt(), "done_at must be applied")
+	assert.Equal(t, due, *n.DueAt(), "absent due_at keeps the stored value")
+	assert.Equal(t, int64(900), *n.RemindBeforeSeconds())
+}
+
+func TestUpdateNote_ClearDueAt(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	n := newTestNote(t, "Comet", "Content", "comet")
+	due := time.Now().Add(24 * time.Hour)
+	var remind int64 = 900
+	require.NoError(t, n.SetCometFields(&due, &remind, nil))
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+
+	// null clears both date and reminder — a reminder without a date is rejected.
+	body := `{"due_at":null,"remind_before_seconds":null}`
+	_, c := newContext(t, http.MethodPut, "/notes/"+n.ID().String(), body, userID)
+	withID(c, n.ID())
+	h.Update(c)
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.Nil(t, n.DueAt())
+	assert.Nil(t, n.RemindBeforeSeconds())
+}
+
+func TestUpdateNote_RemindWithoutDue_BadRequest(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	n := newTestNote(t, "Comet", "Content", "comet")
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+
+	// remind_before on a note without due_at → 400, nothing saved.
+	body := `{"remind_before_seconds":3600}`
+	_, c := newContext(t, http.MethodPut, "/notes/"+n.ID().String(), body, userID)
+	withID(c, n.ID())
+	h.Update(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+	repo.AssertNotCalled(t, "Save")
+}
+
+func TestComets_GroupsOverdueUpcomingUndated(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	now := time.Now()
+
+	mk := func(title string, dueAt *time.Time) *note.Note {
+		n := newTestNote(t, title, "c", "comet")
+		n.SetCreatorID(userID)
+		require.NoError(t, n.SetCometFields(dueAt, nil, nil))
+		return n
+	}
+	overdue := mk("overdue", ptrTime(now.Add(-time.Hour)))
+	upcoming := mk("upcoming", ptrTime(now.Add(time.Hour)))
+	undated := mk("undated", nil)
+
+	// Repo returns due_at ASC NULLS LAST — overdue naturally first.
+	repo.On("FindComets", mock.Anything, userID).Return([]*note.Note{overdue, upcoming, undated}, nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/comets", "", userID)
+	h.Comets(c)
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	body := w.Body.String()
+	ioverdue := strings.Index(body, "overdue")
+	iupcoming := strings.Index(body, "upcoming")
+	iundated := strings.Index(body, "undated")
+	require.GreaterOrEqual(t, ioverdue, 0)
+	assert.Contains(t, body[ioverdue:], `"`+overdue.ID().String()+`"`)
+	assert.Contains(t, body[iupcoming:], `"`+upcoming.ID().String()+`"`)
+	assert.Contains(t, body[iundated:], `"`+undated.ID().String()+`"`)
+}
+
+func ptrTime(t time.Time) *time.Time { return &t }

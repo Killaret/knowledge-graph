@@ -29,7 +29,7 @@ Galaxy          # broad domain
 | **Planet** 🪐     | Sub-topic     | Major section orbiting a star.                                                                                      | Manga, Manhwa, Authentication            |
 | **Moon** 🌙       | Detail        | Specific aspect tied to a planet. Usually assigned automatically.                                                   | Manga genres, Publishers                 |
 | **Satellite** 🛰️  | Utility       | Checklists, templates, configs, snippets attached to a topic.                                                       | Deploy checklist, .env.example           |
-| **Comet** ☄️      | Event         | Temporary / time-bound notes: sprints, meetings, releases.                                                          | Sprint 42 retrospective, Anime Expo 2026 |
+| **Comet** ☄️      | Task          | A task to record and not forget (COMET-1): optional `due_at`, optional `remind_before_seconds`, `done_at` marker (migration 038). The nearer the date, the brighter the comet on the graph (stage E). | Doctor's visit, Anime Expo 2026 |
 | **Asteroid** 🌑   | Fragment      | Raw material: quotes, bookmarks, quick thoughts, TODOs.                                                             | Interesting quote, TODO: check this      |
 | **Nebula** 💫     | Draft         | Fuzzy, forming idea without clear borders.                                                                          | Future product ideas, Unsorted concepts  |
 | **Black Hole** ⚫ | Problem       | Large unclear task, open question, or fundamental bug. **Not a deletion target.**                                   | How to scale ingestion?, Unsolved bug    |

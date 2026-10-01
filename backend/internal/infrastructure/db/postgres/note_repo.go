@@ -336,6 +336,23 @@ func (r *NoteRepository) List(ctx context.Context, userID uuid.UUID, limit, offs
 	return r.FindAllPaginated(ctx, userID, limit, offset)
 }
 
+// FindComets возвращает незакрытые кометы пользователя для «Ближайших дел»:
+// датированные по возрастанию due_at (просроченные естественно первыми — их
+// дата меньше now), бездатные — отдельной группой в конце. COMET-1 этап A.
+func (r *NoteRepository) FindComets(ctx context.Context, userID uuid.UUID) ([]*note.Note, error) {
+	var models []NoteModel
+	err := r.db.WithContext(ctx).
+		Where("type = ?", "comet").
+		Where("creator_id = ?", userID).
+		Where("done_at IS NULL").
+		Order("due_at ASC NULLS LAST, created_at DESC").
+		Find(&models).Error
+	if err != nil {
+		return nil, err
+	}
+	return toDomainNotes(models), nil
+}
+
 // Search performs multilingual full-text search on notes (Russian + English).
 // userID = uuid.Nil — ищет только по публичным, иначе только по заметкам пользователя.
 // Falls back to ILIKE search if full-text search returns no results
@@ -414,15 +431,18 @@ func toGormNote(n *note.Note) (NoteModel, error) {
 		noteType = "unknown"
 	}
 	return NoteModel{
-		ID:        n.ID(),
-		Title:     n.Title().String(),
-		Content:   n.Content().String(),
-		Type:      noteType,
-		Metadata:  datatypes.JSON(metadataJSON),
-		CreatorID: n.CreatorID(),
-		IsPublic:  n.IsPublic(),
-		CreatedAt: n.CreatedAt(),
-		UpdatedAt: n.UpdatedAt(),
+		ID:                  n.ID(),
+		Title:               n.Title().String(),
+		Content:             n.Content().String(),
+		Type:                noteType,
+		Metadata:            datatypes.JSON(metadataJSON),
+		CreatorID:           n.CreatorID(),
+		IsPublic:            n.IsPublic(),
+		DueAt:               n.DueAt(),
+		RemindBeforeSeconds: n.RemindBeforeSeconds(),
+		DoneAt:              n.DoneAt(),
+		CreatedAt:           n.CreatedAt(),
+		UpdatedAt:           n.UpdatedAt(),
 	}, nil
 }
 
@@ -447,7 +467,9 @@ func toDomainNote(m *NoteModel) (*note.Note, error) {
 		return nil, err
 	}
 	noteType := note.NewTypeOrUnknown(m.Type)
-	return note.ReconstructNoteWithCreator(m.ID, title, content, noteType, metadata, m.CreatorID, m.CreatedAt, m.UpdatedAt, note.WithIsPublic(m.IsPublic)), nil
+	return note.ReconstructNoteWithCreator(m.ID, title, content, noteType, metadata, m.CreatorID, m.CreatedAt, m.UpdatedAt,
+		note.WithIsPublic(m.IsPublic),
+		note.WithCometFields(m.DueAt, m.RemindBeforeSeconds, m.DoneAt)), nil
 }
 
 // toDomainNotes преобразует список GORM-моделей в список доменных сущностей

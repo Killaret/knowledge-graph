@@ -201,6 +201,8 @@ func setupRouter(
 		v1.POST("/notes/:id/refetch/restore", writeLimiter, noteWrite, noteHandler.RefetchRestore)
 		v1.GET("/notes", cacheControlMiddleware(60), noteHandler.List)
 		v1.GET("/notes/search", cacheControlMiddleware(30), noteHandler.Search)
+		// COMET-1: «Ближайшие дела» — overdue/upcoming/undated groups.
+		v1.GET("/notes/comets", cacheControlMiddleware(30), noteHandler.Comets)
 
 		v1.POST("/links", writeLimiter, linkHandler.Create)
 		v1.GET("/links/:id", linkHandler.Get)

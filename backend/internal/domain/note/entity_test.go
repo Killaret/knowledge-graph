@@ -420,3 +420,60 @@ func TestNote_SetIsPublic(t *testing.T) {
 	note.SetIsPublic(false)
 	assert.False(t, note.IsPublic())
 }
+
+// COMET-1: поля планирования
+func TestNote_SetCometFields(t *testing.T) {
+	title, _ := NewTitle("Comet")
+	content, _ := NewContent("Content")
+	metadata, _ := NewMetadata(nil)
+	n := NewNote(title, content, MustType("comet"), metadata)
+
+	due := time.Now().Add(24 * time.Hour)
+	var remind int64 = 3600
+	done := time.Now()
+
+	err := n.SetCometFields(&due, &remind, &done)
+	require.NoError(t, err)
+	assert.Equal(t, due, *n.DueAt())
+	assert.Equal(t, int64(3600), *n.RemindBeforeSeconds())
+	assert.Equal(t, done, *n.DoneAt())
+}
+
+func TestNote_SetCometFields_RemindWithoutDue(t *testing.T) {
+	title, _ := NewTitle("Comet")
+	content, _ := NewContent("Content")
+	metadata, _ := NewMetadata(nil)
+	n := NewNote(title, content, MustType("comet"), metadata)
+
+	var remind int64 = 3600
+	err := n.SetCometFields(nil, &remind, nil)
+	assert.Error(t, err, "remind_before без due_at должен отклоняться")
+	assert.Nil(t, n.DueAt())
+	assert.Nil(t, n.RemindBeforeSeconds())
+}
+
+func TestNote_RemindAt(t *testing.T) {
+	title, _ := NewTitle("Comet")
+	content, _ := NewContent("Content")
+	metadata, _ := NewMetadata(nil)
+	n := NewNote(title, content, MustType("comet"), metadata)
+
+	// Нет даты — напоминания нет.
+	assert.Nil(t, n.RemindAt())
+
+	// Дата без сдвига — напоминания нет.
+	due := time.Date(2026, 10, 5, 10, 0, 0, 0, time.UTC)
+	require.NoError(t, n.SetCometFields(&due, nil, nil))
+	assert.Nil(t, n.RemindAt())
+
+	// Дата + сдвиг — remind_at = due_at - offset.
+	var remind int64 = 3600
+	require.NoError(t, n.SetCometFields(&due, &remind, nil))
+	require.NotNil(t, n.RemindAt())
+	assert.Equal(t, due.Add(-time.Hour), *n.RemindAt())
+
+	// Сделанная комета не напоминает.
+	done := time.Now()
+	require.NoError(t, n.SetCometFields(&due, &remind, &done))
+	assert.Nil(t, n.RemindAt())
+}

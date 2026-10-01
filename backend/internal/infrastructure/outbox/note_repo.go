@@ -119,3 +119,7 @@ func (o *NoteRepository) FindAll(ctx context.Context) ([]*note.Note, error) {
 func (o *NoteRepository) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	return o.inner.FindAllPaginated(ctx, userID, limit, offset)
 }
+
+func (o *NoteRepository) FindComets(ctx context.Context, userID uuid.UUID) ([]*note.Note, error) {
+	return o.inner.FindComets(ctx, userID)
+}

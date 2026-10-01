@@ -67,6 +67,9 @@ func TestNoteRepository_Save_Create(t *testing.T) {
 			sqlmock.AnyArg(), // metadata
 			sqlmock.AnyArg(), // creator_id
 			sqlmock.AnyArg(), // is_public
+			sqlmock.AnyArg(), // due_at — COMET-1
+			sqlmock.AnyArg(), // remind_before_seconds
+			sqlmock.AnyArg(), // done_at
 			sqlmock.AnyArg(), // created_at
 			sqlmock.AnyArg(), // updated_at
 			sqlmock.AnyArg(), // deleted_at
