@@ -1189,7 +1189,7 @@ docker exec kg-redis redis-cli KEYS "suggestions:*" | xargs docker exec kg-redis
 | `YANDEX_CLIENT_ID` | Yandex OAuth client ID | - |
 | `YANDEX_CLIENT_SECRET` | Yandex OAuth client secret | - |
 | `PKCE_ENABLED` | Enable PKCE for Yandex OAuth | `true` |
-| `SMTP_HOST` | SMTP server for password reset | - |
+| `SMTP_HOST` | SMTP server for password reset and comet reminders (COMET-1); empty = emails go to the log | - |
 | `SMTP_PORT` | SMTP port | `587` |
 | `SMTP_USER` | SMTP username | - |
 | `SMTP_PASSWORD` | SMTP password | - |

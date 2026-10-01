@@ -780,6 +780,28 @@ func TestGetNote_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "GetTest")
 }
 
+// COMET-1: GET /notes/:id must return the scheduling fields — the details
+// panel and archive suggestion depend on due_at/done_at.
+func TestGetNote_CometFields(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	n := newTestNote(t, "CometGet", "Content", "comet")
+	due := time.Now().UTC().Add(24 * time.Hour).Truncate(time.Second)
+	var remind int64 = 900
+	require.NoError(t, n.SetCometFields(&due, &remind, nil))
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String(), "")
+	withID(c, n.ID())
+	h.Get(c)
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	body := w.Body.String()
+	assert.Contains(t, body, due.Format(time.RFC3339))
+	assert.Contains(t, body, `"remind_before_seconds":900`)
+	assert.Contains(t, body, `"done_at":null`)
+}
+
 func TestGetNote_InvalidID(t *testing.T) {
 	h, _, _, _, _, _ := setupUnitHandler(t)
 

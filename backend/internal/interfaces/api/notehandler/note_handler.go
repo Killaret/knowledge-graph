@@ -1678,14 +1678,17 @@ func (h *Handler) Get(c *gin.Context) {
 	}
 
 	responseData := gin.H{
-		"id":         n.ID(),
-		"title":      n.Title().String(),
-		"content":    n.Content().String(),
-		"type":       n.Type(),
-		"metadata":   n.Metadata().Value(),
-		"is_public":  n.IsPublic(),
-		"created_at": n.CreatedAt(),
-		"updated_at": n.UpdatedAt(),
+		"id":                    n.ID(),
+		"title":                 n.Title().String(),
+		"content":               n.Content().String(),
+		"type":                  n.Type(),
+		"metadata":              n.Metadata().Value(),
+		"is_public":             n.IsPublic(),
+		"due_at":                n.DueAt(),
+		"remind_before_seconds": n.RemindBeforeSeconds(),
+		"done_at":               n.DoneAt(),
+		"created_at":            n.CreatedAt(),
+		"updated_at":            n.UpdatedAt(),
 	}
 	apicommon.JSON(c, 200, responseData)
 }

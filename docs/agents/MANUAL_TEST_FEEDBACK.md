@@ -715,3 +715,19 @@ Create a new bullet under the right section with:
     `view-toggle-3d` отсутствует, `view-toggle-graph`/`view-toggle-list` на месте;
     `GET /graph/3d` → URL стал `/graph`, рендерится 2D `graph-canvas`.
 - **Screenshot / Logs:** `docs/agents/screenshots/freeze-3d-1/top-bar.png` — в переключателе только ◯ и ☰.
+
+### COMET-1 — живой прогон на тест-стеке (этап F)
+
+- **Scope:** критерии 6–7 — напоминание приходит, `.ics` валиден, метафора и архив-предложение на живом графе.
+- **Date:** 2026-10-01
+- **Agent:** Devin
+- **Tests executed:**
+  - `start-test.ps1` → все контейнеры healthy (включая `kg-test-worker`); `seed-test-data.ps1` → 10 заметок.
+  - Комета `COMET-F reminder` создана с `due_at = +3 мин`, `remind_before_seconds = 60` → `remind_at` через ~2 мин.
+  - Worker: `09:20:49 [comet:remind] notification delivered for note 1db12db5…` — 4 с после назначенного времени (период опроса asynq).
+  - `GET /api/v1/notifications` → `comet_reminder` «Comet: COMET-F reminder», `unread_count: 1`; `POST /notifications/:id/read` — 200.
+  - `GET /notes/{id}/calendar.ics` → `text/calendar`, `Content-Disposition: attachment`, `BEGIN:VEVENT`, `DTSTART:20261001T092145Z` (UTC), `VALARM TRIGGER:-PT60S`; все строки ≤ 75 октетов.
+  - Graph-service `GET /v1/graph/full` → узлы комет несут `due_at`/`done_at` (проверка проводки этапа E end-to-end).
+  - `npx playwright test tests/comet-1.spec.ts --project=chromium-skip-auth` → 2 passed: спек сам создаёт пять комет (reminder/+6ч/+30д/−1д/без даты), ждёт `comet_reminder` по API, проверяет `.ics`, группы «Ближайшие дела», архив-предложение и клик «Move to debris» → тип `debris`, заметка уходит из списка комет.
+- **Найденный дефект (исправлен на месте):** `GET /notes/{id}` не возвращал `due_at`/`done_at`/`remind_before_seconds` — панель деталей не видела дату, архив-предложение не появлялось. Добавлены в `note_handler.Get`, регрессионный тест `TestGetNote_CometFields` (мутация «убрать due_at» — красная).
+- **Screenshot / Logs:** `docs/agents/screenshots/comet-1/upcoming-panel.png` (группы overdue/upcoming/undated + 📅), `graph-comets.png` (кометы на графе, light-стиль), `archive-suggestion.png` («The date has passed. Move it to the debris archive?»); `docker logs kg-test-worker` — `notification delivered`.

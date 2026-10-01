@@ -610,7 +610,7 @@ score = α × explicit_score + β × semantic_score
 | `STATIC_API_KEY` | Статический API-ключ (если пустой — генерируется) | — |
 | `YANDEX_CLIENT_ID` | OAuth client ID для входа через Яндекс | — |
 | `YANDEX_CLIENT_SECRET` | OAuth client secret для Яндекс | — |
-| `SMTP_HOST` | SMTP-сервер для сброса пароля | — |
+| `SMTP_HOST` | SMTP-сервер для сброса пароля и напоминаний комет (COMET-1); пусто — письма в лог | — |
 | `SMTP_PORT` | SMTP-порт | `587` |
 | `SMTP_USER` | Логин SMTP | — |
 | `SMTP_PASSWORD` | Пароль SMTP | — |
