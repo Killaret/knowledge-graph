@@ -2,7 +2,7 @@
   import { goto } from "$app/navigation";
   import { isAuthenticated, currentUser, logout } from "$shared/stores/auth.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
-  import { listComets, type CometsResponse, type Note } from "$shared/api/notes";
+  import { listComets, downloadCometIcs, type CometsResponse, type Note } from "$shared/api/notes";
 
   interface NoteItem {
     id: string;
@@ -80,6 +80,22 @@
   function cometDueLabel(n: Note): string {
     if (!n.due_at) return t("comet.noDate");
     return new Date(n.due_at).toLocaleString(locale);
+  }
+
+  // COMET-1 stage D: «Добавить в календарь» — скачивает .ics датированной кометы.
+  async function downloadCometCalendar(event: MouseEvent, comet: Note) {
+    event.stopPropagation();
+    try {
+      const blob = await downloadCometIcs(comet.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${comet.title || comet.id}.ics`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // файл недоступен (нет даты, нет прав) — без всплывающей ошибки в панели
+    }
   }
 
   const navItems = [
@@ -177,30 +193,54 @@
       </button>
       <div class="note-tree" id="comets-content" class:collapsed={!cometsOpen}>
         {#each comets.overdue as comet (comet.id)}
-          <button
-            type="button"
-            class="tree-item tree-item--overdue"
-            onclick={() => onNoteSelect?.(comet.id)}
-            data-testid="comet-item-overdue"
-          >
-            <span class="tree-emoji">☄️</span>
-            <span class="tree-title">{comet.title}</span>
-            <span class="comet-due comet-due--overdue">
-              {cometDueLabel(comet)} · {t("comet.overdue")}
-            </span>
-          </button>
+          <div class="comet-row">
+            <button
+              type="button"
+              class="tree-item tree-item--overdue"
+              onclick={() => onNoteSelect?.(comet.id)}
+              data-testid="comet-item-overdue"
+            >
+              <span class="tree-emoji">☄️</span>
+              <span class="tree-title">{comet.title}</span>
+              <span class="comet-due comet-due--overdue">
+                {cometDueLabel(comet)} · {t("comet.overdue")}
+              </span>
+            </button>
+            <button
+              type="button"
+              class="comet-ics-btn"
+              title={t("comet.addToCalendar")}
+              aria-label={t("comet.addToCalendar")}
+              onclick={(e) => downloadCometCalendar(e, comet)}
+              data-testid="comet-ics-btn"
+            >
+              📅
+            </button>
+          </div>
         {/each}
         {#each comets.upcoming as comet (comet.id)}
-          <button
-            type="button"
-            class="tree-item"
-            onclick={() => onNoteSelect?.(comet.id)}
-            data-testid="comet-item-upcoming"
-          >
-            <span class="tree-emoji">☄️</span>
-            <span class="tree-title">{comet.title}</span>
-            <span class="comet-due">{cometDueLabel(comet)}</span>
-          </button>
+          <div class="comet-row">
+            <button
+              type="button"
+              class="tree-item"
+              onclick={() => onNoteSelect?.(comet.id)}
+              data-testid="comet-item-upcoming"
+            >
+              <span class="tree-emoji">☄️</span>
+              <span class="tree-title">{comet.title}</span>
+              <span class="comet-due">{cometDueLabel(comet)}</span>
+            </button>
+            <button
+              type="button"
+              class="comet-ics-btn"
+              title={t("comet.addToCalendar")}
+              aria-label={t("comet.addToCalendar")}
+              onclick={(e) => downloadCometCalendar(e, comet)}
+              data-testid="comet-ics-btn"
+            >
+              📅
+            </button>
+          </div>
         {/each}
         {#each comets.undated as comet (comet.id)}
           <button
@@ -498,5 +538,32 @@
 
   .tree-item--overdue {
     border-color: rgba(255, 58, 47, 0.35);
+  }
+
+  .comet-row {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .comet-row .tree-item {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .comet-ics-btn {
+    flex: 0 0 auto;
+    padding: 0 6px;
+    font-size: 13px;
+    background: transparent;
+    border: 1px solid var(--carbon-border, rgba(255, 255, 255, 0.1));
+    border-radius: 4px;
+    color: var(--carbon-text-dim, #7a7a8e);
+    cursor: pointer;
+  }
+
+  .comet-ics-btn:hover {
+    color: var(--carbon-text, #e8e8f0);
+    border-color: var(--carbon-accent, #6cf);
   }
 </style>

@@ -17,6 +17,7 @@ vi.mock("$shared/stores/auth.svelte", () => authMock);
 
 const notesApiMock = vi.hoisted(() => ({
   listComets: vi.fn(),
+  downloadCometIcs: vi.fn(),
 }));
 
 vi.mock("$shared/api/notes", () => notesApiMock);
@@ -83,6 +84,31 @@ describe("CockpitLeftPanel — upcoming comets", () => {
     await waitFor(() => expect(notesApiMock.listComets).toHaveBeenCalled());
     expect(document.querySelector('[data-testid="comet-item-overdue"]')).toBeNull();
     expect(document.querySelector("#comets-content")).toBeNull();
+  });
+
+  it("renders a calendar button only on dated comets and downloads .ics on click", async () => {
+    notesApiMock.listComets.mockResolvedValueOnce({
+      overdue: [],
+      upcoming: [{ ...baseComet, id: "c-ics", title: "Dated", due_at: "2099-01-01T10:00:00Z" }],
+      undated: [{ ...baseComet, id: "c-nodate", title: "Undated", due_at: null }],
+    });
+    notesApiMock.downloadCometIcs.mockResolvedValueOnce(
+      new Blob(["ics"], { type: "text/calendar" })
+    );
+
+    const createObjectURL = vi.fn(() => "blob:ics");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", Object.assign(URL, { createObjectURL, revokeObjectURL }));
+
+    render(CockpitLeftPanel, { props: {} });
+
+    const btn = await waitFor(() => screen.getByTestId("comet-ics-btn"));
+    // only one calendar button — the undated comet has none
+    expect(screen.getAllByTestId("comet-ics-btn")).toHaveLength(1);
+
+    await fireEvent.click(btn);
+    await waitFor(() => expect(notesApiMock.downloadCometIcs).toHaveBeenCalledWith("c-ics"));
+    expect(createObjectURL).toHaveBeenCalled();
   });
 
   it("does not fetch comets when unauthenticated", async () => {

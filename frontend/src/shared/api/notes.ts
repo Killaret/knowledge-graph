@@ -87,6 +87,11 @@ export async function listComets(): Promise<CometsResponse> {
   return body.data;
 }
 
+// COMET-1 stage D: «Добавить в календарь» — скачивает .ics датированной кометы.
+export async function downloadCometIcs(id: string): Promise<Blob> {
+  return api.get(`v1/notes/${id}/calendar.ics`).blob();
+}
+
 // Обновить существующую заметку
 export async function updateNote(id: string, data: Partial<Note>): Promise<Note> {
   return api.put(`v1/notes/${id}`, { json: data }).json();

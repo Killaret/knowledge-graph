@@ -1436,3 +1436,66 @@ func TestComets_GroupsOverdueUpcomingUndated(t *testing.T) {
 }
 
 func ptrTime(t time.Time) *time.Time { return &t }
+
+func TestCalendarICS_DatedComet(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	n := newTestNote(t, "Launch, report", "Prep; send", "comet")
+	n.SetCreatorID(userID)
+	due := time.Now().Add(24 * time.Hour).UTC().Truncate(time.Second)
+	remind := int64(3600)
+	require.NoError(t, n.SetCometFields(&due, &remind, nil))
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/calendar.ics", "", userID)
+	withID(c, n.ID())
+	h.CalendarICS(c)
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.Equal(t, "text/calendar; charset=utf-8", w.Header().Get("Content-Type"))
+	assert.Contains(t, w.Header().Get("Content-Disposition"), n.ID().String())
+	body := w.Body.String()
+	assert.Contains(t, body, "BEGIN:VEVENT")
+	assert.Contains(t, body, "DTSTART:"+due.Format("20060102T150405Z"))
+	assert.Contains(t, body, "TRIGGER:-PT3600S")
+	// escaping: comma in title, semicolon in description
+	assert.Contains(t, body, "SUMMARY:Launch\\, report")
+	assert.Contains(t, body, "DESCRIPTION:Prep\\; send")
+}
+
+func TestCalendarICS_UndatedComet_BadRequest(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	n := newTestNote(t, "Comet", "", "comet")
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+
+	_, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/calendar.ics", "", userID)
+	withID(c, n.ID())
+	h.CalendarICS(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+}
+
+func TestCalendarICS_NotFound(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	id := uuid.New()
+	repo.On("FindByID", mock.Anything, id).Return(nil, nil)
+
+	_, c := newContext(t, http.MethodGet, "/notes/"+id.String()+"/calendar.ics", "", userID)
+	withID(c, id)
+	h.CalendarICS(c)
+
+	assert.Equal(t, http.StatusNotFound, c.Writer.Status())
+}
+
+func TestCalendarICS_BadUUID(t *testing.T) {
+	h, _, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	_, c := newContext(t, http.MethodGet, "/notes/nope/calendar.ics", "", userID)
+	c.Params = gin.Params{{Key: "id", Value: "nope"}}
+	h.CalendarICS(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+}

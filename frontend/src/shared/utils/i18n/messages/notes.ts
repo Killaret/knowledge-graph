@@ -55,6 +55,7 @@ export const en: Record<string, string> = {
   "comet.overdue": "overdue",
   "comet.upcoming": "Upcoming tasks",
   "comet.noDate": "no date",
+  "comet.addToCalendar": "Add to calendar (.ics)",
   "comet.empty": "No comets yet — record a task.",
   // Main page (+page.svelte)
   "page.deleteError": "Failed to delete note",
@@ -242,6 +243,7 @@ export const ru: Record<string, string> = {
   "comet.overdue": "просрочено",
   "comet.upcoming": "Ближайшие дела",
   "comet.noDate": "без даты",
+  "comet.addToCalendar": "Добавить в календарь (.ics)",
   "comet.empty": "Комет пока нет — запишите дело.",
   // Main page (+page.svelte)
   "page.deleteError": "Не удалось удалить заметку",

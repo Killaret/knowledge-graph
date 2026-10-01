@@ -1112,6 +1112,39 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/notes/{id}/calendar.ics:
+    get:
+      summary: Download a dated comet as iCalendar (.ics) — «Добавить в календарь»
+      description: |
+        COMET-1 stage D. A single VEVENT: `DTSTART`/`DTEND` are the comet due
+        date in UTC; `remind_before_seconds` becomes a `VALARM` display
+        trigger (`TRIGGER:-PT<seconds>S`). Undated comets and notes without a
+        due date answer 400 — a point-in-time export needs a due date.
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: iCalendar file download
+          content:
+            text/calendar:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/v1/notes/{id}/quality:
     get:
       summary: Latest NOTE-QUALITY-1 assessment for a note

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"regexp"
 	"sort"
@@ -8,13 +9,30 @@ import (
 	"testing"
 
 	"knowledge-graph/internal/config"
+	"knowledge-graph/internal/domain/notification"
 	drafthandler "knowledge-graph/internal/interfaces/api/handlers/draft"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
+
+// contractNotificationRepo registers the notification routes the real router
+// has; its methods are never called — the test only enumerates routes.
+type contractNotificationRepo struct{}
+
+func (contractNotificationRepo) CreateIfAbsent(context.Context, *notification.Notification) (bool, error) {
+	return false, nil
+}
+func (contractNotificationRepo) ListByUser(context.Context, uuid.UUID, int) ([]*notification.Notification, error) {
+	return nil, nil
+}
+func (contractNotificationRepo) CountUnread(context.Context, uuid.UUID) (int64, error) { return 0, nil }
+func (contractNotificationRepo) MarkRead(context.Context, uuid.UUID, uuid.UUID) error {
+	return nil
+}
 
 // serviceRoutes are registered on the router but are not part of the API
 // contract: /health is a probe, /swagger/*any and /openapi.yaml serve the
@@ -59,7 +77,7 @@ func TestRouterMatchesOpenAPISpec(t *testing.T) {
 		apiKeyConfig,
 		skipAuthConfig,
 		nil,
-		nil,
+		contractNotificationRepo{},
 	)
 
 	routerOps := make(map[string]bool)

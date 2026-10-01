@@ -278,6 +278,18 @@ GET  /api/v1/notifications              # {items:[], unread_count} — 50 newest
 POST /api/v1/notifications/{id}/read    # 204; 404 for missing or foreign
 ```
 
+## 12.2 «Add to calendar» — .ics export (COMET-1 stage D)
+
+```bash
+GET /api/v1/notes/{id}/calendar.ics     # text/calendar download
+```
+
+A dated comet downloads as one `VEVENT`: `DTSTART`/`DTEND` are `due_at` in UTC,
+`remind_before_seconds` becomes a `VALARM` display trigger. Undated comets
+answer `400` — a point-in-time export needs a due date. The frontend fetches the
+file with the Bearer token and saves it via a blob URL; a bare `<a href>` cannot
+authenticate.
+
 ## Notes for maintainers
 
 - The Swagger UI bundle is embedded via `swaggo/gin-swagger` and reads

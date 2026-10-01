@@ -6,12 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"knowledge-graph/internal/application/achievement"
 	appcache "knowledge-graph/internal/application/cache"
+	"knowledge-graph/internal/application/comet"
 	"knowledge-graph/internal/application/common"
 	importer "knowledge-graph/internal/application/import"
 	graphQueries "knowledge-graph/internal/application/queries/graph"
@@ -1356,6 +1358,44 @@ func (h *Handler) Comets(c *gin.Context) {
 		}
 	}
 	apicommon.JSON(c, 200, resp)
+}
+
+// CalendarICS serves a dated comet as an iCalendar (.ics) download
+// ("Add to calendar"). The due date becomes the VEVENT start/end and
+// remind_before_seconds becomes a VALARM display trigger. Non-comet or
+// undated comets answer 400 — a point-in-time export needs a due date.
+func (h *Handler) CalendarICS(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "export_ics")
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
+		return
+	}
+
+	n, err := h.repo.FindByID(c.Request.Context(), id)
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+		return
+	}
+	if n == nil {
+		apicommon.NotFound(c, "Note")
+		return
+	}
+	ics := comet.BuildICS(n)
+	if ics == "" {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("due_at", apicommon.ReasonRequired, "ICS export requires a due date", nil),
+		})
+		return
+	}
+	c.Header("Content-Type", "text/calendar; charset=utf-8")
+	c.Header("Content-Disposition", `attachment; filename="`+n.ID().String()+`.ics"`)
+	c.String(http.StatusOK, ics)
 }
 
 // Publish makes a note publicly visible.

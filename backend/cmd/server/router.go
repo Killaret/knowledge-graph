@@ -207,6 +207,8 @@ func setupRouter(
 		v1.GET("/notes/search", cacheControlMiddleware(30), noteHandler.Search)
 		// COMET-1: «Ближайшие дела» — overdue/upcoming/undated groups.
 		v1.GET("/notes/comets", cacheControlMiddleware(30), noteHandler.Comets)
+		// COMET-1 stage D: «Добавить в календарь» — .ics download of a dated comet.
+		v1.GET("/notes/:id/calendar.ics", noteRead, noteHandler.CalendarICS)
 
 		// COMET-1 stage C: in-app notifications (comet reminders).
 		if notificationRepo != nil {
