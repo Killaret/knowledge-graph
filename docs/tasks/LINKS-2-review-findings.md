@@ -488,3 +488,26 @@ Delete. `onLinkDelete` обязан получить `id` и `gamma_origin=true`
 3. Для подтверждённой связи — свой текст модалки `link.deleteConfirmPromoted`, en и ru.
 
 `check-all.ps1` на `a53571a`: 32 из 33 зелёные, упавших нет; пропущен `golangci-lint` — локально не установлен (в CI он есть).
+
+## PANEL-LINKS-1 — исполнение (Devin, 2026-10-01)
+
+Решение 95 исполнено: одиночное удаление связи из панели деталей заметки показывает то же
+пояснение, что на холсте. `CockpitNoteDetails.handleDeleteLink` теперь прогоняет связь через
+`needsLinkDeleteConfirm`/`linkDeleteConfirmKey` (`entities/graph-canvas/lib/link-delete.ts`) —
+общий код с холстом, новой логики не заведено. Источник происхождения различается: на холсте это
+поле `gamma_origin` из graph-service, в панели API `GET /notes/:id/links` отдаёт `source_type` и
+`metadata`; маркер «подтверждённой автосвязи» — `metadata.gamma` (так записывает миграция 037 и
+`Link.gammaProvenance`). Кандидат строится как `{source_type, gamma_origin: metadata.gamma != null}`.
+
+- `source_type === "gamma"` → `link.deleteConfirmSuppress` (пара помечается несвязанной, не будет
+  предлагаться снова);
+- `metadata.gamma` присутствует → `link.deleteConfirmPromoted`;
+- остальные связи удаляются сразу, без модалки — поведение не менялось.
+
+Массовое удаление (`deleteAllNoteLinks`) не тронуто: семантика для автосвязей не решена владельцем
+(см. открытый вопрос выше).
+
+**Тесты** (`CockpitNoteDetails.test.ts`, 16/16): ручная связь удаляется без модалки; gamma-связь —
+модалка с текстом «marked as not related», `deleteLink` не вызывается до подтверждения; «Отмена»
+не удаляет; promoted-связь (`source_type: "user"` + `metadata.gamma`) показывает текст про
+подтверждённую моделью связь. Мутация «удалять без проверки» — 3 теста красные.

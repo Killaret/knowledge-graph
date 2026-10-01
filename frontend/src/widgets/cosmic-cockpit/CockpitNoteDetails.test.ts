@@ -192,20 +192,102 @@ describe("CockpitNoteDetails Component", () => {
     });
   });
 
-  it("deletes a single link", async () => {
-    const { getAllByRole } = render(CockpitNoteDetails, {
+  it("deletes a manual link without extra confirmation", async () => {
+    const { getAllByRole, queryByTestId } = render(CockpitNoteDetails, {
       props: { nodeId: "n1" },
     });
 
     await waitFor(() => {
-      expect(getAllByRole("button", { name: /Delete link/i }).length).toBeGreaterThan(0);
+      expect(getAllByRole("button", { name: /Delete link/i }).length).toBe(2);
+    });
+
+    // l2 is manual (source_type "manual", no gamma provenance) — deletes directly.
+    fireEvent.click(getAllByRole("button", { name: /Delete link/i })[1]);
+
+    await waitFor(() => {
+      expect(linksApi.deleteLink).toHaveBeenCalledWith("l2");
+    });
+    expect(queryByTestId("confirm-modal-confirm")).not.toBeInTheDocument();
+  });
+
+  it("warns before deleting a suggested link and deletes on confirm", async () => {
+    const { getAllByRole, getByTestId, getByText } = render(CockpitNoteDetails, {
+      props: { nodeId: "n1" },
+    });
+
+    await waitFor(() => {
+      expect(getAllByRole("button", { name: /Delete link/i }).length).toBe(2);
+    });
+
+    // l1 is source_type "gamma" — same warning as the canvas (PANEL-LINKS-1).
+    fireEvent.click(getAllByRole("button", { name: /Delete link/i })[0]);
+
+    await waitFor(() => {
+      expect(getByTestId("confirm-modal-confirm")).toBeInTheDocument();
+    });
+    expect(getByText(/marked as not related/i)).toBeInTheDocument();
+    expect(linksApi.deleteLink).not.toHaveBeenCalled();
+
+    fireEvent.click(getByTestId("confirm-modal-confirm"));
+
+    await waitFor(() => {
+      expect(linksApi.deleteLink).toHaveBeenCalledWith("l1");
+    });
+  });
+
+  it("does not delete a suggested link when the warning is cancelled", async () => {
+    const { getAllByRole, getByTestId } = render(CockpitNoteDetails, {
+      props: { nodeId: "n1" },
+    });
+
+    await waitFor(() => {
+      expect(getAllByRole("button", { name: /Delete link/i }).length).toBe(2);
     });
 
     fireEvent.click(getAllByRole("button", { name: /Delete link/i })[0]);
 
     await waitFor(() => {
-      expect(linksApi.deleteLink).toHaveBeenCalledWith("l1");
+      expect(getByTestId("confirm-modal-cancel")).toBeInTheDocument();
     });
+
+    fireEvent.click(getByTestId("confirm-modal-cancel"));
+
+    await waitFor(() => {
+      expect(getAllByRole("button", { name: /Delete link/i }).length).toBe(2);
+    });
+    expect(linksApi.deleteLink).not.toHaveBeenCalled();
+  });
+
+  it("shows the promoted wording for a user-confirmed gamma link", async () => {
+    vi.mocked(linksApi.getNoteLinks).mockResolvedValue([
+      {
+        id: "l9",
+        source_note_id: "n1",
+        target_note_id: "n4",
+        link_type: "related",
+        weight: 0.7,
+        source_type: "user",
+        metadata: { gamma: { weight: 0.95 } },
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+      },
+    ] as any);
+
+    const { getAllByRole, getByTestId, getByText } = render(CockpitNoteDetails, {
+      props: { nodeId: "n1" },
+    });
+
+    await waitFor(() => {
+      expect(getAllByRole("button", { name: /Delete link/i }).length).toBe(1);
+    });
+
+    fireEvent.click(getAllByRole("button", { name: /Delete link/i })[0]);
+
+    await waitFor(() => {
+      expect(getByTestId("confirm-modal-confirm")).toBeInTheDocument();
+    });
+    expect(getByText(/suggested by the model and confirmed by you/i)).toBeInTheDocument();
+    expect(linksApi.deleteLink).not.toHaveBeenCalled();
   });
 
   it("navigates to full note page", async () => {

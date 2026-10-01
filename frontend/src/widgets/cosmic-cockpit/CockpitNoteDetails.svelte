@@ -25,6 +25,10 @@
   } from "$shared/api/quality";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import { computeDependencyCycleNodes } from "$entities/graph-canvas/lib/dependency-chain";
+  import {
+    needsLinkDeleteConfirm,
+    linkDeleteConfirmKey,
+  } from "$entities/graph-canvas/lib/link-delete";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -75,6 +79,8 @@
   let linkActionError = $state("");
   let savingLink = $state(false);
   let deletingLinkId = $state<string | null>(null);
+  let linkToDelete = $state<{ link: Link; confirmKey: string } | null>(null);
+  let showLinkDeleteConfirm = $state(false);
 
   // LINK-TYPES-1: dependency edges split by direction — the sources the note
   // requires and the dependents that need it.
@@ -280,6 +286,28 @@
   }
 
   async function handleDeleteLink(link: Link) {
+    // PANEL-LINKS-1 (решение 95): same warning as on the canvas. The note-links
+    // API carries gamma provenance in metadata.gamma, not a gamma_origin field.
+    const candidate = {
+      source_type: link.source_type,
+      gamma_origin: link.metadata?.gamma != null,
+    };
+    if (needsLinkDeleteConfirm(candidate)) {
+      linkToDelete = { link, confirmKey: linkDeleteConfirmKey(candidate) };
+      showLinkDeleteConfirm = true;
+      return;
+    }
+    await performDeleteLink(link);
+  }
+
+  async function handleConfirmLinkDelete() {
+    const pending = linkToDelete?.link;
+    linkToDelete = null;
+    showLinkDeleteConfirm = false;
+    if (pending) await performDeleteLink(pending);
+  }
+
+  async function performDeleteLink(link: Link) {
     deletingLinkId = link.id;
     linkActionError = "";
     try {
@@ -655,6 +683,18 @@
     {/if}
   </div>
 </div>
+
+<ConfirmModal
+  bind:open={showLinkDeleteConfirm}
+  title={t("confirmModal.title")}
+  message={t(linkToDelete?.confirmKey ?? "link.deleteConfirmSuppress")}
+  danger={true}
+  onConfirm={handleConfirmLinkDelete}
+  onCancel={() => {
+    linkToDelete = null;
+    showLinkDeleteConfirm = false;
+  }}
+/>
 
 <ConfirmModal
   bind:open={showDeleteLinksConfirm}
