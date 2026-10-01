@@ -915,8 +915,21 @@ GET /api/v1/graph/delta?last_hash={hash}&user_id={userId}
 GET /api/v1/graph/public
 GET /api/v1/graph/path
 GET /api/v1/graph/recommendations
+GET /api/v1/graph/events   (SSE — SYNC-1 stage C)
 GET /health
 ```
+
+`GET /api/v1/graph/events` is a Server-Sent Events stream (SYNC-1, stage C).
+An internal broker subscribes to `graph:events` and forwards a bare signal —
+`event: graph` + `data: {"event":"NoteCreated","event_id":"…"}` — only to
+connections owned by the event's `user_id`; note ids and content never travel
+the stream. Browsers authenticate with `?access_token=<JWT>` because
+EventSource cannot set headers (the Authorization header is accepted too); in
+`SKIP_AUTH` mode every event goes to every client. The frontend
+(`shared/services/graphEvents.ts`) reconnects with backoff on a dropped
+stream and fires the same delta refresh the 30 s poll would — the poll stays
+as the fallback. nginx serves the route through a dedicated location with
+`proxy_buffering off`.
 
 ### Event-Driven Cache Invalidation
 

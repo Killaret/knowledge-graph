@@ -615,8 +615,29 @@ describe("GraphCanvas events", () => {
 
   it("applies delta updates to the simulation", async () => {
     const { rerender } = renderResult;
+    // SYNC-1 stage B: the parent merges the delta into its props (PreloadService)
+    // and passes the delta itself, so the canvas applies it in place — the new
+    // node is both in `nodes` and in `added_nodes`.
     const delta: GraphDeltaData = {
       added_nodes: [{ id: "5", title: "Delta Node", type: "star" }],
+    };
+
+    rerender({
+      nodes: [...mockNodes, { id: "5", title: "Delta Node", type: "star" }] as GraphNode[],
+      links: mockLinks as GraphLink[],
+      delta,
+    });
+    await flushMicrotasks();
+
+    expect(window.__graphCanvas!.getSimulationNodes().length).toBe(5);
+  });
+
+  it("does not inject delta nodes outside the filtered view", async () => {
+    const { rerender } = renderResult;
+    // The delta names a node the filtered props do not contain (e.g. a type
+    // filter hid it) — it must not appear in the live simulation.
+    const delta: GraphDeltaData = {
+      added_nodes: [{ id: "5", title: "Hidden Node", type: "star" }],
     };
 
     rerender({
@@ -626,7 +647,7 @@ describe("GraphCanvas events", () => {
     });
     await flushMicrotasks();
 
-    expect(window.__graphCanvas!.getSimulationNodes().length).toBe(5);
+    expect(window.__graphCanvas!.getSimulationNodes().length).toBe(4);
   });
 
   it("fires delayed resize, inactivity, and getKeyLines timers", async () => {

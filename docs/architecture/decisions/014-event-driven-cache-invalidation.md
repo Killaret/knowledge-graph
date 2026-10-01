@@ -7,6 +7,8 @@ Accepted
 
 **SYNC-1 stage A2 (2026-09-27):** publication is no longer a manual call at each write site. Write repositories are wrapped by `infrastructure/outbox` decorators that insert a row into `graph_outbox` (migration 036) inside the same database transaction, so a write and its event commit or roll back together. A relayer in `cmd/worker` drains unsent rows (`FOR UPDATE SKIP LOCKED`, batched) to the Redis channel with at-least-once semantics — a crash between commit and publish is recovered by the next process. Sent rows are purged after 30 days by the worker's daily cleanup. This is Option 3 (outbox pattern, below) adopted over the manual calls the original decision assumed; `scripts/testing/check-graph-write-paths.mjs` now *forbids* manual publishes outside the relay and requires every repository construction to be wrapped.
 
+**SYNC-1 stage C (2026-10-01):** the browser-facing half of the sketch is now real. graph-service serves `GET /api/v1/graph/events` — an SSE stream backed by a Redis fan-out broker (`internal/api/sse.go`) on the same `graph:events` channel. Events reach only the connection whose JWT `user_id` matches the event payload (`?access_token=` because EventSource cannot send headers); the stream carries `event: graph` + a bare `{event, event_id}` signal, and the client answers it with a `/graph/delta` fetch (`shared/services/graphEvents.ts` → `home-page.svelte.ts`). Reconnect uses capped exponential backoff; the 30 s poll and window-focus refresh remain the fallback while the stream is down.
+
 ## Context
 Knowledge Graph system has multiple layers of caching to improve performance:
 - In-memory caching in backend services

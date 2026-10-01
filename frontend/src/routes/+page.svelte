@@ -212,6 +212,7 @@
           <GraphCanvas
             nodes={homePage.filteredGraphData.nodes}
             links={homePage.filteredGraphData.links}
+            delta={homePage.graphDelta ?? undefined}
             onNodeClick={(node: { id: string }) => (graphStore.selectedNodeId = node.id)}
             onNoteCreate={handleNoteCreate}
             onNoteDelete={handleDeleteRequest}

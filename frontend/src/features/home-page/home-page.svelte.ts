@@ -18,6 +18,7 @@ import {
   getPreloadedGraph,
 } from "$shared/services/PreloadService";
 import { loadGraph } from "$shared/services/graphLoader";
+import { subscribeGraphEvents } from "$shared/services/graphEvents";
 import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte";
 import { graphStore } from "$shared/stores/graph.svelte";
 import { graphView } from "$shared/stores/graph-view.svelte";
@@ -25,7 +26,7 @@ import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
 import type { ErrorResponse } from "$shared/types/errors";
 import { CelestialBody, FilterState } from "$entities";
 import { formatMessage, getCurrentLocale, type MessageParams } from "$shared/utils/i18n";
-import type { GraphNode, GraphLink } from "$shared/api/graph";
+import type { GraphNode, GraphLink, GraphDeltaData } from "$shared/api/graph";
 
 interface Graph3DViewerProps {
   nodes: GraphNode[];
@@ -79,6 +80,10 @@ export function createHomePageState() {
 
   // Graph state - always show full graph on main page
   let graphData = $state<GraphData>({ nodes: [], links: [] });
+  // SYNC-1 stage B: the last delta fetched by refreshAfterMutation, handed to
+  // GraphCanvas so it lands in place on the live simulation instead of
+  // rebuilding the layout. Null on resync/full reloads.
+  let graphDelta = $state<GraphDeltaData | null>(null);
   let layoutProvider = $state<"d3" | "graph-service">(toRuntimeConfig().layoutProvider);
   let searchQuery = $state("");
 
@@ -118,6 +123,7 @@ export function createHomePageState() {
   let requestVersion = 0;
   let deltaInterval: ReturnType<typeof setInterval> | undefined;
   let handleFocus: (() => void) | undefined;
+  let graphEventsHandle: { stop(): void } | null = null;
   let authPanelTab = $state<"login" | "register">("login");
   let lastScopeKey: string | null = null;
 
@@ -231,6 +237,15 @@ export function createHomePageState() {
       };
       window.addEventListener("focus", handleFocus);
 
+      // SYNC-1 stage C: live delivery via SSE — the server pushes a bare
+      // "graph changed" signal and we fetch the delta; the 30 s poll above
+      // remains the fallback while the stream is down.
+      graphEventsHandle = subscribeGraphEvents({
+        onGraphChanged: () => {
+          void refreshAfterMutation();
+        },
+      });
+
       // Expose flag for E2E tests to assert background sync is gated by auth.
       (window as unknown as Record<string, unknown>).__kgGraphPollingActive = true;
     } else {
@@ -242,6 +257,8 @@ export function createHomePageState() {
       deltaInterval = undefined;
       if (handleFocus) window.removeEventListener("focus", handleFocus);
       handleFocus = undefined;
+      graphEventsHandle?.stop();
+      graphEventsHandle = null;
       (window as unknown as Record<string, unknown>).__kgGraphPollingActive = false;
       requestVersion += 1;
     };
@@ -378,6 +395,10 @@ export function createHomePageState() {
           graphData = updated;
           allNotes = notes;
           applyFiltersAndSort();
+          // SYNC-1 stage B: a resync delta already replaced the cached graph
+          // wholesale — the canvas rebuilds from the new props. A regular
+          // delta is handed to the canvas so it lands in place.
+          graphDelta = delta.resync ? null : delta;
         }
         return;
       }
@@ -703,6 +724,9 @@ export function createHomePageState() {
     },
     get graphData() {
       return graphData;
+    },
+    get graphDelta() {
+      return graphDelta;
     },
     get layoutProvider() {
       return layoutProvider;

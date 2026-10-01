@@ -53,7 +53,7 @@
 | **DOC-AUDIT-2:** документация против кода: утверждения сверить с кодом, «нет в коде» — владельцу | [`tasks/DOC-AUDIT-2-docs-vs-code.md`](tasks/DOC-AUDIT-2-docs-vs-code.md) | **на ревью** — 1.0 · Devin: все «верно» перепроверены, 5 промахов исправлены. [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) | 2026-09-30 |
 | **SPEC-AUDIT-1:** все постановки против кода: вердикт с доказательством на каждое требование | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md) | **на ревью** — 1.0 · Devin: шаги CI в `core-checks.tsv`, sync 34/34. [`tasks/SPEC-AUDIT-1-review-findings.md`](tasks/SPEC-AUDIT-1-review-findings.md) | 2026-09-30 |
 | **UX-1:** связи из правого меню, связь существующих заметок, пропадание канваса | [`tasks/UX-1-link-creation-and-canvas-refresh.md`](tasks/UX-1-link-creation-and-canvas-refresh.md) | **в работе** — 1.0 · Devin: «Связать с…» в контекст-меню + пикер заметок; канвас не гаснет (chip). Ждёт слот ревью (5/5) | 2026-10-01 |
-| **SYNC-1 (этапы B, C):** события через обёртку и outbox, применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **бэклог** — 1.0 · Devin: A2 принят 29.09 (5 мутаций красные); дальше — этапы B и C. [`tasks/SYNC-1-review-findings.md`](tasks/SYNC-1-review-findings.md) | 2026-09-29 |
+| **SYNC-1 (этапы B, C):** применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **в работе** — 1.0 · Devin: B+C готовы, ждёт слот ревью (5/5) | 2026-10-01 |
 | **PANEL-LINKS-1:** панель «Links (undefined)» — клиент ждёт массив, API отдаёт `{incoming, outgoing}`; при починке — пояснение при удалении связи | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **бэклог** — 1.0 · Devin: конверт починен в LINK-TYPES-1; осталось пояснение при удалении, как на холсте (решение 95) | 2026-09-29 |
 | **NOTE-HEALTH-1:** здоровье заметки: техническое и пользовательское раздельно; этап 0 — скрыть «HEALTH», «Качество» → «Обработка» | [`tasks/NOTE-HEALTH-1-technical-and-user-health.md`](tasks/NOTE-HEALTH-1-technical-and-user-health.md) | **бэклог** — 1.0 · Devin: этап 0; этапы 1–2 — после NOTE-QUALITY-1 этап 2 (решение 80) | 2026-09-27 |
 | **FREEZE-3D-1:** 3D заморожен до готовности 2D: переключатель 3D выключен настройкой, код и тесты остаются | [`tasks/FREEZE-3D-1-hide-3d-view.md`](tasks/FREEZE-3D-1-hide-3d-view.md) | **бэклог** — 1.0 · Devin; маленькая, после порядка владельца (решение 82) | 2026-09-28 |
@@ -98,6 +98,8 @@
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Devin → Claude, 2026-10-01, SYNC-1 этапы B и C — ждёт слот ревью.** Дельта ложится по месту (ребилд только >10 или resync); SSE `/graph/events` с рассылкой по user_id, клиент с реконнектом, опрос 30 с — fallback. Живой прогон C.1 не делался. [`tasks/SYNC-1-review-findings.md`](tasks/SYNC-1-review-findings.md)
 
 **Devin → Claude, 2026-09-30, UX-3 на ревью.** Заметка теперь ищется до связи — чужая связь через заметку подсказки не даёт (мутация красная). Дыра: перекрытие считается по полному глифу ×1.44, сдвиг — влево по нижнему краю (старый диагональный выносил её за верх канваса); живой спек `ux3-blackhole.spec.ts` + снимки в `docs/agents/screenshots/ux-3/`. `legendLayout` меряется ResizeObserver. [`tasks/UX-3-review-findings.md`](tasks/UX-3-review-findings.md)
 

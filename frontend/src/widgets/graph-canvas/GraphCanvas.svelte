@@ -42,6 +42,7 @@
     drawFog,
     getHoveredNeighborIds,
     applyDelta as applyDeltaToSimulation,
+    deltaLinkKey,
   } from "$entities/graph-canvas/lib";
   import { addNodesToSimulation } from "$entities/graph-canvas/lib/incremental";
   import { getLinkEndpointId } from "$entities/graph-canvas/lib/types";
@@ -297,6 +298,10 @@
   // Для отслеживания изменений данных по содержимому (не по ссылке)
   let lastDataKey = "";
   let mounted = $state(false);
+  // SYNC-1 stage B: the delta object already consumed by the in-place
+  // applier. While a fresh delta is pending, the data effect below yields so
+  // the change lands on the live simulation instead of re-layouting it.
+  let lastAppliedDelta: GraphDeltaData | undefined;
 
   // UI-LOAD-1 progressive reveal: large graphs appear in batches — the most
   // linked nodes first, the rest added to the live simulation in portions
@@ -838,6 +843,13 @@
 
     if (!browser || !mounted) return;
 
+    // SYNC-1 stage B: a data change that arrived together with a fresh delta
+    // is applied by the delta effect below, in place — rebuilding here would
+    // throw away the layout the delta was meant to preserve.
+    if (delta && delta !== lastAppliedDelta && !delta.resync && simState.isRunning) {
+      return;
+    }
+
     // A data change supersedes any in-flight reveal before a new sim starts.
     stopReveal();
 
@@ -949,12 +961,31 @@
 
   // Применяем дельта-обновления инкрементально
   $effect(() => {
-    if (!delta || !browser || !mounted || !simState.isRunning) {
+    if (!delta || !browser || !mounted) {
+      return;
+    }
+    if (delta === lastAppliedDelta) {
+      return;
+    }
+    // Consume the delta even when the sim is not running: the merged props
+    // already carry the change, so the regular data path rebuilds with it.
+    lastAppliedDelta = delta;
+    if (!simState.isRunning) {
       return;
     }
 
+    // The canvas only holds what the current filters let through — additions
+    // outside the filtered view must not land in the simulation.
+    const nodeIds = new Set(nodes.map((n) => n.id));
+    const visibleLinkKeys = new Set(visibleLinks.map((l) => deltaLinkKey(l)));
+    const scopedDelta: GraphDeltaData = {
+      ...delta,
+      added_nodes: delta.added_nodes?.filter((n) => nodeIds.has(n.id)),
+      added_links: delta.added_links?.filter((l) => visibleLinkKeys.has(deltaLinkKey(l))),
+    };
+
     // Apply incremental delta updates to the simulation
-    applyDeltaToSimulation(delta, {
+    applyDeltaToSimulation(scopedDelta, {
       nodes,
       links,
       width,

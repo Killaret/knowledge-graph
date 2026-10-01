@@ -121,3 +121,52 @@
 `DeleteAndSuppress` — что отказ записан в той же транзакции.
 
 Этапы B и C — дальше, строка SYNC-1 остаётся в бэклоге 1.0. `check-all.ps1` на `a53571a`: 32 из 33 зелёные, упавших нет; пропущен `golangci-lint` — локально не установлен (в CI он есть).
+
+## Реализация этапов B и C — Devin, 2026-10-01 (ждёт ревью)
+
+### Что изменено
+
+**B — применение по месту.**
+- `frontend/src/entities/graph-canvas/lib/delta.ts`: `applyIncremental` переписан — удаление узла
+  вместе с инцидентными связями и записями прозрачности; удаление связи по `id` или ключу
+  `source:target:type`; добавление связи между стоящими узлами и обновление существующей по ключу;
+  добавление узлов через `addNodesToSimulation` (спавн у соседа, fade-in, reheat `alpha(0.4)`);
+  `updated_nodes` мутирует узел на месте. Порог полного перезапуска не тронут (>10 изменений).
+- `frontend/src/widgets/graph-canvas/GraphCanvas.svelte`: `lastAppliedDelta` — дельта потребляется
+  один раз; эффект данных уступает дельта-эффекту при свежей дельте и живой симуляции (ребилда нет);
+  добавления вне фильтрованного вида (`nodes`/`visibleLinks`) отсекаются до симуляции.
+- `frontend/src/features/home-page/home-page.svelte.ts`: `graphDelta` — последняя дельта для
+  канваса; `resync:true` не передаётся (rebилд из пропсов).
+- `frontend/src/routes/+page.svelte`: `delta={homePage.graphDelta}`.
+
+**C — SSE.**
+- `services/graph-service/internal/api/sse.go`: брокер на канале `graph:events` (независимая
+  подписка), рассылка по `user_id` (`SKIP_AUTH` — всем), наружу `{event, event_id}` — без id заметок
+  и данных. Хендлер `GET /api/v1/graph/events`: JWT из `Authorization` или `?access_token=`
+  (EventSource заголовков не шлёт), `text/event-stream`, heartbeat 25 с, `X-Accel-Buffering: no`.
+- `services/graph-service/cmd/server/main.go`: брокер стартed и маршрут зарегистрирован.
+- `nginx.conf`, `nginx.personal.conf`: dedicated location для events — `proxy_buffering off`,
+  `proxy_read_timeout 1h`.
+- `frontend/src/shared/services/graphEvents.ts`: подписка, дебаунс 400 мс, реконнект с бэкофом
+  2→30 с, свежий токен на реконнекте; без токена/EventSource — инертно. Подключено в
+  `home-page.svelte.ts` рядом с 30-с опросом (опрос остаётся fallback — критерий C.2).
+
+### Тесты и мутации
+
+| Проверка | Результат |
+|---|---|
+| `delta.test.ts` — 16 тестов, в т.ч. add/remove/update по месту, dedup связи, provenance | зелёные; мутация «add/remove → полный перезапуск» — 3 красные |
+| `incremental.test.ts` — 5 | зелёные |
+| `GraphCanvas.events.spec.ts` — фильтрация неслитого добавления | зелёный (новый тест «does not inject delta nodes outside the filtered view») |
+| `home-page.svelte.test.ts` — дельта доезжает до `graphDelta`, `resync` → null | зелёный |
+| `graphEvents.test.ts` — доставка, дебаунс, реконнект, бэкоф, stop | 6 зелёных; мутация «без реконнекта» — 2 красные |
+| `sse_test.go` — 401, query/header токен, изоляция scope, skip-auth, битые события | 5 зелёных; мутация «рассылка всем» — красная (`user-2` утёк к `user-1`) |
+| `svelte-check` | 0 ошибок, 0 предупреждений |
+
+### На что посмотреть при ревью
+
+- Живой критерий C.1 («автосвязь воркера за секунды») — не прогонялся на тест-стеке: нужен поднятый
+  стенд и генерация события. Механика проверена на уровне `sse_test.go` (redis→SSE) и
+  `graphEvents.test.ts` (SSE→refresh).
+- `delta.ts` не трогает `options.nodes`/`options.links` — слитые пропсы держит `PreloadService`.
+- В 3D дельта по месту не проведена — по постановке 3D после 1.0 (решение 82).

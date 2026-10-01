@@ -3,9 +3,17 @@
  * Handles incremental graph updates with animations
  */
 
-import type { GraphDeltaData } from "$shared/api/graph";
+import type { GraphDeltaData, GraphLink } from "$shared/api/graph";
 import { GraphDelta } from "$entities";
-import type { SimulationNode, SimulationLink, SimulationState, TransformState } from "./types";
+import {
+  getLinkEndpointId,
+  type SimulationNode,
+  type SimulationLink,
+  type SimulationState,
+  type TransformState,
+} from "./types";
+import { getLinkId } from "./simulation";
+import { addNodesToSimulation } from "./incremental";
 import * as d3Force from "d3-force";
 
 // Easing function for smooth fade animation
@@ -293,20 +301,51 @@ function applyFullRestart(delta: GraphDelta, options: DeltaUpdateOptions): boole
 }
 
 /**
- * Incremental delta application for small changes
+ * Incremental delta application for small changes — SYNC-1, stage B.
+ *
+ * Everything lands in place on the live simulation: renamed nodes keep their
+ * positions, new nodes grow out of placed neighbours via
+ * `addNodesToSimulation`, removed nodes/links drop out of the link force and
+ * the render maps. A full re-layout happens only for large deltas
+ * (`requiresFullRestart` in `applyDelta`) — a busy import, not a single edit.
  */
+interface ForceLinkLike {
+  links(): SimulationLink[];
+  links(links: SimulationLink[]): ForceLinkLike;
+}
+
+/** Identity used by delta matching: id when both sides carry it, else the
+ * directed endpoints + type (same key as the client-side merge). */
+export function deltaLinkKey(link: {
+  id?: string;
+  source: unknown;
+  target: unknown;
+  link_type?: string;
+}): string {
+  return `${getLinkEndpointId(link.source as SimulationLink["source"])}:${getLinkEndpointId(
+    link.target as SimulationLink["target"]
+  )}:${link.link_type ?? "related"}`;
+}
+
+function isRemovedLink(simLink: SimulationLink, removed: GraphLink[]): boolean {
+  return removed.some(
+    (r) => (r.id !== undefined && r.id === simLink.id) || deltaLinkKey(r) === deltaLinkKey(simLink)
+  );
+}
+
 function applyIncremental(delta: GraphDelta, options: DeltaUpdateOptions): boolean {
-  const { state } = options;
+  const { width, height, state } = options;
 
   if (import.meta.env.DEV) {
     console.log("[Delta] Incremental update");
   }
 
-  let simulationRestarted = false;
+  const sim = state.simulation;
+  let touched = false;
 
-  // Обновляем существующие узлы (без перезапуска симуляции)
-  if (delta.updatedNodes.length > 0) {
-    const simNodes = state.simulation?.nodes() || [];
+  // Updated nodes: mutate fields in place — position untouched.
+  if (delta.updatedNodes.length > 0 && sim) {
+    const simNodes = sim.nodes();
     delta.updatedNodes.forEach((updated) => {
       const simNode = simNodes.find((n) => n.id === updated.id);
       if (simNode) {
@@ -314,26 +353,100 @@ function applyIncremental(delta: GraphDelta, options: DeltaUpdateOptions): boole
         simNode.type = updated.type;
         if (updated.x !== undefined) simNode.x = updated.x;
         if (updated.y !== undefined) simNode.y = updated.y;
+        touched = true;
       }
     });
+  }
 
-    // Легкий перезапуск симуляции для применения изменений
-    if (state.simulation) {
-      state.simulation.alpha(0.3).restart();
-      simulationRestarted = true;
+  // Removed nodes: drop the node plus every incident link.
+  if (delta.removedNodeIds.length > 0 && sim) {
+    const removedIds = new Set(delta.removedNodeIds);
+    const remaining = sim.nodes().filter((n) => !removedIds.has(n.id));
+    if (remaining.length !== sim.nodes().length) {
+      sim.nodes(remaining);
+      const incident = (l: SimulationLink) =>
+        removedIds.has(getLinkEndpointId(l.source)) || removedIds.has(getLinkEndpointId(l.target));
+      for (const l of state.simLinks.filter(incident)) {
+        state.linkOpacity.delete(getLinkId(l));
+      }
+      state.simLinks = state.simLinks.filter((l) => !incident(l));
+      const linkForce = sim.force("link") as ForceLinkLike | undefined;
+      if (linkForce && typeof linkForce.links === "function") {
+        linkForce.links(linkForce.links().filter((l) => !incident(l)));
+      }
+      for (const id of removedIds) state.nodeOpacity.delete(id);
+      touched = true;
     }
   }
 
-  // Для добавления/удаления узлов и связей используем полный перезапуск
-  // даже для небольших изменений, так как D3 требует этого
-  if (
-    delta.addedNodes.length > 0 ||
-    delta.removedNodeIds.length > 0 ||
-    delta.addedLinks.length > 0 ||
-    delta.removedLinks.length > 0
-  ) {
-    return applyFullRestart(delta, options);
+  // Removed links.
+  if (delta.removedLinks.length > 0 && sim) {
+    for (const l of state.simLinks.filter((l) => isRemovedLink(l, delta.removedLinks))) {
+      state.linkOpacity.delete(getLinkId(l));
+    }
+    state.simLinks = state.simLinks.filter((l) => !isRemovedLink(l, delta.removedLinks));
+    const linkForce = sim.force("link") as ForceLinkLike | undefined;
+    if (linkForce && typeof linkForce.links === "function") {
+      linkForce.links(linkForce.links().filter((l) => !isRemovedLink(l, delta.removedLinks)));
+    }
+    touched = true;
   }
 
-  return simulationRestarted;
+  // Added links: the server sends changed links as `added` (set semantics),
+  // so an existing same-key link is updated, not duplicated. Links arriving
+  // alongside added nodes are handled by addNodesToSimulation below.
+  const standaloneLinks: SimulationLink[] = [];
+  if (delta.addedLinks.length > 0 && sim) {
+    const byKey = new Map(state.simLinks.map((l) => [deltaLinkKey(l), l]));
+    for (const added of delta.addedLinks) {
+      const existing = byKey.get(deltaLinkKey(added));
+      if (existing) {
+        existing.id = added.id ?? existing.id;
+        existing.weight = added.weight;
+        existing.link_type = added.link_type;
+        existing.source_type = added.source_type;
+        existing.gamma_origin = added.gamma_origin;
+        existing.last_weight_update = added.last_weight_update;
+      } else {
+        standaloneLinks.push(added as SimulationLink);
+      }
+      touched = true;
+    }
+  }
+
+  // Added nodes — reuse the incremental adder from UI-LOAD-1: new nodes
+  // spawn next to a placed neighbour, fade in, and the sim is reheated
+  // gently, never rebuilt.
+  if (delta.addedNodes.length > 0 && sim) {
+    // Skip nodes the simulation already has — the server may resend an "added"
+    // record for a node the client merged earlier.
+    const existingIds = new Set(sim.nodes().map((n) => n.id));
+    const freshNodes = delta.addedNodes.filter((n) => !existingIds.has(n.id));
+    if (freshNodes.length > 0) {
+      addNodesToSimulation(state, freshNodes as SimulationNode[], standaloneLinks, width, height);
+      standaloneLinks.length = 0;
+      touched = true;
+    }
+  }
+
+  // Links between already-placed nodes still need appending.
+  if (standaloneLinks.length > 0 && sim) {
+    state.simLinks = [...state.simLinks, ...standaloneLinks];
+    const linkForce = sim.force("link") as ForceLinkLike | undefined;
+    if (linkForce && typeof linkForce.links === "function") {
+      linkForce.links([...linkForce.links(), ...standaloneLinks]);
+    }
+    for (const l of standaloneLinks) state.linkOpacity.set(getLinkId(l), 0);
+    touched = true;
+  }
+
+  if (touched && sim) {
+    // A gentle nudge applies the change without re-layouting placed nodes.
+    sim.alpha(0.3).restart();
+    state.isRunning = true;
+    state.stable = false;
+    return true;
+  }
+
+  return false;
 }

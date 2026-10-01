@@ -25,6 +25,7 @@ vi.mock("$app/navigation", () => ({
 vi.mock("$shared/stores/auth.svelte", () => ({
   initAuth: vi.fn().mockResolvedValue(undefined),
   isAuthenticated: vi.fn().mockReturnValue(true),
+  accessToken: vi.fn().mockReturnValue("test-token"),
 }));
 
 vi.mock("$shared/api/notes", () => ({
@@ -274,6 +275,45 @@ describe("Home Page State", () => {
     homePage.handleDeleteRequest("n1");
     await homePage.handleDeleteConfirm();
     expect(notesApi.deleteNote).toHaveBeenCalledWith("n1");
+  });
+
+  it("SYNC-1 stage B: hands a real delta to the canvas, keeps resync as a rebuild", async () => {
+    const homePage = await getHomePage();
+    await waitFor(() => expect(homePage.loading).toBe(false));
+
+    // A delta with actual changes reaches the canvas via graphDelta.
+    const delta = {
+      added_nodes: [{ id: "n9", title: "New", type: "star" }],
+      current_hash: "hash9",
+    };
+    vi.mocked(preloadService.hasPreloadedData).mockReturnValue(true);
+    vi.mocked(preloadService.updateGraphWithDelta).mockResolvedValue(delta as any);
+    vi.mocked(preloadService.getPreloadedGraph).mockReturnValue({
+      nodes: [
+        { id: "n1", title: "Star Note", type: "star" },
+        { id: "n9", title: "New", type: "star" },
+      ],
+      links: [],
+      hash: "hash9",
+    } as any);
+
+    const note = homePage.allNotes[0];
+    await homePage.handleNoteDelete(note);
+    await waitFor(() => expect(homePage.graphDelta).toEqual(delta));
+
+    // A resync delta must NOT reach the in-place applier — the canvas
+    // rebuilds from the replaced props instead.
+    vi.mocked(preloadService.updateGraphWithDelta).mockResolvedValue({
+      resync: true,
+    } as any);
+    // Resync replaced the cached snapshot wholesale — new hash, new object.
+    vi.mocked(preloadService.getPreloadedGraph).mockReturnValue({
+      nodes: [{ id: "n1", title: "Star Note", type: "star" }],
+      links: [],
+      hash: "hash10",
+    } as any);
+    await homePage.handleNoteDelete(homePage.allNotes[0]);
+    await waitFor(() => expect(homePage.graphDelta).toBeNull());
   });
 
   it("manages auth panel", async () => {
