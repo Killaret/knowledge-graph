@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-10-17 — e3c9d6c
-Прочитано: Devin — 2026-10-01 — f52f34a
+Прочитано: Devin — 2026-10-17 — f0b61b4
 ```
 
 ---
@@ -43,7 +43,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **CHUNK-PERF-1:** чанкер квадратичен в двух местах — проверка границы и резка по символам | [`tasks/CHUNK-PERF-1-long-paragraph.md`](tasks/CHUNK-PERF-1-long-paragraph.md) | **бэклог** — первой · Devin, решение 103; прототип v2 рядом | 2026-10-17 |
+| **CHUNK-PERF-1:** чанкер квадратичен в двух местах — проверка границы и резка по символам | [`tasks/CHUNK-PERF-1-long-paragraph.md`](tasks/CHUNK-PERF-1-long-paragraph.md) | **в работе** — первой · Devin, решение 103; прототип v2 рядом | 2026-10-17 |
 | **SMART-CREATE-1:** кнопка «плюс и три плитки» слева от «＋» — заметки из текста, ссылки или файла через `source-text-handler`; без слушателя Java неактивна | [`tasks/SMART-CREATE-1-document-button-via-source-text-handler.md`](tasks/SMART-CREATE-1-document-button-via-source-text-handler.md) | **бэклог** — второй · Devin, решение 106; Java-стороне нужно дополнение к ТЗ — ключ слушателя, до него кнопка неактивна | 2026-10-18 |
 | **MODEL-2:** включить конвейер на текущей модели, один пересчёт, разметка владельца | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **в работе** — 1.0 · Devin: on по умолчанию, config-sync починен; ждёт пересчёта владельца — [`tasks/MODEL-2-final-findings.md`](tasks/MODEL-2-final-findings.md) | 2026-09-30 |
 | **CONFIG-AUDIT-1:** каждая настройка читается и переопределяется как задумано | [`tasks/CONFIG-AUDIT-1-config-precedence.md`](tasks/CONFIG-AUDIT-1-config-precedence.md) | **на ревью** — 1.0 · Devin: блокеры закрыты, решение 102 — NLP читает общий конфиг, 11 ключей убраны. [`tasks/CONFIG-AUDIT-1-review-findings.md`](tasks/CONFIG-AUDIT-1-review-findings.md) | 2026-09-30 |
