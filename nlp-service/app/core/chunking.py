@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from array import array
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
@@ -335,6 +336,7 @@ def _sentence_spans(text: str, start: int, end: int) -> list[tuple[int, int]]:
     spans: list[tuple[int, int]] = []
     sentence_start = start
     i = start
+    index = _ParagraphIndex(text, start, end)
 
     while i < end:
         if text[i] not in _SENTENCE_END:
@@ -348,7 +350,7 @@ def _sentence_spans(text: str, start: int, end: int) -> list[tuple[int, int]]:
         while boundary_end < end and text[boundary_end] in _CLOSERS:
             boundary_end += 1
 
-        if _is_false_boundary(text, start, i):
+        if _is_false_boundary_at(text, start, i, index):
             i = punctuation_end
             continue
 
@@ -368,28 +370,143 @@ def _sentence_spans(text: str, start: int, end: int) -> list[tuple[int, int]]:
     return spans
 
 
-def _is_false_boundary(text: str, block_start: int, punctuation_index: int) -> bool:
-    prefix = text[block_start:punctuation_index]
-    token = _last_token(prefix)
-    if not token:
+# A false-boundary verdict costs O(1) plus the few chars around the point: everything that
+# needs the whole token is answered from a per-paragraph index built once in one pass.
+# The index has no cursor, so points can be asked in any order.
+
+_TOKEN_TRAILERS = frozenset('"\')]}»”')
+_URL_MARKERS = ("http://", "https://", "www.")
+_INITIALS_RE = re.compile(r"(?:[A-Za-zА-Яа-яЁё]\.){1,4}[A-Za-zА-Яа-яЁё]?")
+
+# Rules that look at the normalized token as a string. Each states the longest token it can
+# match; a longer token skips it without lowering. str.lower() never shortens text, so the
+# raw length is a safe gate. A new string rule goes here with its bound — nowhere else.
+_TOKEN_RULES = (
+    # (longest match, check(normalized token, the 23 chars after the point))
+    (1, lambda token, following: bool(re.fullmatch(r"[a-zа-яё]", token)) and _starts_with_dotted_word(following)),
+    (9, lambda token, following: bool(_INITIALS_RE.fullmatch(token))),  # "a.b.c.d.e"
+    (max(map(len, _ABBREVIATIONS)), lambda token, following: token in _ABBREVIATIONS),
+)
+_LONGEST_TOKEN_RULE = max(limit for limit, _ in _TOKEN_RULES)
+
+
+class _ParagraphIndex:
+    """Whole-token facts as arrays over one paragraph, so no point re-reads the token.
+
+    last_space[x]   — last whitespace before x
+    marker_start[x] — latest start of a URL marker that ends at or before x
+    last_bad[x]     — last char before x that cannot be in a number (not a digit, not . or ,)
+    last_pair[x]    — last separator before x that follows another separator (".." or ",.")
+    Positions are absolute; "none" is block_start - 1.
+    """
+
+    def __init__(self, text: str, start: int, end: int) -> None:
+        none = start - 1
+        n = end - start
+        self.start = start
+        self.last_space = array("l", [none]) * (n + 1)
+        self.marker_start = array("l", [none]) * (n + 1)
+        self.last_bad = array("l", [none]) * (n + 1)
+        self.last_pair = array("l", [none]) * (n + 1)
+
+        ends: dict[int, int] = {}
+        for marker in _URL_MARKERS:
+            for pos in _marker_starts(text, start, end, marker):
+                stop = pos + len(marker)
+                ends[stop] = max(ends.get(stop, none), pos)
+
+        space = marker = bad = pair = none
+        prev_sep = False
+        for k in range(n):
+            pos = start + k
+            char = text[pos]
+            if char.isspace():
+                space = pos
+            sep = char in ".,"
+            if not sep and not char.isdecimal():
+                bad = pos
+            if sep and prev_sep:
+                pair = pos
+            prev_sep = sep
+            if pos + 1 in ends:
+                marker = max(marker, ends[pos + 1])
+            # facts "before x" for x = pos + 1
+            self.last_space[k + 1] = space
+            self.marker_start[k + 1] = marker
+            self.last_bad[k + 1] = bad
+            self.last_pair[k + 1] = pair
+
+    def last_space_before(self, pos: int) -> int:
+        return self.last_space[pos - self.start]
+
+    def has_marker(self, token_start: int, token_end: int) -> bool:
+        return self.marker_start[token_end - self.start] >= token_start
+
+    def is_number(self, text: str, token_start: int, token_end: int) -> bool:
+        k = token_end - self.start
+        return (
+            text[token_start].isdecimal()
+            and text[token_end - 1].isdecimal()
+            and self.last_bad[k] < token_start
+            and self.last_pair[k] < token_start
+        )
+
+
+def _marker_starts(text: str, start: int, end: int, marker: str) -> list[int]:
+    """Starts of `marker` in text[start:end] compared as text[j].lower() per char — what
+    `marker in token.lower()` sees, since no char lowers into several marker chars."""
+    chunk = text[start:end]
+    lowered = chunk.lower()
+    found: list[int] = []
+    if len(lowered) == len(chunk):  # positions line up; σ/ς from Σ never touch a marker
+        pos = lowered.find(marker)
+        while pos != -1:
+            found.append(start + pos)
+            pos = lowered.find(marker, pos + 1)
+        return found
+    for j in range(start, end - len(marker) + 1):  # "İ" lowers to two chars: compare per char
+        if all(text[j + i].lower() == marker[i] for i in range(len(marker))):
+            found.append(j)
+    return found
+
+
+def _is_false_boundary_at(
+    text: str, block_start: int, punctuation_index: int, index: _ParagraphIndex
+) -> bool:
+    p = punctuation_index
+
+    # _last_token(prefix): one trailing "\n" is dropped, a trailing space means no token.
+    token_end = p
+    if token_end > block_start and text[token_end - 1] == "\n":
+        token_end -= 1
+    if token_end == block_start or text[token_end - 1].isspace():
         return False
-    normalized = token.rstrip('"\')]}»”').lower()
-    following = text[punctuation_index + 1 : punctuation_index + 24]
+    token_start = index.last_space_before(token_end) + 1
+    norm_end = token_end
+    while norm_end > token_start and text[norm_end - 1] in _TOKEN_TRAILERS:
+        norm_end -= 1
 
-    if re.fullmatch(r"[a-zа-яё]", normalized) and _starts_with_dotted_word(following):
-        return True
-    if _ends_with_initials(prefix.lower()):
-        return True
-    if any(marker in normalized for marker in ("http://", "https://", "www.")):
-        return True
-    if re.fullmatch(r"\d+(?:[.,]\d+)*", normalized):
-        return True
-    if re.fullmatch(r"(?:[A-Za-zА-Яа-яЁё]\.){1,4}[A-Za-zА-Яа-яЁё]?", normalized):
-        return True
-    if normalized in _ABBREVIATIONS:
+    # Whole-token rules, any length, from the index.
+    if norm_end > token_start and (
+        index.has_marker(token_start, norm_end) or index.is_number(text, token_start, norm_end)
+    ):
         return True
 
-    short_prefix = prefix[-12:].lower()
+    # String rules, only for tokens they can match.
+    length = norm_end - token_start
+    if length <= _LONGEST_TOKEN_RULE:
+        normalized = text[token_start:norm_end].lower()
+        following = text[p + 1 : p + 24]
+        if any(length <= limit and check(normalized, following) for limit, check in _TOKEN_RULES):
+            return True
+
+    # Window rules: _ends_with_initials needs the last char, the spaces before it and two more.
+    k = token_end - 2
+    while k >= block_start and text[k].isspace():
+        k -= 1
+    if _ends_with_initials(text[max(block_start, k - 1) : p].lower()):
+        return True
+    short_prefix = text[max(block_start, p - 12) : p].lower()
     return any(short_prefix.endswith(value) for value in _ABBREVIATIONS)
 
 
@@ -599,9 +716,25 @@ def _char_spans(
     spans: list[tuple[int, int]] = []
     cursor = start
     while cursor < end:
-        low = cursor + 1
-        high = end
+        # Grow the probe from the cursor by doubling before the binary search, so a probe
+        # never tokenizes the rest of the paragraph. Same best as the plain search over
+        # [cursor + 1, end] whenever token counts grow with the prefix.
         best = cursor + 1
+        low, high = cursor + 1, end
+        if params.token_counter(text[cursor : cursor + 1]) <= max_tokens:
+            good, width = cursor + 1, 1
+            while good < end:
+                width *= 2
+                probe = min(end, cursor + width)
+                if params.token_counter(text[cursor:probe]) <= max_tokens:
+                    good = probe
+                else:
+                    high = probe - 1
+                    break
+            best = good
+            low = good + 1
+        else:
+            high = cursor  # nothing fits: the plain search keeps best = cursor + 1 too
         while low <= high:
             middle = (low + high) // 2
             if params.token_counter(text[cursor:middle]) <= max_tokens:

@@ -234,6 +234,67 @@ class TestRegexFreeScans:
         assert time.perf_counter() - started < 1.0
 
 
+def _long_prose(size: int) -> str:
+    words = "альфа бета гамма дельта эпсилон текст пример см. т.е. 3.14 А.С. www.site.ru".split()
+    rnd = random.Random(1)
+    out = []
+    while sum(map(len, out)) < size:
+        out.append(
+            " ".join(rnd.choice(words) for _ in range(rnd.randint(5, 15))).capitalize() + "."
+        )
+    return " ".join(out)[:size]
+
+
+class TestLongParagraphScaling:
+    """CHUNK-PERF-1: a paragraph of hundreds of KB must not take quadratic time.
+
+    A "paragraph" for the chunker is everything up to a blank line, so glued-together
+    text or a page of single newlines is one paragraph. On the pre-index code these
+    inputs took 12-94 s each; the "1." case never finished in the measurement window.
+    """
+
+    @pytest.mark.parametrize(
+        "make_text,limit",
+        [
+            (lambda: _long_prose(400_000), 1.0),
+            (lambda: "www." * 100_000, 1.0),
+            (lambda: "1." * 200_000, 1.5),
+            (lambda: "a." * 200_000, 1.5),
+        ],
+        ids=["prose-400K", "www-400K", "ones-400K", "a.-400K"],
+    )
+    def test_long_paragraph_is_chunked_quickly(self, make_text, limit):
+        text = make_text()
+        fast_params = ChunkingParams(
+            token_counter=word_tokens, target_tokens=126, max_tokens=126
+        )
+
+        started = time.perf_counter()
+        chunk(text, fast_params)
+
+        assert time.perf_counter() - started < limit
+
+    def test_nonmonotonic_counter_keeps_window_and_text_invariants(self):
+        # "ё" lowers the count, so appending a character can shrink it — the doubling
+        # probe and binary search must still emit spans that fit the window. Real
+        # tokenizers behave this way (SentencePiece merges can reduce the count).
+        def wavy(s: str) -> int:
+            return len(s) - 5 * s.count("ё")
+
+        # One unbreakable token: every span comes from the doubling probe and the
+        # binary search. (Packing across whitespace gaps is a separate pre-existing
+        # path — see the CHUNK-PERF-1 findings; it is not exercised here.)
+        text = "ё" * 40 + "x" * 400 + "ё" * 40 + "y" * 300 + "z"
+        wavy_params = ChunkingParams(
+            token_counter=wavy, target_tokens=10, max_tokens=10
+        )
+        chunks = chunk(text, wavy_params)
+
+        assert chunks
+        assert all(item.token_count <= 10 for item in chunks)
+        assert_no_non_whitespace_loss(text, chunks)
+
+
 class TestAggregate:
     def test_mean_with_l2_normalization(self):
         result = aggregate(np.asarray([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32))
