@@ -12,12 +12,16 @@ public record DocumentChunk(
         String noteId,
         String type
 ) {
+    public static final int MAX_TEXT_LENGTH = 10_000;
 
     public DocumentChunk {
         if (text == null || text.isBlank()) throw new IllegalArgumentException("Text must not be null or empty");
 
 
         if (index < 0) throw new IllegalArgumentException("Index of the chunk must be positive, got " + index);
+
+        if (text.length() > MAX_TEXT_LENGTH)
+            throw new IllegalArgumentException("Chunk text exceeds 10000 characters, got: " + text.length());
 
         metadata = metadata != null ? Collections.unmodifiableMap(metadata) : Map.of();
 

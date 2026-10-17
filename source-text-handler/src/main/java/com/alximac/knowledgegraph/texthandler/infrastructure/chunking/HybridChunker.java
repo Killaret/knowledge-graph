@@ -18,14 +18,8 @@ public class HybridChunker implements ChunkingStrategy {
 
         for (String paragraph : paragraphs) {
             if (countWords(paragraph) <= options.chunkSize()) {
+                addChunkOrMerge(paragraph, options.minChunkLength(), result, chunkIndex);
                 // короткий параграф — сразу чанк, если не короче minChunkLength
-                if (paragraph.length() >= options.minChunkLength()) {
-                    result.add(new DocumentChunk(paragraph, chunkIndex.getAndIncrement(), Map.of(), null, null));
-                } else if (!result.isEmpty()) {
-                    // слишком короткий — присоединяем к предыдущему чанку
-                    DocumentChunk prev = result.remove(result.size() - 1);
-                    result.add(new DocumentChunk(prev.text() + " " + paragraph, prev.index(), Map.of(), null, null));
-                }
             } else {
                 // длинный параграф — sliding window по предложениям
                 List<String> sentences = splitIntoSentences(paragraph);
@@ -107,13 +101,72 @@ public class HybridChunker implements ChunkingStrategy {
         return chunks;
     }
 
-    private void addChunkOrMerge(String chunkText, int minLength, List<DocumentChunk> chunks, AtomicInteger indexCounter) {
-        if (chunkText.length() >= minLength) {
-            chunks.add(new DocumentChunk(chunkText, indexCounter.getAndIncrement(), Map.of(), null, null));
-        } else if (!chunks.isEmpty()) {
-            DocumentChunk prev = chunks.remove(chunks.size() - 1);
-            chunks.add(new DocumentChunk(prev.text() + " " + chunkText, prev.index(), Map.of(), null, null));
+    private List<String> sliceOversizedChunk(String text, int maxLength) {
+        List<String> parts = new ArrayList<>();
+        String[] words = text.split("\\s+");
+        StringBuilder current = new StringBuilder();
+
+        for (String word : words) {
+
+            if (word.length() > maxLength) {
+                // Слово слишком длинное — режем посимвольно
+                if (current.length() > 0) {
+                    parts.add(current.toString().strip());
+                    current.setLength(0);
+                }
+                while (word.length() > maxLength) {
+                    parts.add(word.substring(0, maxLength));
+                    word = word.substring(maxLength);
+                }
+                current.append(word); // остаток
+                continue;
+            }
+            if (current.length() + word.length() + 1 > maxLength) {
+                if (current.length() > 0) {
+                    parts.add(current.toString().strip());
+                    current.setLength(0);
+                }
+            }
+            if (current.length() > 0) current.append(' ');
+            current.append(word);
         }
-        // Если список пуст и текст короткий, чанк теряется .
+        if (current.length() > 0) {
+            parts.add(current.toString().strip());
+        }
+        return parts;
     }
+
+    private void addChunkOrMerge(String chunkText, int minLength, List<DocumentChunk> chunks, AtomicInteger indexCounter) {
+        // 1. Разрезаем слишком длинный текст на части ≤ MAX_TEXT_LENGTH
+        List<String> parts = chunkText.length() <= DocumentChunk.MAX_TEXT_LENGTH
+                ? List.of(chunkText)
+                : sliceOversizedChunk(chunkText, DocumentChunk.MAX_TEXT_LENGTH);
+
+        for (String part : parts) {
+            if (part.length() >= minLength) {
+                chunks.add(new DocumentChunk(part, indexCounter.getAndIncrement(), Map.of(), null, null));
+            } else if (!chunks.isEmpty()) {
+                // Пробуем присоединить к предыдущему
+                DocumentChunk prev = chunks.remove(chunks.size() - 1);
+                String merged = prev.text() + " " + part;
+
+                // Проверяем, не превысит ли слияние лимит
+                if (merged.length() <= DocumentChunk.MAX_TEXT_LENGTH) {
+                    chunks.add(new DocumentChunk(merged, prev.index(), Map.of(), null, null));
+                } else {
+                    // Не влезает — кладём prev обратно и добавляем part как отдельный чанк
+                    // Слияние превысит лимит — сохраняю part отдельно, даже если он короче minLength.
+                    // Иначе - потеря данных
+                    chunks.add(prev);
+                    chunks.add(new DocumentChunk(part, indexCounter.getAndIncrement(), Map.of(), null, null));
+                }
+            }else {
+                // chunks пустой, part короче minLength — не выбрасываем его.
+                // мб  контент документа маленький.
+                chunks.add(new DocumentChunk(part, indexCounter.getAndIncrement(), Map.of(), null, null));
+            }
+        }
+    }
+
+
 }

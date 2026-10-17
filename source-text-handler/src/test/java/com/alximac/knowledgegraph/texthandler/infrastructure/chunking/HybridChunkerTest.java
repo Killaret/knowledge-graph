@@ -209,4 +209,14 @@ class HybridChunkerTest {
 
         assertThat(chunks).isEmpty();
     }
+
+    @Test
+    @DisplayName("Must not lose first short paragraph")
+    void mustNotLoseFirstShortParagraph() {
+        // текст короче minChunkLength, но это весь контент
+        ImportOptions opts = opts(100, 10, 50);
+        List<DocumentChunk> chunks = chunker.chunk("Hi", opts);
+        assertThat(chunks).hasSize(1);
+        assertThat(chunks.get(0).text()).isEqualTo("Hi");
+    }
 }

@@ -3,6 +3,7 @@ package com.alximac.knowledgegraph.texthandler.infrastructure.parser;
 import com.alximac.knowledgegraph.texthandler.domain.model.ParsedDocument;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParser;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParserException;
+import com.alximac.knowledgegraph.texthandler.infrastructure.validation.UrlValidator;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -24,6 +25,8 @@ public class TikaDocumentParser implements DocumentParser {
 
     @Override
     public ParsedDocument parseFromUrl(String url) throws DocumentParserException {
+        UrlValidator.validate(url);
+
         try (InputStream stream = URI.create(url).toURL().openStream()) {
             return parseFromStream(stream, Map.of());
         } catch (IOException | IllegalArgumentException e) {

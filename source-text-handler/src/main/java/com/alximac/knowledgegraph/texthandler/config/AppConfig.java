@@ -12,6 +12,7 @@ import com.alximac.knowledgegraph.texthandler.infrastructure.chunking.HybridChun
 import com.alximac.knowledgegraph.texthandler.infrastructure.db.RedisImportStateRepository;
 import com.alximac.knowledgegraph.texthandler.infrastructure.http.NoteCreatorHttpClient;
 import com.alximac.knowledgegraph.texthandler.infrastructure.http.ResilientNoteCreator;
+import com.alximac.knowledgegraph.texthandler.infrastructure.link.NoOpLinkDetector;
 import com.alximac.knowledgegraph.texthandler.infrastructure.parser.ParserFactory;
 import com.alximac.knowledgegraph.texthandler.infrastructure.parser.TextDocumentParser;
 import com.alximac.knowledgegraph.texthandler.infrastructure.parser.TikaDocumentParser;
@@ -33,7 +34,6 @@ import io.lettuce.core.RedisClient;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.time.Duration;
-import java.util.List;
 
 public class AppConfig {
     private static final long TIMEOUT_DURATION = 5;
@@ -60,8 +60,9 @@ public class AppConfig {
         RedisClient redisClient = createRedisClient();
         ObjectMapper objectMapper = buildObjectMapper();
         HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(TIMEOUT_DURATION)).build();
+        String backendUrl = System.getenv().getOrDefault("BACKEND_URL", "http://backend:8080/api/v1");
         NoteCreatorHttpClient noteCreatorHttpClient =
-                new NoteCreatorHttpClient(httpClient, objectMapper, "http://backend:8080");
+                new NoteCreatorHttpClient(httpClient, objectMapper, backendUrl);
         HealthCheckService healthService = new HealthCheckService(8081, redisClient);
         healthService.start();
 
@@ -92,7 +93,7 @@ public class AppConfig {
 
         AsynqInboundAdapter asynqInboundAdapter = new AsynqInboundAdapter(
                 redisClient,
-                "asynq:import:document:pending",
+                "import:document:pending",
                 objectMapper);
 
         DocumentParser tikaParser = new TikaDocumentParser();
@@ -102,12 +103,12 @@ public class AppConfig {
 
         ChunkingStrategy chunk = new HybridChunker();
 
-        LinkDetector linkDetector = chunks -> List.of();
+        LinkDetector linkDetector = new NoOpLinkDetector();
 
 
         OutboundQueuePort outboundQueuePort = new AsynqOutboundAdapter(
                 redisClient,
-                "asynq:import:responses:pending",
+                "import:responses:pending",
                 objectMapper);
 
         ImportDocumentHandler handler = new ImportDocumentHandler(chunk, parserFactory, linkDetector, noteCreator,

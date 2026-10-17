@@ -25,8 +25,8 @@ public class NoteCreatorHttpClient implements NoteCreatorPort {
                                  String baseUrl) {
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
-        this.notesUrl = baseUrl + "/api/v1/notes";
-        this.linksUrl = baseUrl + "/api/v1/links";
+        this.notesUrl = baseUrl + "/notes";
+        this.linksUrl = baseUrl + "/links";
     }
 
     private static final long WAIT_DURATION = 5;
