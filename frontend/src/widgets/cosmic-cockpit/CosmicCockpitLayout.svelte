@@ -35,6 +35,9 @@
     children?: Snippet;
     onNodeSelect?: (id: string | null) => void;
     onNoteCreate?: () => void;
+    onSmartCreate?: () => void;
+    smartCreatePending?: boolean;
+    smartCreateUnread?: boolean;
     onNoteDelete?: (id: string) => void;
     onNoteEdit?: (id: string) => void;
     onCreateChildNote?: (note: NoteItem) => void;
@@ -74,6 +77,9 @@
     children,
     onNodeSelect,
     onNoteCreate,
+    onSmartCreate,
+    smartCreatePending,
+    smartCreateUnread,
     onNoteDelete,
     onNoteEdit,
     onCreateChildNote,
@@ -258,6 +264,9 @@
         {onToggleLayoutProvider}
         {onFilter}
         {onNoteCreate}
+        {onSmartCreate}
+        {smartCreatePending}
+        {smartCreateUnread}
         {canvasController}
         variant="docked"
       />

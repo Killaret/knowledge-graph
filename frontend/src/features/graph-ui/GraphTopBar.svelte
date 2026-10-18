@@ -4,6 +4,7 @@
   import { graphStore } from "$shared/stores/graph.svelte";
   import { graphView, type GraphViewMode } from "$shared/stores/graph-view.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+  import { getSmartCreateAvailability } from "$shared/api/import";
   import { isGraph3DEnabled } from "$shared/config/config";
   import GraphStats from "$features/graph-ui/GraphStats.svelte";
   import LangSwitcher from "$components/atoms/LangSwitcher.svelte";
@@ -35,6 +36,9 @@
     onToggleLayoutProvider?: (provider: "d3" | "graph-service") => void;
     onFilter?: (type: string) => void;
     onNoteCreate?: () => void;
+    onSmartCreate?: () => void;
+    smartCreatePending?: boolean;
+    smartCreateUnread?: boolean;
     onSignIn?: () => void;
     onRegister?: () => void;
     canvasController?: {
@@ -63,6 +67,9 @@
     onToggleLayoutProvider,
     onFilter = () => {},
     onNoteCreate,
+    onSmartCreate,
+    smartCreatePending = false,
+    smartCreateUnread = false,
     onSignIn,
     onRegister,
     canvasController,
@@ -71,6 +78,31 @@
 
   let typeDropdownOpen = $state(false);
   let linkDropdownOpen = $state(false);
+
+  // SMART-CREATE-1: the button is active only while the Java listener writes
+  // its Redis key — the bar asks on mount and then every 15 s.
+  let smartCreateAvailable = $state(false);
+  $effect(() => {
+    if (!isAuthenticated || !onSmartCreate) {
+      smartCreateAvailable = false;
+      return;
+    }
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const res = await getSmartCreateAvailability();
+        if (!cancelled) smartCreateAvailable = res.available;
+      } catch {
+        if (!cancelled) smartCreateAvailable = false;
+      }
+    };
+    void check();
+    const timer = setInterval(check, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  });
 
   // FREEZE-3D-1: the 3D toggle disappears while frontend.graph.3d.enabled=false.
   const viewOptions = $derived(
@@ -420,6 +452,86 @@
   <div class="right-cluster">
     <LangSwitcher variant="dark" />
 
+    {#if isAuthenticated && onSmartCreate}
+      <button
+        type="button"
+        class="smart-create-btn"
+        class:smart-create-btn--disabled={!smartCreateAvailable}
+        onclick={() => {
+          if (smartCreateAvailable || smartCreatePending || smartCreateUnread) onSmartCreate();
+        }}
+        title={smartCreateAvailable
+          ? t("import.smartCreateTitle")
+          : t("import.smartCreateUnavailable")}
+        data-testid="smart-create-button"
+        aria-label={smartCreateAvailable
+          ? t("import.smartCreateAria")
+          : t("import.smartCreateUnavailable")}
+        aria-disabled={!smartCreateAvailable}
+      >
+        <span class="smart-create-plus" aria-hidden="true">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </span>
+        <span class="smart-create-tiles" aria-hidden="true">
+          <span class="smart-tile">
+            <svg
+              width="9"
+              height="9"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+            >
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="4" y1="12" x2="20" y2="12" />
+              <line x1="4" y1="18" x2="14" y2="18" />
+            </svg>
+          </span>
+          <span class="smart-tile">
+            <svg
+              width="9"
+              height="9"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+            >
+              <path d="M10 14a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 6" />
+              <path d="M14 10a5 5 0 0 0-7.07 0l-2.83 2.83a5 5 0 0 0 7.07 7.07L13 18" />
+            </svg>
+          </span>
+          <span class="smart-tile">
+            <svg
+              width="9"
+              height="9"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+            >
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 3 14 8 19 8" />
+            </svg>
+          </span>
+        </span>
+        {#if smartCreatePending}
+          <span class="smart-create-waiting" data-testid="smart-create-waiting"></span>
+        {:else if smartCreateUnread}
+          <span class="smart-create-badge" data-testid="smart-create-badge">1</span>
+        {/if}
+      </button>
+    {/if}
+
     {#if isAuthenticated && onNoteCreate}
       <button
         type="button"
@@ -667,6 +779,95 @@
 
   .create-btn:hover {
     background: rgba(45, 212, 191, 0.25);
+  }
+
+  /* SMART-CREATE-1: pill left of «＋» — plus in the create teal, three
+   * source tiles in a violet outline (mockup variant A). */
+  .smart-create-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 34px;
+    padding: 0 9px;
+    border: 1px solid rgba(139, 92, 246, 0.45);
+    border-radius: 999px;
+    background: rgba(139, 92, 246, 0.08);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .smart-create-btn:hover {
+    background: rgba(139, 92, 246, 0.16);
+    border-color: rgba(139, 92, 246, 0.65);
+  }
+
+  .smart-create-plus {
+    display: inline-flex;
+    color: #2dd4bf;
+  }
+
+  .smart-create-tiles {
+    display: inline-flex;
+    gap: 3px;
+  }
+
+  .smart-tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border: 1px solid rgba(139, 92, 246, 0.6);
+    border-radius: 3px;
+    color: rgba(167, 139, 250, 0.95);
+  }
+
+  .smart-create-btn--disabled {
+    border-color: var(--carbon-border);
+    background: var(--carbon-hex-fill);
+    cursor: default;
+  }
+
+  .smart-create-btn--disabled .smart-create-plus,
+  .smart-create-btn--disabled .smart-tile {
+    color: var(--carbon-text-dim);
+    border-color: var(--carbon-border);
+  }
+
+  .smart-create-waiting {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--carbon-graphite);
+    border-top-color: #2dd4bf;
+    border-radius: 50%;
+    animation: smart-spin 0.9s linear infinite;
+  }
+
+  .smart-create-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    border-radius: 999px;
+    background: #2dd4bf;
+    color: #08110f;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  @keyframes smart-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .top-bar-input {

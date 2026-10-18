@@ -5,6 +5,7 @@
   import { createHomePageState } from "$features/home-page";
   import { GraphPageShell } from "$widgets/graph-page";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
+  import SmartCreateModal from "$widgets/notes/SmartCreateModal.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
   import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
   import NoteCard from "$widgets/notes/NoteCard.svelte";
@@ -161,6 +162,9 @@
   onToggleLayoutProvider={handleToggleLayoutProvider}
   onNodeSelect={(id) => (graphStore.selectedNodeId = id)}
   onNoteCreate={() => (homePage.showCreateModal = true)}
+  onSmartCreate={() => (homePage.showSmartCreateModal = true)}
+  smartCreatePending={homePage.smartCreatePending}
+  smartCreateUnread={homePage.smartCreateUnread}
   onNoteDelete={handleDeleteRequest}
   onNoteEdit={(id: string) => {
     homePage.noteToEdit = id;
@@ -435,6 +439,13 @@
   onClose={resetCreateChildParent}
   parentNote={homePage.createChildParent ?? undefined}
   defaultType={homePage.createChildDefaultType}
+/>
+
+<!-- Smart Create Modal (SMART-CREATE-1) -->
+<SmartCreateModal
+  bind:open={homePage.showSmartCreateModal}
+  bind:pending={homePage.smartCreatePending}
+  bind:unread={homePage.smartCreateUnread}
 />
 
 <!-- Edit Note Modal -->

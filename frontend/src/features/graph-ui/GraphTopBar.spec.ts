@@ -1,13 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/svelte";
+import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/svelte";
 import GraphTopBar from "./GraphTopBar.svelte";
 import { graphStore } from "$shared/stores/graph.svelte";
 import { isGraph3DEnabled } from "$shared/config/config";
+import { getSmartCreateAvailability } from "$shared/api/import";
 import { LinkType } from "$entities";
 
 vi.mock("$shared/config/config", async (importOriginal) => ({
   ...(await importOriginal<typeof import("$shared/config/config")>()),
   isGraph3DEnabled: vi.fn(() => true),
+}));
+
+vi.mock("$shared/api/import", () => ({
+  getSmartCreateAvailability: vi.fn(),
 }));
 
 describe("GraphTopBar", () => {
@@ -22,6 +27,7 @@ describe("GraphTopBar", () => {
     vi.clearAllMocks();
     graphStore.reset();
     vi.mocked(isGraph3DEnabled).mockReturnValue(true);
+    vi.mocked(getSmartCreateAvailability).mockResolvedValue({ available: true });
   });
 
   it("renders authenticated view with stats and view toggles", () => {
@@ -242,6 +248,77 @@ describe("GraphTopBar", () => {
 
     fireEvent.click(button);
     expect(onNoteCreate).toHaveBeenCalled();
+  });
+
+  // SMART-CREATE-1: the button sits left of «＋» and is grey while the Java
+  // listener has not written its liveness key.
+  it("renders the smart create button before the create note button", async () => {
+    render(GraphTopBar, {
+      props: {
+        isAuthenticated: true,
+        currentView: "graph",
+        onNoteCreate: vi.fn(),
+        onSmartCreate: vi.fn(),
+      },
+    });
+
+    const smart = screen.getByTestId("smart-create-button");
+    const create = screen.getByTestId("create-note-button");
+    expect(smart.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("calls onSmartCreate when the handler is available", async () => {
+    const onSmartCreate = vi.fn();
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph", onSmartCreate },
+    });
+
+    const button = screen.getByTestId("smart-create-button");
+    await waitFor(() => expect(button).toHaveAttribute("aria-disabled", "false"));
+
+    await fireEvent.click(button);
+    expect(onSmartCreate).toHaveBeenCalled();
+  });
+
+  it("is grey and inert while the document handler is unavailable", async () => {
+    vi.mocked(getSmartCreateAvailability).mockResolvedValue({ available: false });
+    const onSmartCreate = vi.fn();
+    render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph", onSmartCreate },
+    });
+
+    const button = screen.getByTestId("smart-create-button");
+    await waitFor(() => expect(button).toHaveAttribute("aria-disabled", "true"));
+    expect(button).toHaveAttribute(
+      "title",
+      'Document handler is unavailable. A regular note can be created with the "+" button.'
+    );
+
+    await fireEvent.click(button);
+    expect(onSmartCreate).not.toHaveBeenCalled();
+  });
+
+  it("hides the smart create button for anonymous users", () => {
+    render(GraphTopBar, {
+      props: { isAuthenticated: false, currentView: "graph", onSmartCreate: vi.fn() },
+    });
+    expect(screen.queryByTestId("smart-create-button")).toBeNull();
+  });
+
+  it("shows the waiting icon while a task runs and the badge when it finishes", () => {
+    const { rerender } = render(GraphTopBar, {
+      props: { isAuthenticated: true, currentView: "graph", onSmartCreate: vi.fn() },
+    });
+
+    expect(screen.queryByTestId("smart-create-waiting")).toBeNull();
+    expect(screen.queryByTestId("smart-create-badge")).toBeNull();
+
+    rerender({ smartCreatePending: true });
+    expect(screen.getByTestId("smart-create-waiting")).toBeInTheDocument();
+
+    rerender({ smartCreatePending: false, smartCreateUnread: true });
+    const badge = screen.getByTestId("smart-create-badge");
+    expect(badge).toHaveTextContent("1");
   });
 
   it("shows sign in and register buttons when not authenticated", () => {

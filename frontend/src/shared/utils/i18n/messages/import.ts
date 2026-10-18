@@ -35,6 +35,27 @@ export const en: Record<string, string> = {
   "import.noiseDropped": "noise blocks removed: {{count}}",
   "import.doneTitle": "Import complete",
   "import.backToGraph": "Back to graph",
+  // Smart create (source-text-handler)
+  "import.smartCreateTitle": "Smart note creation",
+  "import.smartCreateAria": "Smart note creation from text, link or file",
+  "import.smartCreateUnavailable":
+    'Document handler is unavailable. A regular note can be created with the "+" button.',
+  "import.smartTitle": "Smart note creation",
+  "import.smartSubtitle":
+    'Like "+", but for the big stuff: the handler splits text, a page from a link, or a file into notes and names them itself',
+  "import.smartTileText": "Text — an article, notes, a chapter",
+  "import.smartTileUrl": "Link — the handler fetches the page",
+  "import.smartTileFile": "File — PDF, Word and more",
+  "import.smartTextPlaceholder": "Paste the text…",
+  "import.smartUrlPlaceholder": "https://…",
+  "import.smartChooseFile": "Choose file",
+  "import.smartSubmit": "Submit",
+  "import.smartQueued": "In queue",
+  "import.smartCollapse": "Collapse",
+  "import.smartDone": "Notes created: {{count}}",
+  "import.smartRawChunks": "{{count}} fragments did not become notes",
+  "import.smartFailedTimeout": "The handler did not answer",
+  "import.smartOpenInGraph": "Open in graph",
 };
 
 export const ru: Record<string, string> = {
@@ -70,4 +91,25 @@ export const ru: Record<string, string> = {
   "import.noiseDropped": "вырезано шумовых блоков: {{count}}",
   "import.doneTitle": "Импорт завершён",
   "import.backToGraph": "К графу",
+  // Умное создание (source-text-handler)
+  "import.smartCreateTitle": "Умное создание заметок",
+  "import.smartCreateAria": "Умное создание заметок из текста, ссылки или файла",
+  "import.smartCreateUnavailable":
+    "Обработчик документов недоступен. Обычную заметку можно создать кнопкой «＋».",
+  "import.smartTitle": "Умное создание заметок",
+  "import.smartSubtitle":
+    "Как «＋», только для большого: обработчик разделит текст, страницу по ссылке или файл на заметки и сам придумает им названия",
+  "import.smartTileText": "Текст — статья, конспект, глава",
+  "import.smartTileUrl": "Ссылка — страницу заберёт обработчик",
+  "import.smartTileFile": "Файл — PDF, Word и другие",
+  "import.smartTextPlaceholder": "Вставьте текст…",
+  "import.smartUrlPlaceholder": "https://…",
+  "import.smartChooseFile": "Выбрать файл",
+  "import.smartSubmit": "Отправить",
+  "import.smartQueued": "В очереди",
+  "import.smartCollapse": "Свернуть",
+  "import.smartDone": "Создано заметок: {{count}}",
+  "import.smartRawChunks": "{{count}} фрагментов не стали заметками",
+  "import.smartFailedTimeout": "Обработчик не ответил",
+  "import.smartOpenInGraph": "Открыть в графе",
 };

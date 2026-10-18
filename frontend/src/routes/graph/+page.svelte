@@ -12,6 +12,7 @@
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
+  import SmartCreateModal from "$widgets/notes/SmartCreateModal.svelte";
   import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
@@ -38,6 +39,9 @@
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
   let showCreateModal = $state(false);
+  let showSmartCreateModal = $state(false);
+  let smartCreatePending = $state(false);
+  let smartCreateUnread = $state(false);
   let createChildParent: { id: string; title: string; type?: string } | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
@@ -402,6 +406,9 @@
     else if (view === "3d") goto("/graph/3d");
   }}
   onNoteCreate={() => (showCreateModal = true)}
+  onSmartCreate={() => (showSmartCreateModal = true)}
+  {smartCreatePending}
+  {smartCreateUnread}
   onNoteDelete={handleDeleteRequest}
   onNoteEdit={handleNoteEdit}
   onNodeSelect={handleNodeSelect}
@@ -500,6 +507,12 @@
       : undefined}
   />
 {/if}
+
+<SmartCreateModal
+  bind:open={showSmartCreateModal}
+  bind:pending={smartCreatePending}
+  bind:unread={smartCreateUnread}
+/>
 
 {#if showConfirmDelete}
   <ConfirmModal

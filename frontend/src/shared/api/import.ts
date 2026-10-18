@@ -59,11 +59,29 @@ export interface ImportTaskProgress {
   failed: number;
 }
 
+export interface ImportTaskStatusNote {
+  id: string;
+  title: string;
+}
+
 export interface ImportTaskStatus {
   task_id: string;
   status: "pending" | "processing" | "done" | "failed";
   progress: ImportTaskProgress;
+  /** SMART-CREATE-1: document tasks carry owner, result summary and notes. */
+  user_id?: string;
+  kind?: string;
+  notes?: ImportTaskStatusNote[];
+  raw_chunks_count?: number;
+  errors?: string[];
+  reason?: string;
 }
+
+export interface SmartCreateAvailability {
+  available: boolean;
+}
+
+export type SmartImportType = "TEXT" | "URL" | "FILE";
 
 export interface ImportOptions {
   default_type?: string;
@@ -115,5 +133,35 @@ export async function createBookmarksImport(
  */
 export async function getImportStatus(taskId: string): Promise<ImportTaskStatus> {
   const res = await api.get(`v1/import/${taskId}/status`).json<{ data: ImportTaskStatus }>();
+  return res.data;
+}
+
+/**
+ * SMART-CREATE-1: is the Java source-text-handler listener alive?
+ */
+export async function getSmartCreateAvailability(): Promise<SmartCreateAvailability> {
+  const res = await api
+    .get("v1/import/document/availability")
+    .json<{ data: SmartCreateAvailability }>();
+  return res.data;
+}
+
+/**
+ * SMART-CREATE-1: send a document (text, URL or file) to the source-text
+ * handler queue. Multipart fields follow the backend contract: type, content,
+ * file.
+ */
+export async function createSmartImport(input: {
+  type: SmartImportType;
+  content?: string;
+  file?: File;
+}): Promise<ImportTask> {
+  const form = new FormData();
+  form.set("type", input.type);
+  if (input.content !== undefined) form.set("content", input.content);
+  if (input.file) form.set("file", input.file);
+  const res = await api
+    .post("v1/import/document", { body: form, timeout: 120000 })
+    .json<{ data: ImportTask }>();
   return res.data;
 }

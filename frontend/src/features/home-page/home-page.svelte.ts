@@ -57,6 +57,9 @@ export function createHomePageState() {
   let loading = $state(true);
   let apiError = $state<ErrorResponse | null>(null);
   let showCreateModal = $state(false);
+  let showSmartCreateModal = $state(false);
+  let smartCreatePending = $state(false);
+  let smartCreateUnread = $state(false);
   let createChildParent = $state<{ id: string; title: string; type?: string } | null>(null);
   let showEditModal = $state(false);
   let noteToEdit = $state<string | null>(null);
@@ -696,6 +699,24 @@ export function createHomePageState() {
     },
     set showCreateModal(value) {
       showCreateModal = value;
+    },
+    get showSmartCreateModal() {
+      return showSmartCreateModal;
+    },
+    set showSmartCreateModal(value) {
+      showSmartCreateModal = value;
+    },
+    get smartCreatePending() {
+      return smartCreatePending;
+    },
+    set smartCreatePending(value) {
+      smartCreatePending = value;
+    },
+    get smartCreateUnread() {
+      return smartCreateUnread;
+    },
+    set smartCreateUnread(value) {
+      smartCreateUnread = value;
     },
     get createChildParent() {
       return createChildParent;
