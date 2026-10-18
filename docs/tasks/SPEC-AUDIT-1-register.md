@@ -208,6 +208,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | CHUNK-1-review-findings.md | не начат |
 | CHUNK-1-structure-aware-chunker.md | не начат |
 | CHUNK-PERF-1-long-paragraph.md | не начат |
+| CHUNK-PERF-1-review-findings.md | не начат |
 | JAVA-HANDOVER-1-chunking-and-text-know-how.md | не начат |
 | LINK-NEXT-1-automatic-and-own-link-types.md | не начат |
 | LINK-TYPES-1-link-types-and-visuals.md | не начат |
