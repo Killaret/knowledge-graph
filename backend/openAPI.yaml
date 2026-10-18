@@ -838,6 +838,76 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/import/document/availability:
+    get:
+      summary: SMART-CREATE-1 — is the source-text-handler listener alive (Redis key source-text-handler:alive)
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Listener availability
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [available]
+                        properties:
+                          available:
+                            type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/import/document:
+    post:
+      summary: SMART-CREATE-1 — queue a document (text, URL or file) for the source-text-handler
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: string
+                  enum: [TEXT, URL, FILE]
+                content:
+                  type: string
+                  description: Plain text or URL (required for TEXT and URL)
+                file:
+                  type: string
+                  format: binary
+                  description: Document file, max 8 MiB (required for FILE)
+      responses:
+        '202':
+          description: Document task queued, returns task_id (= correlation_id)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ImportBookmarksCreateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Source-text-handler listener is not alive (code source_text_handler_unavailable)
+
   /api/v1/notes/{id}:
     get:
       summary: Get note by ID
@@ -2843,6 +2913,33 @@ components:
               type: integer
             failed:
               type: integer
+        # SMART-CREATE-1: document-import tasks (kind=document) additionally
+        # report owner, created-note refs, raw fragment count and errors.
+        user_id:
+          type: string
+        kind:
+          type: string
+          enum: [document]
+        notes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+        raw_chunks_count:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
 
     UpdateNoteRequest:
       type: object

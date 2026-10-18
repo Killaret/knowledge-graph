@@ -81,11 +81,29 @@ type TaskStatusProgress struct {
 	Failed    int `json:"failed"`
 }
 
+// TaskStatusNote is a created-note reference reported back to the owner of a
+// document import task (SMART-CREATE-1).
+type TaskStatusNote struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+}
+
 // TaskStatus represents the current state of an async import task.
 type TaskStatus struct {
 	TaskID   string             `json:"task_id"`
 	Status   string             `json:"status"`
 	Progress TaskStatusProgress `json:"progress"`
+	// SMART-CREATE-1: document tasks carry the owner (status answers include
+	// note titles, so they are served to the owner only), a kind marker for
+	// the timeout sweep, creation time for the deadline check, and the Java
+	// result summary. Bookmark tasks leave them empty.
+	UserID         string           `json:"user_id,omitempty"`
+	Kind           string           `json:"kind,omitempty"`
+	Notes          []TaskStatusNote `json:"notes,omitempty"`
+	RawChunksCount int              `json:"raw_chunks_count,omitempty"`
+	Errors         []string         `json:"errors,omitempty"`
+	Reason         string           `json:"reason,omitempty"`
+	CreatedAt      time.Time        `json:"created_at,omitempty"`
 }
 
 // Service orchestrates bookmark import: parsing, preview, deduplication,
@@ -95,6 +113,7 @@ type Service struct {
 	cache     dcache.CacheClient
 	taskQueue common.TaskQueue
 	extractor ContentExtractor
+	docQueue  DocumentQueue
 }
 
 // NewService creates a new ImportService.
@@ -425,8 +444,10 @@ func (s *Service) StartImport(ctx context.Context, userID uuid.UUID, items []Ite
 
 	taskID := uuid.New().String()
 	status := TaskStatus{
-		TaskID: taskID,
-		Status: statusPending,
+		TaskID:    taskID,
+		Status:    statusPending,
+		UserID:    userID.String(),
+		CreatedAt: time.Now(),
 		Progress: TaskStatusProgress{
 			Total: len(items),
 		},

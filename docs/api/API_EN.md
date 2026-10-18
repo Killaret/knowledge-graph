@@ -210,6 +210,36 @@ Batch creation runs the same post-processing as single creation — keywords, em
 link weights and recommendations. Mass **import** does not yet enqueue recommendations;
 that gap is tracked as IMP-4.
 
+### 10.2 Document import via the source-text-handler (SMART-CREATE-1)
+
+The Java `source-text-handler` service (contract:
+`TZ-Java-source-text-handler-2026-08-30.md` §3/§4) splits a document, a URL or a text
+into notes and creates them itself through `POST /api/v1/import/batch`. Two routes
+front that pipeline:
+
+```bash
+GET  /api/v1/import/document/availability   # {available} — listener wrote source-text-handler:alive
+POST /api/v1/import/document                # multipart: type=TEXT|URL|FILE, content, file ≤ 8 MiB
+```
+
+`availability` mirrors a Redis liveness key the Java listener is expected to write on
+every loop turn (`SET source-text-handler:alive <time> EX 15`); while no listener runs,
+the smart-create button stays disabled and `POST` answers `503` with code
+`source_text_handler_unavailable` — nothing is queued.
+
+On success `POST` validates the input (non-empty text, `IsAllowedURL` SSRF policy,
+8 MiB file cap following `client_max_body_size 10m` in nginx) and pushes the plain-JSON
+task of §3 onto `import:document:pending`. The returned `task_id` equals the task's
+`correlation_id`; its status lives in the cache for an hour and is read through the
+shared `GET /api/v1/import/{task_id}/status`, which since this change serves owned
+tasks to their owner only — a foreign task id answers `404`.
+
+The worker drains `import:responses:pending` (§4): `COMPLETED`/`PARTIAL` → `done`
+(PARTIAL also reports `raw_chunks_count`), `FAILED` → `failed` with `errors`. The
+status `notes` field carries `{id, title}` pairs resolved from `note_ids`. A document
+task with no answer after 10 minutes is swept to `failed`/`reason: "timeout"` — the
+timeout is Go-side only, the contract does not define it.
+
 ## 11. Note quality and refetch (NOTE-QUALITY-1 stage 1)
 
 The stage-1 quality pipeline is read-only and indicator-only — it never edits or blocks

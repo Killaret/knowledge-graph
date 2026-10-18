@@ -1108,11 +1108,13 @@ func (h *Handler) ImportBookmarks(c *gin.Context) {
 }
 
 // ImportBookmarksStatus returns the current status of an async import task.
+// SMART-CREATE-1: statuses that carry an owner are served to the owner only —
+// a foreign task answers 404.
 func (h *Handler) ImportBookmarksStatus(c *gin.Context) {
 	middleware.SetDBEntity(c, "notes")
 	middleware.SetDBOperation(c, "import_status")
 
-	_, exists := middleware.GetUserID(c)
+	userID, exists := middleware.GetUserID(c)
 	if !exists {
 		apicommon.Unauthorized(c)
 		return
@@ -1131,7 +1133,7 @@ func (h *Handler) ImportBookmarksStatus(c *gin.Context) {
 		return
 	}
 
-	status, err := h.importSvc.GetTaskStatus(c.Request.Context(), taskID)
+	status, err := h.importSvc.GetTaskStatusForUser(c.Request.Context(), taskID, userID)
 	if err != nil {
 		if errors.Is(err, dcache.ErrCacheMiss) {
 			apicommon.NotFound(c, "Import task")

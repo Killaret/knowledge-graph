@@ -183,6 +183,8 @@ func setupRouter(
 		v1.POST("/import/bookmarks/preview", writeLimiter, noteHandler.ImportBookmarksPreview)
 		v1.POST("/import/bookmarks", writeLimiter, noteHandler.ImportBookmarks)
 		v1.POST("/import/batch", writeLimiter, noteHandler.ImportBatch)
+		v1.GET("/import/document/availability", noteHandler.ImportDocumentAvailability)
+		v1.POST("/import/document", writeLimiter, noteHandler.ImportDocument)
 		v1.GET("/import/:task_id/status", noteHandler.ImportBookmarksStatus)
 		v1.GET("/notes/:id", cacheControlMiddleware(60), noteRead, noteHandler.Get)
 		v1.PUT("/notes/:id", writeLimiter, noteWrite, noteHandler.Update)

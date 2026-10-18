@@ -257,6 +257,10 @@ func run(
 
 	// Import service and handlers
 	importService := importer.NewService(noteRepo, cacheClient, taskQueue, web.NewImportFetcher())
+	// SMART-CREATE-1: source-text-handler queues live on raw Redis lists.
+	if redisClient != nil {
+		importService.SetDocumentQueue(queue.NewDocumentQueue(redisClient))
+	}
 
 	// Handlers with new parameters
 	noteHandler := notehandler.New(noteRepo, taskQueue, suggestionsHandler, affectedNotesSvc, taskDelay, recRepo, embeddingRepo, cacheClient, cfg, graphCache, achievementService, importService)
