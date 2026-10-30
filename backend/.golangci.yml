@@ -1,40 +1,86 @@
+version: "2"
 run:
-  timeout: 5m
-  tests: false  # Не линтить тестовые файлы (решает проблему с testify mocks)
-  skip-dirs:
-    - "mocks"
-    - "mock"
-
+  tests: true
 linters:
   enable:
+    - depguard
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
     - unused
+  settings:
+    depguard:
+      rules:
+        # Clean Architecture: the domain layer is pure Go — no frameworks,
+        # no outer layers (application, infrastructure, interfaces).
+        domain-purity:
+          files:
+            - "**/internal/domain/**"
+          deny:
+            - pkg: gorm.io
+              desc: "domain layer must not depend on GORM; persistence belongs to infrastructure"
+            - pkg: github.com/gin-gonic
+              desc: "domain layer must not depend on Gin; HTTP belongs to interfaces/api"
+            - pkg: github.com/redis
+              desc: "domain layer must not depend on Redis; caching belongs to infrastructure"
+            - pkg: go.mongodb.org
+              desc: "domain layer must not depend on MongoDB; it belongs to infrastructure"
+            - pkg: github.com/hibiken/asynq
+              desc: "domain layer must not depend on asynq; queueing belongs to infrastructure"
+            - pkg: knowledge-graph/internal/application
+              desc: "domain must not import the application layer (inner layers know nothing about outer ones)"
+            - pkg: knowledge-graph/internal/infrastructure
+              desc: "domain must not import the infrastructure layer"
+            - pkg: knowledge-graph/internal/interfaces
+              desc: "domain must not import the interfaces layer"
+        # Application layer may use the domain but not frameworks or outer layers.
+        application-boundaries:
+          files:
+            - "**/internal/application/**"
+          deny:
+            - pkg: gorm.io
+              desc: "application layer must not depend on GORM; use domain repository ports"
+            - pkg: github.com/gin-gonic
+              desc: "application layer must not depend on Gin; HTTP belongs to interfaces/api"
+            - pkg: github.com/redis
+              desc: "application layer must not depend on Redis; use domain cache ports"
+            - pkg: go.mongodb.org
+              desc: "application layer must not depend on MongoDB; use domain ports"
+            - pkg: github.com/hibiken/asynq
+              desc: "application layer must not depend on asynq; queueing belongs to infrastructure"
+            - pkg: knowledge-graph/internal/infrastructure
+              desc: "application must not import the infrastructure layer"
+            - pkg: knowledge-graph/internal/interfaces
+              desc: "application must not import the interfaces layer"
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      # Ignore "is unused" in test files
+      - path: _test\.go
+        text: "is unused"
+        linters:
+          - unused
+    paths:
+      - mocks
+      - mock
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
     - gofmt
     - goimports
-  disable:
-    - typecheck  # Отключаем проблемный линтер (false positives with CGO/imports)
-
-issues:
-  exclude-rules:
-    # Исключаем ложные ошибки для testify mock-методов
-    - path: _test\.go
-      linters:
-        - typecheck
-    # Исключаем ошибки typecheck для всех файлов (проблемы с CGO/imports)
-    - linters:
-        - typecheck
-      text: "undefined:"
-    # Исключаем ошибки на неиспользуемые параметры в тестах
-    - path: _test\.go
-      text: "is unused"
-      linters:
-        - unused
-
-output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
+  exclusions:
+    generated: lax
+    paths:
+      - mocks
+      - mock
+      - third_party$
+      - builtin$
+      - examples$

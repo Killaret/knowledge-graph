@@ -1,0 +1,114 @@
+version: 2
+updates:
+  # Frontend dependencies
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "knowledge-graph-maintainers"
+    assignees:
+      - "knowledge-graph-maintainers"
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      frontend-dependencies:
+        patterns:
+          - "*"
+
+  # Backend dependencies (Go)
+  - package-ecosystem: "gomod"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "knowledge-graph-maintainers"
+    assignees:
+      - "knowledge-graph-maintainers"
+    labels:
+      - "dependencies"
+      - "backend"
+
+  # NLP Service dependencies (Python)
+  - package-ecosystem: "pip"
+    directory: "/nlp-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "knowledge-graph-maintainers"
+    assignees:
+      - "knowledge-graph-maintainers"
+    labels:
+      - "dependencies"
+      - "nlp"
+
+  # Graph Service dependencies (Go)
+  - package-ecosystem: "gomod"
+    directory: "/services/graph-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "knowledge-graph-maintainers"
+    assignees:
+      - "knowledge-graph-maintainers"
+    labels:
+      - "dependencies"
+      - "graph-service"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # Root package.json / package-lock.json
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "knowledge-graph-maintainers"
+    assignees:
+      - "knowledge-graph-maintainers"
+    labels:
+      - "dependencies"
+      - "root"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      root-dependencies:
+        patterns:
+          - "*"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "knowledge-graph-maintainers"
+    assignees:
+      - "knowledge-graph-maintainers"
+    labels:
+      - "dependencies"
+      - "ci"

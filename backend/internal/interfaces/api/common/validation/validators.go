@@ -2,6 +2,7 @@
 package validation
 
 import (
+	"knowledge-graph/internal/domain/note"
 	"regexp"
 	"strings"
 
@@ -10,13 +11,13 @@ import (
 
 // Common error messages
 const (
-	MsgInvalidUUID       = "Неверный формат UUID"
-	MsgInvalidCharacters = "Поле содержит недопустимые символы"
-	MsgTooLong           = "Поле слишком длинное"
-	msgTooShort          = "Поле слишком короткое" // unused, reserved for future
-	MsgRequired          = "Поле обязательно для заполнения"
-	msgOutOfRange        = "Значение вне допустимого диапазона" // unused, reserved for future
-	MsgInvalidEnum       = "Недопустимое значение перечисления"
+	MsgInvalidUUID       = "Invalid UUID format"
+	MsgInvalidCharacters = "Field contains invalid characters"
+	MsgTooLong           = "Field is too long"
+	msgTooShort          = "Field is too short" // unused, reserved for future
+	MsgRequired          = "Field is required"
+	msgOutOfRange        = "Value is out of range" // unused, reserved for future
+	MsgInvalidEnum       = "Invalid enum value"
 )
 
 // Allowed characters patterns for safe input
@@ -32,22 +33,20 @@ var (
 	// SafeTagPattern for tag names - more restrictive
 	SafeTagPattern = regexp.MustCompile(`^[\p{L}\p{N}\-_]+$`)
 
+	//nolint:unused
 	// strictIDPattern for external IDs that should be alphanumeric only (unused, reserved)
 	strictIDPattern = regexp.MustCompile(`^[a-zA-Z0-9\-_]+$`)
 )
 
-// ValidCelestialBodyTypes contains all allowed celestial body types
-// Must match the oneof validation in createNoteRequest.Type: star planet comet galaxy asteroid satellite debris nebula
-var ValidCelestialBodyTypes = map[string]bool{
-	"star":      true,
-	"planet":    true,
-	"comet":     true,
-	"galaxy":    true,
-	"asteroid":  true,
-	"satellite": true,
-	"debris":    true,
-	"nebula":    true,
-}
+// ValidCelestialBodyTypes contains all allowed celestial body types.
+// It is derived from the canonical domain list so backend, OpenAPI and frontend stay in sync.
+var ValidCelestialBodyTypes = func() map[string]bool {
+	m := make(map[string]bool)
+	for _, t := range note.AllTypeStrings() {
+		m[t] = true
+	}
+	return m
+}()
 
 // ValidLinkTypes contains all allowed link types
 var ValidLinkTypes = map[string]bool{
@@ -113,7 +112,8 @@ func IsSafeTag(tag string, maxLength int) *ValidationResult {
 
 // IsValidCelestialBodyType checks if the given type is valid (case-sensitive)
 func IsValidCelestialBodyType(t string) bool {
-	return ValidCelestialBodyTypes[t]
+	_, err := note.NewType(t)
+	return err == nil
 }
 
 // IsValidLinkType checks if the given link type is valid (case-sensitive)

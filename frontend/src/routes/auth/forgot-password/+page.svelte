@@ -1,20 +1,23 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import ForgotPasswordForm from '$lib/components/ForgotPasswordForm.svelte';
-  import AuthCard from '$lib/components/AuthCard.svelte';
-  import { isAuthenticated } from '$lib/stores/auth.svelte.js';
-  
-  // Redirect if already authenticated
+  import { page } from "$app/stores";
+  import ForgotPasswordForm from "$components/organisms/ForgotPasswordForm.svelte";
+  import AuthCard from "$widgets/auth/AuthCard.svelte";
+  import { useAnonymousGuard } from "$shared/composables/auth";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
+
+  // Redirect if already authenticated (but allow viewing auth pages in skip-auth tests)
   $effect(() => {
-    if (isAuthenticated()) {
-      goto('/');
-    }
+    const redirectTo = $page.url.searchParams.get("redirect") || "/";
+    useAnonymousGuard(redirectTo);
   });
 </script>
 
-<AuthCard 
-  title="Восстановление пароля" 
-  subtitle="Введите email для получения ссылки"
+<AuthCard
+  title={t("auth.forgotPasswordTitle")}
+  subtitle={t("auth.forgotPasswordSubtitle")}
   showIcon={true}
 >
   <ForgotPasswordForm />

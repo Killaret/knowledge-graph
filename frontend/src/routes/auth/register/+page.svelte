@@ -1,26 +1,26 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import RegisterForm from '$lib/components/RegisterForm.svelte';
-  import AuthCard from '$lib/components/AuthCard.svelte';
-  import { isAuthenticated, initAuth } from '$lib/stores/auth.svelte.js';
-  
-  // Redirect if already authenticated
+  import { page } from "$app/stores";
+  import RegisterForm from "$components/organisms/RegisterForm.svelte";
+  import AuthCard from "$widgets/auth/AuthCard.svelte";
+  import { initAuth } from "$shared/stores/auth.svelte.js";
+  import { useAnonymousGuard } from "$shared/composables/auth";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string) => formatMessage(key, locale);
+
+  // Redirect if already authenticated (but allow viewing auth pages in skip-auth tests)
   $effect(() => {
-    if (isAuthenticated()) {
-      goto('/');
-    }
+    const redirectTo = $page.url.searchParams.get("redirect") || "/";
+    useAnonymousGuard(redirectTo);
   });
-  
+
   // Initialize auth on mount
   $effect(() => {
     initAuth();
   });
 </script>
 
-<AuthCard 
-  title="Создать аккаунт" 
-  subtitle="Присоединитесь к вселенной знаний"
-  showIcon={true}
->
+<AuthCard title={t("auth.registerTitle")} subtitle={t("auth.registerSubtitle")} showIcon={true}>
   <RegisterForm />
 </AuthCard>

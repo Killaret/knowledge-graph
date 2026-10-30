@@ -1,0 +1,4 @@
+#!/bin/sh
+# AUTHOR-1: trailer guard must run before commits leave the machine — check-all
+# and CI see violations only after the fact.
+node scripts/testing/check-commit-authorship.mjs .

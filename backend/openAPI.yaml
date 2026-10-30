@@ -1,41 +1,53 @@
+# This file is the source of truth for the API contract. It is maintained
+# by hand; do NOT generate it from swaggo annotations.
 openapi: 3.0.3
 info:
   title: Knowledge Graph API
   version: 1.1.0
   description: |
-    Knowledge Graph API с унифицированными REST ответами.
-    Все ответы следуют стандартному формату SuccessResponse и ErrorResponse.
-    
-    ## Формат ответов
-    
-    ### Успешный ответ (200, 201):
+    Knowledge Graph API with unified REST responses.
+    All responses follow the standard SuccessResponse and ErrorResponse formats.
+
+    ## Authentication
+
+    Authenticated endpoints accept either:
+    - `Authorization: Bearer <JWT>` header, or
+    - HttpOnly `access_token` cookie (sent automatically by the browser).
+
+    ## Response format
+
+    ### Success (200, 201):
     ```json
     {
       "data": { ... },
-      "message": "Опциональное сообщение"
+      "message": "Optional success message"
     }
     ```
-    
-    ### Ошибка (400, 404, 409, 500):
+
+    ### Error (400, 401, 403, 404, 409, 500):
     ```json
     {
       "code": "ERROR_CODE",
-      "message": "Человекочитаемое описание",
+      "message": "Human-readable description",
       "details": [
         {
-          "field": "поле",
-          "reason": "причина",
-          "message": "описание",
-          "received": "полученное значение",
-          "expected": "ожидаемое значение"
+          "field": "field",
+          "reason": "reason",
+          "message": "description",
+          "received": "received value",
+          "expected": "expected value"
         }
       ]
     }
     ```
 
 servers:
-  - url: http://localhost:8081/api/v1
-    description: Local development server
+  - url: http://127.0.0.1:18080
+    description: Dev nginx gateway (host port)
+  - url: http://127.0.0.1:18083
+    description: Test backend direct (SKIP_AUTH=false test stack)
+  - url: http://127.0.0.1:9000
+    description: Dev backend direct
 
 paths:
   /health:
@@ -55,9 +67,589 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
 
+  /api/v1/auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/login:
+    post:
+      summary: Authenticate a user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/logout:
+    post:
+      summary: Log out the current user
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/refresh:
+    post:
+      summary: Refresh access token
+      description: |
+        Refresh token can be supplied either in the request body or as an HttpOnly cookie.
+        The frontend typically sends no body and relies on the browser sending the `refresh_token` cookie.
+      tags: [Auth]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: New tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/forgot-password:
+    post:
+      summary: Request password reset
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Reset request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/reset-password:
+    post:
+      summary: Reset password with token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/yandex/login:
+    get:
+      summary: Start Yandex OAuth login
+      tags: [Auth]
+      responses:
+        '200':
+          description: Yandex OAuth authorization URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        '501':
+          description: Yandex OAuth not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/yandex/callback:
+    get:
+      summary: Yandex OAuth callback
+      tags: [Auth]
+      parameters:
+        - name: code
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me:
+    get:
+      summary: Get current user profile
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Update current user profile (email and/or password)
+      description: |
+        Updates the email and/or password of the authenticated user.
+        Both fields are optional; omitted fields are left unchanged.
+        Changing the password requires `old_password` to be supplied and
+        correct; `new_password` must satisfy the server's password policy.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: |
+            Invalid email format, missing old_password when new_password is
+            set, or new_password fails the password policy.
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Authentication required, or old_password is incorrect.
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Email is already in use by another account.
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete current user account (soft delete)
+      description: Requires the current password to confirm the deletion.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAccountRequest'
+      responses:
+        '200':
+          description: Account deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Authentication required, or password is incorrect.
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/api-keys:
+    get:
+      summary: List API keys for the current user
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of API keys (key hashes are never returned)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_keys:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/APIKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Create a new API key
+      description: |
+        The plaintext `api_key` value is returned only once, in this
+        response. It cannot be retrieved again afterwards.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAPIKeyRequest'
+      responses:
+        '201':
+          description: API key created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAPIKeyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/api-keys/{id}:
+    delete:
+      summary: Revoke an API key
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: API key revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/settings:
+    get:
+      summary: Get all settings for the current user
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of user settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Setting'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Update (or create) a setting for the current user
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingRequest'
+      responses:
+        '200':
+          description: Setting updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Missing/invalid key or value, or unknown setting key.
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/settings/{key}:
+    get:
+      summary: Get a single setting value
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Setting value
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  value: {}
+        '400':
+          description: Unknown setting key.
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete a setting
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Setting deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Unknown setting key.
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/settings/galactic_mode:
+    get:
+      summary: Get the galactic mode setting (convenience endpoint)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Galactic mode state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  galactic_mode:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/users/me/settings/galactic_mode/toggle:
+    post:
+      summary: Toggle the galactic mode setting
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Galactic mode toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  galactic_mode:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/achievements:
+    get:
+      summary: List all achievements
+      tags: [Achievements]
+      responses:
+        '200':
+          description: Achievements list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/achievements:
+    get:
+      summary: Get current user achievements
+      tags: [Achievements]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User achievements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/achievements/{id}/mark-seen:
+    post:
+      summary: Mark an achievement as seen
+      tags: [Achievements]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Achievement marked as seen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/v1/notes:
     get:
       summary: List all notes with pagination
+      tags: [Notes]
       parameters:
         - name: limit
           in: query
@@ -81,11 +673,14 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalError'
 
     post:
       summary: Create note
+      tags: [Notes]
       requestBody:
         required: true
         content:
@@ -98,17 +693,155 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Note'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/import/bookmarklet:
+    post:
+      summary: Import a captured web page as a note (bookmarklet)
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookmarkletRequest'
+      responses:
+        '201':
+          description: Note created from bookmarklet
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BookmarkletResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/import/bookmarks/preview:
+    post:
+      summary: Build a preview for a batch of captured web pages
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportBookmarksPreviewRequest'
+      responses:
+        '200':
+          description: Preview list with titles, extracted text, duplicates and errors
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ImportBookmarksPreviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/import/bookmarks:
+    post:
+      summary: Start an async import of a batch of captured web pages
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportBookmarksCreateRequest'
+      responses:
+        '202':
+          description: Import task accepted, returns task_id
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ImportBookmarksCreateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/import/{task_id}/status:
+    get:
+      summary: Get the status of an async import task
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current import task status
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ImportTaskStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
 
   /api/v1/notes/{id}:
     get:
       summary: Get note by ID
+      tags: [Notes]
       parameters:
         - name: id
           in: path
@@ -125,6 +858,8 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -132,6 +867,7 @@ paths:
 
     put:
       summary: Update note
+      tags: [Notes]
       parameters:
         - name: id
           in: path
@@ -154,6 +890,8 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -161,6 +899,7 @@ paths:
 
     delete:
       summary: Delete note
+      tags: [Notes]
       parameters:
         - name: id
           in: path
@@ -173,14 +912,176 @@ paths:
           description: Deleted
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/publish:
+    post:
+      summary: Publish a note (make it visible in the public graph)
+      tags: [Notes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Note published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can publish it.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/unpublish:
+    post:
+      summary: Unpublish a note (hide it from the public graph)
+      tags: [Notes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Note unpublished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can unpublish it.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/restore:
+    post:
+      summary: Restore a soft-deleted note
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/batch/create:
+    post:
+      summary: Create a batch of notes
+      tags: [Notes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNotesBatchRequest'
+      responses:
+        '201':
+          description: Created notes and any failures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateNotesBatchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/batch/delete:
+    post:
+      summary: Delete a batch of notes
+      tags: [Notes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteBatchRequest'
+      responses:
+        '204':
+          description: Batch delete succeeded
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/import/batch:
+    post:
+      summary: Import a batch of notes and links
+      tags: [Import]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportBatchRequest'
+      responses:
+        '200':
+          description: Created notes and links, with any failures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportBatchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalError'
 
   /api/v1/notes/{id}/suggestions:
     get:
       summary: Get recommendations for note
+      tags: [Notes]
       parameters:
         - name: id
           in: path
@@ -204,12 +1105,17 @@ paths:
           description: Recommendations being generated
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /api/v1/notes/{id}/graph:
     get:
       summary: Graph data for note (BFS)
+      tags: [Graph]
       parameters:
         - name: id
           in: path
@@ -231,12 +1137,15 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalError'
 
   /api/v1/notes/search:
     get:
       summary: Search notes
+      tags: [Notes]
       parameters:
         - name: q
           in: query
@@ -262,12 +1171,15 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalError'
 
   /api/v1/links:
     post:
       summary: Create link
+      tags: [Links]
       requestBody:
         required: true
         content:
@@ -275,6 +1187,12 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateLinkRequest'
       responses:
+        '200':
+          description: Existing gamma link promoted to a user link — no new row was created; the link keeps its id and created_at, gains the request's weight/type/metadata, and records its origin in metadata.gamma
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
         '201':
           description: Link created
           content:
@@ -283,6 +1201,8 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -293,6 +1213,7 @@ paths:
   /api/v1/links/{id}:
     get:
       summary: Get link by ID
+      tags: [Links]
       parameters:
         - name: id
           in: path
@@ -309,6 +1230,44 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Update link
+      tags: [Links]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLinkRequest'
+      responses:
+        '200':
+          description: Link updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -316,6 +1275,7 @@ paths:
 
     delete:
       summary: Delete link
+      tags: [Links]
       parameters:
         - name: id
           in: path
@@ -328,6 +1288,8 @@ paths:
           description: Deleted
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -335,7 +1297,8 @@ paths:
 
   /api/v1/notes/{id}/links:
     get:
-      summary: Get links for note
+      summary: Get links for a note
+      tags: [Links]
       parameters:
         - name: id
           in: path
@@ -345,20 +1308,21 @@ paths:
             format: uuid
       responses:
         '200':
-          description: Links for note
+          description: Note links
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalError'
 
     delete:
-      summary: Delete all links for note
+      summary: Delete all links for a note
+      tags: [Links]
       parameters:
         - name: id
           in: path
@@ -368,34 +1332,434 @@ paths:
             format: uuid
       responses:
         '204':
-          description: All links deleted
+          description: Deleted
         '400':
           $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/v1/graph/all:
+  /api/v1/notes/{id}/share:
+    post:
+      summary: Share a note with another user
+      description: |
+        Only the note's creator can share it. Sharing the same note with the
+        same user again updates the existing share (e.g. to change
+        permission or expiration) instead of creating a duplicate.
+      tags: [Sharing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareNoteRequest'
+      responses:
+        '200':
+          description: Existing share updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareNoteResponse'
+        '201':
+          description: Share created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareNoteResponse'
+        '400':
+          description: Invalid note ID, invalid user ID, or invalid request body.
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can share it.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Note or target user not found.
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/share-link:
+    post:
+      summary: Create a public share link for a note
+      description: Only the note's creator can create share links for it.
+      tags: [Sharing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareLinkRequest'
+      responses:
+        '201':
+          description: Share link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareLinkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can create share links.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/shares:
     get:
-      summary: Get full graph with pagination
+      summary: List all shares (user shares and share links) for a note
+      description: Only the note's creator can view its shares.
+      tags: [Sharing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User shares and share links for the note
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_shares:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShareNoteResponse'
+                  share_links:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShareLinkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can view shares.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/shares/{shareId}:
+    delete:
+      summary: Revoke a direct user-to-user share
+      description: Only the note's creator can revoke shares.
+      tags: [Sharing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Share revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the note's creator can revoke shares.
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/share-links/{id}:
+    delete:
+      summary: Revoke a share link
+      tags: [Sharing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Share link revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/share/{token}:
+    get:
+      summary: Access a shared note via a public share-link token
+      description: |
+        Public endpoint (no authentication required). Increments the share
+        link's use counter on each successful access.
+      tags: [Sharing]
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Shared note content and the granted permission
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  note:
+                    $ref: '#/components/schemas/Note'
+                  permission:
+                    type: string
+                    enum: [read, write]
+        '400':
+          description: Missing share token.
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Invalid, expired share link, or note not found.
+          $ref: '#/components/responses/NotFound'
+        '410':
+          description: Share link has expired or reached its maximum uses.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/draft:
+    get:
+      summary: Get the latest draft for a note
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Latest draft for the note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Draft'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Save (create or update) a draft for a note
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveDraftRequest'
+      responses:
+        '200':
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  state:
+                    type: string
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/drafts/{draft_id}/sync:
+    post:
+      summary: Synchronize a draft with the server
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Draft synced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/drafts/{draft_id}/resolve:
+    post:
+      summary: Resolve a conflict in a draft
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conflict resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/drafts/{draft_id}:
+    delete:
+      summary: Delete a draft
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Draft deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/drafts:
+    get:
+      summary: List active drafts for the current user
+      tags: [Drafts]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active drafts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  drafts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Draft'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/graph/public:
+    get:
+      summary: Get public graph
+      tags: [Graph]
       parameters:
         - name: limit
           in: query
           schema:
             type: integer
-            default: 100
+            default: 1000
         - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
-        - name: link_limit
-          in: query
-          schema:
-            type: integer
-            default: 500
-        - name: link_offset
           in: query
           schema:
             type: integer
@@ -407,10 +1771,353 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/graph/analytics:
+    get:
+      summary: Graph analytics (PageRank, clusters, top central nodes)
+      tags: [Graph]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Computed analytics for the caller's graph
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GraphAnalytics'
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/me/graph/cached:
+    get:
+      summary: Get cached graph for current user
+      tags: [Graph]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cached graph
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/me/graph/fresh:
+    get:
+      summary: Get fresh graph for current user
+      tags: [Graph]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Fresh graph
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/tags:
+    get:
+      summary: List all tags
+      tags: [Tags]
+      responses:
+        '200':
+          description: Tags list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Create tag
+      tags: [Tags]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTagRequest'
+      responses:
+        '201':
+          description: Tag created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/tags/{id}:
+    get:
+      summary: Get tag by ID
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tag found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Update tag
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTagRequest'
+      responses:
+        '200':
+          description: Tag updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete tag
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/tags:
+    get:
+      summary: Get tags for a note
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Note tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Add tag to note
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddTagToNoteRequest'
+      responses:
+        '200':
+          description: Tag added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/tags/{tagId}:
+    delete:
+      summary: Remove tag from note
+      tags: [Tags]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Removed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/backup/cloud:
+    post:
+      summary: Trigger cloud backup
+      tags: [Backup]
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Backup task accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/backup/status:
+    get:
+      summary: Get backup status
+      tags: [Backup]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Backup status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/metrics/database:
+    get:
+      summary: Database connection pool statistics (admin only)
+      tags: [Metrics]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Connection pool statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalError'
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+
   schemas:
     SuccessResponse:
       type: object
@@ -426,7 +2133,7 @@ components:
           id: "550e8400-e29b-41d4-a716-446655440000"
           title: "Note Title"
           content: "Note content"
-        message: "Ресурс успешно создан"
+        message: "Resource created successfully"
 
     ErrorResponse:
       type: object
@@ -440,18 +2147,18 @@ components:
           enum: [VALIDATION_ERROR, NOT_FOUND, CONFLICT, FORBIDDEN, UNAUTHORIZED, INTERNAL_ERROR]
         message:
           type: string
-          description: Human-readable error message (Russian)
+          description: Human-readable error message
         details:
           type: array
           items:
             $ref: '#/components/schemas/FieldError'
       example:
         code: "VALIDATION_ERROR"
-        message: "Некорректные входные данные"
+        message: "Invalid input data"
         details:
           - field: "title"
             reason: "required"
-            message: "Поле обязательно для заполнения"
+            message: "Title is required"
 
     FieldError:
       type: object
@@ -471,7 +2178,7 @@ components:
           type: string
           description: Human-readable error description
         received:
-          type: any
+          type: string
           description: Received value (optional)
         expected:
           type: string
@@ -489,9 +2196,11 @@ components:
           type: string
         type:
           type: string
-          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
         metadata:
           type: object
+        is_public:
+          type: boolean
         created_at:
           type: string
           description: ISO 8601 timestamp with timezone
@@ -512,9 +2221,176 @@ components:
           maxLength: 50000
         type:
           type: string
-          enum: [star, planet, comet, galaxy, asteroid, satellite, debris, nebula]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
         metadata:
           type: object
+
+    BookmarkletRequest:
+      type: object
+      required:
+        - title
+        - url
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+        text:
+          type: string
+          maxLength: 50000
+        type:
+          type: string
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+
+    BookmarkletResponse:
+      type: object
+      required:
+        - note_id
+        - title
+        - type
+      properties:
+        note_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        type:
+          type: string
+
+    ImportBookmarksItem:
+      type: object
+      required:
+        - url
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        url:
+          type: string
+          maxLength: 2048
+        text:
+          type: string
+          maxLength: 50000
+        type:
+          type: string
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+
+    ImportBookmarksPreviewRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ImportBookmarksItem'
+        options:
+          type: object
+          properties:
+            default_type:
+              type: string
+              enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+              default: asteroid
+            extract_content:
+              type: boolean
+              default: false
+
+    ImportPreviewItem:
+      type: object
+      required:
+        - url
+        - is_new
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+        text:
+          type: string
+        type:
+          type: string
+        is_new:
+          type: boolean
+        existing_note_id:
+          type: string
+          format: uuid
+        error:
+          type: string
+
+    ImportBookmarksPreviewResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportPreviewItem'
+
+    ImportBookmarksCreateRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ImportBookmarksItem'
+        options:
+          type: object
+          properties:
+            default_type:
+              type: string
+              default: asteroid
+            extract_content:
+              type: boolean
+              default: false
+
+    ImportBookmarksCreateResponse:
+      type: object
+      required:
+        - task_id
+      properties:
+        task_id:
+          type: string
+        message:
+          type: string
+
+    ImportTaskStatus:
+      type: object
+      required:
+        - task_id
+        - status
+        - progress
+      properties:
+        task_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, done, failed]
+        progress:
+          type: object
+          required:
+            - total
+            - created
+            - skipped
+            - failed
+          properties:
+            total:
+              type: integer
+            processed:
+              type: integer
+            created:
+              type: integer
+            skipped:
+              type: integer
+            failed:
+              type: integer
 
     UpdateNoteRequest:
       type: object
@@ -527,6 +2403,154 @@ components:
           maxLength: 50000
         metadata:
           type: object
+
+    DeleteBatchRequest:
+      type: object
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    CreateNotesBatchRequest:
+      type: object
+      required:
+        - notes
+      properties:
+        notes:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/CreateNoteItem'
+
+    CreateNoteItem:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+          maxLength: 50000
+        type:
+          type: string
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+        metadata:
+          type: object
+
+    CreateNotesBatchResponse:
+      type: object
+      properties:
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchItemError'
+
+    BatchItemError:
+      type: object
+      properties:
+        index:
+          type: integer
+        field:
+          type: string
+        reason:
+          type: string
+        message:
+          type: string
+
+    ImportBatchRequest:
+      type: object
+      required:
+        - notes
+      properties:
+        notes:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ImportNoteItem'
+        links:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ImportLinkItem'
+
+    ImportNoteItem:
+      type: object
+      required:
+        - title
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+          maxLength: 50000
+        type:
+          type: string
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
+        is_public:
+          type: boolean
+        source_url:
+          type: string
+          format: uri
+          maxLength: 16384
+        metadata:
+          type: object
+
+    ImportLinkItem:
+      type: object
+      required:
+        - source_note_id
+        - target_note_id
+        - link_type
+      properties:
+        source_note_id:
+          type: string
+          format: uuid
+        target_note_id:
+          type: string
+          format: uuid
+        link_type:
+          type: string
+          enum: [reference, dependency, related, custom, parent, child]
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+        metadata:
+          type: object
+
+    ImportBatchResponse:
+      type: object
+      properties:
+        created_notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        created_links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        failed_notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchItemError'
+        failed_links:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchItemError'
 
     Link:
       type: object
@@ -542,7 +2566,7 @@ components:
           format: uuid
         link_type:
           type: string
-          enum: [reference, dependency, related, custom]
+          enum: [reference, dependency, related, custom, parent, child]
         weight:
           type: number
           minimum: 0
@@ -555,6 +2579,41 @@ components:
         updated_at:
           type: string
           description: ISO 8601 timestamp with timezone
+
+    UpdateLinkRequest:
+      type: object
+      description: At least one of link_type or weight must be provided.
+      properties:
+        link_type:
+          type: string
+          enum: [reference, dependency, related, custom, parent, child]
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    GraphAnalytics:
+      type: object
+      properties:
+        page_rank:
+          type: object
+          additionalProperties:
+            type: number
+          description: PageRank score per note ID
+        clusters:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+              format: uuid
+          description: Connected components; each cluster is a list of note IDs
+        top_centers:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Most central note IDs by PageRank
 
     CreateLinkRequest:
       type: object
@@ -571,7 +2630,7 @@ components:
           format: uuid
         link_type:
           type: string
-          enum: [reference, dependency, related, custom]
+          enum: [reference, dependency, related, custom, parent, child]
         weight:
           type: number
           minimum: 0
@@ -590,11 +2649,15 @@ components:
           type: string
         type:
           type: string
-          enum: [star, planet, moon, asteroid, nebula, satellite, comet, blackhole, galaxy]
+          enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
 
     GraphLink:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
+          description: Link row id — required to delete the link via DELETE /links/{id}.
         source:
           type: string
           format: uuid
@@ -607,7 +2670,348 @@ components:
           maximum: 1
         link_type:
           type: string
-          enum: [reference, dependency, related, custom]
+          enum: [reference, dependency, related, custom, parent, child]
+        source_type:
+          type: string
+          enum: [user, gamma]
+          description: Who created the link — a human or the gamma generator.
+        gamma_origin:
+          type: boolean
+          description: >-
+            True when the model once proposed this pair — either the link is
+            still gamma, or it was promoted by a human and keeps its gamma
+            provenance. Deleting such a link records a "not related" rejection.
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          description: Optional when the refresh token is provided as an HttpOnly cookie.
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - password
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+          minLength: 8
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        login:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        points:
+          type: integer
+
+    UserAchievement:
+      type: object
+      properties:
+        achievement_id:
+          type: string
+        seen:
+          type: boolean
+        earned_at:
+          type: string
+          format: date-time
+
+    CreateTagRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        color:
+          type: string
+
+    AddTagToNoteRequest:
+      type: object
+      required:
+        - tag_id
+      properties:
+        tag_id:
+          type: string
+          format: uuid
+
+    UpdateUserRequest:
+      type: object
+      description: |
+        All fields are optional. To change the password, both
+        `old_password` and `new_password` must be provided.
+      properties:
+        email:
+          type: string
+          format: email
+        old_password:
+          type: string
+          description: Required when new_password is set.
+        new_password:
+          type: string
+          minLength: 10
+          description: Must satisfy the server's password policy.
+
+    DeleteAccountRequest:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+
+    APIKey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          nullable: true
+          format: date-time
+        last_used_at:
+          type: string
+          nullable: true
+          format: date-time
+
+    CreateAPIKeyRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+
+    CreateAPIKeyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        api_key:
+          type: string
+          description: Plaintext API key, shown only once.
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Setting:
+      type: object
+      properties:
+        key:
+          type: string
+        value: {}
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateSettingRequest:
+      type: object
+      required:
+        - key
+        - value
+      properties:
+        key:
+          type: string
+        value: {}
+
+    ShareNoteRequest:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        permission:
+          type: string
+          enum: [read, write]
+          default: read
+        expires_at:
+          type: string
+          nullable: true
+          format: date-time
+
+    ShareNoteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        note_id:
+          type: string
+          format: uuid
+        shared_with_user_id:
+          type: string
+          format: uuid
+        shared_with_login:
+          type: string
+        permission:
+          type: string
+          enum: [read, write]
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          nullable: true
+          format: date-time
+
+    CreateShareLinkRequest:
+      type: object
+      properties:
+        permission:
+          type: string
+          enum: [read, write]
+          default: read
+        expires_at:
+          type: string
+          nullable: true
+          format: date-time
+        max_uses:
+          type: integer
+          nullable: true
+
+    ShareLinkResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        token:
+          type: string
+        permission:
+          type: string
+          enum: [read, write]
+        expires_at:
+          type: string
+          nullable: true
+          format: date-time
+        max_uses:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    SaveDraftRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+        title:
+          type: string
+
+    Draft:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        note_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        title:
+          type: string
+        state:
+          type: string
+          enum: [active, synced, conflict]
+        updated_at:
+          type: string
+          format: date-time
 
     HealthResponse:
       type: object
@@ -648,11 +3052,21 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             code: "VALIDATION_ERROR"
-            message: "Некорректные входные данные"
+            message: "Invalid input data"
             details:
               - field: "title"
                 reason: "required"
-                message: "Поле обязательно для заполнения"
+                message: "Title is required"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "UNAUTHORIZED"
+            message: "Authentication required"
 
     NotFound:
       description: Not Found
@@ -662,7 +3076,7 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             code: "NOT_FOUND"
-            message: "Заметка не найдена"
+            message: "Note not found"
 
     Conflict:
       description: Conflict - Duplicate or conflicting data
@@ -672,21 +3086,21 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             code: "CONFLICT"
-            message: "Конфликт данных"
+            message: "Data conflict"
             details:
               - field: "link"
                 reason: "already_exists"
-                message: "Связь уже существует"
+                message: "Link already exists"
 
     Forbidden:
-      description: Forbidden - Reserved for future authentication
+      description: Forbidden
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             code: "FORBIDDEN"
-            message: "Доступ запрещён"
+            message: "Access denied"
 
     InternalError:
       description: Internal Server Error
@@ -696,4 +3110,4 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             code: "INTERNAL_ERROR"
-            message: "Внутренняя ошибка сервера"
+            message: "Internal server error"

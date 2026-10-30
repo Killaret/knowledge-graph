@@ -2,10 +2,11 @@
   /**
    * Test index page
    */
-  import GraphCanvas from '$lib/components/GraphCanvas.svelte';
-  
-  const nodes = [{ id: '1', title: 'Test Star', type: 'star' }];
-  const links: any[] = [];
+  import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
+  import type { GraphLink } from "$shared/api/graph";
+
+  const nodes = [{ id: "1", title: "Test Star", type: "star" }];
+  const links: GraphLink[] = [];
 </script>
 
 <div class="test-container">
@@ -22,7 +23,7 @@
     min-height: 100vh;
     color: white;
   }
-  
+
   .canvas-wrapper {
     width: 600px;
     height: 400px;

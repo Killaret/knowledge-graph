@@ -15,7 +15,7 @@ func main() {
 	fmt.Println("3. Report differences between models and actual schema")
 	fmt.Println("")
 	fmt.Println("For now, manual check with: go run cmd/server/main.go and inspect logs")
-	
+
 	// Exit 0 for now as this is a placeholder
 	os.Exit(0)
 }

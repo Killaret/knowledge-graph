@@ -11,17 +11,17 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// UserSettingsRepository — репозиторий для работы с настройками пользователя
+// UserSettingsRepository — repository for working with user settings
 type UserSettingsRepository struct {
 	db *gorm.DB
 }
 
-// NewUserSettingsRepository создает новый репозиторий
+// NewUserSettingsRepository creates a new repository
 func NewUserSettingsRepository(db *gorm.DB) *UserSettingsRepository {
 	return &UserSettingsRepository{db: db}
 }
 
-// FindByUserID находит все настройки пользователя
+// FindByUserID finds all user settings
 func (r *UserSettingsRepository) FindByUserID(ctx context.Context, userID uuid.UUID) ([]userDomain.UserSetting, error) {
 	var models []UserSettingModel
 	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&models).Error
@@ -43,7 +43,7 @@ func (r *UserSettingsRepository) FindByUserID(ctx context.Context, userID uuid.U
 	return settings, nil
 }
 
-// FindByUserIDAndKey находит настройку по пользователю и ключу
+// FindByUserIDAndKey finds a setting by user and key
 func (r *UserSettingsRepository) FindByUserIDAndKey(ctx context.Context, userID uuid.UUID, key userDomain.SettingKey) (*userDomain.UserSetting, error) {
 	var model UserSettingModel
 	err := r.db.WithContext(ctx).
@@ -62,7 +62,7 @@ func (r *UserSettingsRepository) FindByUserIDAndKey(ctx context.Context, userID 
 	)
 }
 
-// Upsert создает или обновляет настройку
+// Upsert creates or updates a setting
 func (r *UserSettingsRepository) Upsert(ctx context.Context, setting userDomain.UserSetting) error {
 	model := UserSettingModel{
 		ID:        setting.ID(),
@@ -81,7 +81,7 @@ func (r *UserSettingsRepository) Upsert(ctx context.Context, setting userDomain.
 	).Create(&model).Error
 }
 
-// Delete удаляет настройку
+// Delete deletes a setting
 func (r *UserSettingsRepository) Delete(ctx context.Context, userID uuid.UUID, key userDomain.SettingKey) error {
 	return r.db.WithContext(ctx).
 		Where("user_id = ? AND key = ?", userID, key.String()).

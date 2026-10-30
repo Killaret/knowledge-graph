@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-graph/internal/application/common"
-	"knowledge-graph/internal/application/recommendation"
+	"knowledge-graph/internal/application/achievement"
+	"knowledge-graph/internal/application/cache"
+	appevents "knowledge-graph/internal/application/events"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
-	"knowledge-graph/internal/infrastructure/db/postgres"
-	"knowledge-graph/internal/infrastructure/queue/tasks"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
@@ -21,51 +20,45 @@ import (
 )
 
 type Handler struct {
-	linkRepo         link.Repository
-	noteRepo         note.Repository
-	taskQueue        common.TaskQueue
-	affectedNotesSvc *recommendation.AffectedNotesService
-	taskDelay        time.Duration
+	linkRepo           link.Repository
+	noteRepo           note.Repository
+	achievementService *achievement.Service
+	graphCache         *cache.GraphCache
+	eventPublisher     appevents.Publisher
 }
 
-func New(linkRepo link.Repository, noteRepo note.Repository, taskQueue common.TaskQueue, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration) *Handler {
+func getUserIDString(c *gin.Context) string {
+	if userID, exists := middleware.GetUserID(c); exists && userID != uuid.Nil {
+		return userID.String()
+	}
+	return ""
+}
+
+func New(linkRepo link.Repository, noteRepo note.Repository, achievementService *achievement.Service, graphCache *cache.GraphCache) *Handler {
 	return &Handler{
-		linkRepo:         linkRepo,
-		noteRepo:         noteRepo,
-		taskQueue:        taskQueue,
-		affectedNotesSvc: affectedNotesSvc,
-		taskDelay:        taskDelay,
+		linkRepo:           linkRepo,
+		noteRepo:           noteRepo,
+		achievementService: achievementService,
+		graphCache:         graphCache,
 	}
 }
 
-// enqueueRecommendationTasks queues recommendation refresh tasks for affected notes
-func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UUID) {
-	if h.affectedNotesSvc == nil || h.taskQueue == nil {
-		return
-	}
-
-	affected, err := h.affectedNotesSvc.GetAffectedNotes(ctx, noteID)
-	if err != nil {
-		return
-	}
-
-	for _, nid := range affected {
-		task, err := tasks.NewRefreshRecommendationsTask(nid, h.taskDelay)
-		if err != nil {
-			continue
-		}
-		if err := h.taskQueue.Enqueue(ctx, task); err != nil {
-			// Log error but continue
-		}
-	}
+// SetEventPublisher sets the optional graph event publisher for cache invalidation.
+func (h *Handler) SetEventPublisher(p appevents.Publisher) {
+	h.eventPublisher = p
 }
 
 type createLinkRequest struct {
 	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
 	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
-	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom"`
+	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom parent child"`
 	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
 	Metadata     map[string]interface{} `json:"metadata"`
+}
+
+type updateLinkRequest struct {
+	LinkType string  `json:"link_type" binding:"omitempty,oneof=reference dependency related custom parent child"`
+	Weight   float64 `json:"weight" binding:"omitempty,min=0,max=1"`
 }
 
 // LinkValidationErrors defines human-readable error messages for link validation
@@ -75,12 +68,15 @@ var LinkValidationErrors = map[string]string{
 	"target_note_id.required": "Target note ID is required",
 	"target_note_id.uuid":     "Target note ID must be a valid UUID",
 	"link_type.required":      "Link type is required",
-	"link_type.oneof":         "Link type must be one of: reference, dependency, related, custom",
+	"link_type.oneof":         "Link type must be one of: reference, dependency, related, custom, parent, child",
 	"weight.min":              "Weight must be between 0 and 1",
 	"weight.max":              "Weight must be between 0 and 1",
 }
 
 func (h *Handler) Create(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "create")
+
 	var req createLinkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		errStr := err.Error()
@@ -172,10 +168,11 @@ func (h *Handler) Create(c *gin.Context) {
 		newLink = link.NewLink(sourceID, targetID, linkType, weightVO, metadata)
 	}
 
-	if err := h.linkRepo.Save(ctx, newLink); err != nil {
+	savedLink, created, err := h.linkRepo.SaveUserLink(ctx, newLink)
+	if err != nil {
 		log.Printf("[LinkHandler.Create] Failed to save link: source=%s target=%s type=%s error=%v",
 			newLink.SourceNoteID(), newLink.TargetNoteID(), newLink.LinkType().String(), err)
-		if errors.Is(err, postgres.ErrDuplicateLink) {
+		if errors.Is(err, link.ErrDuplicateLink) {
 			apicommon.Conflict(c, []apicommon.FieldError{
 				apicommon.NewFieldErrorFull("link", apicommon.ReasonAlreadyExists, apicommon.MsgDuplicateLink,
 					map[string]string{"source_note_id": req.SourceNoteID, "target_note_id": req.TargetNoteID, "link_type": req.LinkType},
@@ -186,12 +183,162 @@ func (h *Handler) Create(c *gin.Context) {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveLink)
 		return
 	}
+	newLink = savedLink
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkCreated(context.Background(), newLink.SourceNoteID().String(), newLink.TargetNoteID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkCreated event: %v", err)
+		}
+	}
+
+	// Check for achievements asynchronously with bounded context
+	if userID, exists := middleware.GetUserID(c); exists && h.achievementService != nil {
+		go func(ctx context.Context) {
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			if err := h.achievementService.CheckTrigger(ctx, userID, "link.create"); err != nil {
+				log.Printf("[LinkHandler] Failed to check achievements: %v", err)
+			}
+		}(c.Request.Context())
+	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[LinkHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
 
 	responseData := toLinkResponse(newLink)
+	if !created {
+		// An existing gamma link was promoted to a user link — no new row.
+		apicommon.JSON(c, 200, responseData)
+		return
+	}
 	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
 
+func (h *Handler) Update(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "update")
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
+		return
+	}
+
+	var req updateLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		if strings.Contains(errStr, "link_type") {
+			details = append(details, apicommon.NewFieldError("link_type", apicommon.ReasonInvalidValue, LinkValidationErrors["link_type.oneof"]))
+		}
+		if strings.Contains(errStr, "weight") {
+			details = append(details, apicommon.NewFieldError("weight", apicommon.ReasonOutOfRange, LinkValidationErrors["weight.max"]))
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
+		return
+	}
+
+	if req.LinkType == "" && req.Weight == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, "at least one of link_type or weight must be provided"),
+		})
+		return
+	}
+
+	ctx := c.Request.Context()
+	l, err := h.linkRepo.FindByID(ctx, id)
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchLink)
+		return
+	}
+	if l == nil {
+		apicommon.NotFound(c, apicommon.MsgLinkNotFound)
+		return
+	}
+
+	// Authorization: only the creator can update the link.
+	userID, authenticated := middleware.GetUserID(c)
+	if authenticated {
+		if l.CreatorID() != nil && *l.CreatorID() != userID {
+			apicommon.Forbidden(c)
+			return
+		}
+	} else {
+		// Anonymous users cannot update links.
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	modified := false
+	if req.LinkType != "" {
+		linkType, err := link.NewLinkType(req.LinkType)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("link_type", apicommon.ReasonInvalidValue, err.Error(), req.LinkType),
+			})
+			return
+		}
+		l.UpdateLinkType(linkType)
+		modified = true
+	}
+
+	if req.Weight != 0 {
+		weightVO, err := link.NewWeight(req.Weight)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("weight", apicommon.ReasonOutOfRange, err.Error(), req.Weight),
+			})
+			return
+		}
+		l.UpdateWeight(weightVO)
+		modified = true
+	}
+
+	if !modified {
+		apicommon.JSON(c, 200, toLinkResponse(l))
+		return
+	}
+
+	if err := h.linkRepo.Update(ctx, l); err != nil {
+		log.Printf("[LinkHandler.Update] Failed to update link: id=%s error=%v", id, err)
+		if errors.Is(err, link.ErrLinkNotFound) {
+			apicommon.NotFound(c, apicommon.MsgLinkNotFound)
+			return
+		}
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveLink)
+		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkUpdated(context.Background(), l.SourceNoteID().String(), l.TargetNoteID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkUpdated event: %v", err)
+		}
+	}
+
+	// Invalidate graph cache for the user
+	if userID != uuid.Nil && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[LinkHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	apicommon.JSON(c, 200, toLinkResponse(l))
+}
+
 func (h *Handler) Get(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "read")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -215,6 +362,9 @@ func (h *Handler) Get(c *gin.Context) {
 }
 
 func (h *Handler) GetByNote(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "read_by_note")
+
 	noteIDStr := c.Param("id")
 	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
@@ -262,6 +412,9 @@ func (h *Handler) GetByNote(c *gin.Context) {
 }
 
 func (h *Handler) Delete(c *gin.Context) {
+	middleware.SetDBEntity(c, "links")
+	middleware.SetDBOperation(c, "delete")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -282,10 +435,38 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.linkRepo.Delete(ctx, id); err != nil {
+	// Deleting a gamma link or a link carrying gamma provenance records the
+	// rejection "these notes are not related" so regeneration will not propose
+	// the pair again (LINKS-2). Purely manual links leave no rejection.
+	if l.SourceType().IsGamma() || l.HasGammaProvenance() {
+		linkType := l.LinkType().String()
+		var creatorID *uuid.UUID
+		if userID, exists := middleware.GetUserID(c); exists {
+			creatorID = &userID
+		}
+		suppression := link.NewSuppression(l.SourceNoteID(), l.TargetNoteID(), &linkType, creatorID)
+		if err := h.linkRepo.DeleteAndSuppress(ctx, l, suppression); err != nil {
+			apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
+			return
+		}
+	} else if err := h.linkRepo.Delete(ctx, id); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
 		return
 	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkDeleted(context.Background(), l.SourceNoteID().String(), l.TargetNoteID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkDeleted event: %v", err)
+		}
+	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[LinkHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
 	apicommon.NoContent(c)
 }
 
@@ -304,5 +485,12 @@ func (h *Handler) DeleteByNote(c *gin.Context) {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
 		return
 	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishLinkDeleted(context.Background(), noteID.String(), "", getUserIDString(c)); err != nil {
+			log.Printf("[LinkHandler] Failed to publish LinkDeleted event for DeleteByNote: %v", err)
+		}
+	}
+
 	apicommon.NoContent(c)
 }

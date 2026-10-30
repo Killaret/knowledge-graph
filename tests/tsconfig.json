@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "baseUrl": "..",
+    "typeRoots": ["../frontend/node_modules/@types"],
+    "paths": {
+      "@cucumber/cucumber": ["frontend/node_modules/@cucumber/cucumber"],
+      "@playwright/test": ["frontend/node_modules/@playwright/test"]
+    },
+    "types": ["node"]
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

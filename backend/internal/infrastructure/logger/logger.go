@@ -83,7 +83,7 @@ func Initialize(cfg Config) error {
 
 // New creates a new logger instance
 func New(cfg Config) (*Logger, error) {
-	var output io.Writer = cfg.Output
+	output := cfg.Output
 
 	if cfg.LogFile != "" {
 		// Ensure log directory exists
@@ -255,6 +255,8 @@ func Error(message string, err error, data ...map[string]interface{}) {
 }
 
 // setOutput sets the output writer for the default logger (unused, kept for future)
+//
+//nolint:unused
 func setOutput(w io.Writer) {
 	if defaultLogger != nil {
 		defaultLogger.output = w
@@ -262,14 +264,18 @@ func setOutput(w io.Writer) {
 }
 
 // newStandardLogger creates a standard library compatible logger (unused, kept for future)
+//
+//nolint:unused
 func newStandardLogger(context string) *log.Logger {
 	return log.New(&standardLoggerAdapter{context: context}, "", 0)
 }
 
+//nolint:unused
 type standardLoggerAdapter struct {
 	context string
 }
 
+//nolint:unused
 func (a *standardLoggerAdapter) Write(p []byte) (n int, err error) {
 	msg := strings.TrimSpace(string(p))
 	WithContext(a.context).Info(msg)

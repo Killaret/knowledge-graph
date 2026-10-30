@@ -1,5 +1,10 @@
-import { setWorldConstructor, setDefaultTimeout, World } from '@cucumber/cucumber';
-import { type Browser, type BrowserContext, type Page, type APIRequestContext } from '@playwright/test';
+import { setWorldConstructor, setDefaultTimeout, World } from "@cucumber/cucumber";
+import {
+  type Browser,
+  type BrowserContext,
+  type Page,
+  type APIRequestContext,
+} from "@playwright/test";
 
 export interface ITestWorld extends World {
   browser?: Browser;
@@ -32,4 +37,6 @@ class CustomWorld extends World implements ITestWorld {
 }
 
 setWorldConstructor(CustomWorld);
-setDefaultTimeout(15000);
+// Give heavy browser/network steps enough time in CI; Playwright actions have
+// their own explicit timeouts, this is the Cucumber-level safety net.
+setDefaultTimeout(60 * 1000);

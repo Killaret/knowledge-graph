@@ -1,10 +1,13 @@
 package middleware
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strings"
 
 	"knowledge-graph/internal/auth"
+	contextkeys "knowledge-graph/internal/shared/context"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -19,20 +22,27 @@ const (
 
 // JWTConfig holds JWT middleware configuration
 type JWTConfig struct {
-	JWTManager     *auth.JWTManager
-	TokenStore     *auth.RedisTokenStore
-	SkipPaths      []string
-	HeaderName     string
-	TokenLookup    string
+	JWTManager *auth.JWTManager
+	TokenStore auth.TokenStore
+	SkipPaths  []string
+	// SkipGETPaths are route templates exempt only for GET requests: other
+	// methods on the same template still require a token. Needed because
+	// SkipPaths matches c.FullPath() regardless of method — adding
+	// /api/v1/notes/:id there would also exempt PUT and DELETE.
+	SkipGETPaths []string
+	HeaderName   string
+	TokenLookup  string
+	CookieName   string
 }
 
 // DefaultJWTConfig returns default JWT configuration
-func DefaultJWTConfig(jwtManager *auth.JWTManager, tokenStore *auth.RedisTokenStore) *JWTConfig {
+func DefaultJWTConfig(jwtManager *auth.JWTManager, tokenStore auth.TokenStore) *JWTConfig {
 	return &JWTConfig{
 		JWTManager:  jwtManager,
 		TokenStore:  tokenStore,
 		HeaderName:  "Authorization",
 		TokenLookup: "header",
+		CookieName:  "access_token",
 		SkipPaths: []string{
 			"/api/v1/auth/login",
 			"/api/v1/auth/register",
@@ -41,9 +51,19 @@ func DefaultJWTConfig(jwtManager *auth.JWTManager, tokenStore *auth.RedisTokenSt
 			"/api/v1/auth/reset-password",
 			"/api/v1/auth/yandex/login",
 			"/api/v1/auth/yandex/callback",
+			"/api/v1/achievements",
+			"/api/v1/graph/public",
 			"/health",
 			"/swagger/*any",
 			"/openapi.yaml",
+		},
+		SkipGETPaths: []string{
+			// PUB-1: anonymous visitors may read a public note and search
+			// public notes. RequireNoteAccess still conceals private notes
+			// with 404, and applyNoteScope limits anonymous search results
+			// to public notes.
+			"/api/v1/notes/:id",
+			"/api/v1/notes/search",
 		},
 	}
 }
@@ -59,9 +79,28 @@ func JWTAuth(config *JWTConfig) gin.HandlerFunc {
 			}
 		}
 
+		// Skip if user already exists in context (set by SkipAuth middleware)
+		if userID, exists := GetUserID(c); exists {
+			_ = userID
+			c.Next()
+			return
+		}
+
 		// Extract token
 		token, err := extractToken(c, config)
 		if err != nil {
+			// Without credentials the GET-only exemptions let anonymous
+			// readers through. A request that DOES carry a token is still
+			// validated — otherwise an authenticated owner would lose his
+			// identity and read his own private note as a stranger (404).
+			if c.Request.Method == http.MethodGet {
+				for _, path := range config.SkipGETPaths {
+					if c.FullPath() == path {
+						c.Next()
+						return
+					}
+				}
+			}
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "missing or malformed token"})
 			c.Abort()
 			return
@@ -90,35 +129,49 @@ func JWTAuth(config *JWTConfig) gin.HandlerFunc {
 			return
 		}
 
-		// Set context values
+		// Set context values. The request-context flag marks a verified
+		// identity so the data layer can tell the seeded uuid.Nil user apart
+		// from an anonymous request.
 		c.Set(ContextUserIDKey, claims.UserID)
 		c.Set(ContextRoleKey, claims.Role)
 		c.Set(ContextLoginKey, claims.Login)
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), contextkeys.AuthenticatedKey, true))
+
+		// Set full claims for logging middleware
+		c.Set("token_claims", map[string]interface{}{
+			"user_id": claims.UserID,
+			"login":   claims.Login,
+			"role":    claims.Role,
+		})
 
 		c.Next()
 	}
 }
 
-// extractToken extracts JWT token from request
+// extractToken extracts JWT token from request. It only accepts the Bearer
+// Authorization header or the configured HttpOnly cookie. Raw headers and query
+// parameters are rejected to prevent tokens from leaking into logs, browser
+// history, and Referer headers.
 func extractToken(c *gin.Context, config *JWTConfig) (string, error) {
 	// Try header first
 	authHeader := c.GetHeader(config.HeaderName)
 	if authHeader != "" {
 		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+		if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") && parts[1] != "" {
 			return parts[1], nil
 		}
-		// If no Bearer prefix, assume it's the token itself
-		return authHeader, nil
+		// A non-Bearer header is not a valid token transport.
+		return "", errors.New("missing or malformed token")
 	}
 
-	// Try query parameter
-	token := c.Query("token")
-	if token != "" {
-		return token, nil
+	// Try HttpOnly cookie
+	if config.CookieName != "" {
+		if cookie, err := c.Cookie(config.CookieName); err == nil && cookie != "" {
+			return cookie, nil
+		}
 	}
 
-	return "", nil
+	return "", errors.New("missing or malformed token")
 }
 
 // GetUserID extracts user ID from context
@@ -127,7 +180,7 @@ func GetUserID(c *gin.Context) (uuid.UUID, bool) {
 	if !exists {
 		return uuid.Nil, false
 	}
-	
+
 	id, ok := userID.(uuid.UUID)
 	return id, ok
 }
@@ -138,9 +191,20 @@ func GetUserRole(c *gin.Context) (string, bool) {
 	if !exists {
 		return "", false
 	}
-	
+
 	r, ok := role.(string)
 	return r, ok
+}
+
+// GetLogin extracts user login from context
+func GetLogin(c *gin.Context) (string, bool) {
+	login, exists := c.Get(ContextLoginKey)
+	if !exists {
+		return "", false
+	}
+
+	l, ok := login.(string)
+	return l, ok
 }
 
 // RequireAuth middleware ensures user is authenticated
@@ -148,7 +212,7 @@ func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		_, exists := GetUserID(c)
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
 			c.Abort()
 			return
 		}

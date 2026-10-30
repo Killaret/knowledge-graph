@@ -1,31 +1,40 @@
-import type { Page, APIRequestContext } from '@playwright/test';
+import { expect, type Page, type APIRequestContext } from "@playwright/test";
+import {
+  createNote as createNoteAdvanced,
+  createLink as createLinkAdvanced,
+  getBackendUrl,
+} from "./testData";
 
 /**
- * Get backend URL from environment or use default
+ * Get frontend URL from environment or use default
  */
-export function getBackendUrl(): string {
-  return process.env.BACKEND_URL || 'http://localhost:8080/api';
+export function getFrontendUrl(): string {
+  return process.env.FRONTEND_URL || "http://127.0.0.1:5173";
 }
 
 /**
- * Create a note via API for testing
+ * Re-export from testData.ts for backward compatibility
+ */
+export { getBackendUrl };
+
+/**
+ * Re-export createNote from testData.ts with simplified signature
  */
 export async function createNote(
   request: APIRequestContext,
-  data: { title: string; content?: string; type?: string }
+  data: { title: string; content?: string; type?: string; email?: string }
 ): Promise<{ data: { id: string; title: string } }> {
-  const response = await request.post(`${getBackendUrl()}/v1/notes`, {
-    data: {
-      title: data.title,
-      content: data.content || 'Test content',
-      type: data.type || 'star'
-    }
+  const result = await createNoteAdvanced(request, {
+    title: data.title,
+    content: data.content,
+    type: data.type,
+    metadata: data.email ? { email: data.email } : undefined,
   });
-  return await response.json() as { data: { id: string; title: string } };
+  return { data: { id: result.data.id, title: result.data.title } };
 }
 
 /**
- * Create a link between notes via API for testing
+ * Re-export createLink from testData.ts
  */
 export async function createLink(
   request: APIRequestContext,
@@ -36,21 +45,32 @@ export async function createLink(
     weight?: number;
   }
 ): Promise<void> {
-  await request.post(`${getBackendUrl()}/v1/links`, {
-    data: {
-      source_note_id: data.source_note_id,
-      target_note_id: data.target_note_id,
-      link_type: data.link_type || 'related',
-      weight: data.weight ?? 0.5
-    }
-  });
+  await createLinkAdvanced(
+    request,
+    data.source_note_id,
+    data.target_note_id,
+    data.weight ?? 0.5,
+    data.link_type ?? "related"
+  );
 }
+
+/**
+ * Re-export deleteNote from testData.ts
+ */
+export { deleteNote as deleteNoteSimple } from "./testData";
+
+/**
+ * Re-export isBackendAvailable from testData.ts
+ */
+export { isBackendAvailable } from "./testData";
 
 /**
  * Click an element using JavaScript to bypass viewport checks.
  * Useful for position:fixed elements that Playwright considers outside viewport.
+ * Waits for the element to be attached first to avoid hydration race conditions.
  */
 export async function clickBySelector(page: Page, selector: string): Promise<void> {
+  await page.waitForSelector(selector, { state: "attached", timeout: 5000 });
   await page.evaluate((sel) => {
     const element = document.querySelector(sel);
     if (element) {
@@ -70,80 +90,94 @@ export async function clickFloatingControl(page: Page, dataTestId: string): Prom
 }
 
 /**
- * Click create note button in floating controls
+ * Open a cockpit panel by clicking its visible handle and waiting for the slide-out animation.
+ * Waits for the handle to mount to avoid hydration race conditions; if it never appears,
+ * the panel may already be open (or the page doesn't have this cockpit).
+ */
+export async function openCockpitPanel(
+  page: Page,
+  position: "top" | "left" | "right" | "bottom" = "top"
+): Promise<void> {
+  const handle = page.locator(`[data-testid="cockpit-handle-${position}"]`).first();
+  try {
+    await handle.waitFor({ state: "attached", timeout: 2000 });
+  } catch {
+    // Handle not present: panel is already open or this page has no cockpit.
+    return;
+  }
+  await clickBySelector(page, `[data-testid="cockpit-handle-${position}"]`);
+  await page.waitForTimeout(500);
+}
+
+/**
+ * Click create note button in the top bar
  */
 export async function clickCreateNoteButton(page: Page): Promise<void> {
-  await clickFloatingControl(page, 'create-note-button');
+  await clickBySelector(page, '[data-testid="create-note-button"]');
 }
 
 /**
- * Click view toggle button in floating controls
+ * Click view toggle button in the top bar
  */
-export async function clickViewToggle(page: Page, view: 'list' | 'graph' | '3d'): Promise<void> {
+export async function clickViewToggle(page: Page, view: "list" | "graph" | "3d"): Promise<void> {
   const testId = `view-toggle-${view}`;
-  await clickFloatingControl(page, testId);
+  await clickBySelector(page, `[data-testid="${testId}"]`);
 }
 
 /**
- * Click filter chip in floating controls
+ * Click filter chip in the top bar type dropdown
  */
 export async function clickFilterChip(page: Page, filter: string): Promise<void> {
-  const filterId = filter.toLowerCase().replace(/s$/, ''); // stars -> star
-  await clickFloatingControl(page, `filter-chip-${filterId}`);
+  const filterId = filter.toLowerCase().replace(/s$/, ""); // stars -> star
+  // Open the type dropdown
+  await clickBySelector(page, '[data-testid="type-dropdown-toggle"]');
+  await page.waitForTimeout(300);
+  await clickBySelector(page, `[data-testid="filter-chip-${filterId}"]`);
+  await page.waitForTimeout(300);
 }
 
 /**
- * Fill search input in floating controls
+ * Fill search input in the top bar (home/graph pages) or search page
  */
 export async function fillSearchInput(page: Page, query: string): Promise<void> {
-  await page.evaluate((q) => {
-    const input = document.querySelector('[data-testid="search-input"]') as HTMLInputElement;
-    if (input) {
-      input.value = q;
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-    } else {
-      throw new Error('Search input not found');
-    }
-  }, query);
+  // Try the top bar search input first, then fall back to the dedicated search page input.
+  const searchInput = page
+    .locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]')
+    .first();
+  await expect(searchInput).toBeVisible({ timeout: 5000 });
+  await searchInput.fill(query);
+  await searchInput.dispatchEvent("input");
 }
 
 /**
- * Click search button in floating controls
+ * Submit the active search input (the top bar no longer has a separate search button)
  */
 export async function clickSearchButton(page: Page): Promise<void> {
-  // Search button doesn't have data-testid, use class selector via JS
-  await page.evaluate(() => {
-    const button = document.querySelector('.search-btn');
-    if (button) {
-      (button as HTMLElement).click();
-    } else {
-      throw new Error('Search button not found');
-    }
-  });
+  const searchInput = page
+    .locator('[data-testid="top-bar-search-input"], [data-testid="search-input"]')
+    .first();
+  await searchInput.press("Enter");
+  await page.waitForTimeout(300);
 }
 
 /**
  * Setup SKIP_AUTH mode for testing
  * Must be called before navigating to protected routes
- * 
+ *
  * Works with both dev server (localStorage) and production build (query param)
+ * Simplified version that doesn't navigate to auth page
  */
 export async function setupSkipAuth(page: Page): Promise<void> {
-  // Navigate to login page with skip_auth query param (for production)
-  // This will set localStorage and persist across navigations
-  await page.goto('/auth/login?skip_auth=true');
-  await page.waitForTimeout(500);
-  
-  // Also set it directly for dev server
-  await page.evaluate(() => {
-    localStorage.setItem('__SKIP_AUTH__', 'true');
-    (window as any).__SKIP_AUTH__ = true;
-    console.log('[TEST] SKIP_AUTH enabled');
-  });
-  
-  // Set init script for subsequent navigations
+  // Set SKIP_AUTH flag directly without navigating to auth page
+  // Use addInitScript only - evaluate might fail due to localStorage restrictions
   await page.addInitScript(() => {
-    localStorage.setItem('__SKIP_AUTH__', 'true');
+    try {
+      localStorage.setItem("__SKIP_AUTH__", "true");
+    } catch {
+      // localStorage might not be available in some contexts
+      console.log("[TEST] localStorage not available, using window flag");
+    }
     (window as any).__SKIP_AUTH__ = true;
+    console.log("[TEST] SKIP_AUTH enabled via initScript");
   });
 }

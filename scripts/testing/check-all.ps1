@@ -1,0 +1,142 @@
+param(
+    [switch]$Quick,
+    [switch]$Strict,
+    # Test hook: run a subset manifest (e.g. one docker phase). The workflow
+    # sync check is skipped - it validates the real manifest, not a fixture.
+    [string]$Manifest
+)
+
+$ErrorActionPreference = 'Continue'
+$scriptDir = $PSScriptRoot
+$repoDir = Split-Path -Parent (Split-Path -Parent $scriptDir)
+$manifestPath = if ($Manifest) { $Manifest } else { Join-Path $scriptDir 'core-checks.tsv' }
+$workflowPath = Join-Path $repoDir '.github\workflows\_core-checks.yml'
+$syncScript = Join-Path $scriptDir 'check-core-workflow-sync.mjs'
+
+. "$scriptDir\lib\phase-tracking.ps1"
+if (-not (Get-Command Register-Phase -ErrorAction SilentlyContinue)) {
+    Write-Host "FATAL: lib\phase-tracking.ps1 did not load (check encoding)" -ForegroundColor Red
+    exit 1
+}
+$script:PhaseResults.Clear()
+$script:SnapshotDir = $null
+$checks = Import-Csv -Path $manifestPath -Delimiter "`t"
+$coverCreated = $false
+
+function Register-Skip {
+    param([string]$Name, [string]$Reason)
+    Register-Phase -Name $Name -Skipped -Reason $Reason
+}
+
+function Test-ToolAvailable {
+    param([string]$Tool)
+
+    foreach ($name in $Tool.Split('+')) {
+        if (-not (Get-Command $name -ErrorAction SilentlyContinue)) {
+            return "$name is not installed or not in PATH"
+        }
+    }
+    if ($Tool -like 'docker*') {
+        # CHECK-ALL-2: `docker info` can fail transiently on a live daemon
+        # under load - retry once before believing it, and the skip reason
+        # must name the command and show its output.
+        $dockerOutput = ''
+        $dockerExit = 0
+        foreach ($attempt in 1, 2) {
+            $dockerOutput = docker info 2>&1 | Out-String
+            $dockerExit = $LASTEXITCODE
+            if ($dockerExit -eq 0) { break }
+            if ($attempt -eq 1) { Start-Sleep -Seconds 3 }
+        }
+        if ($dockerExit -ne 0) {
+            $tail = (($dockerOutput -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -Last 3) -join ' | ')
+            if ($tail.Length -gt 300) { $tail = $tail.Substring(0, 300) }
+            return "docker info failed (exit ${dockerExit}): $tail"
+        }
+    }
+    return $null
+}
+
+function Invoke-Check {
+    param($Check)
+
+    $originalLocation = Get-Location
+    $previousJwtSecret = $env:JWT_SECRET
+    try {
+        Set-Location (Join-Path $repoDir $Check.cwd)
+        if ($Check.id -eq 'backend-coverage') {
+            if (-not (Test-Path 'cover.out')) {
+                Write-Host 'cover.out was not produced by backend tests' -ForegroundColor Red
+                return 1
+            }
+            $required = [double]($Check.command -replace '^@coverage:', '')
+            $coverageArgs = "../scripts/testing/backend-coverage-total.py", "cover.out", "$required"
+            & python $coverageArgs | Out-Host
+            return $LASTEXITCODE
+        }
+        if ($Check.id -eq 'frontend-config') {
+            npm run build-config | Out-Host
+            if ($LASTEXITCODE -ne 0) { return [int]$LASTEXITCODE }
+            git diff --exit-code -- knowledge-graph.config.json | Out-Host
+            return [int]$LASTEXITCODE
+        }
+        if ($Check.id -eq 'backend-config' -and -not $env:JWT_SECRET) {
+            $env:JWT_SECRET = 'local-check-secret-32-characters-long'
+        }
+        $global:LASTEXITCODE = 0
+        $command = [string]$Check.command
+        Invoke-Expression $command | Out-Host
+        return [int]$(if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE })
+    } catch {
+        Write-Host $_ -ForegroundColor Red
+        return 1
+    } finally {
+        if ($null -ne $previousJwtSecret) {
+            $env:JWT_SECRET = $previousJwtSecret
+        } else {
+            Remove-Item Env:JWT_SECRET -ErrorAction SilentlyContinue
+        }
+        Set-Location $originalLocation
+    }
+}
+
+Write-Host '========================================' -ForegroundColor Cyan
+Write-Host '  Knowledge Graph Local Core Checks' -ForegroundColor Cyan
+Write-Host '========================================' -ForegroundColor Cyan
+
+if ($Manifest) {
+    # Fixture manifest - the sync check applies to the real one only.
+} elseif (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Register-Skip -Name 'Core workflow sync' -Reason 'node is not installed or not in PATH'
+} else {
+    node $syncScript $manifestPath $workflowPath
+    Register-Phase -Name 'Core workflow sync' -ExitCode $LASTEXITCODE
+}
+
+foreach ($check in $checks) {
+    if ($Quick -and $check.quick_skip -eq '1') {
+        Register-Skip -Name $check.name -Reason 'quick mode skips integration checks'
+        continue
+    }
+    $unavailableReason = Test-ToolAvailable -Tool $check.tool
+    if ($unavailableReason) {
+        Register-Skip -Name $check.name -Reason $unavailableReason
+        continue
+    }
+    $exitCode = Invoke-Check -Check $check
+    if ($check.id -eq 'backend-unit') { $coverCreated = $true }
+    Register-Phase -Name $check.name -ExitCode $exitCode
+}
+
+if ($coverCreated) {
+    Remove-Item (Join-Path $repoDir 'backend\cover.out') -ErrorAction SilentlyContinue
+}
+
+$failed = Test-AnyFailed
+$skippedCount = @($script:PhaseResults.Values | Where-Object { $_.Status -eq 'skip' }).Count
+Write-FinalSummary -Success (-not $failed)
+if ($Strict -and $skippedCount -gt 0) {
+    Write-Host "Strict mode: $skippedCount skipped phase(s) treated as failure." -ForegroundColor Red
+    exit 1
+}
+exit $(if ($failed) { 1 } else { 0 })

@@ -10,6 +10,60 @@ import (
 	"github.com/hibiken/asynq"
 )
 
+// TypeCleanupExpiredDrafts is the task type for cleaning up expired drafts
+const TypeCleanupExpiredDrafts = "cleanup:expired_drafts"
+
+// CleanupExpiredDraftsPayload contains parameters for draft cleanup
+type CleanupExpiredDraftsPayload struct {
+	TTLHours int `json:"ttl_hours"`
+}
+
+// NewCleanupExpiredDraftsTask creates a new Asynq task for cleaning up expired drafts
+func NewCleanupExpiredDraftsTask(ttlHours int) (*asynq.Task, error) {
+	if ttlHours <= 0 {
+		ttlHours = 168 // Default: 7 days
+	}
+
+	payload, err := json.Marshal(CleanupExpiredDraftsPayload{
+		TTLHours: ttlHours,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	opts := []asynq.Option{
+		asynq.MaxRetry(3),
+		asynq.Timeout(5 * time.Minute),
+		asynq.Queue("default"),
+		asynq.Unique(24 * time.Hour),
+	}
+
+	return asynq.NewTask(TypeCleanupExpiredDrafts, payload, opts...), nil
+}
+
+// DraftCleanupServiceInterface defines the interface for draft cleanup service
+type DraftCleanupServiceInterface interface {
+	DeleteExpired(ctx context.Context, before time.Time) (int, error)
+}
+
+// HandleCleanupExpiredDrafts is the handler for TypeCleanupExpiredDrafts tasks
+func HandleCleanupExpiredDrafts(ctx context.Context, t *asynq.Task, draftCleanupSvc DraftCleanupServiceInterface) error {
+	var p CleanupExpiredDraftsPayload
+	if err := json.Unmarshal(t.Payload(), &p); err != nil {
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+
+	before := time.Now().Add(-time.Duration(p.TTLHours) * time.Hour)
+	count, err := draftCleanupSvc.DeleteExpired(ctx, before)
+	if err != nil {
+		log.Printf("[Asynq] Failed to cleanup expired drafts: %v", err)
+		return err
+	}
+
+	log.Printf("[Asynq] Cleaned up %d expired drafts", count)
+	return nil
+}
+
 // TypeCleanupSoftDeleted is the task type for cleaning up soft-deleted records
 const TypeCleanupSoftDeleted = "cleanup:soft_deleted"
 

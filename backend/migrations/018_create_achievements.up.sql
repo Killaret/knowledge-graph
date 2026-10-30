@@ -1,43 +1,53 @@
 -- Migration 018: Create achievements system
--- Created: 2024
+-- Updated: 2026-06-01 — aligned with AchievementModel (name_ru/en, description_ru/en, icon_emoji, category, hidden)
 
--- Create achievements table for system-wide achievements
+BEGIN;
+
+-- Create achievements table (matches achievement_model.go)
 CREATE TABLE IF NOT EXISTS achievements (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code VARCHAR(100) UNIQUE NOT NULL,
-    title VARCHAR(200) NOT NULL,
-    description TEXT,
-    icon VARCHAR(50),
-    condition_json JSONB NOT NULL,
-    points INT DEFAULT 0,
-    is_hidden BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    code VARCHAR(100) NOT NULL UNIQUE,
+    name_ru TEXT,
+    name_en TEXT,
+    description_ru TEXT,
+    description_en TEXT,
+    icon_emoji VARCHAR(8),
+    category VARCHAR(50),
+    condition_json JSONB NOT NULL DEFAULT '{}',
+    points INTEGER NOT NULL DEFAULT 0,
+    hidden BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Create index for lookup by code
 CREATE INDEX IF NOT EXISTS idx_achievements_code ON achievements(code);
-CREATE INDEX IF NOT EXISTS idx_achievements_hidden ON achievements(is_hidden);
+CREATE INDEX IF NOT EXISTS idx_achievements_hidden ON achievements(hidden);
 
--- Create user_achievements table to track earned achievements
+-- Create user_achievements table (matches user_achievement_model.go)
 CREATE TABLE IF NOT EXISTS user_achievements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     achievement_id UUID NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
-    obtained_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    metadata JSONB DEFAULT '{}',
-    PRIMARY KEY (user_id, achievement_id)
+    unlocked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    notification_seen BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, achievement_id)
 );
 
--- Create index for user achievement lookups
 CREATE INDEX IF NOT EXISTS idx_user_achievements_user ON user_achievements(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_achievements_achievement ON user_achievements(achievement_id);
 
 -- Seed default achievements
-INSERT INTO achievements (code, title, description, icon, condition_json, points, is_hidden) VALUES
+INSERT INTO achievements (code, name_ru, name_en, description_ru, description_en, icon_emoji, category, condition_json, points, hidden) VALUES
     (
         'first_note',
         'Первые Искры',
+        'First Sparks',
         'Создана первая заметка во вселенной',
-        'star',
+        'Created your first note in the universe',
+        '⭐',
+        'creation',
         '{"type": "count", "entity": "note", "action": "create", "threshold": 1}',
         10,
         false
@@ -45,8 +55,11 @@ INSERT INTO achievements (code, title, description, icon, condition_json, points
     (
         'note_master_10',
         'Архитектор Галактики',
+        'Galaxy Architect',
         'Создано 10 заметок',
-        'planet',
+        'Created 10 notes',
+        '🪐',
+        'creation',
         '{"type": "count", "entity": "note", "action": "create", "threshold": 10}',
         50,
         false
@@ -54,8 +67,11 @@ INSERT INTO achievements (code, title, description, icon, condition_json, points
     (
         'note_master_50',
         'Космический Коллекционер',
+        'Cosmic Collector',
         'Создано 50 заметок',
-        'galaxy',
+        'Created 50 notes',
+        '🌌',
+        'creation',
         '{"type": "count", "entity": "note", "action": "create", "threshold": 50}',
         200,
         false
@@ -63,8 +79,11 @@ INSERT INTO achievements (code, title, description, icon, condition_json, points
     (
         'link_maker',
         'Ткачь Гравитации',
+        'Gravity Weaver',
         'Создана первая связь между объектами',
-        'link',
+        'Created your first link between objects',
+        '🔗',
+        'connection',
         '{"type": "count", "entity": "link", "action": "create", "threshold": 1}',
         15,
         false
@@ -72,8 +91,11 @@ INSERT INTO achievements (code, title, description, icon, condition_json, points
     (
         'link_master',
         'Повелитель Пространства',
+        'Space Lord',
         'Создано 20 связей',
-        'network',
+        'Created 20 links',
+        '🕸️',
+        'connection',
         '{"type": "count", "entity": "link", "action": "create", "threshold": 20}',
         100,
         false
@@ -81,8 +103,11 @@ INSERT INTO achievements (code, title, description, icon, condition_json, points
     (
         'galaxy_builder',
         'Строитель Млечного Пути',
+        'Milky Way Builder',
         'Создано 5 заметок типа "galaxy"',
-        'sparkles',
+        'Created 5 notes of type "galaxy"',
+        '✨',
+        'creation',
         '{"type": "count", "entity": "note", "action": "create", "filter": {"type": "galaxy"}, "threshold": 5}',
         75,
         false
@@ -90,8 +115,11 @@ INSERT INTO achievements (code, title, description, icon, condition_json, points
     (
         'star_collector',
         'Собиратель Звёзд',
+        'Star Collector',
         'Создано 10 заметок типа "star"',
-        'sun',
+        'Created 10 notes of type "star"',
+        '☀️',
+        'creation',
         '{"type": "count", "entity": "note", "action": "create", "filter": {"type": "star"}, "threshold": 10}',
         60,
         false
@@ -99,8 +127,11 @@ INSERT INTO achievements (code, title, description, icon, condition_json, points
     (
         'seven_day_streak',
         'Непрерывный Путник',
+        'Continuous Traveler',
         'Входил в систему 7 дней подряд',
-        'flame',
+        'Logged in for 7 consecutive days',
+        '🔥',
+        'streak',
         '{"type": "streak", "action": "login", "threshold": 7}',
         150,
         false
@@ -108,8 +139,11 @@ INSERT INTO achievements (code, title, description, icon, condition_json, points
     (
         'explorer',
         'Искатель Тайн',
+        'Secret Seeker',
         'Использовал поиск 50 раз',
-        'search',
+        'Used search 50 times',
+        '🔍',
+        'discovery',
         '{"type": "count", "entity": "search", "action": "execute", "threshold": 50}',
         80,
         true
@@ -117,8 +151,11 @@ INSERT INTO achievements (code, title, description, icon, condition_json, points
     (
         'sharer',
         'Даритель Света',
+        'Light Giver',
         'Поделился заметкой с другим пользователем',
-        'share',
+        'Shared a note with another user',
+        '📤',
+        'social',
         '{"type": "count", "entity": "share", "action": "create", "threshold": 1}',
         25,
         false

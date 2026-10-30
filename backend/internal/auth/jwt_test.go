@@ -109,6 +109,7 @@ func TestTokenClaims_Expiry(t *testing.T) {
 	secret := "test-secret-key"
 	// Use very short TTL for testing
 	manager := NewJWTManager(secret, 1*time.Millisecond, 1*time.Millisecond)
+	manager.leeway = 0 // default leeway would keep short-lived tokens "valid" for seconds after exp
 
 	userID := uuid.New()
 	tokens, err := manager.GenerateTokenPair(userID, "testuser", "user")

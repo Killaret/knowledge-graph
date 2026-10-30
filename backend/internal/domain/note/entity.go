@@ -11,19 +11,38 @@ type Note struct {
 	id        uuid.UUID
 	title     Title
 	content   Content
-	type_     string
+	type_     NoteType
 	metadata  Metadata
 	creatorID *uuid.UUID
+	isPublic  bool
 	createdAt time.Time
 	updatedAt time.Time
 }
 
-func NewNote(title Title, content Content, noteType string, metadata Metadata) *Note {
-	now := time.Now()
-	if noteType == "" {
-		noteType = "star"
+// NoteOption configures a Note during construction.
+type NoteOption func(*Note)
+
+// WithIsPublic sets the public visibility flag on a reconstructed note.
+func WithIsPublic(isPublic bool) NoteOption {
+	return func(n *Note) {
+		n.isPublic = isPublic
 	}
-	return &Note{
+}
+
+// WithID sets a specific id on a newly created note.
+// Used by importers that generate note IDs ahead of time so links can reference them.
+func WithID(id uuid.UUID) NoteOption {
+	return func(n *Note) {
+		n.id = id
+	}
+}
+
+func NewNote(title Title, content Content, noteType NoteType, metadata Metadata, opts ...NoteOption) *Note {
+	now := time.Now()
+	if !noteType.IsValid() {
+		noteType = Unknown()
+	}
+	n := &Note{
 		id:        uuid.New(),
 		title:     title,
 		content:   content,
@@ -33,15 +52,19 @@ func NewNote(title Title, content Content, noteType string, metadata Metadata) *
 		createdAt: now,
 		updatedAt: now,
 	}
+	for _, opt := range opts {
+		opt(n)
+	}
+	return n
 }
 
 // NewNoteWithCreator creates a new note with a creator ID
-func NewNoteWithCreator(title Title, content Content, noteType string, metadata Metadata, creatorID uuid.UUID) *Note {
+func NewNoteWithCreator(title Title, content Content, noteType NoteType, metadata Metadata, creatorID uuid.UUID, opts ...NoteOption) *Note {
 	now := time.Now()
-	if noteType == "" {
-		noteType = "star"
+	if !noteType.IsValid() {
+		noteType = Unknown()
 	}
-	return &Note{
+	n := &Note{
 		id:        uuid.New(),
 		title:     title,
 		content:   content,
@@ -51,14 +74,18 @@ func NewNoteWithCreator(title Title, content Content, noteType string, metadata 
 		createdAt: now,
 		updatedAt: now,
 	}
+	for _, opt := range opts {
+		opt(n)
+	}
+	return n
 }
 
-// ReconstructNote восстанавливает заметку из сохранённых данных (используется репозиторием)
-func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, createdAt, updatedAt time.Time) *Note {
-	if noteType == "" {
-		noteType = "star"
+// ReconstructNote reconstructs a note from saved data (used by repository)
+func ReconstructNote(id uuid.UUID, title Title, content Content, noteType NoteType, metadata Metadata, createdAt, updatedAt time.Time, opts ...NoteOption) *Note {
+	if !noteType.IsValid() {
+		noteType = Unknown()
 	}
-	return &Note{
+	n := &Note{
 		id:        id,
 		title:     title,
 		content:   content,
@@ -68,14 +95,18 @@ func ReconstructNote(id uuid.UUID, title Title, content Content, noteType string
 		createdAt: createdAt,
 		updatedAt: updatedAt,
 	}
+	for _, opt := range opts {
+		opt(n)
+	}
+	return n
 }
 
-// ReconstructNoteWithCreator восстанавливает заметку с creator ID
-func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, noteType string, metadata Metadata, creatorID *uuid.UUID, createdAt, updatedAt time.Time) *Note {
-	if noteType == "" {
-		noteType = "star"
+// ReconstructNoteWithCreator reconstructs a note with creator ID
+func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, noteType NoteType, metadata Metadata, creatorID *uuid.UUID, createdAt, updatedAt time.Time, opts ...NoteOption) *Note {
+	if !noteType.IsValid() {
+		noteType = Unknown()
 	}
-	return &Note{
+	n := &Note{
 		id:        id,
 		title:     title,
 		content:   content,
@@ -85,9 +116,13 @@ func ReconstructNoteWithCreator(id uuid.UUID, title Title, content Content, note
 		createdAt: createdAt,
 		updatedAt: updatedAt,
 	}
+	for _, opt := range opts {
+		opt(n)
+	}
+	return n
 }
 
-// Геттеры
+// Getters
 func (n *Note) ID() uuid.UUID {
 	return n.id
 }
@@ -105,11 +140,24 @@ func (n *Note) Metadata() Metadata {
 }
 
 func (n *Note) Type() string {
-	return n.type_
+	return n.type_.String()
 }
 
 func (n *Note) CreatorID() *uuid.UUID {
 	return n.creatorID
+}
+
+func (n *Note) IsPublic() bool {
+	return n.isPublic
+}
+
+// IsOwnedBy reports whether userID matches the note's creator. It is a
+// pure id comparison: callers MUST combine it with an "identity present"
+// check — anonymous callers carry uuid.Nil, and the seeded test user of
+// the test stack legitimately authenticates as uuid.Nil (migration 019),
+// so Nil-vs-Nil alone cannot mean "not owned".
+func (n *Note) IsOwnedBy(userID uuid.UUID) bool {
+	return n.creatorID != nil && *n.creatorID == userID
 }
 
 func (n *Note) SetCreatorID(creatorID uuid.UUID) {
@@ -117,11 +165,16 @@ func (n *Note) SetCreatorID(creatorID uuid.UUID) {
 	n.updatedAt = time.Now()
 }
 
-func (n *Note) SetType(noteType string) {
-	if noteType != "" {
+func (n *Note) SetType(noteType NoteType) {
+	if noteType.IsValid() {
 		n.type_ = noteType
 		n.updatedAt = time.Now()
 	}
+}
+
+func (n *Note) SetIsPublic(isPublic bool) {
+	n.isPublic = isPublic
+	n.updatedAt = time.Now()
 }
 
 func (n *Note) CreatedAt() time.Time {
@@ -132,7 +185,7 @@ func (n *Note) UpdatedAt() time.Time {
 	return n.updatedAt
 }
 
-// Методы изменения с валидацией
+// Mutation methods with validation
 func (n *Note) UpdateTitle(newTitle Title) error {
 	if newTitle.String() == "" {
 		return fmt.Errorf("cannot update with empty title")

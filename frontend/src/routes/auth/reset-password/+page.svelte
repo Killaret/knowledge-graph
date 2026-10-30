@@ -1,44 +1,43 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
-  import ResetPasswordForm from '$lib/components/ResetPasswordForm.svelte';
-  import AuthCard from '$lib/components/AuthCard.svelte';
-  import ConstellationIcon from '$lib/components/ConstellationIcon.svelte';
-  import { isAuthenticated } from '$lib/stores/auth.svelte.js';
-  
+  import { page } from "$app/stores";
+  import ResetPasswordForm from "$components/organisms/ResetPasswordForm.svelte";
+  import AuthCard from "$widgets/auth/AuthCard.svelte";
+  import ConstellationIcon from "$components/atoms/ConstellationIcon.svelte";
+  import { useAnonymousGuard } from "$shared/composables/auth";
+  import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
+
+  const locale = getCurrentLocale();
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
+
   // Get token from URL
-  let token = $state('');
-  
+  let token = $state("");
+
   $effect(() => {
-    token = $page.url.searchParams.get('token') || '';
+    token = $page.url.searchParams.get("token") || "";
   });
-  
-  // Redirect if already authenticated
+
+  // Redirect if already authenticated (but allow viewing auth pages in skip-auth tests)
   $effect(() => {
-    if (isAuthenticated()) {
-      goto('/');
-    }
+    const redirectTo = $page.url.searchParams.get("redirect") || "/";
+    useAnonymousGuard(redirectTo);
   });
 </script>
 
 {#if token}
-  <AuthCard 
-    title="Сброс пароля" 
-    subtitle="Создайте новый пароль для аккаунта"
+  <AuthCard
+    title={t("auth.resetPasswordTitle")}
+    subtitle={t("auth.resetPasswordSubtitle")}
     showIcon={true}
   >
     <ResetPasswordForm {token} />
   </AuthCard>
 {:else}
-  <AuthCard 
-    title="Ошибка" 
-    subtitle="Токен сброса пароля не найден"
-    showIcon={false}
-  >
+  <AuthCard title={t("error.fallback")} subtitle={t("auth.resetTokenMissing")} showIcon={false}>
     <div class="error-content">
       <ConstellationIcon size={48} class="error-icon" />
-      <p class="error-text">Пожалуйста, запросите новую ссылку для сброса пароля.</p>
-      <a href="/auth/forgot-password" class="back-link">Запросить сброс пароля</a>
+      <p class="error-text">{t("auth.requestNewLink")}</p>
+      <a href="/auth/forgot-password" class="back-link">{t("auth.requestResetLink")}</a>
     </div>
   </AuthCard>
 {/if}
@@ -51,30 +50,30 @@
     align-items: center;
     gap: 1rem;
   }
-  
+
   .error-content :global(.error-icon) {
     opacity: 0.6;
   }
-  
+
   .error-text {
     margin: 0;
-    color: var(--color-text-secondary, #94a3b8);
+    color: var(--carbon-text-muted, #8b8b9e);
     font-size: 0.875rem;
   }
-  
+
   .back-link {
     display: inline-block;
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: var(--carbon-gradient-primary, linear-gradient(135deg, #22d3ee 0%, #8b5cf6 100%));
     color: white;
     text-decoration: none;
     border-radius: 8px;
     font-weight: 500;
     transition: all 0.2s ease;
   }
-  
+
   .back-link:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    box-shadow: var(--carbon-glow-cyan, 0 0 16px rgba(34, 211, 238, 0.35));
   }
 </style>

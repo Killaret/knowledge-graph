@@ -18,7 +18,7 @@ seed:
 # Development
 
 dev:
-	go run cmd/server/main.go
+	go run ./cmd/server
 
 # Run tests
 test:
@@ -26,14 +26,17 @@ test:
 
 # Build
 build:
-	go build -o bin/server cmd/server/main.go
+	go build -ldflags="-s -w" -o bin/server ./cmd/server
 
 build-worker:
-	go build -o bin/worker cmd/worker/main.go
+	go build -ldflags="-s -w" -o bin/worker ./cmd/worker
 
 # Configuration validation
-check-config:
-	go run cmd/checkconfig/main.go
+build-config:
+	cd .. && node scripts/build-config.js
+
+check-config: build-config
+	cd .. && go run backend/cmd/checkconfig/main.go ../knowledge-graph.config.json
 
 # Migration drift check - compares GORM models with database schema
 check-migrations:
@@ -68,3 +71,9 @@ check-env-usage:
 	fi
 
 .DEFAULT_GOAL := dev
+
+# Convenience: delegate clean-lunix to root Makefile
+.PHONY: clean-lunix
+clean-lunix:
+	@echo "Delegating to root Makefile: clean-lunix"
+	cd .. && $(MAKE) clean-lunix

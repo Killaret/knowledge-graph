@@ -8,6 +8,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/require"
 )
 
 // TestNLPClient_ExtractKeywords_Success тестирует успешное извлечение ключевых слов
@@ -34,16 +38,18 @@ func TestNLPClient_ExtractKeywords_Success(t *testing.T) {
 			t.Fatalf("failed to decode request: %v", err)
 		}
 
-		// Возвращаем тестовый ответ
+		// Возвращаем тестовый ответ — новый контракт NLP-2: keyword = лемма,
+		// surface = форма из текста, extractor = чем посчитано
 		response := map[string]interface{}{
+			"extractor": "keybert-hybrid-0.9",
 			"keywords": []Keyword{
-				{Keyword: "machine", Weight: 0.8},
-				{Keyword: "learning", Weight: 0.7},
+				{Keyword: "machine", Surface: "machine", Weight: 0.8},
+				{Keyword: "learning", Surface: "learning", Weight: 0.7},
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -52,17 +58,24 @@ func TestNLPClient_ExtractKeywords_Success(t *testing.T) {
 
 	// Вызываем метод
 	ctx := context.Background()
-	keywords, err := client.ExtractKeywords(ctx, "machine learning", 5)
+	res, err := client.ExtractKeywords(ctx, "machine learning", 5)
 
 	// Проверяем результат
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	if res.Extractor != "keybert-hybrid-0.9" {
+		t.Errorf("expected extractor 'keybert-hybrid-0.9', got %s", res.Extractor)
+	}
+	keywords := res.Keywords
 	if len(keywords) != 2 {
 		t.Errorf("expected 2 keywords, got %d", len(keywords))
 	}
 	if keywords[0].Keyword != "machine" {
 		t.Errorf("expected first keyword 'machine', got %s", keywords[0].Keyword)
+	}
+	if keywords[0].Surface != "machine" {
+		t.Errorf("expected surface 'machine', got %s", keywords[0].Surface)
 	}
 	if keywords[0].Weight != 0.8 {
 		t.Errorf("expected weight 0.8, got %f", keywords[0].Weight)
@@ -74,7 +87,8 @@ func TestNLPClient_ExtractKeywords_HTTPError(t *testing.T) {
 	// Создаём тестовый сервер, возвращающий ошибку
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal server error"))
+		_, err := w.Write([]byte("internal server error"))
+		require.NoError(t, err)
 	}))
 	defer server.Close()
 
@@ -97,7 +111,8 @@ func TestNLPClient_ExtractKeywords_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("invalid json"))
+		_, err := w.Write([]byte("invalid json"))
+		require.NoError(t, err)
 	}))
 	defer server.Close()
 
@@ -130,7 +145,7 @@ func TestNLPClient_Embed_Success(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -164,7 +179,7 @@ func TestNLPClient_Embed_CacheHit(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -198,7 +213,7 @@ func TestNLPClient_Embed_EmptyText(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
@@ -220,20 +235,20 @@ func TestNLPClient_ExtractKeywords_EmptyResponse(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
 	}))
 	defer server.Close()
 
 	client := NewNLPClient(server.URL, nil, 5*time.Minute)
 	ctx := context.Background()
 
-	keywords, err := client.ExtractKeywords(ctx, "test", 5)
+	res, err := client.ExtractKeywords(ctx, "test", 5)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(keywords) != 0 {
-		t.Errorf("expected 0 keywords, got %d", len(keywords))
+	if len(res.Keywords) != 0 {
+		t.Errorf("expected 0 keywords, got %d", len(res.Keywords))
 	}
 }
 
@@ -267,5 +282,209 @@ func TestKeywordStruct(t *testing.T) {
 	}
 	if kw.Weight != 0.9 {
 		t.Errorf("expected weight 0.9, got %f", kw.Weight)
+	}
+}
+
+// TestNLPClient_HealthCheck_Success тестирует успешную проверку здоровья NLP сервиса
+func TestNLPClient_HealthCheck_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/health" {
+			t.Errorf("expected /health, got %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	ctx := context.Background()
+
+	if err := client.HealthCheck(ctx); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+// TestNLPClient_HealthCheck_Error тестирует ошибку проверки здоровья
+func TestNLPClient_HealthCheck_Error(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	ctx := context.Background()
+
+	if err := client.HealthCheck(ctx); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+// TestNLPClient_Embed_RedisCache тестирует кэширование эмбеддингов в Redis
+func TestNLPClient_Embed_RedisCache(t *testing.T) {
+	expectedEmbedding := []float32{0.1, 0.2, 0.3}
+	callCount := 0
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		response := map[string]interface{}{
+			"embedding": expectedEmbedding,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
+	}))
+	defer server.Close()
+
+	mr := miniredis.RunT(t)
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+
+	client := NewNLPClient(server.URL, rdb, time.Hour)
+	ctx := context.Background()
+
+	first, err := client.Embed(ctx, "cached text")
+	if err != nil {
+		t.Fatalf("first call failed: %v", err)
+	}
+
+	second, err := client.Embed(ctx, "cached text")
+	if err != nil {
+		t.Fatalf("second call failed: %v", err)
+	}
+
+	if callCount != 1 {
+		t.Errorf("expected 1 HTTP call, got %d", callCount)
+	}
+
+	if len(first) != len(second) {
+		t.Fatalf("embedding lengths differ")
+	}
+}
+
+// TestNLPClient_Similarity_Success тестирует успешный подсчет схожести
+func TestNLPClient_Similarity_Success(t *testing.T) {
+	expectedSimilarity := 0.85
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/similarity" {
+			t.Errorf("expected /similarity, got %s", r.URL.Path)
+		}
+
+		var reqBody map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			t.Fatalf("failed to decode request: %v", err)
+		}
+		if reqBody["text_a"] != "text a" || reqBody["text_b"] != "text b" {
+			t.Errorf("unexpected request body: %v", reqBody)
+		}
+
+		response := map[string]interface{}{"similarity": expectedSimilarity}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	ctx := context.Background()
+
+	similarity, err := client.Similarity(ctx, "text a", "text b")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if similarity != expectedSimilarity {
+		t.Errorf("expected similarity %f, got %f", expectedSimilarity, similarity)
+	}
+}
+
+// TestNLPClient_Similarity_EmptyText тестирует схожесть пустого текста
+func TestNLPClient_Similarity_EmptyText(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("server should not be called for empty text")
+	}))
+	defer server.Close()
+
+	client := NewNLPClient(server.URL, nil, 5*time.Minute)
+	ctx := context.Background()
+
+	similarity, err := client.Similarity(ctx, "", "text b")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if similarity != 0.0 {
+		t.Errorf("expected 0.0 for empty text, got %f", similarity)
+	}
+}
+
+// TestNLPClient_Similarity_RedisCache тестирует кэширование схожести в Redis
+func TestNLPClient_Similarity_RedisCache(t *testing.T) {
+	expectedSimilarity := 0.95
+	callCount := 0
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		response := map[string]interface{}{"similarity": expectedSimilarity}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
+	}))
+	defer server.Close()
+
+	mr := miniredis.RunT(t)
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+
+	client := NewNLPClient(server.URL, rdb, time.Hour)
+	ctx := context.Background()
+
+	first, err := client.Similarity(ctx, "text a", "text b")
+	if err != nil {
+		t.Fatalf("first call failed: %v", err)
+	}
+
+	second, err := client.Similarity(ctx, "text a", "text b")
+	if err != nil {
+		t.Fatalf("second call failed: %v", err)
+	}
+
+	if callCount != 1 {
+		t.Errorf("expected 1 HTTP call, got %d", callCount)
+	}
+	if first != second {
+		t.Errorf("expected cached value %f, got %f", first, second)
+	}
+}
+
+// TestNLPClient_ExtractKeywords_Retry тестирует retry при 500
+func TestNLPClient_ExtractKeywords_Retry(t *testing.T) {
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		if callCount == 1 {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		response := map[string]interface{}{
+			"keywords": []Keyword{{Keyword: "retry", Weight: 0.9}},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		require.NoError(t, json.NewEncoder(w).Encode(response))
+	}))
+	defer server.Close()
+
+	client := &NLPClient{
+		httpClient: &http.Client{Timeout: 10 * time.Second},
+		baseURL:    server.URL,
+		redis:      nil,
+		cacheTTL:   time.Hour,
+		maxRetries: 2,
+		retryDelay: 1 * time.Millisecond,
+	}
+
+	ctx := context.Background()
+	res, err := client.ExtractKeywords(ctx, "test", 5)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(res.Keywords) != 1 || res.Keywords[0].Keyword != "retry" {
+		t.Errorf("unexpected keywords: %v", res.Keywords)
 	}
 }

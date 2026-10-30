@@ -1,4 +1,4 @@
-import type { APIRequestContext } from '@playwright/test';
+import type { APIRequestContext } from "@playwright/test";
 
 // Retry configuration for rate limit handling
 const MAX_RETRIES = 3;
@@ -8,14 +8,14 @@ const BASE_DELAY_MS = 1000;
  * Sleep utility for delays
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
  * Check if error is a rate limit error (429)
  */
 function isRateLimitError(status: number, errorText: string): boolean {
-  return status === 429 || errorText.includes('Rate limit exceeded');
+  return status === 429 || errorText.includes("Rate limit exceeded");
 }
 
 /**
@@ -39,6 +39,7 @@ export interface NoteData {
   title: string;
   content?: string;
   type?: string;
+  is_public?: boolean;
   metadata?: Record<string, unknown>;
 }
 
@@ -61,7 +62,7 @@ export interface LinkData {
  * Get backend base URL from environment or default
  */
 export function getBackendUrl(): string {
-  return process.env.BACKEND_URL || 'http://localhost:8080';
+  return process.env.BACKEND_URL || "http://127.0.0.1:8080";
 }
 
 /**
@@ -72,15 +73,19 @@ export async function createNote(
   data: Partial<NoteData>,
   retryCount = 0
 ): Promise<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>> {
-  const payload = {
-    title: data.title || 'Test Note',
-    content: data.content || 'Test content',
+  const payload: Record<string, unknown> = {
+    title: data.title || "Test Note",
+    content: data.content || "Test content",
     type: data.type,
-    metadata: data.metadata || {},
+    metadata: { ...(data.metadata || {}), __testNote: true },
   };
+  if (data.is_public !== undefined) {
+    payload.is_public = data.is_public;
+  }
 
   const response = await request.post(`${getBackendUrl()}/api/v1/notes`, {
     data: payload,
+    timeout: 10000,
   });
 
   if (!response.ok()) {
@@ -89,8 +94,10 @@ export async function createNote(
 
     // Handle rate limiting with retry
     if (isRateLimitError(status, errorText) && retryCount < MAX_RETRIES) {
-      const delay = getRetryAfter(errorText) + (retryCount * BASE_DELAY_MS);
-      console.log(`[createNote] Rate limited (attempt ${retryCount + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry...`);
+      const delay = getRetryAfter(errorText) + retryCount * BASE_DELAY_MS;
+      console.log(
+        `[createNote] Rate limited (attempt ${retryCount + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry...`
+      );
       await sleep(delay);
       return createNote(request, data, retryCount + 1);
     }
@@ -99,7 +106,7 @@ export async function createNote(
   }
 
   const result = await response.json();
-  console.log('[createNote] API response:', JSON.stringify(result));
+  console.log("[createNote] API response:", JSON.stringify(result));
   return result;
 }
 
@@ -110,7 +117,9 @@ export async function createNotes(
   request: APIRequestContext,
   notes: Partial<NoteData>[],
   delayMs = 100
-): Promise<Array<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>>> {
+): Promise<
+  Array<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>>
+> {
   const created = [];
   for (const noteData of notes) {
     const note = await createNote(request, noteData);
@@ -131,17 +140,22 @@ export async function createLink(
   sourceId: string,
   targetId: string,
   weight = 0.5,
-  linkType = 'related',
+  linkType = "related",
   retryCount = 0
 ): Promise<{ id: string; [key: string]: unknown }> {
   // Debug logging
-  console.log('[createLink] Creating link:', { sourceId, targetId, weight, linkType });
-  
+  console.log("[createLink] Creating link:", {
+    sourceId,
+    targetId,
+    weight,
+    linkType,
+  });
+
   // Validate inputs
   if (!sourceId || !targetId) {
     throw new Error(`Invalid parameters: sourceId=${sourceId}, targetId=${targetId}`);
   }
-  
+
   // Go backend expects snake_case field names in JSON (based on struct tags)
   const payload = {
     source_note_id: sourceId,
@@ -150,17 +164,18 @@ export async function createLink(
     link_type: linkType,
     metadata: {},
   };
-  
-  console.log('[createLink] Payload:', JSON.stringify(payload));
+
+  console.log("[createLink] Payload:", JSON.stringify(payload));
 
   // Use Playwright request API for proper cookie/auth handling
   const url = `${getBackendUrl()}/api/v1/links`;
   const response = await request.post(url, {
     data: payload,
     headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
+    timeout: 10000,
   });
 
   if (!response.ok()) {
@@ -169,8 +184,10 @@ export async function createLink(
 
     // Handle rate limiting with retry
     if (isRateLimitError(status, errorText) && retryCount < MAX_RETRIES) {
-      const delay = getRetryAfter(errorText) + (retryCount * BASE_DELAY_MS);
-      console.log(`[createLink] Rate limited (attempt ${retryCount + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry...`);
+      const delay = getRetryAfter(errorText) + retryCount * BASE_DELAY_MS;
+      console.log(
+        `[createLink] Rate limited (attempt ${retryCount + 1}/${MAX_RETRIES}), waiting ${delay}ms before retry...`
+      );
       await sleep(delay);
       return createLink(request, sourceId, targetId, weight, linkType, retryCount + 1);
     }
@@ -191,7 +208,9 @@ export async function createStarTopology(
   linkWeight = 0.7
 ): Promise<{
   center: ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>;
-  surrounding: Array<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>>;
+  surrounding: Array<
+    ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>
+  >;
 }> {
   const center = await createNote(request, centerNote);
   const surrounding = [];
@@ -212,7 +231,9 @@ export async function createChainTopology(
   request: APIRequestContext,
   notes: Partial<NoteData>[],
   linkWeight = 0.8
-): Promise<Array<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>>> {
+): Promise<
+  Array<ApiResponse<NoteData & { id: string; created_at?: string; updated_at?: string }>>
+> {
   const created = [];
 
   for (let i = 0; i < notes.length; i++) {
@@ -232,7 +253,9 @@ export async function createChainTopology(
  * Delete a note via API
  */
 export async function deleteNote(request: APIRequestContext, noteId: string): Promise<void> {
-  const response = await request.delete(`${getBackendUrl()}/api/v1/notes/${noteId}`);
+  const response = await request.delete(`${getBackendUrl()}/api/v1/notes/${noteId}`, {
+    timeout: 10000,
+  });
 
   if (!response.ok() && response.status() !== 404) {
     const errorText = await response.text();
@@ -269,4 +292,72 @@ export async function isBackendAvailable(request: APIRequestContext): Promise<bo
   } catch {
     return false;
   }
+}
+
+/**
+ * Test user credentials for E2E tests
+ */
+export const TEST_USER = {
+  login: "e2e_test_user",
+  email: "e2e@test.example.com",
+  password: "TestPassword123!",
+};
+
+/**
+ * Register or get existing test user
+ */
+export async function getOrCreateTestUser(request: APIRequestContext) {
+  try {
+    // Try to register
+    const response = await request.post(`${getBackendUrl()}/api/v1/auth/register`, {
+      data: {
+        login: TEST_USER.login,
+        email: TEST_USER.email,
+        password: TEST_USER.password,
+      },
+      timeout: 10000,
+    });
+
+    if (response.ok()) {
+      const result = await response.json();
+      console.log("[TestUser] Registered new user:", TEST_USER.login);
+      return { user: result.data, isNew: true };
+    }
+
+    // User might already exist
+    console.log("[TestUser] Registration returned:", response.status());
+    return { user: null, isNew: false };
+  } catch (e) {
+    console.log("[TestUser] Registration error:", e);
+    return { user: null, isNew: false };
+  }
+}
+
+/**
+ * Login with test user and return auth headers
+ */
+export async function loginAsTestUser(request: APIRequestContext) {
+  const response = await request.post(`${getBackendUrl()}/api/v1/auth/login`, {
+    data: {
+      login: TEST_USER.login,
+      password: TEST_USER.password,
+    },
+    timeout: 10000,
+  });
+
+  if (!response.ok()) {
+    throw new Error(`Login failed: ${response.status()}`);
+  }
+
+  const result = await response.json();
+  console.log("[TestUser] Login successful, token received");
+
+  return {
+    token: result.data.access_token,
+    headers: {
+      Authorization: `Bearer ${result.data.access_token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  };
 }

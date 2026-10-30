@@ -133,11 +133,16 @@ func TestGeneratePKCE(t *testing.T) {
 		t.Error("Code challenge should not be empty")
 	}
 
-	if pkce.CodeChallengeMethod != "plain" {
-		t.Errorf("Expected method 'plain', got '%s'", pkce.CodeChallengeMethod)
+	if pkce.CodeChallengeMethod != "S256" {
+		t.Errorf("Expected method 'S256', got '%s'", pkce.CodeChallengeMethod)
 	}
 
 	if pkce.CodeVerifier == "" {
 		t.Error("Code verifier should not be empty")
+	}
+
+	// Verify S256: code_challenge = BASE64URL(SHA256(verifier))
+	if pkce.CodeChallenge == pkce.CodeVerifier {
+		t.Error("S256 code challenge should differ from verifier (not plain method)")
 	}
 }

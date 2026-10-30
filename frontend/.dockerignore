@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules
+
+# Build artifacts
+.svelte-kit/
+build/
+dist/
+.nuxt/
+.cache/
+
+# Test files
+tests/
+*.spec.ts
+*.spec.tsx
+coverage/
+playwright-report/
+test-results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Documentation
+*.md
+docs/
+
+# TypeScript
+*.tsbuildinfo

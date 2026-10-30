@@ -16,6 +16,23 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "  Перезапустить: docker compose -f docker-compose.personal.yml restart" -ForegroundColor Gray
     Write-Host "  Логи:        docker compose -f docker-compose.personal.yml logs -f" -ForegroundColor Gray
     Write-Host "  Удалить:     docker compose -f docker-compose.personal.yml down" -ForegroundColor Gray
+
+    # BACKUP-3: страховка на старте. Если свежайший бэкап старше
+    # KG_BACKUP_MAX_AGE_HOURS (backup-policy.env), делаем daily — cron в 02:00
+    # срабатывает только при поднятом стеке, а событийный путь воркера ловит
+    # только новые изменения.
+    Write-Host ""
+    Write-Host "Проверка свежести бэкапа:" -ForegroundColor Cyan
+    & "$PSScriptRoot\scripts\devops\check-personal-backup.ps1"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  Свежего бэкапа нет — запускаю daily..." -ForegroundColor Yellow
+        & "$PSScriptRoot\scripts\devops\backup-personal.ps1" -Mode daily
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  Страховочный бэкап создан." -ForegroundColor Green
+        } else {
+            Write-Host "  Страховочный бэкап не удался — сделайте вручную: scripts\devops\backup-personal.ps1" -ForegroundColor Yellow
+        }
+    }
 } else {
     Write-Host "❌ Ошибка при запуске. Проверьте логи командой выше." -ForegroundColor Red
     exit 1

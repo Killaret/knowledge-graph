@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// UserModel — пользователь с поддержкой soft delete и ролей
+// UserModel — user with soft delete and roles support
 type UserModel struct {
 	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Login        string         `gorm:"uniqueIndex;not null"`
@@ -20,7 +20,7 @@ type UserModel struct {
 
 func (UserModel) TableName() string { return "users" }
 
-// UserRoleModel — роль пользователя
+// UserRoleModel — user role
 type UserRoleModel struct {
 	ID          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name        string    `gorm:"uniqueIndex;not null"`
@@ -30,7 +30,7 @@ type UserRoleModel struct {
 
 func (UserRoleModel) TableName() string { return "user_roles" }
 
-// RolePermissionModel — разрешения для ролей
+// RolePermissionModel — permissions for roles
 type RolePermissionModel struct {
 	ID        uuid.UUID     `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	RoleID    uuid.UUID     `gorm:"type:uuid;not null;index"`
@@ -42,7 +42,7 @@ type RolePermissionModel struct {
 
 func (RolePermissionModel) TableName() string { return "role_permissions" }
 
-// APIKeyModel — API ключи пользователей
+// APIKeyModel — user API keys
 type APIKeyModel struct {
 	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID     uuid.UUID `gorm:"type:uuid;not null;index"`
@@ -58,7 +58,7 @@ type APIKeyModel struct {
 
 func (APIKeyModel) TableName() string { return "api_keys" }
 
-// RefreshTokenModel — refresh токены
+// RefreshTokenModel — refresh tokens
 type RefreshTokenModel struct {
 	ID              uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID          uuid.UUID `gorm:"type:uuid;not null;index"`
@@ -74,7 +74,7 @@ type RefreshTokenModel struct {
 
 func (RefreshTokenModel) TableName() string { return "refresh_tokens" }
 
-// AuditLogModel — лог аудита
+// AuditLogModel — audit log
 type AuditLogModel struct {
 	ID           uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID       *uuid.UUID `gorm:"type:uuid;index"`

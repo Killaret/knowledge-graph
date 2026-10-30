@@ -9,117 +9,36 @@ on:
     branches-ignore:
       - main
 
+permissions:
+  contents: read
+  actions: write
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-32-characters-long' }}
 
 jobs:
-  # ============ BACKEND LINT & UNIT TESTS ============
-  backend-checks:
-    name: Backend Checks
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-          cache-dependency-path: backend/go.sum
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          working-directory: ./backend
-          version: v1.56.0
-          args: --path-prefix=. --timeout=10m
-          skip-cache: false
-          install-mode: binary
-
-      - name: Run backend tests
-        run: go test -v ./...
-
-      - name: Validate config
-        run: go run cmd/checkconfig/main.go ../knowledge-graph.config.json
-
-  # ============ FRONTEND LINT & UNIT TESTS ============
-  frontend-checks:
-    name: Frontend Checks
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: ./frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Clean ESLint cache
-        run: rm -f .eslintcache
-
-      - name: Run ESLint
-        run: npm run lint
-
-      - name: Check TypeScript
-        run: npm run check
-
-      - name: Run unit tests
-        run: npm run test:unit
-
-  # ============ NLP SERVICE TESTS ============
-  nlp-checks:
-    name: NLP Service Checks
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./nlp-service
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-asyncio
-
-      - name: Check requirements exist
-        run: test -f requirements.txt || (echo "requirements.txt not found" && exit 1)
-
-      - name: Run NLP tests
-        run: pytest tests/ -v
+  # ============ CORE CHECKS (reusable) ============
+  core-checks:
+    name: Core Checks
+    uses: ./.github/workflows/_core-checks.yml
+    secrets: inherit
 
   # ============ CONFIG & MIGRATION VALIDATION ============
   config-validation:
     name: Config & Migration Validation
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: ./backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: '1.23'
+          go-version: '1.25'
           cache-dependency-path: backend/go.sum
 
       - name: Validate JSON syntax
@@ -128,6 +47,8 @@ jobs:
           echo "✓ JSON syntax valid"
 
       - name: Check config loads successfully
+        env:
+          JWT_SECRET: ${{ env.JWT_SECRET }}
         run: |
           go mod download
           go run cmd/checkconfig/main.go ../knowledge-graph.config.json
@@ -157,8 +78,9 @@ jobs:
   docker-compose-validation:
     name: Docker Compose Validation
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Create .env file from example
         run: |
@@ -174,6 +96,11 @@ jobs:
         run: |
           docker compose -f docker-compose.personal.yml config > /dev/null
           echo "✓ docker-compose.personal.yml valid"
+
+      - name: Validate docker-compose.test.yml syntax
+        run: |
+          docker compose -f docker-compose.test.yml config > /dev/null
+          echo "✓ docker-compose.test.yml valid"
 
       - name: Check for conflicting env vars
         run: |
@@ -193,8 +120,9 @@ jobs:
   smoke-tests:
     name: Smoke Tests
     runs-on: ubuntu-latest
-    needs: [backend-checks, frontend-checks]
+    needs: [core-checks]
     if: github.event_name == 'pull_request'
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: ./frontend
@@ -221,15 +149,46 @@ jobs:
           --health-retries 5
         ports:
           - 6379:6379
+      mongo:
+        image: mongo:7
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 27017:27017
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: '1.25'
+          cache-dependency-path: '**/go.sum'
+
+      - name: Cache Go build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-gobuild-smoke-${{ hashFiles('backend/go.sum', 'services/graph-service/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-gobuild-smoke-
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: ./frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('./frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: npm ci
@@ -237,40 +196,111 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Apply database migrations
-        env:
-          DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
-        run: |
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
-          sudo mv migrate /usr/local/bin/
-          migrate -path ../backend/migrations -database "$DATABASE_URL" up
-
       - name: Start backend for smoke tests
         env:
+          APP_ENV: test
           DATABASE_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: localhost:6379
+          MONGO_URL: mongodb://localhost:27017
+          REDIS_FLUSH_ON_STARTUP: "true"
+          JWT_SECRET: ${{ env.JWT_SECRET }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
+          GRAPH_SERVICE_URL: http://localhost:9091
+          SKIP_AUTH: "true"
+          SEED_TEST_USER_PASSWORD: "test-password-123!"
         run: |
           cd ../backend
           go mod download
-          go run cmd/server/main.go &
-          for i in {1..30}; do
+          go run ./cmd/server &
+          for i in {1..90}; do
             if curl -s http://localhost:8080/health > /dev/null 2>&1; then
               echo "✅ Backend is ready!"
               break
             fi
-            echo "Waiting for backend... attempt $i/30"
+            echo "Waiting for backend... attempt $i/90"
             sleep 2
           done
+          if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
+            echo "❌ Backend failed to start"
+            exit 1
+          fi
+          echo "Seeding test user..."
+          go run ./cmd/seed
+          echo "✅ Test user seeded"
+
+      - name: Start graph-service for smoke tests
+        env:
+          APP_ENV: test
+          POSTGRES_URL: postgres://kb_user:kb_password@localhost:5432/knowledge_base?sslmode=disable
+          REDIS_URL: localhost:6379
+          HTTP_PORT: "9091"
+          GRPC_PORT: "9090"
+          JWT_SECRET: ${{ env.JWT_SECRET }}
+          GRAPH_SERVICE_INTERNAL_TOKEN: ${{ secrets.GRAPH_SERVICE_INTERNAL_TOKEN || 'ci-internal-token' }}
+          SKIP_AUTH: "true"
+        run: |
+          cd ../services/graph-service
+          go mod download
+          go run ./cmd/server &
+          for i in {1..90}; do
+            if curl -s http://127.0.0.1:9091/health > /dev/null 2>&1; then
+              echo "✅ Graph-service is ready!"
+              break
+            fi
+            echo "Waiting for graph-service... attempt $i/90"
+            sleep 2
+          done
+          if ! curl -s http://127.0.0.1:9091/health > /dev/null 2>&1; then
+            echo "❌ Graph-service failed to start"
+            exit 1
+          fi
+
+      - name: Start frontend dev server for smoke tests
+        env:
+          FRONTEND_URL: http://127.0.0.1:5173
+          VITE_API_TARGET: http://localhost:8080
+          VITE_GRAPH_SERVICE_URL: http://localhost:9091
+          BACKEND_URL: http://localhost:8080
+          GRAPH_SERVICE_URL: http://localhost:9091
+          SKIP_AUTH: "true"
+        run: |
+          npm run dev -- --host 127.0.0.1 &
+          for i in {1..60}; do
+            if curl -s http://127.0.0.1:5173 > /dev/null 2>&1; then
+              echo "✅ Frontend dev server is ready!"
+              break
+            fi
+            echo "Waiting for frontend... attempt $i/60"
+            sleep 2
+          done
+          if ! curl -s http://127.0.0.1:5173 > /dev/null 2>&1; then
+            echo "❌ Frontend dev server failed to start"
+            exit 1
+          fi
 
       - name: Run smoke tests only
+        env:
+          PLAYWRIGHT_DEV_SERVER: true
+          FRONTEND_URL: http://127.0.0.1:5173
+          VITE_API_TARGET: http://localhost:8080
+          VITE_GRAPH_SERVICE_URL: http://localhost:9091
+          BACKEND_URL: http://localhost:8080
+          GRAPH_SERVICE_URL: http://localhost:9091
         run: npx playwright test --grep="@smoke"
 
       - name: Run smoke BDD tests
+        env:
+          FRONTEND_URL: http://127.0.0.1:5173
+          VITE_API_TARGET: http://localhost:8080
+          VITE_GRAPH_SERVICE_URL: http://localhost:9091
+          BACKEND_URL: http://localhost:8080
+          GRAPH_SERVICE_URL: http://localhost:9091
+          SKIP_AUTH: "true"
         run: npm run test:cucumber -- --tags="@smoke"
 
       - name: Upload smoke test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: smoke-test-results
           path: frontend/test-results/

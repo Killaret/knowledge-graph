@@ -1,5 +1,5 @@
-import { vi } from 'vitest';
-import type { MockedFunction } from 'vitest';
+import { vi } from "vitest";
+import type { MockedFunction } from "vitest";
 
 // Тип для mock response с методом json()
 interface MockResponse<T = unknown> {
@@ -36,15 +36,19 @@ const mockKy = {
     put: mockPut,
     delete: mockDelete,
     patch: mockPatch,
-    extend: vi.fn(function(this: any) { return this; })
+    extend: vi.fn(function (this: any) {
+      return this;
+    }),
   })),
   // Для прямого использования (также поддерживает extend)
-  extend: vi.fn(function(this: typeof mockKy) { return this; }),
+  extend: vi.fn(function (this: typeof mockKy) {
+    return this;
+  }),
   get: mockGet,
   post: mockPost,
   put: mockPut,
   delete: mockDelete,
-  patch: mockPatch
+  patch: mockPatch,
 };
 
 // Экспортируем функции для удобной настройки моков в тестах

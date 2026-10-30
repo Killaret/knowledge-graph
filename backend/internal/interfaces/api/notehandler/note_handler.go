@@ -3,37 +3,48 @@ package notehandler
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
 	"time"
 
+	"knowledge-graph/internal/application/achievement"
+	appcache "knowledge-graph/internal/application/cache"
 	"knowledge-graph/internal/application/common"
+	appevents "knowledge-graph/internal/application/events"
+	importer "knowledge-graph/internal/application/import"
 	graphQueries "knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
+	dcache "knowledge-graph/internal/domain/cache"
+	graphdomain "knowledge-graph/internal/domain/graph"
+	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
-	"knowledge-graph/internal/infrastructure/db/postgres"
-	"knowledge-graph/internal/infrastructure/queue/tasks"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/common/validation"
 	"knowledge-graph/internal/interfaces/api/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 )
 
 type Handler struct {
 	repo               note.Repository
+	linkRepo           link.Repository
 	taskQueue          common.TaskQueue
 	suggestionsHandler *graphQueries.GetSuggestionsHandler
 	affectedNotesSvc   *recommendation.AffectedNotesService
 	taskDelay          time.Duration
-	recRepo            *postgres.RecommendationRepository
-	embeddingRepo      *postgres.EmbeddingRepository
-	redis              *redis.Client
+	recRepo            recommendation.Repository
+	embeddingRepo      recommendation.EmbeddingRepository
+	cacheClient        dcache.CacheClient
 	cfg                *config.Config
+	graphCache         *appcache.GraphCache
+	achievementService *achievement.Service
+	importSvc          *importer.Service
+	eventPublisher     appevents.Publisher
 }
 
 // SuggestionsResponse represents the response for recommendations
@@ -49,7 +60,14 @@ type Suggestion struct {
 	Score  float64 `json:"score"`
 }
 
-func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo *postgres.RecommendationRepository, embeddingRepo *postgres.EmbeddingRepository, redis *redis.Client, cfg *config.Config) *Handler {
+func getUserIDString(c *gin.Context) string {
+	if userID, exists := middleware.GetUserID(c); exists && userID != uuid.Nil {
+		return userID.String()
+	}
+	return ""
+}
+
+func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *graphQueries.GetSuggestionsHandler, affectedNotesSvc *recommendation.AffectedNotesService, taskDelay time.Duration, recRepo recommendation.Repository, embeddingRepo recommendation.EmbeddingRepository, cacheClient dcache.CacheClient, cfg *config.Config, graphCache *appcache.GraphCache, achievementService *achievement.Service, importSvc *importer.Service) *Handler {
 	return &Handler{
 		repo:               repo,
 		taskQueue:          taskQueue,
@@ -58,9 +76,22 @@ func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *g
 		taskDelay:          taskDelay,
 		recRepo:            recRepo,
 		embeddingRepo:      embeddingRepo,
-		redis:              redis,
+		cacheClient:        cacheClient,
 		cfg:                cfg,
+		graphCache:         graphCache,
+		achievementService: achievementService,
+		importSvc:          importSvc,
 	}
+}
+
+// SetEventPublisher sets the optional graph event publisher for cache invalidation.
+func (h *Handler) SetEventPublisher(p appevents.Publisher) {
+	h.eventPublisher = p
+}
+
+// SetLinkRepository sets the optional link repository used by batch/import handlers.
+func (h *Handler) SetLinkRepository(repo link.Repository) {
+	h.linkRepo = repo
 }
 
 // enqueueRecommendationTasks queues recommendation refresh tasks for affected notes
@@ -76,21 +107,116 @@ func (h *Handler) enqueueRecommendationTasks(ctx context.Context, noteID uuid.UU
 	}
 
 	for _, nid := range affected {
-		task, err := tasks.NewRefreshRecommendationsTask(nid, h.taskDelay)
-		if err != nil {
-			continue
-		}
-		if err := h.taskQueue.Enqueue(ctx, task); err != nil {
+		if err := h.taskQueue.EnqueueRefreshRecommendations(ctx, nid, h.taskDelay); err != nil {
 			// Log error but continue
+			_ = err
 		}
+	}
+}
+
+// enqueueBackupOnNoteChange schedules a database backup after note mutations.
+// Multiple changes within the unique window are deduplicated by the task queue.
+func (h *Handler) enqueueBackupOnNoteChange(ctx context.Context) {
+	if h.taskQueue == nil {
+		return
+	}
+	if err := h.taskQueue.EnqueueBackupOnNoteChange(ctx); err != nil {
+		log.Printf("[NoteHandler] Failed to enqueue backup on note change: %v", err)
 	}
 }
 
 type createNoteRequest struct {
 	Title    string                 `json:"title" binding:"required,max=200"`
-	Content  string                 `json:"content" binding:"max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=star planet comet galaxy asteroid satellite debris nebula"`
+	Content  string                 `json:"content" binding:"omitempty,max=50000"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	Metadata map[string]interface{} `json:"metadata"`
+}
+
+type deleteBatchRequest struct {
+	IDs []string `json:"ids" binding:"required,dive,uuid"`
+}
+
+type batchNoteItem struct {
+	Title    string                 `json:"title" binding:"required,max=200"`
+	Content  string                 `json:"content" binding:"omitempty,max=50000"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
+
+type createNotesBatchRequest struct {
+	Notes []batchNoteItem `json:"notes" binding:"required,max=50,dive"`
+}
+
+type batchItemError struct {
+	Index   int    `json:"index"`
+	Field   string `json:"field,omitempty"`
+	Reason  string `json:"reason,omitempty"`
+	Message string `json:"message"`
+}
+
+type createNotesBatchResponse struct {
+	Notes  []noteResponse   `json:"notes"`
+	Failed []batchItemError `json:"failed"`
+}
+
+type importBatchNoteItem struct {
+	ID        string                 `json:"id" binding:"omitempty,uuid"`
+	Title     string                 `json:"title" binding:"required,max=200"`
+	Content   string                 `json:"content" binding:"omitempty,max=50000"`
+	Type      string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	IsPublic  bool                   `json:"is_public"`
+	SourceURL string                 `json:"source_url" binding:"omitempty,url,max=16384"`
+	Metadata  map[string]interface{} `json:"metadata"`
+}
+
+type importBatchLinkItem struct {
+	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
+	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
+	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom parent child"`
+	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
+	Metadata     map[string]interface{} `json:"metadata"`
+}
+
+type importBatchRequest struct {
+	Notes []importBatchNoteItem `json:"notes" binding:"required,max=50,dive"`
+	Links []importBatchLinkItem `json:"links" binding:"max=50,dive"`
+}
+
+type importBatchLinkResponse struct {
+	ID           string                 `json:"id"`
+	SourceNoteID string                 `json:"source_note_id"`
+	TargetNoteID string                 `json:"target_note_id"`
+	LinkType     string                 `json:"link_type"`
+	Weight       float64                `json:"weight"`
+	Metadata     map[string]interface{} `json:"metadata"`
+	CreatedAt    time.Time              `json:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at"`
+}
+
+type importBatchResponse struct {
+	CreatedNotes []noteResponse            `json:"created_notes"`
+	CreatedLinks []importBatchLinkResponse `json:"created_links"`
+	FailedNotes  []batchItemError          `json:"failed_notes"`
+	FailedLinks  []batchItemError          `json:"failed_links"`
+}
+
+type noteResponse struct {
+	ID        string                 `json:"id"`
+	Title     string                 `json:"title"`
+	Content   string                 `json:"content"`
+	Type      string                 `json:"type"`
+	Metadata  map[string]interface{} `json:"metadata"`
+	IsPublic  bool                   `json:"is_public"`
+	CreatedAt time.Time              `json:"created_at"`
+	UpdatedAt time.Time              `json:"updated_at"`
+}
+
+//nolint:unused
+var noteValidationMessages = map[string]string{
+	"title.required": "Title is required",
+	"title.max":      "Title must not exceed 200 characters",
+	"content.max":    "Content must not exceed 50000 characters",
+	"type.oneof":     "Type must be one of: galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination",
 }
 
 // NoteValidationErrors defines human-readable error messages for note validation
@@ -98,10 +224,25 @@ var NoteValidationErrors = map[string]string{
 	"title.required": "Title is required",
 	"title.max":      "Title must not exceed 200 characters",
 	"content.max":    "Content must not exceed 50000 characters",
-	"type.oneof":     "Type must be one of: star, planet, comet, galaxy, asteroid, satellite, debris, nebula",
+	"type.oneof":     "Type must be one of: galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination",
+}
+
+// LinkValidationErrors defines human-readable error messages for link validation (used by import batch).
+var LinkValidationErrors = map[string]string{
+	"source_note_id.required": "Source note ID is required",
+	"source_note_id.uuid":     "Source note ID must be a valid UUID",
+	"target_note_id.required": "Target note ID is required",
+	"target_note_id.uuid":     "Target note ID must be a valid UUID",
+	"link_type.required":      "Link type is required",
+	"link_type.oneof":         "Link type must be one of: reference, dependency, related, custom, parent, child",
+	"weight.min":              "Weight must be between 0 and 1",
+	"weight.max":              "Weight must be between 0 and 1",
 }
 
 func (h *Handler) Create(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "create")
+
 	var req createNoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		// Provide structured validation error response
@@ -144,14 +285,10 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	// Определяем тип: сначала из корня запроса, затем из metadata
-	noteType := req.Type
-	if noteType == "" && req.Metadata != nil {
-		if t, ok := req.Metadata["type"]; ok {
-			if ts, ok := t.(string); ok && ts != "" {
-				noteType = ts
-			}
-		}
+	noteType, fe := resolveNoteType(req.Type, req.Metadata)
+	if fe != nil {
+		apicommon.BadRequest(c, fe)
+		return
 	}
 
 	// Get authenticated user ID if available
@@ -167,6 +304,13 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
+	// Notify graph-service cache invalidation subscribers
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteCreated(context.Background(), newNote.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
+		}
+	}
+
 	// Ставим задачи в очередь
 	log.Printf("taskQueue is nil? %v", h.taskQueue == nil)
 	if h.taskQueue != nil {
@@ -178,6 +322,9 @@ func (h *Handler) Create(c *gin.Context) {
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("Failed to enqueue compute embedding: %v", err)
 		}
+		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), newNote.ID(), h.taskDelay); err != nil {
+			log.Printf("Failed to enqueue link weight recalculation: %v", err)
+		}
 	} else {
 		log.Println("taskQueue is nil, tasks not enqueued")
 	}
@@ -185,25 +332,737 @@ func (h *Handler) Create(c *gin.Context) {
 	// Enqueue recommendation refresh tasks for affected notes
 	h.enqueueRecommendationTasks(c.Request.Context(), newNote.ID())
 
+	// Schedule backup after note change
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
 	responseData := gin.H{
 		"id":         newNote.ID(),
 		"title":      newNote.Title().String(),
 		"content":    newNote.Content().String(),
 		"type":       newNote.Type(),
 		"metadata":   newNote.Metadata().Value(),
+		"is_public":  newNote.IsPublic(),
 		"created_at": newNote.CreatedAt(),
 		"updated_at": newNote.UpdatedAt(),
 	}
 	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
 
+// toNoteResponse converts a domain note to the handler note response.
+func toNoteResponse(n *note.Note) noteResponse {
+	return noteResponse{
+		ID:        n.ID().String(),
+		Title:     n.Title().String(),
+		Content:   n.Content().String(),
+		Type:      n.Type(),
+		Metadata:  n.Metadata().Value(),
+		IsPublic:  n.IsPublic(),
+		CreatedAt: n.CreatedAt(),
+		UpdatedAt: n.UpdatedAt(),
+	}
+}
+
+// resolveNoteType determines the final note type from the explicit value or metadata,
+// validates it through the domain NoteType value object, and returns structured errors.
+func resolveNoteType(value string, metadata map[string]interface{}) (note.NoteType, []apicommon.FieldError) {
+	if value == "" && metadata != nil {
+		if t, ok := metadata["type"]; ok {
+			if ts, ok := t.(string); ok && ts != "" {
+				value = ts
+			}
+		}
+	}
+	if value == "" {
+		value = note.Default().String()
+	}
+	noteType, err := note.NewType(value)
+	if err != nil {
+		return note.NoteType{}, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, err.Error(), value),
+		}
+	}
+	return noteType, nil
+}
+
+// buildNoteFromBatchItem validates an item and builds a domain note.
+func buildNoteFromBatchItem(item batchNoteItem, userID *uuid.UUID) (*note.Note, []apicommon.FieldError) {
+	title, err := note.NewTitle(item.Title)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("title", apicommon.ReasonInvalidValue, err.Error(), item.Title)}
+	}
+	content, err := note.NewContent(item.Content)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), item.Content)}
+	}
+	metadata, err := note.NewMetadata(item.Metadata)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), item.Metadata)}
+	}
+
+	noteType, fe := resolveNoteType(item.Type, item.Metadata)
+	if fe != nil {
+		return nil, fe
+	}
+
+	if userID != nil {
+		return note.NewNoteWithCreator(title, content, noteType, metadata, *userID), nil
+	}
+	return note.NewNote(title, content, noteType, metadata), nil
+}
+
+// buildImportNote validates an import item and builds a domain note.
+// When the client provides an explicit id, it is used so links in the same batch can reference it.
+func buildImportNote(item importBatchNoteItem, userID *uuid.UUID) (*note.Note, []apicommon.FieldError) {
+	title, err := note.NewTitle(item.Title)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("title", apicommon.ReasonInvalidValue, err.Error(), item.Title)}
+	}
+	content, err := note.NewContent(item.Content)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), item.Content)}
+	}
+
+	noteType, fe := resolveNoteType(item.Type, item.Metadata)
+	if fe != nil {
+		return nil, fe
+	}
+
+	// Preserve the source URL inside metadata so the client can query it later.
+	mergedMetadata := item.Metadata
+	if mergedMetadata == nil {
+		mergedMetadata = make(map[string]interface{})
+	}
+	if item.SourceURL != "" {
+		mergedMetadata["source_url"] = item.SourceURL
+	}
+	metadata, err := note.NewMetadata(mergedMetadata)
+	if err != nil {
+		return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), mergedMetadata)}
+	}
+
+	opts := []note.NoteOption{note.WithIsPublic(item.IsPublic)}
+	if item.ID != "" {
+		id, err := uuid.Parse(item.ID)
+		if err != nil {
+			return nil, []apicommon.FieldError{apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, item.ID)}
+		}
+		opts = append(opts, note.WithID(id))
+	}
+
+	if userID != nil {
+		return note.NewNoteWithCreator(title, content, noteType, metadata, *userID, opts...), nil
+	}
+	return note.NewNote(title, content, noteType, metadata, opts...), nil
+}
+
+// postprocessCreatedNote runs the standard background pipeline for a single note.
+func (h *Handler) postprocessCreatedNote(c *gin.Context, n *note.Note) {
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteCreated(context.Background(), n.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
+		}
+	}
+
+	if h.taskQueue != nil {
+		noteID := n.ID().String()
+		if err := h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue extract keywords for batch: %v", err)
+		}
+		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue compute embedding for batch: %v", err)
+		}
+		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), n.ID(), h.taskDelay); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue link weight recalculation for batch: %v", err)
+		}
+	}
+
+	h.enqueueRecommendationTasks(c.Request.Context(), n.ID())
+}
+
+// CreateBatch creates a batch of notes synchronously.
+// It is best-effort: each note is validated, saved and post-processed independently.
+func (h *Handler) CreateBatch(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "create_batch")
+
+	var req createNotesBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		for key, msg := range NoteValidationErrors {
+			if strings.Contains(errStr, key) {
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
+			}
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
+		return
+	}
+
+	if len(req.Notes) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{apicommon.NewFieldError("notes", apicommon.ReasonInvalidValue, "notes must be a non-empty array")})
+		return
+	}
+
+	var userID *uuid.UUID
+	if uid, exists := middleware.GetUserID(c); exists {
+		userID = &uid
+	}
+
+	created := make([]noteResponse, 0, len(req.Notes))
+	failed := make([]batchItemError, 0)
+
+	for i, item := range req.Notes {
+		n, errs := buildNoteFromBatchItem(item, userID)
+		if errs != nil {
+			errs[0].Field = fmt.Sprintf("notes[%d].%s", i, errs[0].Field)
+			failed = append(failed, batchItemError{Index: i, Field: errs[0].Field, Reason: string(errs[0].Reason), Message: errs[0].Message})
+			continue
+		}
+
+		if err := h.repo.Save(c.Request.Context(), n); err != nil {
+			failed = append(failed, batchItemError{Index: i, Message: apicommon.MsgFailedSaveNote})
+			continue
+		}
+
+		h.postprocessCreatedNote(c, n)
+		created = append(created, toNoteResponse(n))
+	}
+
+	if userID != nil && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
+	apicommon.JSONWithMessage(c, 201, createNotesBatchResponse{Notes: created, Failed: failed}, apicommon.MsgResourceCreated)
+}
+
+// ImportBatch creates a batch of notes and links synchronously.
+// Notes are created first. Links may reference notes via explicit ids supplied in the request
+// or existing notes already in the repository.
+func (h *Handler) ImportBatch(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "import_batch")
+
+	var req importBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		for key, msg := range NoteValidationErrors {
+			if strings.Contains(errStr, key) {
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
+			}
+		}
+		for key, msg := range LinkValidationErrors {
+			if strings.Contains(errStr, key) {
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
+			}
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
+		return
+	}
+
+	if len(req.Notes) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{apicommon.NewFieldError("notes", apicommon.ReasonInvalidValue, "notes must be a non-empty array")})
+		return
+	}
+
+	var userID *uuid.UUID
+	if uid, exists := middleware.GetUserID(c); exists {
+		userID = &uid
+	}
+
+	createdNotes := make([]noteResponse, 0, len(req.Notes))
+	createdLinks := make([]importBatchLinkResponse, 0, len(req.Links))
+	failedNotes := make([]batchItemError, 0)
+	failedLinks := make([]batchItemError, 0)
+	createdNoteIDs := make(map[uuid.UUID]bool)
+
+	// First pass: create notes.
+	for i, item := range req.Notes {
+		n, errs := buildImportNote(item, userID)
+		if errs != nil {
+			errs[0].Field = fmt.Sprintf("notes[%d].%s", i, errs[0].Field)
+			failedNotes = append(failedNotes, batchItemError{Index: i, Field: errs[0].Field, Reason: string(errs[0].Reason), Message: errs[0].Message})
+			continue
+		}
+
+		if item.ID != "" {
+			existing, err := h.repo.FindByID(c.Request.Context(), n.ID())
+			if err != nil {
+				failedNotes = append(failedNotes, batchItemError{Index: i, Message: apicommon.MsgFailedFetchNote})
+				continue
+			}
+			if existing != nil {
+				failedNotes = append(failedNotes, batchItemError{Index: i, Field: "id", Message: "note with this id already exists"})
+				continue
+			}
+		}
+
+		if err := h.repo.Save(c.Request.Context(), n); err != nil {
+			failedNotes = append(failedNotes, batchItemError{Index: i, Message: apicommon.MsgFailedSaveNote})
+			continue
+		}
+
+		h.postprocessCreatedNote(c, n)
+		createdNoteIDs[n.ID()] = true
+		createdNotes = append(createdNotes, toNoteResponse(n))
+	}
+
+	// Second pass: create links.
+	if h.linkRepo != nil {
+		for i, item := range req.Links {
+			sourceID, err := uuid.Parse(item.SourceNoteID)
+			if err != nil {
+				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "source_note_id", Reason: string(apicommon.ReasonInvalidFormat), Message: apicommon.MsgInvalidUUID})
+				continue
+			}
+			targetID, err := uuid.Parse(item.TargetNoteID)
+			if err != nil {
+				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "target_note_id", Reason: string(apicommon.ReasonInvalidFormat), Message: apicommon.MsgInvalidUUID})
+				continue
+			}
+
+			// Both endpoints must exist or have just been created.
+			if !createdNoteIDs[sourceID] {
+				existing, err := h.repo.FindByID(c.Request.Context(), sourceID)
+				if err != nil || existing == nil {
+					failedLinks = append(failedLinks, batchItemError{Index: i, Field: "source_note_id", Message: apicommon.MsgSourceNotFound})
+					continue
+				}
+			}
+			if !createdNoteIDs[targetID] {
+				existing, err := h.repo.FindByID(c.Request.Context(), targetID)
+				if err != nil || existing == nil {
+					failedLinks = append(failedLinks, batchItemError{Index: i, Field: "target_note_id", Message: apicommon.MsgTargetNotFound})
+					continue
+				}
+			}
+
+			linkType, err := link.NewLinkType(item.LinkType)
+			if err != nil {
+				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "link_type", Reason: string(apicommon.ReasonInvalidValue), Message: err.Error()})
+				continue
+			}
+
+			weight := 1.0
+			if item.Weight > 0 {
+				weight = item.Weight
+			}
+			weightVO, err := link.NewWeight(weight)
+			if err != nil {
+				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "weight", Reason: string(apicommon.ReasonOutOfRange), Message: err.Error()})
+				continue
+			}
+
+			metadata, err := link.NewMetadata(item.Metadata)
+			if err != nil {
+				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "metadata", Reason: string(apicommon.ReasonInvalidValue), Message: err.Error()})
+				continue
+			}
+
+			var newLink *link.Link
+			if userID != nil {
+				newLink = link.NewLinkWithCreator(sourceID, targetID, *userID, linkType, weightVO, metadata)
+			} else {
+				newLink = link.NewLink(sourceID, targetID, linkType, weightVO, metadata)
+			}
+
+			if err := h.linkRepo.Save(c.Request.Context(), newLink); err != nil {
+				if errors.Is(err, link.ErrDuplicateLink) {
+					failedLinks = append(failedLinks, batchItemError{Index: i, Field: "link", Message: apicommon.MsgDuplicateLink})
+					continue
+				}
+				failedLinks = append(failedLinks, batchItemError{Index: i, Message: apicommon.MsgFailedSaveLink})
+				continue
+			}
+
+			if h.eventPublisher != nil {
+				if err := h.eventPublisher.PublishLinkCreated(context.Background(), newLink.SourceNoteID().String(), newLink.TargetNoteID().String(), getUserIDString(c)); err != nil {
+					log.Printf("[NoteHandler] Failed to publish LinkCreated event for batch: %v", err)
+				}
+			}
+
+			createdLinks = append(createdLinks, importBatchLinkResponse{
+				ID:           newLink.ID().String(),
+				SourceNoteID: newLink.SourceNoteID().String(),
+				TargetNoteID: newLink.TargetNoteID().String(),
+				LinkType:     newLink.LinkType().String(),
+				Weight:       newLink.Weight().Value(),
+				Metadata:     newLink.Metadata().Value(),
+				CreatedAt:    newLink.CreatedAt(),
+				UpdatedAt:    newLink.UpdatedAt(),
+			})
+		}
+	} else if len(req.Links) > 0 {
+		for i := range req.Links {
+			failedLinks = append(failedLinks, batchItemError{Index: i, Message: "link repository not configured"})
+		}
+	}
+
+	if userID != nil && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
+	apicommon.JSONWithMessage(c, 200, importBatchResponse{
+		CreatedNotes: createdNotes,
+		CreatedLinks: createdLinks,
+		FailedNotes:  failedNotes,
+		FailedLinks:  failedLinks,
+	}, apicommon.MsgResourceCreated)
+}
+
+type bookmarkletRequest struct {
+	Title string `json:"title" binding:"required,max=200"`
+	URL   string `json:"url"   binding:"required,url,max=16384"`
+	Text  string `json:"text"  binding:"max=50000"`
+	Type  string `json:"type"  binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+}
+
+type bookmarkletResponse struct {
+	NoteID string `json:"note_id"`
+	Title  string `json:"title"`
+	Type   string `json:"type"`
+}
+
+// Bookmarklet creates a note from a captured web page.
+func (h *Handler) Bookmarklet(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "create")
+
+	var req bookmarkletRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		errStr := err.Error()
+		var details []apicommon.FieldError
+		for key, msg := range NoteValidationErrors {
+			if strings.Contains(errStr, key) {
+				parts := strings.Split(key, ".")
+				if len(parts) >= 2 {
+					details = append(details, apicommon.NewFieldError(parts[0], apicommon.ReasonInvalidValue, msg))
+				}
+			}
+		}
+		if len(details) == 0 {
+			details = append(details, apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, errStr))
+		}
+		apicommon.BadRequest(c, details)
+		return
+	}
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	noteTypeValue := req.Type
+	if noteTypeValue == "" {
+		noteTypeValue = "asteroid"
+	}
+	noteType, err := note.NewType(noteTypeValue)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, err.Error(), noteTypeValue),
+		})
+		return
+	}
+
+	content := importer.BuildContent(req.Title, req.URL, req.Text)
+
+	title, err := note.NewTitle(req.Title)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("title", apicommon.ReasonInvalidValue, err.Error(), req.Title),
+		})
+		return
+	}
+
+	contentVO, err := note.NewContent(content)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("content", apicommon.ReasonInvalidValue, err.Error(), content),
+		})
+		return
+	}
+
+	metadata, err := note.NewMetadata(map[string]interface{}{
+		"source_url": req.URL,
+		"type":       noteType,
+	})
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("metadata", apicommon.ReasonInvalidValue, err.Error(), nil),
+		})
+		return
+	}
+
+	newNote := note.NewNoteWithCreator(title, contentVO, noteType, metadata, userID)
+
+	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
+		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteCreated(context.Background(), newNote.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
+		}
+	}
+
+	if h.taskQueue != nil {
+		noteID := newNote.ID().String()
+		if err := h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10); err != nil {
+			log.Printf("Failed to enqueue extract keywords: %v", err)
+		}
+		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
+			log.Printf("Failed to enqueue compute embedding: %v", err)
+		}
+		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), newNote.ID(), h.taskDelay); err != nil {
+			log.Printf("Failed to enqueue link weight recalculation: %v", err)
+		}
+	}
+
+	h.enqueueRecommendationTasks(c.Request.Context(), newNote.ID())
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
+	if h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	c.JSON(201, bookmarkletResponse{
+		NoteID: newNote.ID().String(),
+		Title:  newNote.Title().String(),
+		Type:   newNote.Type(),
+	})
+}
+
+// --- Mass bookmark import handlers ---
+
+type importItem struct {
+	Title string `json:"title" binding:"max=1000"`
+	URL   string `json:"url"   binding:"required,max=16384"`
+	Text  string `json:"text"  binding:"max=50000"`
+	Type  string `json:"type"  binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+}
+
+type importOptions struct {
+	DefaultType    string `json:"default_type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	ExtractContent bool   `json:"extract_content"`
+}
+
+type importBookmarksPreviewRequest struct {
+	Items   []importItem  `json:"items" binding:"required,max=50,dive"`
+	Options importOptions `json:"options"`
+}
+
+type importBookmarksCreateRequest struct {
+	Items   []importItem  `json:"items" binding:"required,max=50,dive"`
+	Options importOptions `json:"options"`
+}
+
+func resolveImportType(itemType, defaultType string) string {
+	if itemType != "" {
+		return itemType
+	}
+	if defaultType != "" {
+		return defaultType
+	}
+	return "asteroid"
+}
+
+// ImportBookmarksPreview returns a preview with titles, normalized URLs,
+// duplicates and per-item validation errors.
+func (h *Handler) ImportBookmarksPreview(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "import_preview")
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	var req importBookmarksPreviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, err.Error()),
+		})
+		return
+	}
+
+	if len(req.Items) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("items", apicommon.ReasonInvalidValue, "at least one item is required"),
+		})
+		return
+	}
+	if len(req.Items) > 50 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("items", apicommon.ReasonInvalidValue, "max 50 items per batch"),
+		})
+		return
+	}
+
+	if h.importSvc == nil {
+		apicommon.InternalErrorWithMessage(c, "Import service is not configured")
+		return
+	}
+
+	items := make([]importer.Item, len(req.Items))
+	for i, it := range req.Items {
+		items[i] = importer.Item{
+			Title:          it.Title,
+			URL:            it.URL,
+			Text:           it.Text,
+			Type:           resolveImportType(it.Type, req.Options.DefaultType),
+			ExtractContent: req.Options.ExtractContent,
+		}
+	}
+
+	preview, err := h.importSvc.Preview(c.Request.Context(), userID, items)
+	if err != nil {
+		apicommon.BadRequestSimple(c, err.Error())
+		return
+	}
+
+	apicommon.JSON(c, 200, gin.H{"items": preview})
+}
+
+// ImportBookmarks starts an async import task and returns its task_id.
+func (h *Handler) ImportBookmarks(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "import_create")
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	var req importBookmarksCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("request", apicommon.ReasonInvalidValue, err.Error()),
+		})
+		return
+	}
+
+	if len(req.Items) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("items", apicommon.ReasonInvalidValue, "at least one item is required"),
+		})
+		return
+	}
+	if len(req.Items) > 50 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("items", apicommon.ReasonInvalidValue, "max 50 items per batch"),
+		})
+		return
+	}
+
+	if h.importSvc == nil {
+		apicommon.InternalErrorWithMessage(c, "Import service is not configured")
+		return
+	}
+
+	items := make([]importer.Item, len(req.Items))
+	for i, it := range req.Items {
+		items[i] = importer.Item{
+			Title:          it.Title,
+			URL:            it.URL,
+			Text:           it.Text,
+			Type:           resolveImportType(it.Type, req.Options.DefaultType),
+			ExtractContent: req.Options.ExtractContent,
+		}
+	}
+
+	taskID, err := h.importSvc.StartImport(c.Request.Context(), userID, items)
+	if err != nil {
+		apicommon.BadRequestSimple(c, err.Error())
+		return
+	}
+
+	apicommon.JSON(c, 202, gin.H{"task_id": taskID})
+}
+
+// ImportBookmarksStatus returns the current status of an async import task.
+func (h *Handler) ImportBookmarksStatus(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "import_status")
+
+	_, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	taskID := c.Param("task_id")
+	if _, err := uuid.Parse(taskID); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("task_id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, taskID),
+		})
+		return
+	}
+
+	if h.importSvc == nil {
+		apicommon.InternalErrorWithMessage(c, "Import service is not configured")
+		return
+	}
+
+	status, err := h.importSvc.GetTaskStatus(c.Request.Context(), taskID)
+	if err != nil {
+		if errors.Is(err, dcache.ErrCacheMiss) {
+			apicommon.NotFound(c, "Import task")
+			return
+		}
+		apicommon.InternalErrorWithMessage(c, "Failed to fetch import status")
+		return
+	}
+
+	apicommon.JSON(c, 200, status)
+}
+
 type updateNoteRequest struct {
-	Title    string                 `json:"title" binding:"omitempty,min=1,max=200"`
+	Title    string                 `json:"title" binding:"omitempty,max=200"`
 	Content  string                 `json:"content" binding:"omitempty,max=50000"`
+	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
 func (h *Handler) Update(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "update")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -219,7 +1078,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 	if existing == nil {
-		apicommon.NotFound(c, "Заметка")
+		apicommon.NotFound(c, "Note")
 		return
 	}
 
@@ -244,6 +1103,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	textChanged := false
 
+	// Update title if provided
 	if req.Title != "" {
 		title, err := note.NewTitle(req.Title)
 		if err != nil {
@@ -260,6 +1120,7 @@ func (h *Handler) Update(c *gin.Context) {
 		}
 		textChanged = true
 	}
+	// Update content if provided
 	if req.Content != "" {
 		content, err := note.NewContent(req.Content)
 		if err != nil {
@@ -291,19 +1152,44 @@ func (h *Handler) Update(c *gin.Context) {
 			return
 		}
 	}
+	if req.Type != "" {
+		noteType, err := note.NewType(req.Type)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("type", apicommon.ReasonInvalidValue, err.Error(), req.Type),
+			})
+			return
+		}
+		existing.SetType(noteType)
+	}
 
 	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedUpdateNote)
 		return
 	}
 
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), existing.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteUpdated event: %v", err)
+		}
+	}
+
 	if textChanged && h.taskQueue != nil {
 		noteID := existing.ID().String()
 		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
 		_ = h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID)
+		_ = h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), existing.ID(), h.taskDelay)
 	}
 
 	h.enqueueRecommendationTasks(c.Request.Context(), existing.ID())
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
 
 	responseData := gin.H{
 		"id":         existing.ID(),
@@ -311,13 +1197,134 @@ func (h *Handler) Update(c *gin.Context) {
 		"content":    existing.Content().String(),
 		"type":       existing.Type(),
 		"metadata":   existing.Metadata().Value(),
+		"is_public":  existing.IsPublic(),
 		"created_at": existing.CreatedAt(),
 		"updated_at": existing.UpdatedAt(),
 	}
 	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
 }
 
+// Publish makes a note publicly visible.
+func (h *Handler) Publish(c *gin.Context) {
+	h.setNotePublic(c, true)
+}
+
+// Unpublish hides a note from the public graph.
+func (h *Handler) Unpublish(c *gin.Context) {
+	h.setNotePublic(c, false)
+}
+
+func (h *Handler) setNotePublic(c *gin.Context, isPublic bool) {
+	middleware.SetDBEntity(c, "notes")
+	if isPublic {
+		middleware.SetDBOperation(c, "publish")
+	} else {
+		middleware.SetDBOperation(c, "unpublish")
+	}
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
+		return
+	}
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		apicommon.Unauthorized(c)
+		return
+	}
+
+	existing, err := h.repo.FindByID(c.Request.Context(), id)
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+		return
+	}
+	if existing == nil {
+		apicommon.NotFound(c, "Note")
+		return
+	}
+
+	// SEC-1: a stranger's note is indistinguishable from a missing one.
+	if !existing.IsOwnedBy(userID) { // userID comes from a JWT — identity is present here
+		apicommon.NotFound(c, "Note")
+		return
+	}
+
+	existing.SetIsPublic(isPublic)
+	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedUpdateNote)
+		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), existing.ID().String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteUpdated event for publish/unpublish: %v", err)
+		}
+	}
+
+	h.invalidateGraphServiceCaches(c.Request.Context(), userID.String(), id.String())
+
+	if h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	responseData := gin.H{
+		"id":         existing.ID(),
+		"title":      existing.Title().String(),
+		"content":    existing.Content().String(),
+		"type":       existing.Type(),
+		"metadata":   existing.Metadata().Value(),
+		"is_public":  existing.IsPublic(),
+		"created_at": existing.CreatedAt(),
+		"updated_at": existing.UpdatedAt(),
+	}
+	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
+}
+
+func (h *Handler) invalidateGraphServiceCaches(ctx context.Context, userID, noteID string) {
+	if h.cacheClient == nil {
+		return
+	}
+
+	patterns := []string{
+		fmt.Sprintf("graph-service:full:%s", userID),
+		fmt.Sprintf("graph-service:delta:%s:*", userID),
+		"graph-service:full:public",
+		"graph-service:delta:public:*",
+		"graph-service:public:*",
+		fmt.Sprintf("graph-service:note:*:%s:*", noteID),
+	}
+
+	for _, pattern := range patterns {
+		var cursor uint64
+		for {
+			keys, nextCursor, err := h.cacheClient.Scan(ctx, cursor, pattern, 100)
+			if err != nil {
+				log.Printf("[NoteHandler] Failed to scan cache pattern %s: %v", pattern, err)
+				break
+			}
+			if len(keys) > 0 {
+				if err := h.cacheClient.Del(ctx, keys...); err != nil {
+					log.Printf("[NoteHandler] Failed to delete cache keys for pattern %s: %v", pattern, err)
+				}
+			}
+			cursor = nextCursor
+			if cursor == 0 {
+				break
+			}
+		}
+	}
+}
+
 func (h *Handler) Delete(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "delete")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -333,7 +1340,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 	if existing == nil {
-		apicommon.NotFound(c, "Заметка")
+		apicommon.NotFound(c, "Note")
 		return
 	}
 
@@ -341,10 +1348,144 @@ func (h *Handler) Delete(c *gin.Context) {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteNote)
 		return
 	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteDeleted event: %v", err)
+		}
+	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
+	apicommon.NoContent(c)
+}
+
+func (h *Handler) DeleteBatch(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "delete_batch")
+
+	var req deleteBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("ids", apicommon.ReasonInvalidValue, "ids must be a non-empty array of valid UUIDs", req.IDs),
+		})
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldError("ids", apicommon.ReasonInvalidValue, "ids must be a non-empty array of valid UUIDs"),
+		})
+		return
+	}
+
+	ids := make([]uuid.UUID, 0, len(req.IDs))
+	for _, idStr := range req.IDs {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("ids", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+			})
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	// SEC-1: refuse the whole batch when any id points at a note the
+	// caller does not own. Missing ids keep their previous no-op
+	// semantics; foreign ones answer 404 without deleting anything.
+	if !middleware.IsSkipAuth(c.Request.Context()) {
+		userID, authed := middleware.GetUserID(c)
+		for _, id := range ids {
+			n, err := h.repo.FindByID(c.Request.Context(), id)
+			if err != nil {
+				apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+				return
+			}
+			if n != nil && (!authed || !n.IsOwnedBy(userID)) {
+				apicommon.NotFound(c, "Note")
+				return
+			}
+		}
+	}
+
+	if err := h.repo.DeleteBatch(c.Request.Context(), ids); err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteNote)
+		return
+	}
+
+	if h.eventPublisher != nil {
+		userID := getUserIDString(c)
+		for _, id := range ids {
+			if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), userID); err != nil {
+				log.Printf("[NoteHandler] Failed to publish NoteDeleted event for batch: %v", err)
+			}
+		}
+	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
+	apicommon.NoContent(c)
+}
+
+func (h *Handler) Restore(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "restore")
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
+		return
+	}
+
+	if err := h.repo.Restore(c.Request.Context(), id); err != nil {
+		if errors.Is(err, note.ErrNoteNotFound) {
+			apicommon.NotFound(c, "Note")
+			return
+		}
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
+		return
+	}
+
+	if h.eventPublisher != nil {
+		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), id.String(), getUserIDString(c)); err != nil {
+			log.Printf("[NoteHandler] Failed to publish NoteUpdated event for restore: %v", err)
+		}
+	}
+
+	// Invalidate graph cache for the user
+	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
+		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to invalidate graph cache: %v", err)
+		}
+	}
+
+	h.enqueueBackupOnNoteChange(c.Request.Context())
+
 	apicommon.NoContent(c)
 }
 
 func (h *Handler) Get(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "read")
+
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -360,7 +1501,7 @@ func (h *Handler) Get(c *gin.Context) {
 		return
 	}
 	if n == nil {
-		apicommon.NotFound(c, "Заметка")
+		apicommon.NotFound(c, "Note")
 		return
 	}
 
@@ -370,6 +1511,7 @@ func (h *Handler) Get(c *gin.Context) {
 		"content":    n.Content().String(),
 		"type":       n.Type(),
 		"metadata":   n.Metadata().Value(),
+		"is_public":  n.IsPublic(),
 		"created_at": n.CreatedAt(),
 		"updated_at": n.UpdatedAt(),
 	}
@@ -399,9 +1541,12 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		}
 	}
 
+	// Pass the authenticated user ID to downstream graph-service calls.
+	ctx = graphdomain.WithUserID(ctx, getUserIDString(c))
+
 	// 1. Try to get precomputed recommendations from database
 	if h.recRepo != nil {
-		recs, err := h.recRepo.Get(ctx, noteID, limit)
+		recs, err := h.recRepo.GetRecommendations(ctx, noteID, limit)
 		if err == nil && len(recs) > 0 {
 			// Check staleness by comparing recommendation timestamp with note update time
 			stale := false
@@ -420,8 +1565,13 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 				GeneratedAt: recs[0].UpdatedAt,
 			}
 			for _, rec := range recs {
+				title := ""
+				if noteEntity, err := h.repo.FindByID(ctx, rec.RecommendedNoteID); err == nil && noteEntity != nil {
+					title = noteEntity.Title().String()
+				}
 				suggestionsResp.Suggestions = append(suggestionsResp.Suggestions, Suggestion{
 					NoteID: rec.RecommendedNoteID.String(),
+					Title:  title,
 					Score:  rec.Score,
 				})
 			}
@@ -435,30 +1585,55 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		}
 	}
 
-	// 2. Fallback to semantic neighbors (if enabled)
+	// 2. Try live graph analytics via graph-service (with in-memory BFS fallback).
+	if h.suggestionsHandler != nil {
+		dtos, err := h.suggestionsHandler.Handle(ctx, graphQueries.GetSuggestionsQuery{NoteID: noteID, Limit: limit})
+		if err == nil && len(dtos) > 0 {
+			suggestions := make([]Suggestion, 0, len(dtos))
+			for _, s := range dtos {
+				suggestions = append(suggestions, Suggestion{
+					NoteID: s.NoteID.String(),
+					Title:  s.Title,
+					Score:  s.Score,
+				})
+			}
+
+			c.Header("X-Recommendations-Source", "graph-service")
+			c.Header("X-Recommendations-Stale", "true")
+			c.JSON(200, SuggestionsResponse{Suggestions: suggestions, GeneratedAt: time.Now()})
+			return
+		}
+	}
+
+	// 3. Fallback to semantic neighbors (if enabled)
 	if h.cfg.RecommendationFallbackSemanticEnabled && h.embeddingRepo != nil {
 		neighbors, err := h.embeddingRepo.FindSimilarNotes(ctx, noteID, limit)
 		if err == nil && len(neighbors) > 0 {
 			suggestions := make([]Suggestion, 0, len(neighbors))
 			for _, n := range neighbors {
+				title := ""
+				if noteEntity, err := h.repo.FindByID(ctx, n.NoteID); err == nil && noteEntity != nil {
+					title = noteEntity.Title().String()
+				}
 				suggestions = append(suggestions, Suggestion{
 					NoteID: n.NoteID.String(),
+					Title:  title,
 					Score:  n.Score,
 				})
 			}
 
 			c.Header("X-Recommendations-Source", "semantic")
 			c.Header("X-Recommendations-Stale", "true")
-			c.JSON(200, SuggestionsResponse{Suggestions: suggestions})
+			c.JSON(200, SuggestionsResponse{Suggestions: suggestions, GeneratedAt: time.Now()})
 			h.enqueueRefreshWithDelay(noteID)
 			return
 		}
 	}
 
-	// 3. Fallback to Redis cache (if enabled)
-	if h.cfg.RecommendationFallbackEnabled && h.redis != nil {
+	// 3. Fallback to cache (if enabled)
+	if h.cfg.RecommendationFallbackEnabled && h.cacheClient != nil {
 		cacheKey := "recommendations:" + noteID.String()
-		cached, err := h.redis.Get(ctx, cacheKey).Result()
+		cached, err := h.cacheClient.Get(ctx, cacheKey)
 		if err == nil && cached != "" {
 			var suggestions []Suggestion
 			if err := json.Unmarshal([]byte(cached), &suggestions); err == nil {
@@ -485,13 +1660,7 @@ func (h *Handler) enqueueRefreshWithDelay(noteID uuid.UUID) {
 	}
 
 	delay := time.Duration(h.cfg.RecommendationTaskDelaySeconds) * time.Second
-	task, err := tasks.NewRefreshRecommendationsTask(noteID, delay)
-	if err != nil {
-		log.Printf("failed to create refresh task: %v", err)
-		return
-	}
-
-	if err := h.taskQueue.Enqueue(context.Background(), task); err != nil {
+	if err := h.taskQueue.EnqueueRefreshRecommendations(context.Background(), noteID, delay); err != nil {
 		log.Printf("failed to enqueue refresh task: %v", err)
 	}
 }
@@ -541,6 +1710,9 @@ func validateSearchQuery(query string) []apicommon.FieldError {
 
 // Search performs full-text search on notes
 func (h *Handler) Search(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "search")
+
 	var req SearchRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		apicommon.BadRequestSimple(c, err.Error())
@@ -566,8 +1738,10 @@ func (h *Handler) Search(c *gin.Context) {
 		req.Size = h.cfg.PaginationMaxLimit
 	}
 
-	// Perform search using repository directly (for simplicity, could use service layer)
-	notes, total, err := h.repo.Search(c.Request.Context(), req.Q, req.Size, (req.Page-1)*req.Size)
+	// Perform search using repository directly (for simplicity, could use service layer).
+	// Scope by current user: uuid.Nil for anonymous means public notes only.
+	userID, _ := middleware.GetUserID(c)
+	notes, total, err := h.repo.Search(c.Request.Context(), userID, req.Q, req.Size, (req.Page-1)*req.Size)
 	if err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSearchNotes)
 		return
@@ -582,6 +1756,7 @@ func (h *Handler) Search(c *gin.Context) {
 			"content":    n.Content().String(),
 			"type":       n.Type(),
 			"metadata":   n.Metadata().Value(),
+			"is_public":  n.IsPublic(),
 			"created_at": n.CreatedAt(),
 			"updated_at": n.UpdatedAt(),
 		}
@@ -601,6 +1776,9 @@ func (h *Handler) Search(c *gin.Context) {
 
 // List возвращает список заметок с пагинацией
 func (h *Handler) List(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "list")
+
 	// Получаем параметры пагинации из query
 	limitStr := c.DefaultQuery("limit", strconv.Itoa(h.cfg.PaginationDefaultLimit))
 	offsetStr := c.DefaultQuery("offset", "0")
@@ -618,8 +1796,10 @@ func (h *Handler) List(c *gin.Context) {
 		limit = h.cfg.PaginationMaxLimit
 	}
 
-	// Получаем заметки из репозитория
-	notes, total, err := h.repo.List(c.Request.Context(), limit, offset)
+	// Получаем заметки из репозитория с учётом текущего пользователя.
+	// uuid.Nil для анонима — только публичные заметки.
+	userID, _ := middleware.GetUserID(c)
+	notes, total, err := h.repo.List(c.Request.Context(), userID, limit, offset)
 	if err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNotes)
 		return
@@ -634,6 +1814,7 @@ func (h *Handler) List(c *gin.Context) {
 			"content":    n.Content().String(),
 			"type":       n.Type(),
 			"metadata":   n.Metadata().Value(),
+			"is_public":  n.IsPublic(),
 			"created_at": n.CreatedAt(),
 			"updated_at": n.UpdatedAt(),
 		}

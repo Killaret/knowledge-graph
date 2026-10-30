@@ -1,0 +1,271 @@
+#!/usr/bin/env python3
+"""PreToolUse guard: refuse destructive Docker commands without a fresh backup.
+
+Reads the Claude Code hook payload from stdin and inspects the shell command
+that is about to run. Commands that can destroy Personal stack data are allowed
+only when a recent, non-empty backup exists in the backups directory.
+
+Everything else passes through untouched, including work on the test and dev
+stacks, so routine `docker compose -f docker-compose.test.yml down -v` is not
+affected.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+PERSONAL_VOLUMES = ("pgdata_personal", "redisdata_personal", "mongodbdata_personal")
+
+BACKUP_GLOBS = ("backup-personal-*", "personal-volumes-raw-*")
+
+# Commands that sweep every unused volume, personal ones included.
+PRUNE_PATTERNS = (
+    re.compile(r"\bdocker\s+volume\s+prune\b"),
+    re.compile(r"\bdocker\s+system\s+prune\b"),
+)
+
+# Commands that destroy volumes belonging to the Personal stack specifically.
+#
+# Known bypass this guard cannot see: scripts/cleanup/cleanup-docker.ps1 and
+# cleanup-docker.sh run `docker volume rm` / `docker system prune` inside a
+# script file, so the hook payload (`pwsh -File cleanup-docker.ps1 ...`) does
+# not match any pattern. That path is guarded inside the script itself via
+# scripts/devops/check-personal-backup.{ps1,sh} — the check must live where
+# the deletion happens, because the hook only sees agent commands.
+PERSONAL_PATTERNS = (
+    re.compile(r"\bdocker\s+volume\s+rm\b"),
+    re.compile(r"\bdown\b.*(?:\s-v\b|--volumes\b)"),
+    re.compile(r"\brm\s+-[a-z]*r"),
+)
+
+
+def _max_age_hours() -> float:
+    """Freshness threshold for a usable backup, in hours.
+
+    Single source of truth: backup-policy.env next to this script; the
+    KG_BACKUP_MAX_AGE_HOURS environment variable overrides it per run.
+    """
+    env_value = os.environ.get("KG_BACKUP_MAX_AGE_HOURS")
+    if env_value:
+        return float(env_value)
+    policy = Path(__file__).resolve().parent / "backup-policy.env"
+    if policy.is_file():
+        for line in policy.read_text().splitlines():
+            if line.strip().startswith("KG_BACKUP_MAX_AGE_HOURS"):
+                return float(line.split("=", 1)[1].strip())
+    return 24.0
+
+
+def resolve_backup_dir() -> Path:
+    """Absolute path to the local backup directory.
+
+    Single source of truth: the KG_BACKUP_DIR value from backup-policy.env
+    next to this script. The KG_BACKUP_DIR environment variable overrides it.
+    A leading ~ is expanded; a relative tail is joined to the user's home
+    directory; an absolute path is used as-is.
+    """
+    env_value = os.environ.get("KG_BACKUP_DIR")
+    value = env_value
+    if not value:
+        policy = Path(__file__).resolve().parent / "backup-policy.env"
+        if policy.is_file():
+            for line in policy.read_text().splitlines():
+                if line.strip().startswith("KG_BACKUP_DIR"):
+                    value = line.split("=", 1)[1].strip()
+                    break
+    if not value:
+        raise RuntimeError(
+            "KG_BACKUP_DIR is not set and not found in backup-policy.env"
+        )
+    value = os.path.expanduser(value)
+    p = Path(value)
+    if p.is_absolute():
+        return p
+    return Path.home() / p
+
+
+MAX_AGE_HOURS = _max_age_hours()
+
+
+def repo_root() -> Path:
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if out.returncode == 0 and out.stdout.strip():
+            return Path(out.stdout.strip())
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return Path(__file__).resolve().parents[2]
+
+
+ENV_ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+OPERATORS = {"&&", "||", ";", "|", "&", "(", ")", "\n"}
+RISKY_EXECUTABLES = {"docker", "docker-compose", "rm", "rmdir", "del"}
+
+# Shells that carry a nested command in an argument; the payload is inspected
+# instead of the wrapper, so `bash -c "docker volume prune"` is not a bypass.
+SHELL_WRAPPERS = {"bash", "sh", "zsh", "pwsh", "powershell", "cmd"}
+SHELL_COMMAND_FLAGS = {"-c", "-Command", "-command", "/c", "/C"}
+MAX_WRAPPER_DEPTH = 3
+
+
+def split_segments(command: str) -> list[list[str]]:
+    """Tokenize the shell command into segments, honouring quotes.
+
+    A quoted string never starts a new segment, so a commit message that
+    mentions `docker ... && ...` is one argument, not three commands.
+    """
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=True)
+    lexer.whitespace_split = True
+    segments: list[list[str]] = [[]]
+    for token in lexer:
+        if token in OPERATORS:
+            segments.append([])
+        else:
+            segments[-1].append(token)
+    return segments
+
+
+def executable_of(segment: list[str]) -> str:
+    """First real word of a segment, ignoring leading env assignments."""
+    for word in segment:
+        if ENV_ASSIGNMENT.match(word):
+            continue
+        return word.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+    return ""
+
+
+def nested_command(segment: list[str]) -> str | None:
+    """Payload of a shell wrapper such as `bash -c "..."`, if this is one."""
+    words = [w for w in segment if not ENV_ASSIGNMENT.match(w)]
+    if not words:
+        return None
+    name = words[0].rsplit("/", 1)[-1].rsplit("\\", 1)[-1].lower()
+    if name.removesuffix(".exe") not in SHELL_WRAPPERS:
+        return None
+    for index, word in enumerate(words[1:], start=1):
+        if word in SHELL_COMMAND_FLAGS and index + 1 < len(words):
+            return " ".join(words[index + 1 :])
+    return None
+
+
+def targets_personal_data(command: str, depth: int = 0) -> bool:
+    """True when the command can destroy Personal stack volumes.
+
+    Only segments that actually invoke a risky program are inspected, so a
+    commit message or a doc edit that merely quotes such a command is ignored.
+    A shell wrapper is unwrapped and its payload inspected instead. A command
+    that cannot be parsed is treated as risky.
+    """
+    try:
+        segments = split_segments(command)
+    except ValueError:
+        segments = [command.split()]
+
+    for segment in segments:
+        if depth < MAX_WRAPPER_DEPTH:
+            payload = nested_command(segment)
+            if payload and targets_personal_data(payload, depth + 1):
+                return True
+
+        if executable_of(segment) not in RISKY_EXECUTABLES:
+            continue
+        text = " ".join(segment)
+        if any(p.search(text) for p in PRUNE_PATTERNS):
+            return True
+        mentions_personal = "personal" in text.lower() or any(
+            v in text for v in PERSONAL_VOLUMES
+        )
+        if mentions_personal and any(p.search(text) for p in PERSONAL_PATTERNS):
+            return True
+    return False
+
+
+def newest_backup(backup_dir: Path) -> tuple[Path | None, float, int]:
+    newest: Path | None = None
+    newest_mtime = 0.0
+    if backup_dir.is_dir():
+        for pattern in BACKUP_GLOBS:
+            for candidate in backup_dir.glob(pattern):
+                if not candidate.is_file() or candidate.stat().st_size == 0:
+                    continue
+                mtime = candidate.stat().st_mtime
+                if mtime > newest_mtime:
+                    newest, newest_mtime = candidate, mtime
+    size = newest.stat().st_size if newest else 0
+    return newest, newest_mtime, size
+
+
+def deny(reason: str) -> None:
+    json.dump(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": reason,
+            }
+        },
+        sys.stdout,
+    )
+    sys.exit(0)
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except (json.JSONDecodeError, ValueError):
+        return
+
+    command = str(payload.get("tool_input", {}).get("command", ""))
+    if not command or not targets_personal_data(command):
+        return
+
+    try:
+        backup_dir = resolve_backup_dir()
+    except RuntimeError as exc:
+        deny(f"Команда может уничтожить данные Personal-стека, но не удалось "
+             f"определить каталог бэкапа: {exc}. Проверьте "
+             "scripts/devops/backup-policy.env.")
+
+    backup, mtime, size = newest_backup(backup_dir)
+
+    if backup is None:
+        deny(
+            "Команда может уничтожить данные Personal-стека, а непустого бэкапа "
+            f"в {backup_dir} нет. Сначала выполните "
+            "scripts/devops/backup-personal.ps1 и убедитесь, что файл создан."
+        )
+
+    age_hours = (time.time() - mtime) / 3600
+    if age_hours > MAX_AGE_HOURS:
+        deny(
+            f"Последний бэкап Personal-стека — {backup.name}, ему "
+            f"{age_hours:.1f} ч при допустимых {MAX_AGE_HOURS:.0f}. "
+            "Сделайте свежий бэкап через scripts/devops/backup-personal.ps1, "
+            "либо поднимите порог переменной KG_BACKUP_MAX_AGE_HOURS."
+        )
+
+    json.dump(
+        {
+            "systemMessage": (
+                f"Деструктивная команда разрешена: бэкап {backup.name} "
+                f"({size / 1024:.0f} КБ, возраст {age_hours:.1f} ч) на месте."
+            )
+        },
+        sys.stdout,
+    )
+
+
+if __name__ == "__main__":
+    main()

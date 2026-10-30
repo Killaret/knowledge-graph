@@ -5,6 +5,7 @@ package postgres
 import (
 	"context"
 	"testing"
+	"time"
 
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
@@ -37,6 +38,7 @@ func (s *LinkRepositoryIntegrationTestSuite) SetupSuite() {
 	models := []interface{}{
 		&NoteModel{},
 		&LinkModel{},
+		&LinkSuppressionModel{},
 		&NoteKeywordModel{},
 		&UserModel{},
 		&TagModel{},
@@ -63,11 +65,11 @@ func (s *LinkRepositoryIntegrationTestSuite) SetupTest() {
 	sourceTitle, _ := note.NewTitle("Source Note")
 	sourceContent, _ := note.NewContent("Source content for testing")
 	metadata, _ := note.NewMetadata(map[string]interface{}{})
-	s.sourceNote = note.NewNote(sourceTitle, sourceContent, "star", metadata)
+	s.sourceNote = note.NewNote(sourceTitle, sourceContent, note.MustType("star"), metadata)
 
 	targetTitle, _ := note.NewTitle("Target Note")
 	targetContent, _ := note.NewContent("Target content for testing")
-	s.targetNote = note.NewNote(targetTitle, targetContent, "star", metadata)
+	s.targetNote = note.NewNote(targetTitle, targetContent, note.MustType("star"), metadata)
 
 	// Сохраняем заметки
 	err = s.noteRepo.Save(s.ctx, s.sourceNote)
@@ -138,7 +140,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestFindBySource() {
 	targetTitle2, _ := note.NewTitle("Target Note 2")
 	targetContent2, _ := note.NewContent("Content 2")
 	noteMetadata, _ := note.NewMetadata(map[string]interface{}{})
-	targetNote2 := note.NewNote(targetTitle2, targetContent2, "star", noteMetadata)
+	targetNote2 := note.NewNote(targetTitle2, targetContent2, note.MustType("star"), noteMetadata)
 	err := s.noteRepo.Save(s.ctx, targetNote2)
 	s.NoError(err)
 
@@ -181,7 +183,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestFindBySourceIDs() {
 	sourceTitle2, _ := note.NewTitle("Source Note 2")
 	sourceContent2, _ := note.NewContent("Content 2")
 	noteMetadata, _ := note.NewMetadata(map[string]interface{}{})
-	sourceNote2 := note.NewNote(sourceTitle2, sourceContent2, "star", noteMetadata)
+	sourceNote2 := note.NewNote(sourceTitle2, sourceContent2, note.MustType("star"), noteMetadata)
 	err := s.noteRepo.Save(s.ctx, sourceNote2)
 	s.NoError(err)
 
@@ -212,7 +214,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestFindByTargetIDs() {
 	targetTitle2, _ := note.NewTitle("Target Note 2")
 	targetContent2, _ := note.NewContent("Content 2")
 	noteMetadata, _ := note.NewMetadata(map[string]interface{}{})
-	targetNote2 := note.NewNote(targetTitle2, targetContent2, "star", noteMetadata)
+	targetNote2 := note.NewNote(targetTitle2, targetContent2, note.MustType("star"), noteMetadata)
 	err := s.noteRepo.Save(s.ctx, targetNote2)
 	s.NoError(err)
 
@@ -248,7 +250,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestFindAll() {
 	targetTitle2, _ := note.NewTitle("Target Note 2")
 	targetContent2, _ := note.NewContent("Content 2")
 	noteMetadata, _ := note.NewMetadata(map[string]interface{}{})
-	targetNote2 := note.NewNote(targetTitle2, targetContent2, "star", noteMetadata)
+	targetNote2 := note.NewNote(targetTitle2, targetContent2, note.MustType("star"), noteMetadata)
 	err := s.noteRepo.Save(s.ctx, targetNote2)
 	s.NoError(err)
 
@@ -293,7 +295,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestDeleteBySource() {
 	targetTitle2, _ := note.NewTitle("Target Note 2")
 	targetContent2, _ := note.NewContent("Content 2")
 	noteMetadata, _ := note.NewMetadata(map[string]interface{}{})
-	targetNote2 := note.NewNote(targetTitle2, targetContent2, "star", noteMetadata)
+	targetNote2 := note.NewNote(targetTitle2, targetContent2, note.MustType("star"), noteMetadata)
 	err := s.noteRepo.Save(s.ctx, targetNote2)
 	s.NoError(err)
 
@@ -320,7 +322,7 @@ func (s *LinkRepositoryIntegrationTestSuite) TestDeleteBySource() {
 	s.Len(links, 0)
 }
 
-// TestConstraintProtection - проверка что FK constraint защищает от удаления
+// TestConstraintProtection - удаление заметки каскадно удаляет связи (ON DELETE CASCADE, миграция 002)
 func (s *LinkRepositoryIntegrationTestSuite) TestConstraintProtection() {
 	// Создаем связь
 	linkType, _ := link.NewLinkType("reference")
@@ -331,18 +333,17 @@ func (s *LinkRepositoryIntegrationTestSuite) TestConstraintProtection() {
 	err := s.repo.Save(s.ctx, l)
 	s.NoError(err)
 
-	// Пытаемся удалить source заметку - должно упасть из-за FK constraint
+	// Удаляем source заметку - каскад сносит связь, ошибки нет
 	err = s.noteRepo.Delete(s.ctx, s.sourceNote.ID())
-	s.Error(err, "should fail due to foreign key constraint")
-	s.Contains(err.Error(), "violates foreign key constraint")
+	s.NoError(err, "delete should cascade through ON DELETE CASCADE")
 
-	// Корректный порядок: сначала удаляем связи
-	err = s.repo.DeleteBySource(s.ctx, s.sourceNote.ID())
+	links, err := s.repo.FindBySource(s.ctx, s.sourceNote.ID())
 	s.NoError(err)
+	s.Len(links, 0, "cascade must remove outgoing links")
 
-	// Теперь можно удалить заметку
-	err = s.noteRepo.Delete(s.ctx, s.sourceNote.ID())
+	incoming, err := s.repo.FindByTarget(s.ctx, s.sourceNote.ID())
 	s.NoError(err)
+	s.Len(incoming, 0, "cascade must remove incoming links")
 }
 
 // TestDifferentLinkTypes - разные типы связей
@@ -373,6 +374,251 @@ func (s *LinkRepositoryIntegrationTestSuite) TestDifferentLinkTypes() {
 	}
 	s.True(types["reference"])
 	s.True(types["dependency"])
+}
+
+// TestDeleteBySourceType — LINKS-1: регенерация удаляет только gamma-связи,
+// ручные (source_type='user') сохраняются.
+func (s *LinkRepositoryIntegrationTestSuite) TestDeleteBySourceType() {
+	linkType, _ := link.NewLinkType("related")
+	weight, _ := link.NewWeight(0.9)
+	metadata, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+
+	gamma := link.NewGammaLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, weight, metadata)
+	s.Require().NoError(s.repo.Save(s.ctx, gamma))
+
+	// Ручная связь той же пары — другой link_type, чтобы не упираться в
+	// uniqueIndex (source, target, type).
+	depType, _ := link.NewLinkType("dependency")
+	manual := link.NewLink(s.sourceNote.ID(), s.targetNote.ID(), depType, weight, metadata)
+	s.Require().NoError(s.repo.Save(s.ctx, manual))
+
+	deleted, err := s.repo.DeleteBySourceType(s.ctx, "gamma")
+	s.Require().NoError(err)
+	s.Equal(int64(1), deleted)
+
+	remaining, err := s.repo.FindBySource(s.ctx, s.sourceNote.ID())
+	s.Require().NoError(err)
+	s.Require().Len(remaining, 1)
+	s.Equal("user", remaining[0].SourceType().String(), "manual link must survive gamma regeneration")
+}
+
+// --- LINKS-2: promotion and rejections on a real database ---
+
+// TestSaveUserLink_PromotesGamma — POST семантика повышения: одна строка,
+// source_type='user', metadata.gamma с происхождением, created_at сохранён.
+func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_PromotesGamma() {
+	linkType, _ := link.NewLinkType("related")
+	gammaWeight, _ := link.NewWeight(0.6)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	gamma := link.NewGammaLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, gammaWeight, md)
+	s.Require().NoError(s.repo.Save(s.ctx, gamma))
+
+	userWeight, _ := link.NewWeight(0.9)
+	reqMD, _ := link.NewMetadata(map[string]interface{}{"note": "confirmed"})
+	creator := uuid.New()
+	s.Require().NoError(s.db.Create(&UserModel{ID: creator, Login: "promoter", PasswordHash: "x"}).Error)
+	manual := link.NewLinkWithCreator(s.sourceNote.ID(), s.targetNote.ID(), creator, linkType, userWeight, reqMD)
+
+	saved, created, err := s.repo.SaveUserLink(s.ctx, manual)
+	s.Require().NoError(err)
+	s.False(created, "promotion must not insert a new row")
+	s.Equal(gamma.ID(), saved.ID())
+	s.Equal("user", saved.SourceType().String())
+	s.Equal(0.9, saved.Weight().Value())
+	s.Equal(creator, *saved.CreatorID())
+	s.WithinDuration(gamma.CreatedAt(), saved.CreatedAt(), time.Microsecond, "created_at must be preserved (postgres stores µs precision)")
+
+	prov, ok := saved.Metadata().Value()["gamma"].(map[string]interface{})
+	s.Require().True(ok, "metadata.gamma must record the origin")
+	s.InDelta(0.6, prov["score"], 0.0001)
+	s.NotEmpty(prov["generated_at"])
+
+	// Проверяем, что в базе ровно одна строка на паре.
+	pair, err := s.repo.FindByPair(s.ctx, s.sourceNote.ID(), s.targetNote.ID())
+	s.Require().NoError(err)
+	s.Require().Len(pair, 1)
+	s.Equal("user", pair[0].SourceType().String())
+}
+
+// TestSaveUserLink_PromotesGammaReverseDirection — ручная связь Y→X поверх
+// gamma X→Y повышает существующую строку, принимая направление запроса:
+// одно ребро на пару (решение 53), id и created_at сохранены.
+func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_PromotesGammaReverseDirection() {
+	linkType, _ := link.NewLinkType("related")
+	gammaWeight, _ := link.NewWeight(0.6)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	gamma := link.NewGammaLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, gammaWeight, md)
+	s.Require().NoError(s.repo.Save(s.ctx, gamma))
+
+	userWeight, _ := link.NewWeight(0.9)
+	reqMD, _ := link.NewMetadata(nil)
+	// Ручная связь в обратную сторону.
+	manual := link.NewLink(s.targetNote.ID(), s.sourceNote.ID(), linkType, userWeight, reqMD)
+
+	saved, created, err := s.repo.SaveUserLink(s.ctx, manual)
+	s.Require().NoError(err)
+	s.False(created, "reverse-direction manual link must promote the gamma row")
+	s.Equal(gamma.ID(), saved.ID())
+	s.Equal("user", saved.SourceType().String())
+	s.Equal(s.targetNote.ID(), saved.SourceNoteID(), "promoted row must adopt the requested direction")
+	s.Equal(s.sourceNote.ID(), saved.TargetNoteID())
+	s.True(saved.HasGammaProvenance(), "promotion keeps gamma origin")
+
+	pairForward, err := s.repo.FindByPair(s.ctx, s.sourceNote.ID(), s.targetNote.ID())
+	s.Require().NoError(err)
+	s.Empty(pairForward, "no X→Y row must remain")
+	pairBack, err := s.repo.FindByPair(s.ctx, s.targetNote.ID(), s.sourceNote.ID())
+	s.Require().NoError(err)
+	s.Require().Len(pairBack, 1)
+}
+
+// TestSaveUserLink_ManualConflictReverse — ручная поверх ручной во встречном
+// направлении тоже конфликт: одно ребро на пару.
+func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_ManualConflictReverse() {
+	linkType, _ := link.NewLinkType("related")
+	weight, _ := link.NewWeight(0.8)
+	md, _ := link.NewMetadata(nil)
+	s.Require().NoError(s.repo.Save(s.ctx, link.NewLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, weight, md)))
+
+	back := link.NewLink(s.targetNote.ID(), s.sourceNote.ID(), linkType, weight, md)
+	_, _, err := s.repo.SaveUserLink(s.ctx, back)
+	s.ErrorIs(err, link.ErrDuplicateLink)
+}
+
+// TestSaveUserLink_ManualConflict — ручная поверх ручной остаётся конфликтом.
+func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_ManualConflict() {
+	linkType, _ := link.NewLinkType("related")
+	weight, _ := link.NewWeight(0.8)
+	md, _ := link.NewMetadata(nil)
+	s.Require().NoError(s.repo.Save(s.ctx, link.NewLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, weight, md)))
+
+	again := link.NewLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, weight, md)
+	_, _, err := s.repo.SaveUserLink(s.ctx, again)
+	s.ErrorIs(err, link.ErrDuplicateLink)
+}
+
+// TestSaveUserLink_DifferentTypeGamma — gamma другого типа удаляется,
+// происхождение переезжает в новую строку.
+func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_DifferentTypeGamma() {
+	relType, _ := link.NewLinkType("related")
+	gammaWeight, _ := link.NewWeight(0.55)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	s.Require().NoError(s.repo.Save(s.ctx,
+		link.NewGammaLink(s.sourceNote.ID(), s.targetNote.ID(), relType, gammaWeight, md)))
+
+	depType, _ := link.NewLinkType("dependency")
+	userWeight, _ := link.NewWeight(0.8)
+	reqMD, _ := link.NewMetadata(nil)
+	manual := link.NewLink(s.sourceNote.ID(), s.targetNote.ID(), depType, userWeight, reqMD)
+
+	saved, created, err := s.repo.SaveUserLink(s.ctx, manual)
+	s.Require().NoError(err)
+	s.True(created, "a different-type manual link is a new row")
+	s.Equal("dependency", saved.LinkType().String())
+
+	pair, err := s.repo.FindByPair(s.ctx, s.sourceNote.ID(), s.targetNote.ID())
+	s.Require().NoError(err)
+	s.Require().Len(pair, 1, "the gamma row must not remain next to the manual one")
+	prov, ok := pair[0].Metadata().Value()["gamma"].(map[string]interface{})
+	s.Require().True(ok)
+	s.InDelta(0.55, prov["score"], 0.0001)
+}
+
+// TestDeleteAndSuppress_Persists — удаление gamma-связи пишет отказ,
+// который виден через FindSuppressionsForNotes в обе стороны.
+func (s *LinkRepositoryIntegrationTestSuite) TestDeleteAndSuppress_Persists() {
+	linkType, _ := link.NewLinkType("related")
+	weight, _ := link.NewWeight(0.6)
+	md, _ := link.NewMetadata(map[string]interface{}{"source": "gamma"})
+	gamma := link.NewGammaLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, weight, md)
+	s.Require().NoError(s.repo.Save(s.ctx, gamma))
+
+	supType := "related"
+	sup := link.NewSuppression(s.sourceNote.ID(), s.targetNote.ID(), &supType, nil)
+	s.Require().NoError(s.repo.DeleteAndSuppress(s.ctx, gamma, sup))
+
+	gone, err := s.repo.FindByID(s.ctx, gamma.ID())
+	s.Require().NoError(err)
+	s.Nil(gone)
+
+	sups, err := s.repo.FindSuppressionsForNotes(s.ctx, []uuid.UUID{s.targetNote.ID()})
+	s.Require().NoError(err)
+	s.Require().Len(sups, 1, "the rejection must be visible from the other note too (symmetric pair)")
+	s.True(sups[0].Blocks(s.targetNote.ID(), s.sourceNote.ID(), "related"),
+		"rejection A→B must block the B→A proposal")
+	s.False(sups[0].Blocks(s.targetNote.ID(), s.sourceNote.ID(), "dependency"),
+		"a typed rejection must not block other types")
+}
+
+// TestSaveUserLink_LiftsSuppression — ручное создание на отвергнутой паре
+// снимает отказ в той же транзакции.
+func (s *LinkRepositoryIntegrationTestSuite) TestSaveUserLink_LiftsSuppression() {
+	supType := "related"
+	s.Require().NoError(s.repo.SaveSuppression(s.ctx,
+		link.NewSuppression(s.sourceNote.ID(), s.targetNote.ID(), &supType, nil)))
+
+	linkType, _ := link.NewLinkType("related")
+	weight, _ := link.NewWeight(0.8)
+	md, _ := link.NewMetadata(nil)
+	manual := link.NewLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, weight, md)
+
+	_, created, err := s.repo.SaveUserLink(s.ctx, manual)
+	s.Require().NoError(err)
+	s.True(created)
+
+	sups, err := s.repo.FindSuppressionsForNotes(s.ctx, []uuid.UUID{s.sourceNote.ID()})
+	s.Require().NoError(err)
+	s.Empty(sups, "the rejection must be lifted by manual creation")
+}
+
+// TestSuppressionCascadeOnNoteDelete — удаление заметки уносит её отказы.
+func (s *LinkRepositoryIntegrationTestSuite) TestSuppressionCascadeOnNoteDelete() {
+	supType := "related"
+	s.Require().NoError(s.repo.SaveSuppression(s.ctx,
+		link.NewSuppression(s.sourceNote.ID(), s.targetNote.ID(), &supType, nil)))
+
+	// Каскад живёт в FK notes→link_suppressions, который создаёт миграция 034.
+	// В тесте AutoMigrate создаёт тот же FK через теги модели.
+	s.Require().NoError(s.db.Exec("DELETE FROM notes WHERE id = ?", s.sourceNote.ID()).Error)
+
+	sups, err := s.repo.FindSuppressionsForNotes(s.ctx, []uuid.UUID{s.targetNote.ID()})
+	s.Require().NoError(err)
+	s.Empty(sups, "note deletion must cascade to its rejections")
+}
+
+// TestDeleteAndSuppress_AlreadyDeleted — повторный delete/suppress той же
+// строки идемпотентен: отказ записывается, ошибки нет (гонка DELETE-запросов).
+func (s *LinkRepositoryIntegrationTestSuite) TestDeleteAndSuppress_AlreadyDeleted() {
+	linkType, _ := link.NewLinkType("related")
+	weight, _ := link.NewWeight(0.6)
+	md, _ := link.NewMetadata(nil)
+	gamma := link.NewGammaLink(s.sourceNote.ID(), s.targetNote.ID(), linkType, weight, md)
+	s.Require().NoError(s.repo.Save(s.ctx, gamma))
+
+	supType := "related"
+	sup := link.NewSuppression(s.sourceNote.ID(), s.targetNote.ID(), &supType, nil)
+	s.Require().NoError(s.repo.DeleteAndSuppress(s.ctx, gamma, sup))
+	// The row is already gone — a second request must still succeed.
+	s.Require().NoError(s.repo.DeleteAndSuppress(s.ctx, gamma, sup))
+
+	sups, err := s.repo.FindSuppressionsForNotes(s.ctx, []uuid.UUID{s.sourceNote.ID()})
+	s.Require().NoError(err)
+	s.Len(sups, 1, "duplicate delete must not duplicate the rejection")
+}
+
+// TestSuppression_NullTypeBlocksEverything — link_type NULL переживает
+// round-trip через БД и блокирует любой тип предложения на паре.
+func (s *LinkRepositoryIntegrationTestSuite) TestSuppression_NullTypeBlocksEverything() {
+	s.Require().NoError(s.repo.SaveSuppression(s.ctx,
+		link.NewSuppression(s.sourceNote.ID(), s.targetNote.ID(), nil, nil)))
+
+	sups, err := s.repo.FindSuppressionsForNotes(s.ctx, []uuid.UUID{s.sourceNote.ID()})
+	s.Require().NoError(err)
+	s.Require().Len(sups, 1)
+	s.Nil(sups[0].LinkType(), "NULL link_type must round-trip as nil")
+	s.True(sups[0].Blocks(s.sourceNote.ID(), s.targetNote.ID(), "related"))
+	s.True(sups[0].Blocks(s.targetNote.ID(), s.sourceNote.ID(), "dependency"),
+		"untyped rejection must block every type in either direction")
 }
 
 // Запускаем тесты

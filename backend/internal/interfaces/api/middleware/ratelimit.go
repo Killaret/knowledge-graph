@@ -16,13 +16,20 @@ type RateLimiter struct {
 	window   time.Duration
 }
 
-// NewRateLimiter creates a new rate limiter
+// NewRateLimiter creates a new rate limiter and starts a background cleanup goroutine
 func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
-	return &RateLimiter{
+	rl := &RateLimiter{
 		requests: make(map[string][]time.Time),
 		limit:    limit,
 		window:   window,
 	}
+
+	// Periodically evict stale client entries to prevent unbounded memory growth.
+	if window > 0 {
+		go rl.cleanupLoop()
+	}
+
+	return rl
 }
 
 // Allow checks if request from client is allowed
@@ -51,6 +58,33 @@ func (rl *RateLimiter) Allow(clientID string) bool {
 	valid = append(valid, now)
 	rl.requests[clientID] = valid
 	return true
+}
+
+// cleanupOldEntries removes clients whose last request is older than 10 windows.
+func (rl *RateLimiter) cleanupOldEntries() {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	if rl.window <= 0 {
+		return
+	}
+
+	now := time.Now()
+	maxAge := 10 * rl.window
+	for clientID, requests := range rl.requests {
+		if len(requests) == 0 || now.Sub(requests[len(requests)-1]) > maxAge {
+			delete(rl.requests, clientID)
+		}
+	}
+}
+
+func (rl *RateLimiter) cleanupLoop() {
+	ticker := time.NewTicker(rl.window)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		rl.cleanupOldEntries()
+	}
 }
 
 // RateLimitMiddleware creates gin middleware for rate limiting
@@ -91,7 +125,7 @@ func RateLimitByEndpoint(limits map[string]int, defaultLimit int, window time.Du
 
 		if !limiter.Allow(clientID + ":" + endpoint) {
 			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error":   "Rate limit exceeded for this endpoint",
+				"error":       "Rate limit exceeded for this endpoint",
 				"retry_after": window.Seconds(),
 			})
 			c.Abort()

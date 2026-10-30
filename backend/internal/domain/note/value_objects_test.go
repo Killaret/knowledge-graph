@@ -1,6 +1,7 @@
 package note
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -13,6 +14,8 @@ func TestNewTitle(t *testing.T) {
 		{"empty", "", true},
 		{"too long", string(make([]byte, 201)), true},
 		{"valid", "Hello", false},
+		{"russian 200 runes", strings.Repeat("а", 200), false},
+		{"russian 201 runes", strings.Repeat("а", 201), true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -31,7 +34,7 @@ func TestNewContent(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", "", false},
-		{"too long", string(make([]byte, 10001)), true},
+		{"too long", string(make([]byte, 50001)), true},
 		{"valid", "Content", false},
 	}
 	for _, tt := range tests {

@@ -117,7 +117,8 @@ r.Use(middleware.APIKey(apiKeyConfig))
 
 ### Permission Check
 ```go
-permConfig := middleware.DefaultPermissionConfig(db, tokenStore)
+permRepo := postgres.NewPermissionRepository(db)
+permConfig := middleware.DefaultPermissionConfig(permRepo, tokenStore)
 r.GET("/admin/data", middleware.Can(permConfig, "data", "read"), handler)
 ```
 
@@ -156,7 +157,7 @@ The migration `016_add_auth_and_sharing.sql` creates:
 
 3. **PKCE for OAuth**
    - Prevents authorization code interception
-   - Plain method for simplicity (can be upgraded to S256)
+   - S256 method (RFC 7636) for enhanced security
 
 4. **Rate Limiting**
    - Apply rate limiting to auth endpoints

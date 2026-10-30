@@ -8,8 +8,8 @@ const API_BASE = process.env.BACKEND_URL || 'http://localhost:8080/api';
 
 test.describe('API Contract - Graph Endpoints', () => {
   
-  test('GET /v1/graph/all returns wrapped response with data property', async ({ request }) => {
-    const response = await request.get(`${API_BASE}/v1/graph/all?limit=5`);
+  test('GET /v1/graph/public returns wrapped response with data property', async ({ request }) => {
+    const response = await request.get(`${API_BASE}/v1/graph/public?limit=5`);
     
     expect(response.ok()).toBeTruthy();
     
@@ -59,7 +59,7 @@ test.describe('API Contract - Graph Endpoints', () => {
   });
 
   test('Graph nodes have required fields', async ({ request }) => {
-    const response = await request.get(`${API_BASE}/v1/graph/all?limit=3`);
+    const response = await request.get(`${API_BASE}/v1/graph/public?limit=3`);
     const body = await response.json();
     
     if (body.data.nodes.length > 0) {
@@ -76,7 +76,7 @@ test.describe('API Contract - Graph Endpoints', () => {
   });
 
   test('Graph links have required fields', async ({ request }) => {
-    const response = await request.get(`${API_BASE}/v1/graph/all?limit=50`);
+    const response = await request.get(`${API_BASE}/v1/graph/public?limit=50`);
     const body = await response.json();
     
     if (body.data.links && body.data.links.length > 0) {

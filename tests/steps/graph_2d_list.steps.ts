@@ -38,7 +38,7 @@ Given('there are notes of various types in the database', async function (this: 
       content: `This is a test note of type ${type}`,
       type: type,
     });
-    testNoteIds.push(note.id);
+    testNoteIds.push(note.data.id);
   }
 });
 

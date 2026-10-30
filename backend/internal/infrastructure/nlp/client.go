@@ -17,8 +17,16 @@ import (
 
 // Keyword представляет одно ключевое слово с весом
 type Keyword struct {
-	Keyword string  `json:"keyword"`
+	Keyword string  `json:"keyword"` // canonical lemma
+	Surface string  `json:"surface"` // surface form as written in the text
 	Weight  float64 `json:"weight"`
+}
+
+// KeywordsResult — ответ /extract_keywords: слова + имя экстрактора,
+// которым они посчитаны (пишется в note_keywords.extractor).
+type KeywordsResult struct {
+	Extractor string    `json:"extractor"`
+	Keywords  []Keyword `json:"keywords"`
 }
 
 // NLPClient — клиент для вызова Python-микросервиса
@@ -41,6 +49,19 @@ func NewNLPClient(baseURL string, redisClient *redis.Client, cacheTTL time.Durat
 		cacheTTL:   cacheTTL,
 		maxRetries: 3,
 		retryDelay: 1 * time.Second,
+	}
+}
+
+// NewMockNLPClient создаёт mock клиент для тестирования
+// Возвращает предопределенные keywords и embedding без HTTP запросов
+func NewMockNLPClient() *NLPClient {
+	return &NLPClient{
+		httpClient: &http.Client{Timeout: 10 * time.Second},
+		baseURL:    "mock://nlp",
+		redis:      nil,
+		cacheTTL:   0,
+		maxRetries: 0,
+		retryDelay: 0,
 	}
 }
 
@@ -97,7 +118,8 @@ func (c *NLPClient) doWithRetry(ctx context.Context, buildReq requestBuilder) (*
 }
 
 // ExtractKeywords вызывает /extract_keywords и возвращает список ключевых слов
-func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) ([]Keyword, error) {
+// вместе с именем экстрактора, которым они посчитаны.
+func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) (*KeywordsResult, error) {
 	reqBody := map[string]interface{}{
 		"text":  text,
 		"top_n": topN,
@@ -131,13 +153,11 @@ func (c *NLPClient) ExtractKeywords(ctx context.Context, text string, topN int) 
 		return nil, fmt.Errorf("nlp service returned %d: %s", resp.StatusCode, body)
 	}
 
-	var result struct {
-		Keywords []Keyword `json:"keywords"`
-	}
+	var result KeywordsResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
-	return result.Keywords, nil
+	return &result, nil
 }
 
 // Embed вызывает /embed и возвращает вектор ([]float32)
@@ -204,6 +224,81 @@ func (c *NLPClient) Embed(ctx context.Context, text string) ([]float32, error) {
 	}
 
 	return result.Embedding, nil
+}
+
+// Similarity вызывает /similarity и возвращает косинусную близость [0, 1]
+// Результат кэшируется в Redis (если redisClient передан)
+func (c *NLPClient) Similarity(ctx context.Context, textA, textB string) (float64, error) {
+	if textA == "" || textB == "" {
+		return 0.0, nil
+	}
+
+	// Кэш по детерминированному ключу: лексикографически меньший текст — первый
+	a, b := textA, textB
+	if textA > textB {
+		a, b = textB, textA
+	}
+	cacheKey := "similarity:" + sha256Hash(a+"\x00"+b)
+
+	if c.redis != nil {
+		cached, err := c.redis.Get(ctx, cacheKey).Float64()
+		if err == nil {
+			return cached, nil
+		}
+	}
+
+	reqBody := map[string]interface{}{
+		"text_a": textA,
+		"text_b": textB,
+	}
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return 0.0, fmt.Errorf("failed to marshal similarity request: %w", err)
+	}
+
+	buildReq := func() (*http.Request, error) {
+		req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/similarity", bytes.NewReader(jsonBody))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return req, nil
+	}
+
+	resp, err := c.doWithRetry(ctx, buildReq)
+	if err != nil {
+		return 0.0, fmt.Errorf("similarity request failed after retries: %w", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Printf("Warning: failed to close response body: %v\n", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return 0.0, fmt.Errorf("nlp service returned %d: %s", resp.StatusCode, body)
+	}
+
+	var result struct {
+		Similarity float64 `json:"similarity"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return 0.0, fmt.Errorf("failed to decode similarity response: %w", err)
+	}
+
+	// Сохраняем в кэш
+	if c.redis != nil {
+		_ = c.redis.Set(ctx, cacheKey, result.Similarity, c.cacheTTL).Err()
+	}
+
+	return result.Similarity, nil
+}
+
+// sha256Hash возвращает SHA-256 хеш строки в hex
+func sha256Hash(s string) string {
+	h := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(h[:])
 }
 
 // HealthCheck проверяет доступность NLP сервиса

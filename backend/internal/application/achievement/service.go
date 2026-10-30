@@ -1,4 +1,3 @@
-// Package achievement provides the achievement service
 package achievement
 
 import (
@@ -6,14 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
+	"knowledge-graph/internal/application/common"
 	userApp "knowledge-graph/internal/application/user"
 	achievementDomain "knowledge-graph/internal/domain/achievement"
+	dcache "knowledge-graph/internal/domain/cache"
 
 	"github.com/google/uuid"
-	"github.com/hibiken/asynq"
-	"github.com/redis/go-redis/v9"
 )
 
 // Service handles achievement operations
@@ -21,8 +21,8 @@ type Service struct {
 	engine          achievementDomain.Engine
 	achievementRepo achievementDomain.Repository
 	settingsService *userApp.SettingsService
-	taskQueue       interface{}
-	redis           *redis.Client
+	taskQueue       common.TaskQueue
+	cacheClient     dcache.CacheClient
 }
 
 // NewService creates a new achievement service
@@ -30,13 +30,15 @@ func NewService(
 	engine achievementDomain.Engine,
 	achievementRepo achievementDomain.Repository,
 	settingsService *userApp.SettingsService,
-	redis *redis.Client,
+	cacheClient dcache.CacheClient,
+	taskQueue common.TaskQueue,
 ) *Service {
 	return &Service{
 		engine:          engine,
 		achievementRepo: achievementRepo,
 		settingsService: settingsService,
-		redis:           redis,
+		cacheClient:     cacheClient,
+		taskQueue:       taskQueue,
 	}
 }
 
@@ -149,10 +151,14 @@ func matchesTrigger(condition achievementDomain.Condition, trigger map[string]st
 // sendNotification sends an achievement notification if enabled
 func (s *Service) sendNotification(ctx context.Context, userID uuid.UUID, achievement achievementDomain.Achievement) error {
 	// Check if notifications are enabled
-	showNotifications, err := s.settingsService.GetBool(ctx, userID, "show_achievement_notifications")
-	if err != nil {
-		// Default to true on error
-		showNotifications = true
+	showNotifications := true
+	if s.settingsService != nil {
+		var err error
+		showNotifications, err = s.settingsService.GetBool(ctx, userID, "show_achievement_notifications")
+		if err != nil {
+			// Default to true on error
+			showNotifications = true
+		}
 	}
 
 	if !showNotifications {
@@ -177,9 +183,7 @@ func (s *Service) sendNotification(ctx context.Context, userID uuid.UUID, achiev
 
 	// Queue notification task if task queue is available
 	if s.taskQueue != nil {
-		task := asynq.NewTask("notification:achievement", data)
-		_, err := s.taskQueue.(*asynq.Client).Enqueue(task)
-		if err != nil {
+		if err := s.taskQueue.EnqueueNotification(ctx, data); err != nil {
 			return err
 		}
 	}
@@ -217,6 +221,47 @@ func (s *Service) GetUserAchievements(ctx context.Context, userID uuid.UUID) ([]
 	return s.achievementRepo.FindByUserID(ctx, userID)
 }
 
+type UserAchievementWithStatus struct {
+	ID               string  `json:"id"`
+	Code             string  `json:"code"`
+	NameRu           *string `json:"name_ru,omitempty"`
+	NameEn           *string `json:"name_en,omitempty"`
+	DescriptionRu    *string `json:"description_ru,omitempty"`
+	DescriptionEn    *string `json:"description_en,omitempty"`
+	IconEmoji        *string `json:"icon_emoji,omitempty"`
+	Category         *string `json:"category,omitempty"`
+	Points           int     `json:"points"`
+	UnlockedAt       string  `json:"unlocked_at"`
+	NotificationSeen bool    `json:"notification_seen"`
+}
+
+// GetUserAchievementsWithStatus returns all user-earned achievements with unlock metadata.
+func (s *Service) GetUserAchievementsWithStatus(ctx context.Context, userID uuid.UUID) ([]UserAchievementWithStatus, error) {
+	results, err := s.achievementRepo.FindUserAchievementsWithStatus(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]UserAchievementWithStatus, 0, len(results))
+	for _, r := range results {
+		responses = append(responses, UserAchievementWithStatus{
+			ID:               r.ID,
+			Code:             r.Code,
+			NameRu:           r.NameRu,
+			NameEn:           r.NameEn,
+			DescriptionRu:    r.DescriptionRu,
+			DescriptionEn:    r.DescriptionEn,
+			IconEmoji:        r.IconEmoji,
+			Category:         r.Category,
+			Points:           r.Points,
+			UnlockedAt:       r.UnlockedAt.Format(time.RFC3339),
+			NotificationSeen: r.NotificationSeen,
+		})
+	}
+
+	return responses, nil
+}
+
 // GetAllAchievements returns all available achievements
 func (s *Service) GetAllAchievements(ctx context.Context) ([]achievementDomain.Achievement, error) {
 	return s.achievementRepo.FindAll(ctx)
@@ -224,26 +269,26 @@ func (s *Service) GetAllAchievements(ctx context.Context) ([]achievementDomain.A
 
 // TrackLogin records a user login for streak tracking
 func (s *Service) TrackLogin(ctx context.Context, userID uuid.UUID) error {
-	if s.redis == nil {
+	if s.cacheClient == nil {
 		return nil
 	}
 
 	key := fmt.Sprintf("login:streak:%s", userID.String())
 
 	// Check if there's an existing streak
-	exists, err := s.redis.Exists(ctx, key).Result()
+	exists, err := s.cacheClient.Exists(ctx, key)
 	if err != nil {
 		return err
 	}
 
 	if exists == 0 {
 		// New streak
-		s.redis.Set(ctx, key, 1, 48*time.Hour)
+		_ = s.cacheClient.Set(ctx, key, "1", 48*time.Hour)
 	} else {
 		// Increment existing streak
-		s.redis.Incr(ctx, key)
+		_, _ = s.cacheClient.Incr(ctx, key)
 		// Extend TTL
-		s.redis.Expire(ctx, key, 48*time.Hour)
+		_ = s.cacheClient.Expire(ctx, key, 48*time.Hour)
 	}
 
 	// Check for streak-based achievements
@@ -252,18 +297,37 @@ func (s *Service) TrackLogin(ctx context.Context, userID uuid.UUID) error {
 
 // GetStreak returns the current login streak for a user
 func (s *Service) GetStreak(ctx context.Context, userID uuid.UUID) (int, error) {
-	if s.redis == nil {
+	if s.cacheClient == nil {
 		return 0, nil
 	}
 
 	key := fmt.Sprintf("login:streak:%s", userID.String())
-	streak, err := s.redis.Get(ctx, key).Int()
+	streakStr, err := s.cacheClient.Get(ctx, key)
 	if err != nil {
-		if err.Error() == "redis: nil" {
+		if err == dcache.ErrCacheMiss {
 			return 0, nil
 		}
 		return 0, err
 	}
 
+	streak, err := strconv.Atoi(streakStr)
+	if err != nil {
+		return 0, err
+	}
+
 	return streak, nil
+}
+
+// MarkNotificationSeen marks the notification as read for a user's achievement.
+func (s *Service) MarkNotificationSeen(ctx context.Context, userID uuid.UUID, achievementID string) error {
+	if achievementID == "" {
+		return nil
+	}
+
+	achievementUUID, err := uuid.Parse(achievementID)
+	if err != nil {
+		return err
+	}
+
+	return s.achievementRepo.MarkNotificationSeen(ctx, userID, achievementUUID)
 }

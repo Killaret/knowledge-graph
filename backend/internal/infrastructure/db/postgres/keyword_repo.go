@@ -54,6 +54,22 @@ func (r *KeywordRepository) GetKeywordsBatchWithWeights(ctx context.Context, not
 	return result, nil
 }
 
+// FindNoteIDsMissingExtractor returns IDs of notes that have non-empty
+// content but no note_keywords row written by the given extractor.
+// Notes for which the extractor honestly returned an empty list will keep
+// matching — acceptable for a one-shot recompute (see NLP-2 spec).
+func (r *KeywordRepository) FindNoteIDsMissingExtractor(ctx context.Context, extractor string) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT n.id FROM notes n
+		WHERE n.deleted_at IS NULL AND btrim(n.content) <> ''
+		  AND NOT EXISTS (
+			SELECT 1 FROM note_keywords k
+			WHERE k.note_id = n.id AND k.extractor = ?
+		)`, extractor).Scan(&ids).Error
+	return ids, err
+}
+
 // SaveAll сохраняет ключевые слова для заметки (удаляет старые, вставляет новые)
 func (r *KeywordRepository) SaveAll(ctx context.Context, noteID uuid.UUID, keywords []NoteKeywordModel) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

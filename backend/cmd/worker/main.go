@@ -1,25 +1,30 @@
 package main
 
 import (
-	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 
 	"knowledge-graph/internal/application/graph"
+	importer "knowledge-graph/internal/application/import"
+	"knowledge-graph/internal/application/linkweight"
 	"knowledge-graph/internal/application/recommendation"
 	"knowledge-graph/internal/config"
 	graphDomain "knowledge-graph/internal/domain/graph"
+	"knowledge-graph/internal/infrastructure/backup"
+	infracache "knowledge-graph/internal/infrastructure/cache"
+	"knowledge-graph/internal/infrastructure/cloud"
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
+	"knowledge-graph/internal/infrastructure/events"
 	"knowledge-graph/internal/infrastructure/nlp"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/infrastructure/queue/tasks"
+	"knowledge-graph/internal/infrastructure/web"
 )
 
 func main() {
@@ -29,12 +34,36 @@ func main() {
 		log.Printf("FATAL: Failed to load configuration: %v", err)
 		os.Exit(1)
 	}
+
+	// Override NLP URL from environment (environment has priority over config)
+	if nlpServiceURL := os.Getenv("NLP_SERVICE_URL"); nlpServiceURL != "" {
+		cfg.NLPServiceURL = nlpServiceURL
+		log.Printf("NLP_SERVICE_URL from environment: %s", nlpServiceURL)
+	}
+
+	// Override DATABASE_URL from environment (environment has priority over config)
+	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
+		cfg.DatabaseURL = databaseURL
+		log.Printf("DATABASE_URL from environment: %s", maskURL(databaseURL))
+	}
+
+	// Override REDIS_URL from environment (environment has priority over config)
+	if redisURL := os.Getenv("REDIS_URL"); redisURL != "" {
+		cfg.RedisURL = redisURL
+		log.Printf("REDIS_URL from environment: %s", redisURL)
+	}
+
 	log.Printf("Worker config loaded: DatabaseURL=%s, RedisURL=%s, NLPServiceURL=%s",
 		maskURL(cfg.DatabaseURL), cfg.RedisURL, cfg.NLPServiceURL)
 	// Инициализация БД
-	db.Init()
-	if db.DB == nil {
-		log.Fatal("database connection is nil")
+	database, err := db.ConnectWithPool(cfg.DatabaseURL, db.PoolConfig{
+		MaxOpenConns:           cfg.DatabasePoolMaxOpenConns,
+		MaxIdleConns:           cfg.DatabasePoolMaxIdleConns,
+		ConnMaxLifetimeSeconds: cfg.DatabasePoolConnMaxLifetimeSeconds,
+		ConnMaxIdleTimeSeconds: cfg.DatabasePoolConnMaxIdleTimeSeconds,
+	})
+	if err != nil {
+		log.Fatalf("database connection failed: %v", err)
 	}
 	log.Println("Worker: Connected to PostgreSQL")
 
@@ -44,17 +73,27 @@ func main() {
 		redisAddr = "localhost:6379"
 	}
 	log.Println("Starting worker, connecting to Redis at", redisAddr)
-	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:            redisAddr,
+		PoolSize:        10,
+		MinIdleConns:    1,
+		ConnMaxLifetime: 5 * time.Minute,
+		ConnMaxIdleTime: 1 * time.Minute,
+	})
 	defer func() {
 		if err := redisClient.Close(); err != nil {
 			log.Printf("Error closing redis client: %v", err)
 		}
 	}()
 
+	// Клиент кэша
+	cacheClient := infracache.NewRedisCacheClient(redisClient)
+
 	// Репозитории
-	noteRepo := postgres.NewNoteRepository(db.DB, redisClient)
-	keywordRepo := postgres.NewKeywordRepository(db.DB)
-	embeddingRepo := postgres.NewEmbeddingRepository(db.DB)
+	noteRepo := postgres.NewNoteRepository(database, cacheClient)
+	keywordRepo := postgres.NewKeywordRepository(database)
+	embeddingRepo := postgres.NewEmbeddingRepository(database, cfg.NLPModelName)
+	recRepo := postgres.NewRecommendationRepository(database)
 
 	// URL Python-сервиса (внутри Docker – nlp:5000, локально – localhost:5000)
 	nlpURL := cfg.NLPServiceURL
@@ -63,12 +102,45 @@ func main() {
 	}
 	nlpClient := nlp.NewNLPClient(nlpURL, redisClient, 24*time.Hour)
 
+	// Task queue client for the import worker to enqueue note processing tasks.
+	queueClient, err := queue.NewAsynqClient(redisAddr, cfg.BackupEnabled)
+	if err != nil {
+		log.Printf("[Worker] WARNING: failed to create asynq client: %v", err)
+		queueClient = nil
+	}
+	if queueClient != nil {
+		defer func() {
+			if err := queueClient.Close(); err != nil {
+				log.Printf("[Worker] error closing asynq client: %v", err)
+			}
+		}()
+	}
+
+	importSvc := importer.NewService(noteRepo, cacheClient, queueClient, web.NewImportFetcher())
+
+	linkRepo := postgres.NewLinkRepository(database)
+
+	// LINKS-1: gamma-link generation runs after a successful embedding upsert.
+	// LinkCreated events reach graph-service over the same Redis channel the
+	// API uses, so closure refresh and cache invalidation work unchanged.
+	var eventPublisher *events.Publisher
+	if cfg.EventChannel != "" {
+		eventPublisher = events.NewPublisher(redisClient, cfg.EventChannel)
+	} else {
+		log.Println("[Worker] EVENT_CHANNEL not set, gamma-link events will not be published")
+	}
+	gammaGen := recommendation.NewGammaLinkGenerator(embeddingRepo, linkRepo, 2, cfg.GammaLinkMinScore)
+	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
+
 	// Воркер (обработчик задач)
-	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient)
+	worker := queue.NewWorker(noteRepo, keywordRepo, embeddingRepo, nlpClient, cacheClient, importSvc,
+		gammaGen, eventPublisher, queueClient, taskDelay)
 
 	// Graph traversal service for recommendations
-	linkRepo := postgres.NewLinkRepository(db.DB)
 	neighborLoader := graph.NewNeighborLoader(linkRepo, noteRepo)
+
+	// Link weight recalculation service
+	weightRecalc := linkweight.NewRecalculator(linkRepo, noteRepo, nlpClient)
 
 	// Create keyword similarity strategy from config
 	keywordSimilarity, err := recommendation.NewKeywordSimilarity(
@@ -105,25 +177,36 @@ func main() {
 	}
 
 	// Refresh service for background recommendation calculation
-	refreshSvc := recommendation.NewRefreshService(db.DB, redisClient, traversalSvc, cfg.RecommendationTopN)
+	refreshSvc := recommendation.NewRefreshService(noteRepo, recRepo, traversalSvc, cfg.RecommendationTopN)
+
+	// Backup service and runner for event-driven database backups.
+	// Only register the backup handlers when backup is explicitly enabled,
+	// so dev/test/personal stacks without the flag do not run backups.
+	var backupSvc tasks.BackupServiceInterface
+	var backupRunner tasks.DatabaseBackupRunner
+	if cfg.BackupEnabled {
+		backupSvc = buildBackupService(cfg)
+		backupRunner = buildBackupRunner(cfg, backupSvc)
+	} else {
+		log.Println("[Worker] Database backup is disabled")
+	}
 
 	// Asynq сервер с конфигурацией
-	srv := asynq.NewServer(
-		asynq.RedisClientOpt{Addr: redisAddr},
-		asynq.Config{
-			Concurrency: cfg.AsynqConcurrency,
-			Queues: map[string]int{
-				"default": cfg.AsynqQueueDefault,
-			},
-		},
-	)
+	queues := map[string]int{"default": cfg.AsynqQueueDefault}
+	srv := queue.NewServer(redisAddr, cfg.AsynqConcurrency, queues)
 
-	mux := asynq.NewServeMux()
+	mux := queue.NewServeMux()
 	mux.HandleFunc(queue.TypeExtractKeywords, worker.HandleExtractKeywords)
 	mux.HandleFunc(queue.TypeComputeEmbedding, worker.HandleComputeEmbedding)
-	mux.HandleFunc(tasks.TypeRefreshRecommendations, func(ctx context.Context, t *asynq.Task) error {
-		return tasks.HandleRefreshRecommendations(ctx, t, refreshSvc)
-	})
+	mux.HandleFunc(queue.TypeRecalculateLinkWeights, queue.RecalculateLinkWeightsHandler(weightRecalc))
+	mux.HandleFunc(queue.TypeRefreshRecommendations, queue.RefreshRecommendationsHandler(refreshSvc))
+	mux.HandleFunc(queue.TypeImportBookmarks, worker.HandleImportBookmarks)
+	if cfg.BackupEnabled {
+		mux.HandleFunc(queue.TypeDatabaseBackup, queue.BackupDatabaseHandler(backupRunner))
+		if backupSvc != nil {
+			mux.HandleFunc(queue.TypeBackupToCloud, queue.BackupToCloudHandler(backupSvc))
+		}
+	}
 
 	log.Printf("Worker started with config: Concurrency=%d, QueueMaxLen=%d", cfg.AsynqConcurrency, cfg.AsynqQueueMaxLen)
 
@@ -154,6 +237,41 @@ func main() {
 	case err := <-errChan:
 		log.Fatalf("Worker error: %v", err)
 	}
+}
+
+// buildBackupService creates the cloud backup service when configured.
+func buildBackupService(cfg *config.Config) tasks.BackupServiceInterface {
+	if !cfg.BackupCloudEnabled {
+		return nil
+	}
+	if cfg.BackupCloudProvider != "yandex" {
+		log.Printf("[Worker] WARNING: unsupported cloud backup provider: %s", cfg.BackupCloudProvider)
+		return nil
+	}
+	if cfg.BackupYandexOAuthToken == "" {
+		log.Printf("[Worker] WARNING: Yandex backup enabled but token is empty")
+		return nil
+	}
+
+	svc, err := cloud.NewYandexDiskService(cloud.YandexDiskConfig{
+		OAuthToken: cfg.BackupYandexOAuthToken,
+	})
+	if err != nil {
+		log.Printf("[Worker] WARNING: failed to create Yandex backup service: %v", err)
+		return nil
+	}
+	return svc
+}
+
+// buildBackupRunner creates the database backup runner used by the worker.
+func buildBackupRunner(cfg *config.Config, uploader backup.Uploader) *backup.Runner {
+	return backup.NewRunner(
+		cfg.DatabaseURL,
+		cfg.BackupLocalPath,
+		cfg.BackupRetentionDays,
+		backup.WithUploader(uploader),
+		backup.WithRemoteFolder(cfg.BackupYandexFolder),
+	)
 }
 
 // maskURL hides sensitive info in URLs for logging

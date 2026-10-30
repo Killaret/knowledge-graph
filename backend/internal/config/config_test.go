@@ -1,10 +1,21 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	if os.Getenv("JWT_SECRET") == "" {
+		os.Setenv("JWT_SECRET", "test-jwt-secret")
+	}
+}
 
 // TestEnvVarPriority tests that environment variables take priority over JSON config
 func TestEnvVarPriority(t *testing.T) {
@@ -461,4 +472,348 @@ func TestSecurityConfig(t *testing.T) {
 			t.Errorf("Argon2Threads out of reasonable range: %d", cfg.Argon2Threads)
 		}
 	})
+}
+
+func TestConfigHelpers(t *testing.T) {
+	t.Run("getEnv returns env value", func(t *testing.T) {
+		t.Setenv("TEST_CONFIG_KEY", "value")
+		if got := getEnv("TEST_CONFIG_KEY", "default"); got != "value" {
+			t.Errorf("expected 'value', got %q", got)
+		}
+	})
+
+	t.Run("getEnv returns default", func(t *testing.T) {
+		t.Setenv("TEST_CONFIG_KEY_UNKNOWN", "")
+		if got := getEnv("TEST_CONFIG_KEY_UNKNOWN_XYZ", "default"); got != "default" {
+			t.Errorf("expected 'default', got %q", got)
+		}
+	})
+
+	t.Run("mustGetEnv returns value", func(t *testing.T) {
+		t.Setenv("TEST_MUST_KEY", "value")
+		val, err := mustGetEnv("TEST_MUST_KEY")
+		if err != nil || val != "value" {
+			t.Errorf("expected 'value', got %q, err %v", val, err)
+		}
+	})
+
+	t.Run("mustGetEnv returns error when missing", func(t *testing.T) {
+		t.Setenv("TEST_MUST_KEY_MISSING", "")
+		if _, err := mustGetEnv("TEST_MUST_KEY_MISSING_XYZ"); err == nil {
+			t.Error("expected error for missing env var")
+		}
+	})
+
+	t.Run("getIntEnv parses integer", func(t *testing.T) {
+		t.Setenv("TEST_INT_KEY", "42")
+		if got := getIntEnv("TEST_INT_KEY", 0); got != 42 {
+			t.Errorf("expected 42, got %d", got)
+		}
+	})
+
+	t.Run("getIntEnv returns default on invalid", func(t *testing.T) {
+		t.Setenv("TEST_INT_KEY_INVALID", "not-a-number")
+		if got := getIntEnv("TEST_INT_KEY_INVALID", 7); got != 7 {
+			t.Errorf("expected default 7, got %d", got)
+		}
+	})
+
+	t.Run("getFloatEnv parses float", func(t *testing.T) {
+		t.Setenv("TEST_FLOAT_KEY", "3.14")
+		if got := getFloatEnv("TEST_FLOAT_KEY", 0); got != 3.14 {
+			t.Errorf("expected 3.14, got %f", got)
+		}
+	})
+
+	t.Run("getBoolEnv parses bool", func(t *testing.T) {
+		t.Setenv("TEST_BOOL_KEY", "true")
+		if got := getBoolEnv("TEST_BOOL_KEY", false); !got {
+			t.Error("expected true")
+		}
+	})
+
+	t.Run("getUint32Env parses uint32", func(t *testing.T) {
+		t.Setenv("TEST_UINT32_KEY", "100")
+		if got := getUint32Env("TEST_UINT32_KEY", 0); got != 100 {
+			t.Errorf("expected 100, got %d", got)
+		}
+	})
+
+	t.Run("getUint8Env parses uint8", func(t *testing.T) {
+		t.Setenv("TEST_UINT8_KEY", "8")
+		if got := getUint8Env("TEST_UINT8_KEY", 0); got != 8 {
+			t.Errorf("expected 8, got %d", got)
+		}
+	})
+}
+
+func TestMergeJSONObjects(t *testing.T) {
+	dst := map[string]any{
+		"backend": map[string]any{
+			"server": map[string]any{
+				"port": "8080",
+			},
+		},
+	}
+	src := map[string]any{
+		"backend": map[string]any{
+			"server": map[string]any{
+				"port": "9090",
+				"host": "127.0.0.1",
+			},
+			"new": true,
+		},
+	}
+
+	merged := mergeJSONObjects(dst, src)
+	backend := merged["backend"].(map[string]any)
+	server := backend["server"].(map[string]any)
+
+	if server["port"] != "9090" {
+		t.Errorf("expected port 9090, got %v", server["port"])
+	}
+	if server["host"] != "127.0.0.1" {
+		t.Errorf("expected host 127.0.0.1, got %v", server["host"])
+	}
+	if backend["new"] != true {
+		t.Error("expected new key")
+	}
+}
+
+func TestMustJSON(t *testing.T) {
+	data := map[string]any{"key": "value"}
+	jsonStr := mustJSON(data)
+	if jsonStr != `{"key":"value"}` {
+		t.Errorf("unexpected json: %s", jsonStr)
+	}
+}
+
+func TestSkipAuthRequiresTestEnv(t *testing.T) {
+	// Set required variables for config.Load
+	t.Setenv("DATABASE_URL", "postgres://test@localhost/test")
+	t.Setenv("JWT_SECRET", "test-jwt-secret")
+
+	tests := []struct {
+		name     string
+		appEnv   string
+		skipAuth string
+		wantErr  bool
+	}{
+		{"skip auth in dev", "development", "true", true},
+		{"skip auth in production", "production", "true", true},
+		{"skip auth in test", "test", "true", false},
+		{"no skip auth in dev", "development", "false", false},
+		{"empty env defaults to development", "", "false", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("APP_ENV", tt.appEnv)
+			t.Setenv("SKIP_AUTH", tt.skipAuth)
+
+			cfg, err := Load()
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "SKIP_AUTH")
+				assert.Contains(t, err.Error(), "APP_ENV")
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, cfg)
+				if tt.appEnv == "" {
+					assert.Equal(t, "development", cfg.AppEnv)
+				} else {
+					assert.Equal(t, tt.appEnv, cfg.AppEnv)
+				}
+			}
+		})
+	}
+}
+
+func TestJSONDefaultHelpers(t *testing.T) {
+	var cfg JSONConfig
+	cfg.Backend.Recommendation.Depth = 5
+	cfg.Backend.Recommendation.Alpha = 0.5
+
+	if got := getJSONIntOrDefault(&cfg, func(j *JSONConfig) int { return j.Backend.Recommendation.Depth }, 1); got != 5 {
+		t.Errorf("expected 5, got %d", got)
+	}
+	if got := getJSONIntOrDefault(nil, nil, 3); got != 3 {
+		t.Errorf("expected default 3, got %d", got)
+	}
+	if got := getJSONFloatOrDefault(&cfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.Alpha }, 0.1); got != 0.5 {
+		t.Errorf("expected 0.5, got %f", got)
+	}
+	if got := getJSONStringOrDefault(nil, nil, "default"); got != "default" {
+		t.Errorf("expected default string, got %q", got)
+	}
+}
+
+// DB-POOL-1: the env knob must reach the loaded config — POSTGRES_MAX_OPEN_CONNS=7
+// has to land in cfg.DatabasePoolMaxOpenConns.
+func TestDatabasePoolEnvVars(t *testing.T) {
+	vars := []string{
+		"DATABASE_URL",
+		"POSTGRES_MAX_OPEN_CONNS",
+		"POSTGRES_MAX_IDLE_CONNS",
+		"POSTGRES_CONN_MAX_LIFETIME_SECONDS",
+		"POSTGRES_CONN_MAX_IDLE_TIME_SECONDS",
+	}
+	original := make(map[string]string)
+	for _, v := range vars {
+		original[v] = os.Getenv(v)
+	}
+	defer func() {
+		for k, v := range original {
+			if v == "" {
+				os.Unsetenv(k)
+			} else {
+				os.Setenv(k, v)
+			}
+		}
+	}()
+
+	os.Setenv("DATABASE_URL", "postgres://test@localhost/test")
+	os.Setenv("POSTGRES_MAX_OPEN_CONNS", "7")
+	os.Setenv("POSTGRES_MAX_IDLE_CONNS", "3")
+	os.Setenv("POSTGRES_CONN_MAX_LIFETIME_SECONDS", "111")
+	os.Setenv("POSTGRES_CONN_MAX_IDLE_TIME_SECONDS", "22")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+	if cfg.DatabasePoolMaxOpenConns != 7 {
+		t.Errorf("expected DatabasePoolMaxOpenConns 7, got %d", cfg.DatabasePoolMaxOpenConns)
+	}
+	if cfg.DatabasePoolMaxIdleConns != 3 {
+		t.Errorf("expected DatabasePoolMaxIdleConns 3, got %d", cfg.DatabasePoolMaxIdleConns)
+	}
+	if cfg.DatabasePoolConnMaxLifetimeSeconds != 111 {
+		t.Errorf("expected lifetime 111, got %d", cfg.DatabasePoolConnMaxLifetimeSeconds)
+	}
+	if cfg.DatabasePoolConnMaxIdleTimeSeconds != 22 {
+		t.Errorf("expected idle time 22, got %d", cfg.DatabasePoolConnMaxIdleTimeSeconds)
+	}
+}
+
+// TestGammaLinkMinScore ensures the LINKS-1 threshold is wired through env,
+// JSON config and the Go default of 0.6.
+func TestGammaLinkMinScore(t *testing.T) {
+	vars := []string{"DATABASE_URL", "GAMMA_LINK_MIN_SCORE"}
+	original := make(map[string]string)
+	for _, v := range vars {
+		original[v] = os.Getenv(v)
+	}
+	defer func() {
+		for k, v := range original {
+			if v == "" {
+				os.Unsetenv(k)
+			} else {
+				os.Setenv(k, v)
+			}
+		}
+	}()
+
+	os.Setenv("DATABASE_URL", "postgres://test@localhost/test")
+	os.Unsetenv("GAMMA_LINK_MIN_SCORE")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+	if cfg.GammaLinkMinScore != 0.6 {
+		t.Errorf("expected default GammaLinkMinScore 0.6, got %f", cfg.GammaLinkMinScore)
+	}
+
+	os.Setenv("GAMMA_LINK_MIN_SCORE", "0.55")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+	if cfg.GammaLinkMinScore != 0.55 {
+		t.Errorf("expected env override GammaLinkMinScore 0.55, got %f", cfg.GammaLinkMinScore)
+	}
+}
+
+// A loaded JSON config without the gamma_link_min_score key must resolve to
+// the 0.6 default — via the seeded struct for a real load, and via the <=0
+// guard for an explicit non-positive value.
+func TestGammaLinkMinScore_MissingJSONKey(t *testing.T) {
+	original := os.Getenv("GAMMA_LINK_MIN_SCORE")
+	defer func() {
+		if original == "" {
+			os.Unsetenv("GAMMA_LINK_MIN_SCORE")
+		} else {
+			os.Setenv("GAMMA_LINK_MIN_SCORE", original)
+		}
+	}()
+	os.Unsetenv("GAMMA_LINK_MIN_SCORE")
+
+	// CONFIG-1 path: seeded struct + file that omits the key -> default kept.
+	jsonCfg := defaultJSONConfig()
+	require.NoError(t, json.Unmarshal([]byte(`{"backend":{"pagination":{"default_limit":50}}}`), jsonCfg))
+	if v := resolveGammaLinkMinScore(jsonCfg); v != 0.6 {
+		t.Errorf("expected fallback 0.6 for missing JSON key, got %f", v)
+	}
+	assert.Equal(t, 50, jsonCfg.Backend.Pagination.DefaultLimit, "present key must override the seed")
+	assert.Equal(t, 100, jsonCfg.Backend.Pagination.MaxLimit, "absent sibling key must keep its default")
+
+	// Explicit non-positive still clamps through the guard.
+	jsonCfg.Backend.Recommendation.GammaLinkMinScore = 0
+	if v := resolveGammaLinkMinScore(jsonCfg); v != 0.6 {
+		t.Errorf("expected fallback 0.6 for explicit 0, got %f", v)
+	}
+
+	// An explicit positive value still wins.
+	jsonCfg.Backend.Recommendation.GammaLinkMinScore = 0.7
+	if v := resolveGammaLinkMinScore(jsonCfg); v != 0.7 {
+		t.Errorf("expected JSON value 0.7, got %f", v)
+	}
+}
+
+// CONFIG-1 drift guard: the seeded struct must mirror every call-site
+// default. resolveConfig(nil) resolves through the helpers' defaultValue
+// arguments; resolveConfig(defaultJSONConfig()) resolves through the seed —
+// any default added to one but not the other shows up as a diff here.
+func TestDefaultJSONConfig_MatchesCallSiteDefaults(t *testing.T) {
+	saved := os.Environ()
+	os.Clearenv()
+	t.Cleanup(func() {
+		os.Clearenv()
+		for _, kv := range saved {
+			if k, v, ok := strings.Cut(kv, "="); ok {
+				os.Setenv(k, v)
+			}
+		}
+	})
+	t.Setenv("DATABASE_URL", "postgres://test:test@localhost/test")
+	t.Setenv("JWT_SECRET", "test-jwt-secret")
+
+	withoutFile, err := resolveConfig(nil)
+	require.NoError(t, err)
+	withSeed, err := resolveConfig(defaultJSONConfig())
+	require.NoError(t, err)
+
+	assert.Equal(t, *withoutFile, *withSeed,
+		"seeded JSONConfig must reproduce every built-in default — a missing field means defaultJSONConfig drifted from the call sites")
+}
+
+// CONFIG-1: explicit zero-values in the file must still apply — the fix is
+// pre-seeding, not zero-detection, so `false`/`0`/`""` are real settings.
+func TestDefaultJSONConfig_ExplicitValuesWin(t *testing.T) {
+	jsonCfg := defaultJSONConfig()
+	require.NoError(t, json.Unmarshal([]byte(`{
+		"backend": {
+			"search": {"fallback_to_ilike": false},
+			"server": {"rate_limit": {"enabled": false, "endpoints": {"notes_create": 5}}}
+		}
+	}`), jsonCfg))
+
+	assert.False(t, jsonCfg.Backend.Search.FallbackToILike, "explicit false must override the seeded true")
+	assert.False(t, jsonCfg.Backend.Server.RateLimit.Enabled)
+	// Partial maps merge onto the seeded defaults: unspecified entries keep
+	// their default rates instead of disappearing.
+	assert.Equal(t, 5, jsonCfg.Backend.Server.RateLimit.Endpoints["notes_create"])
+	assert.Equal(t, 50, jsonCfg.Backend.Server.RateLimit.Endpoints["links_create"],
+		"absent map entry must keep its seeded default")
 }

@@ -4,16 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 )
 
 // JSONConfig represents the structure of knowledge-graph.config.json
 type JSONConfig struct {
 	Backend struct {
+		AppEnv string `json:"app_env"`
 		Server struct {
 			RateLimit struct {
 				Enabled       bool           `json:"enabled"`
@@ -27,6 +31,13 @@ type JSONConfig struct {
 			RetryMaxAttempts      int  `json:"retry_max_attempts"`
 			RetryDelaySeconds     int  `json:"retry_delay_seconds"`
 			MigrationsFailOnError bool `json:"migrations_fail_on_error"`
+			Pool                  struct {
+				MaxOpenConns           int `json:"max_open_conns"`
+				MaxIdleConns           int `json:"max_idle_conns"`
+				ConnMaxLifetimeSeconds int `json:"conn_max_lifetime_seconds"`
+				ConnMaxIdleTimeSeconds int `json:"conn_max_idle_time_seconds"`
+				StatsIntervalSeconds   int `json:"stats_interval_seconds"`
+			} `json:"pool"`
 		} `json:"database"`
 		Search struct {
 			FulltextLanguages []string           `json:"fulltext_languages"`
@@ -52,6 +63,7 @@ type JSONConfig struct {
 			KeywordSimilarityMethod string  `json:"keyword_similarity_method"`
 			KeywordTverskyAlpha     float64 `json:"keyword_tversky_alpha"`
 			KeywordTverskyBeta      float64 `json:"keyword_tversky_beta"`
+			GammaLinkMinScore       float64 `json:"gamma_link_min_score"`
 		} `json:"recommendation"`
 		Pagination struct {
 			DefaultLimit int `json:"default_limit"`
@@ -73,7 +85,11 @@ type JSONConfig struct {
 			QueueDefault int `json:"queue_default"`
 			QueueMaxLen  int `json:"queue_max_len"`
 		} `json:"asynq"`
+		Redis struct {
+			FlushOnStartup bool `json:"flush_on_startup"`
+		} `json:"redis"`
 		Auth struct {
+			FrontendURL                  string `json:"frontend_url"`
 			JWTSecret                    string `json:"jwt_secret"`
 			JWTAccessTTLSeconds          int    `json:"jwt_access_ttl_seconds"`
 			JWTRefreshTTLSeconds         int    `json:"jwt_refresh_ttl_seconds"`
@@ -81,6 +97,7 @@ type JSONConfig struct {
 			Argon2Memory                 uint32 `json:"argon2_memory"`
 			Argon2Threads                uint8  `json:"argon2_threads"`
 			APIKeyEnabled                bool   `json:"api_key_enabled"`
+			StaticAPIKey                 string `json:"static_api_key"`
 			SkipAuth                     bool   `json:"skip_auth"` // Disable auth for testing
 			YandexClientID               string `json:"yandex_client_id"`
 			YandexClientSecret           string `json:"yandex_client_secret"`
@@ -99,10 +116,33 @@ type JSONConfig struct {
 			PasswordPolicyRequireSpecial bool   `json:"password_policy_require_special"`
 		} `json:"auth"`
 	} `json:"backend"`
+	Backup struct {
+		Enabled   bool   `json:"enabled"`
+		LocalPath string `json:"local_path"`
+		Cloud     struct {
+			Enabled  bool   `json:"enabled"`
+			Provider string `json:"provider"`
+			Yandex   struct {
+				OAuthToken   string `json:"oauth_token"`
+				BackupFolder string `json:"backup_folder"`
+				MaxBackups   int    `json:"max_backups"`
+			} `json:"yandex"`
+		} `json:"cloud"`
+		Schedule      string `json:"schedule"`
+		RetentionDays int    `json:"retention_days"`
+		DraftTTLHours int    `json:"draft_ttl_hours"`
+	} `json:"backup"`
+	MongoDB struct {
+		URL      string `json:"url"`
+		Database string `json:"database"`
+	} `json:"mongodb"`
 }
 
 type Config struct {
-	// Сервер
+	// App environment (development, test, production)
+	AppEnv string
+
+	// Server
 	ServerPort                   string
 	ServerRateLimitEnabled       bool
 	ServerRateLimitRequests      int
@@ -110,24 +150,32 @@ type Config struct {
 	ServerRateLimitEndpoints     map[string]int
 	ServerFallbackPorts          []string
 
-	// База данных
-	DatabaseURL               string
-	DatabaseRetryMaxAttempts  int
-	DatabaseRetryDelaySeconds int
-	MigrationsFailOnError     bool
+	// Database
+	DatabaseURL                        string
+	DatabaseRetryMaxAttempts           int
+	DatabaseRetryDelaySeconds          int
+	MigrationsFailOnError              bool
+	DatabasePoolMaxOpenConns           int
+	DatabasePoolMaxIdleConns           int
+	DatabasePoolConnMaxLifetimeSeconds int
+	DatabasePoolConnMaxIdleTimeSeconds int
+	DatabasePoolStatsIntervalSeconds   int
 
 	// Redis
-	RedisURL string
+	RedisURL            string
+	RedisFlushOnStartup bool
+	EventChannel        string
 
 	// NLP
 	NLPServiceURL string
+	NLPModelName  string
 
 	// Search
 	SearchFulltextLanguages []string
 	SearchRankingWeights    map[string]float64
 	SearchFallbackToILike   bool
 
-	// Рекомендации (граф)
+	// Recommendations (graph)
 	RecommendationAlpha      float64
 	RecommendationBeta       float64
 	RecommendationDepth      int
@@ -135,8 +183,8 @@ type Config struct {
 	RecommendationCacheTTL   time.Duration
 	EmbeddingSimilarityLimit int
 
-	// Загрузка графа (визуализация)
-	GraphLoadDepth int // Глубина загрузки графа для визуализации
+	// Graph loading (visualization)
+	GraphLoadDepth int // Depth of graph loading for visualization
 
 	// Pagination
 	PaginationDefaultLimit int
@@ -148,25 +196,36 @@ type Config struct {
 	GraphLinkDefaultLimit int
 	GraphLinkMaxLimit     int
 
-	// Новые параметры для улучшения алгоритма рекомендаций
-	RecommendationGamma                   float64       // Коэффициент для дополнительного компонента
-	BFSAggregation                        string        // Метод агрегации BFS: "max", "sum", "avg"
-	BFSNormalize                          bool          // Нормализация весов в BFS
-	RecommendationTopN                    int           // Количество рекомендаций для сохранения
-	RecommendationTaskDelaySeconds        int           // Задержка перед выполнением задачи (dedup)
-	RecommendationBatchRateLimit          int           // Rate limit для batch обработки
-	RecommendationFallbackEnabled         bool          // Включить fallback на Redis
-	RecommendationFallbackTTL             time.Duration // TTL для fallback-кэша
-	RecommendationFallbackSemanticEnabled bool          // Включить fallback на семантических соседей
-	RecommendationKeywordEnabled          bool          // Включить keyword-компонент (gamma)
-	RecommendationKeywordSimilarityMethod string        // Метод сходства ключевых слов: jaccard, overlap, tversky, weighted_jaccard, cosine
-	RecommendationKeywordTverskyAlpha     float64       // Alpha параметр для Tversky index
-	RecommendationKeywordTverskyBeta      float64       // Beta параметр для Tversky index
-	AsynqConcurrency                      int           // Уровень параллелизма Asynq
-	AsynqQueueDefault                     int           // Приоритет дефолтной очереди Asynq
-	AsynqQueueMaxLen                      int           // Максимальная длина очереди
+	// Graph service integration
+	GraphServiceURL           string        // HTTP URL of the graph analytics service
+	GraphServiceInternalToken string        // Shared secret for internal service calls
+	GraphServiceTimeout       time.Duration // HTTP client timeout for graph service calls
 
-	// Auth
+	// New parameters for improved recommendation algorithm
+	RecommendationGamma                   float64       // Coefficient for additional component
+	BFSAggregation                        string        // BFS aggregation method: "max", "sum", "avg"
+	BFSNormalize                          bool          // Normalize weights in BFS
+	RecommendationTopN                    int           // Number of recommendations to save
+	RecommendationTaskDelaySeconds        int           // Delay before task execution (dedup)
+	RecommendationBatchRateLimit          int           // Rate limit for batch processing
+	RecommendationFallbackEnabled         bool          // Enable fallback to Redis
+	RecommendationFallbackTTL             time.Duration // TTL for fallback cache
+	RecommendationFallbackSemanticEnabled bool          // Enable fallback for semantic neighbors
+	RecommendationKeywordEnabled          bool          // Enable keyword component (gamma)
+	RecommendationKeywordSimilarityMethod string        // Keyword similarity method: jaccard, overlap, tversky, weighted_jaccard, cosine
+	RecommendationKeywordTverskyAlpha     float64       // Alpha parameter for Tversky index
+	RecommendationKeywordTverskyBeta      float64       // Beta parameter for Tversky index
+	GammaLinkMinScore                     float64       // Minimum cosine similarity for an automatic (gamma) link; below it no link is created
+	AsynqConcurrency                      int           // Asynq concurrency level
+	AsynqQueueDefault                     int           // Asynq default queue priority
+	AsynqQueueMaxLen                      int           // Maximum queue length
+
+	// MongoDB
+	MongoDBURL      string
+	MongoDBDatabase string
+
+	// Auth / App
+	FrontendURL                  string
 	JWTSecret                    string
 	JWTAccessTTL                 time.Duration
 	JWTRefreshTTL                time.Duration
@@ -174,6 +233,7 @@ type Config struct {
 	Argon2Memory                 uint32
 	Argon2Threads                uint8
 	APIKeyEnabled                bool
+	StaticAPIKey                 string
 	SkipAuth                     bool // Disable auth for testing
 	YandexClientID               string
 	YandexClientSecret           string
@@ -190,21 +250,32 @@ type Config struct {
 	PasswordPolicyRequireLower   bool
 	PasswordPolicyRequireDigit   bool
 	PasswordPolicyRequireSpecial bool
+
+	// Backup configuration
+	BackupEnabled          bool
+	BackupCloudEnabled     bool
+	BackupCloudProvider    string
+	BackupLocalPath        string
+	BackupSchedule         string
+	BackupRetentionDays    int
+	BackupYandexOAuthToken string
+	BackupYandexFolder     string
+	BackupYandexMaxBackups int
 }
 
-// loadJSONConfig загружает конфигурацию из knowledge-graph.config.json
-// Возвращает nil если файл не существует или не может быть прочитан
+// loadJSONConfig loads configuration from knowledge-graph.config.json
+// Returns nil if file doesn't exist or cannot be read
 func loadJSONConfig() *JSONConfig {
-	// Определяем путь к корню проекта (где находится knowledge-graph.config.json)
-	// Пробуем несколько вариантов поиска файла
+	// Determine path to project root (where knowledge-graph.config.json is located)
+	// Try several possible file locations
 	possiblePaths := []string{
-		"knowledge-graph.config.json", // текущая директория
+		"knowledge-graph.config.json", // current directory
 	}
 
-	// Добавляем путь относительно расположения этого файла (backend/internal/config)
+	// Add path relative to this file location (backend/internal/config)
 	_, filename, _, ok := runtime.Caller(0)
 	if ok {
-		// От корня проекта: backend/internal/config -> ../../../knowledge-graph.config.json
+		// From project root: backend/internal/config -> ../../../knowledge-graph.config.json
 		configDir := filepath.Dir(filename)
 		projectRoot := filepath.Join(configDir, "..", "..", "..")
 		possiblePaths = append(possiblePaths, filepath.Join(projectRoot, "knowledge-graph.config.json"))
@@ -222,30 +293,119 @@ func loadJSONConfig() *JSONConfig {
 	}
 
 	if err != nil {
-		// Файл не найден - это нормально, используем только env vars
+		// Try to load configuration from separate config/*.json files
+		configDir := filepath.Join(filepath.Dir(filename), "..", "..", "..", "config")
+		if mergedConfig := loadJSONConfigParts(configDir); mergedConfig != nil {
+			log.Printf("[Config] Loaded JSON config from folder: %s", configDir)
+			return mergedConfig
+		}
+
 		log.Printf("[Config] knowledge-graph.config.json not found, using env vars only")
 		return nil
 	}
 
-	var jsonCfg JSONConfig
-	if err := json.Unmarshal(data, &jsonCfg); err != nil {
+	// CONFIG-1: unmarshal onto a struct pre-seeded with the built-in defaults —
+	// keys the file omits keep their defaults instead of silently becoming
+	// zero values; values the file sets (including explicit 0/false/"") apply.
+	jsonCfg := defaultJSONConfig()
+	if err := json.Unmarshal(data, jsonCfg); err != nil {
 		log.Printf("[Config] Failed to parse knowledge-graph.config.json: %v, using env vars only", err)
 		return nil
 	}
 
 	log.Printf("[Config] JSON config loaded successfully")
-	return &jsonCfg
+	return jsonCfg
 }
 
-// Load загружает конфигурацию из переменных окружения.
-// Если переменная не задана, используется значение по умолчанию из JSON-конфига (если он есть),
-// иначе используется встроенное значение по умолчанию.
-// Для обязательных переменных (DatabaseURL) используется mustGetEnv.
-func Load() (*Config, error) {
-	// Загружаем JSON конфиг как источник дефолтных значений
-	jsonCfg := loadJSONConfig()
+// Load loads configuration from environment variables.
+// If a variable is not set, the default value from JSON config is used (if available),
+// otherwise the built-in default value is used.
+// For required variables (DatabaseURL), mustGetEnv is used.
+func loadJSONConfigParts(configDir string) *JSONConfig {
+	stat, err := os.Stat(configDir)
+	if err != nil || !stat.IsDir() {
+		return nil
+	}
 
+	entries, err := os.ReadDir(configDir)
+	if err != nil {
+		log.Printf("[Config] Failed to read config dir %s: %v", configDir, err)
+		return nil
+	}
+
+	merged := map[string]any{}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+
+		filePath := filepath.Join(configDir, entry.Name())
+		raw, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Printf("[Config] Failed to read config part %s: %v", filePath, err)
+			return nil
+		}
+
+		var part map[string]any
+		if err := json.Unmarshal(raw, &part); err != nil {
+			log.Printf("[Config] Failed to parse config part %s: %v", filePath, err)
+			return nil
+		}
+
+		merged = mergeJSONObjects(merged, part)
+	}
+
+	// Same pre-seed as the single-file path — merged parts may omit keys too.
+	jsonCfg := defaultJSONConfig()
+	if err := json.Unmarshal([]byte(mustJSON(merged)), jsonCfg); err != nil {
+		log.Printf("[Config] Failed to unmarshal merged config parts: %v", err)
+		return nil
+	}
+
+	return jsonCfg
+}
+
+func mergeJSONObjects(dst, src map[string]any) map[string]any {
+	for key, srcValue := range src {
+		if dstValue, ok := dst[key]; ok && isMap(dstValue) && isMap(srcValue) {
+			dst[key] = mergeJSONObjects(dstValue.(map[string]any), srcValue.(map[string]any))
+			continue
+		}
+		dst[key] = srcValue
+	}
+	return dst
+}
+
+func isMap(value any) bool {
+	_, ok := value.(map[string]any)
+	return ok
+}
+
+func mustJSON(value any) string {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	return string(raw)
+}
+
+func (c *Config) IsTest() bool       { return c.AppEnv == "test" }
+func (c *Config) IsProduction() bool { return c.AppEnv == "production" }
+
+func Load() (*Config, error) {
+	// Load JSON config as source of default values
+	return resolveConfig(loadJSONConfig())
+}
+
+// resolveConfig builds the effective Config: env vars win over JSON fields,
+// JSON fields over built-in defaults. It is split from Load so tests can
+// compare the nil-config path against a defaults-seeded struct — the drift
+// guard for defaultJSONConfig.
+func resolveConfig(jsonCfg *JSONConfig) (*Config, error) {
 	cfg := &Config{
+		// App environment (env > JSON > development)
+		AppEnv: getEnv("APP_ENV", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.AppEnv }, "development")),
+
 		// Server
 		ServerPort:                   getEnv("SERVER_PORT", "8080"),
 		ServerRateLimitEnabled:       getBoolEnv("SERVER_RATE_LIMIT_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Server.RateLimit.Enabled }, true)),
@@ -260,12 +420,22 @@ func Load() (*Config, error) {
 		DatabaseRetryDelaySeconds: getIntEnv("DATABASE_RETRY_DELAY_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.RetryDelaySeconds }, 5)),
 		MigrationsFailOnError:     getBoolEnv("MIGRATIONS_FAIL_ON_ERROR", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Database.MigrationsFailOnError }, false)),
 
+		// Database connection pool
+		DatabasePoolMaxOpenConns:           getIntEnv("POSTGRES_MAX_OPEN_CONNS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.MaxOpenConns }, 25)),
+		DatabasePoolMaxIdleConns:           getIntEnv("POSTGRES_MAX_IDLE_CONNS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.MaxIdleConns }, 5)),
+		DatabasePoolConnMaxLifetimeSeconds: getIntEnv("POSTGRES_CONN_MAX_LIFETIME_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.ConnMaxLifetimeSeconds }, 300)),
+		DatabasePoolConnMaxIdleTimeSeconds: getIntEnv("POSTGRES_CONN_MAX_IDLE_TIME_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.ConnMaxIdleTimeSeconds }, 60)),
+		DatabasePoolStatsIntervalSeconds:   getIntEnv("POSTGRES_POOL_STATS_INTERVAL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Database.Pool.StatsIntervalSeconds }, 300)),
+
 		// Redis & NLP
-		RedisURL:      getEnv("REDIS_URL", "localhost:6379"),
-		NLPServiceURL: getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
+		RedisURL:            getEnv("REDIS_URL", "localhost:6379"),
+		RedisFlushOnStartup: getBoolEnv("REDIS_FLUSH_ON_STARTUP", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Redis.FlushOnStartup }, false)),
+		EventChannel:        getEnv("EVENT_CHANNEL", "graph:events"),
+		NLPServiceURL:       getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
+		NLPModelName:        getEnv("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2"),
 
 		// Search
-		SearchFulltextLanguages: getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Search.FulltextLanguages }, []string{"russian", "simple"}),
+		SearchFulltextLanguages: getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Search.FulltextLanguages }, slices.Clone(defaultFulltextLanguages)),
 		SearchRankingWeights:    nil, // Loaded separately below
 		SearchFallbackToILike:   getBoolEnv("SEARCH_FALLBACK_TO_ILIKE", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Search.FallbackToILike }, true)),
 
@@ -277,7 +447,7 @@ func Load() (*Config, error) {
 		RecommendationCacheTTL:   time.Duration(getIntEnv("RECOMMENDATION_CACHE_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Recommendation.CacheTTLSeconds }, 300))) * time.Second,
 		EmbeddingSimilarityLimit: getIntEnv("EMBEDDING_SIMILARITY_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Embedding.SimilarityLimit }, 30)),
 
-		// Загрузка графа
+		// Graph loading
 		GraphLoadDepth: getIntEnv("GRAPH_LOAD_DEPTH", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LoadDepth }, 2)),
 
 		// Pagination
@@ -290,7 +460,12 @@ func Load() (*Config, error) {
 		GraphLinkDefaultLimit: getIntEnv("GRAPH_LINK_DEFAULT_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LinkDefaultLimit }, 500)),
 		GraphLinkMaxLimit:     getIntEnv("GRAPH_LINK_MAX_LIMIT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Graph.LinkMaxLimit }, 5000)),
 
-		// Новые параметры
+		// Graph service integration
+		GraphServiceURL:           getEnv("GRAPH_SERVICE_URL", "http://graph-service:9091"),
+		GraphServiceInternalToken: getEnv("GRAPH_SERVICE_INTERNAL_TOKEN", ""),
+		GraphServiceTimeout:       time.Duration(getIntEnv("GRAPH_SERVICE_TIMEOUT_SECONDS", 5)) * time.Second,
+
+		// New parameters
 		RecommendationGamma:                   getFloatEnv("RECOMMENDATION_GAMMA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.Gamma }, 0.2)),
 		BFSAggregation:                        getEnv("BFS_AGGREGATION", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Recommendation.BFSAggregation }, "max")),
 		BFSNormalize:                          getBoolEnv("BFS_NORMALIZE", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.BFSNormalize }, true)),
@@ -301,6 +476,7 @@ func Load() (*Config, error) {
 		RecommendationFallbackTTL:             time.Duration(getIntEnv("RECOMMENDATION_FALLBACK_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Recommendation.FallbackTTLSeconds }, 3600))) * time.Second,
 		RecommendationFallbackSemanticEnabled: getBoolEnv("RECOMMENDATION_FALLBACK_SEMANTIC_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.FallbackSemanticEnabled }, true)),
 		RecommendationKeywordEnabled:          getBoolEnv("RECOMMENDATION_KEYWORD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Recommendation.KeywordEnabled }, true)),
+		GammaLinkMinScore:                     resolveGammaLinkMinScore(jsonCfg),
 		RecommendationKeywordSimilarityMethod: getEnv("RECOMMENDATION_KEYWORD_SIMILARITY_METHOD", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Recommendation.KeywordSimilarityMethod }, "jaccard")),
 		RecommendationKeywordTverskyAlpha:     getFloatEnv("RECOMMENDATION_KEYWORD_TVERSKY_ALPHA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.KeywordTverskyAlpha }, 0.5)),
 		RecommendationKeywordTverskyBeta:      getFloatEnv("RECOMMENDATION_KEYWORD_TVERSKY_BETA", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 { return j.Backend.Recommendation.KeywordTverskyBeta }, 0.5)),
@@ -308,14 +484,20 @@ func Load() (*Config, error) {
 		AsynqQueueDefault:                     getIntEnv("ASYNQ_QUEUE_DEFAULT", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueDefault }, 1)),
 		AsynqQueueMaxLen:                      getIntEnv("ASYNQ_QUEUE_MAX_LEN", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Asynq.QueueMaxLen }, 10000)),
 
-		// Auth configuration
-		JWTSecret:                    getEnv("JWT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.JWTSecret }, "change-me-in-production")),
+		// MongoDB configuration
+		MongoDBURL:      getEnv("MONGO_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.URL }, "mongodb://localhost:27017")),
+		MongoDBDatabase: getEnv("MONGO_DATABASE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.MongoDB.Database }, "knowledge_graph")),
+
+		// Auth / App configuration
+		FrontendURL:                  getEnv("FRONTEND_URL", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.FrontendURL }, "")),
+		JWTSecret:                    getEnv("JWT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.JWTSecret }, "")),
 		JWTAccessTTL:                 time.Duration(getIntEnv("JWT_ACCESS_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.JWTAccessTTLSeconds }, 900))) * time.Second,
 		JWTRefreshTTL:                time.Duration(getIntEnv("JWT_REFRESH_TTL_SECONDS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backend.Auth.JWTRefreshTTLSeconds }, 604800))) * time.Second,
 		Argon2Time:                   getUint32Env("ARGON2_TIME", getJSONUint32OrDefault(jsonCfg, func(j *JSONConfig) uint32 { return j.Backend.Auth.Argon2Time }, 3)),
 		Argon2Memory:                 getUint32Env("ARGON2_MEMORY", getJSONUint32OrDefault(jsonCfg, func(j *JSONConfig) uint32 { return j.Backend.Auth.Argon2Memory }, 65536)),
 		Argon2Threads:                getUint8Env("ARGON2_THREADS", getJSONUint8OrDefault(jsonCfg, func(j *JSONConfig) uint8 { return j.Backend.Auth.Argon2Threads }, 4)),
 		APIKeyEnabled:                getBoolEnv("API_KEY_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.APIKeyEnabled }, true)),
+		StaticAPIKey:                 getEnv("STATIC_API_KEY", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.StaticAPIKey }, "")),
 		SkipAuth:                     getBoolEnv("SKIP_AUTH", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.SkipAuth }, false)),
 		YandexClientID:               getEnv("YANDEX_CLIENT_ID", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.YandexClientID }, "")),
 		YandexClientSecret:           getEnv("YANDEX_CLIENT_SECRET", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backend.Auth.YandexClientSecret }, "")),
@@ -332,32 +514,29 @@ func Load() (*Config, error) {
 		PasswordPolicyRequireLower:   getBoolEnv("PASSWORD_POLICY_REQUIRE_LOWER", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireLower }, true)),
 		PasswordPolicyRequireDigit:   getBoolEnv("PASSWORD_POLICY_REQUIRE_DIGIT", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireDigit }, true)),
 		PasswordPolicyRequireSpecial: getBoolEnv("PASSWORD_POLICY_REQUIRE_SPECIAL", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backend.Auth.PasswordPolicyRequireSpecial }, true)),
+
+		// Backup configuration
+		BackupEnabled:          getBoolEnv("BACKUP_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backup.Enabled }, false)),
+		BackupCloudEnabled:     getBoolEnv("BACKUP_CLOUD_ENABLED", getJSONBoolOrDefault(jsonCfg, func(j *JSONConfig) bool { return j.Backup.Cloud.Enabled }, false)),
+		BackupCloudProvider:    getEnv("BACKUP_CLOUD_PROVIDER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Provider }, "r2")),
+		BackupLocalPath:        getEnv("BACKUP_LOCAL_PATH", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.LocalPath }, "./backups")),
+		BackupSchedule:         getEnv("BACKUP_SCHEDULE", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Schedule }, "0 2 * * *")),
+		BackupRetentionDays:    getIntEnv("BACKUP_RETENTION_DAYS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backup.RetentionDays }, 7)),
+		BackupYandexOAuthToken: getEnv("BACKUP_YANDEX_OAUTH_TOKEN", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Yandex.OAuthToken }, "")),
+		BackupYandexFolder:     getEnv("BACKUP_YANDEX_FOLDER", getJSONStringOrDefault(jsonCfg, func(j *JSONConfig) string { return j.Backup.Cloud.Yandex.BackupFolder }, "/KnowledgeGraphBackups")),
+		BackupYandexMaxBackups: getIntEnv("BACKUP_YANDEX_MAX_BACKUPS", getJSONIntOrDefault(jsonCfg, func(j *JSONConfig) int { return j.Backup.Cloud.Yandex.MaxBackups }, 10)),
 	}
 
 	// Load complex types from JSON (no env var override for these)
 	if jsonCfg != nil {
-		cfg.ServerRateLimitEndpoints = getJSONIntMapOrDefault(jsonCfg, func(j *JSONConfig) map[string]int { return j.Backend.Server.RateLimit.Endpoints }, map[string]int{
-			"notes_create": 30,
-			"links_create": 50,
-			"notes_update": 20,
-		})
-		cfg.ServerFallbackPorts = getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Server.RateLimit.FallbackPorts }, []string{"8081", "8082"})
-		cfg.SearchRankingWeights = getJSONFloatMapOrDefault(jsonCfg, func(j *JSONConfig) map[string]float64 { return j.Backend.Search.RankingWeights }, map[string]float64{
-			"russian": 1.0,
-			"simple":  1.0,
-		})
+		cfg.ServerRateLimitEndpoints = getJSONIntMapOrDefault(jsonCfg, func(j *JSONConfig) map[string]int { return j.Backend.Server.RateLimit.Endpoints }, maps.Clone(defaultRateLimitEndpoints))
+		cfg.ServerFallbackPorts = getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Server.RateLimit.FallbackPorts }, slices.Clone(defaultFallbackPorts))
+		cfg.SearchRankingWeights = getJSONFloatMapOrDefault(jsonCfg, func(j *JSONConfig) map[string]float64 { return j.Backend.Search.RankingWeights }, maps.Clone(defaultRankingWeights))
 	} else {
 		// Set defaults when no JSON config
-		cfg.ServerRateLimitEndpoints = map[string]int{
-			"notes_create": 30,
-			"links_create": 50,
-			"notes_update": 20,
-		}
-		cfg.ServerFallbackPorts = []string{"8081", "8082"}
-		cfg.SearchRankingWeights = map[string]float64{
-			"russian": 1.0,
-			"simple":  1.0,
-		}
+		cfg.ServerRateLimitEndpoints = maps.Clone(defaultRateLimitEndpoints)
+		cfg.ServerFallbackPorts = slices.Clone(defaultFallbackPorts)
+		cfg.SearchRankingWeights = maps.Clone(defaultRankingWeights)
 	}
 
 	// Load required environment variable
@@ -367,7 +546,143 @@ func Load() (*Config, error) {
 	}
 	cfg.DatabaseURL = dbURL
 
+	if cfg.JWTSecret == "" {
+		return nil, fmt.Errorf("JWT_SECRET must be set via environment variable or configuration")
+	}
+
+	if cfg.SkipAuth && !cfg.IsTest() {
+		return nil, fmt.Errorf("SKIP_AUTH=true is only allowed when APP_ENV=test; current APP_ENV=%s", cfg.AppEnv)
+	}
+
 	return cfg, nil
+}
+
+// resolveGammaLinkMinScore wires env -> JSON -> default 0.6, plus a guard:
+// an explicit non-positive value would silently link every note to any
+// neighbour — the exact failure the threshold exists to prevent — so it is
+// clamped to the default with a log line. (A *missing* key no longer reaches
+// here as zero: defaultJSONConfig seeds 0.6 before unmarshal, CONFIG-1.)
+func resolveGammaLinkMinScore(jsonCfg *JSONConfig) float64 {
+	const fallback = 0.6
+	v := getFloatEnv("GAMMA_LINK_MIN_SCORE", getJSONFloatOrDefault(jsonCfg, func(j *JSONConfig) float64 {
+		return j.Backend.Recommendation.GammaLinkMinScore
+	}, fallback))
+	if v <= 0 {
+		log.Printf("[Config] gamma_link_min_score resolved to %v (non-positive); using default %v", v, fallback)
+		return fallback
+	}
+	return v
+}
+
+// Shared defaults for JSON config's complex types — one source for the
+// no-file path (resolveConfig else-branch), the seeded struct, and the helper
+// fallback argument.
+var (
+	defaultRateLimitEndpoints = map[string]int{
+		"notes_create": 30,
+		"links_create": 50,
+		"notes_update": 20,
+	}
+	defaultFallbackPorts  = []string{"8081", "8082"}
+	defaultRankingWeights = map[string]float64{
+		"russian": 1.0,
+		"simple":  1.0,
+	}
+	defaultFulltextLanguages = []string{"russian", "simple"}
+)
+
+// defaultJSONConfig returns a JSONConfig pre-seeded with every built-in
+// default. Unmarshalling a config file on top of it leaves absent keys at
+// their defaults instead of the zero value — the failure behind CONFIG-1,
+// where a loaded JSON silently zeroed every key it did not mention. Fields
+// whose default IS the zero value ("" / false / 0) are not listed.
+func defaultJSONConfig() *JSONConfig {
+	cfg := &JSONConfig{}
+
+	cfg.Backend.AppEnv = "development"
+	cfg.Backend.Server.RateLimit.Enabled = true
+	cfg.Backend.Server.RateLimit.Requests = 100
+	cfg.Backend.Server.RateLimit.WindowSeconds = 60
+	// Cloned: json.Unmarshal merges maps and may replace slices in place —
+	// the package-level defaults must never be mutated through a loaded config.
+	cfg.Backend.Server.RateLimit.Endpoints = maps.Clone(defaultRateLimitEndpoints)
+	cfg.Backend.Server.RateLimit.FallbackPorts = slices.Clone(defaultFallbackPorts)
+
+	cfg.Backend.Database.RetryMaxAttempts = 3
+	cfg.Backend.Database.RetryDelaySeconds = 5
+	cfg.Backend.Database.Pool.MaxOpenConns = 25
+	cfg.Backend.Database.Pool.MaxIdleConns = 5
+	cfg.Backend.Database.Pool.ConnMaxLifetimeSeconds = 300
+	cfg.Backend.Database.Pool.ConnMaxIdleTimeSeconds = 60
+	cfg.Backend.Database.Pool.StatsIntervalSeconds = 300
+
+	cfg.Backend.Search.FulltextLanguages = slices.Clone(defaultFulltextLanguages)
+	cfg.Backend.Search.RankingWeights = maps.Clone(defaultRankingWeights)
+	cfg.Backend.Search.FallbackToILike = true
+
+	cfg.Backend.Recommendation.Depth = 3
+	cfg.Backend.Recommendation.Decay = 0.5
+	cfg.Backend.Recommendation.TopN = 20
+	cfg.Backend.Recommendation.Alpha = 0.5
+	cfg.Backend.Recommendation.Beta = 0.5
+	cfg.Backend.Recommendation.Gamma = 0.2
+	cfg.Backend.Recommendation.CacheTTLSeconds = 300
+	cfg.Backend.Recommendation.TaskDelaySeconds = 5
+	cfg.Backend.Recommendation.BatchRateLimit = 10
+	cfg.Backend.Recommendation.FallbackEnabled = true
+	cfg.Backend.Recommendation.FallbackTTLSeconds = 3600
+	cfg.Backend.Recommendation.FallbackSemanticEnabled = true
+	cfg.Backend.Recommendation.KeywordEnabled = true
+	cfg.Backend.Recommendation.BFSAggregation = "max"
+	cfg.Backend.Recommendation.BFSNormalize = true
+	cfg.Backend.Recommendation.KeywordSimilarityMethod = "jaccard"
+	cfg.Backend.Recommendation.KeywordTverskyAlpha = 0.5
+	cfg.Backend.Recommendation.KeywordTverskyBeta = 0.5
+	cfg.Backend.Recommendation.GammaLinkMinScore = 0.6
+
+	cfg.Backend.Pagination.DefaultLimit = 20
+	cfg.Backend.Pagination.MaxLimit = 100
+
+	cfg.Backend.Graph.LoadDepth = 2
+	cfg.Backend.Graph.DefaultLimit = 100
+	cfg.Backend.Graph.MaxLimit = 1000
+	cfg.Backend.Graph.LinkDefaultLimit = 500
+	cfg.Backend.Graph.LinkMaxLimit = 5000
+
+	cfg.Backend.Embedding.SimilarityLimit = 30
+
+	cfg.Backend.Asynq.Concurrency = 10
+	cfg.Backend.Asynq.QueueDefault = 1
+	cfg.Backend.Asynq.QueueMaxLen = 10000
+
+	cfg.Backend.Auth.JWTAccessTTLSeconds = 900
+	cfg.Backend.Auth.JWTRefreshTTLSeconds = 604800
+	cfg.Backend.Auth.Argon2Time = 3
+	cfg.Backend.Auth.Argon2Memory = 65536
+	cfg.Backend.Auth.Argon2Threads = 4
+	cfg.Backend.Auth.APIKeyEnabled = true
+	cfg.Backend.Auth.PKCEEnabled = true
+	cfg.Backend.Auth.PKCECodeChallengeLength = 128
+	cfg.Backend.Auth.SMTPPort = 587
+	cfg.Backend.Auth.SMTPFrom = "noreply@example.com"
+	cfg.Backend.Auth.PasswordResetTTLSeconds = 900
+	cfg.Backend.Auth.PasswordPolicyMinLength = 10
+	cfg.Backend.Auth.PasswordPolicyRequireUpper = true
+	cfg.Backend.Auth.PasswordPolicyRequireLower = true
+	cfg.Backend.Auth.PasswordPolicyRequireDigit = true
+	cfg.Backend.Auth.PasswordPolicyRequireSpecial = true
+
+	cfg.MongoDB.URL = "mongodb://localhost:27017"
+	cfg.MongoDB.Database = "knowledge_graph"
+
+	cfg.Backup.Cloud.Provider = "r2"
+	cfg.Backup.LocalPath = "./backups"
+	cfg.Backup.Schedule = "0 2 * * *"
+	cfg.Backup.RetentionDays = 7
+	cfg.Backup.Cloud.Yandex.BackupFolder = "/KnowledgeGraphBackups"
+	cfg.Backup.Cloud.Yandex.MaxBackups = 10
+
+	return cfg
 }
 
 // Helper functions for JSON config with fallbacks

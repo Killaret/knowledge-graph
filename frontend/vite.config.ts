@@ -1,24 +1,42 @@
 // Конфигурация Vite для SvelteKit
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
-import path from 'path';
+import { sveltekit } from "@sveltejs/kit/vite";
+import { defineConfig } from "vite";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [sveltekit()],
   resolve: {
     alias: {
-      // Алиас для конфигурации проекта (корневой knowledge-graph.config.json)
-      '$config': path.resolve(__dirname, '../knowledge-graph.config.json')
-    }
+      // FSD aliases (must match svelte.config.js)
+      $shared: path.resolve(__dirname, "src/shared"),
+      $entities: path.resolve(__dirname, "src/entities"),
+      $features: path.resolve(__dirname, "src/features"),
+      $widgets: path.resolve(__dirname, "src/widgets"),
+      $components: path.resolve(__dirname, "src/components"),
+      // Алиас для проекта (корневой knowledge-graph.config.json)
+      $config: path.resolve(__dirname, "../knowledge-graph.config.json"),
+    },
   },
-  build: {},
+  build: {
+    sourcemap: false,
+    minify: "esbuild",
+  },
   server: {
-    port: 3000,
+    // Vite dev server proxy - only used in dev mode, not in production SSR
+    // Defaults target the dev stack (docker-compose.yml) services on host ports
     proxy: {
-      '/v1': {
-        target: process.env.VITE_API_TARGET || 'http://localhost:8080/api',
-        changeOrigin: true
-      }
-    }
-  }
+      "/api/v1": {
+        target: process.env.VITE_API_TARGET || process.env.VITE_API_URL || "http://127.0.0.1:9000",
+        changeOrigin: true,
+      },
+      "/graph-service/api": {
+        target: process.env.VITE_GRAPH_SERVICE_URL || "http://127.0.0.1:9091",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/graph-service/, ""),
+      },
+    },
+  },
 });

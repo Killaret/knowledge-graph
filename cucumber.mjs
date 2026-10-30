@@ -1,32 +1,22 @@
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const featureRoot = join(__dirname, 'frontend', 'tests', 'features');
+
+// Default BDD runs are skip-auth (see scripts/run-bdd.cjs). Real-auth features
+// tagged with @auth-real must only execute when SKIP_AUTH=false.
+const isSkipAuth = process.env.SKIP_AUTH !== 'false';
+
 export default {
-  // Path to feature files (relative to cwd when running from root)
-  paths: ['tests/features/**/*.feature'],
-
-  // Path to step definitions and support files
-  import: [
-    'tests/features/step_definitions/**/*.ts',
-    'tests/features/support/**/*.ts'
+  paths: [join(featureRoot, '**', '*.feature')],
+  require: [
+    join(featureRoot, 'support', 'world.ts'),
+    join(featureRoot, 'support', 'hooks.ts'),
+    join(featureRoot, 'step_definitions', '**', '*.ts')
   ],
-
-  // Formatters
-  format: [
-    'progress-bar',
-    'html:cucumber-report.html',
-    'json:cucumber-report.json'
-  ],
-
-  // Parallel execution (adjust based on your CI capabilities)
-  parallel: 1,
-
-  // Tags to filter scenarios
-  tags: process.env.CUCUMBER_TAGS || '',
-
-  // Timeouts
-  defaultTimeout: parseInt(process.env.DEFAULT_TIMEOUT || '30000'),
-
-  // Publish report to Cucumber Studio (optional)
+  import: ['tsx'],
+  format: ['progress'],
   publishQuiet: true,
-
-  // Dry run (check step definitions without executing)
-  dryRun: process.env.DRY_RUN === 'true',
+  tags: isSkipAuth ? 'not @auth-real' : ''
 };

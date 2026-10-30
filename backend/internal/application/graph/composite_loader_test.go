@@ -179,6 +179,43 @@ func TestCompositeNeighborLoader_GetNeighbors(t *testing.T) {
 	})
 }
 
+func TestCompositeNeighborLoader_GetNeighborsBatch(t *testing.T) {
+	ctx := context.Background()
+	nodeID := uuid.New()
+
+	t.Run("single loader batch", func(t *testing.T) {
+		loader1 := new(MockNeighborLoader)
+		loader1.On("GetNeighborsBatch", ctx, []uuid.UUID{nodeID}).Return(map[uuid.UUID][]graph.Edge{
+			nodeID: {{From: nodeID, To: uuid.New(), Weight: 0.5}},
+		}, nil)
+
+		composite := NewCompositeNeighborLoaderWithWeights(
+			[]graph.NeighborLoader{loader1},
+			[]float64{1.0},
+		)
+
+		result, err := composite.GetNeighborsBatch(ctx, []uuid.UUID{nodeID})
+
+		assert.NoError(t, err)
+		assert.Len(t, result[nodeID], 1)
+		loader1.AssertExpectations(t)
+	})
+
+	t.Run("all loaders fail", func(t *testing.T) {
+		loader1 := new(MockNeighborLoader)
+		loader1.On("GetNeighborsBatch", ctx, []uuid.UUID{nodeID}).Return(map[uuid.UUID][]graph.Edge{}, assert.AnError)
+
+		composite := NewCompositeNeighborLoaderWithWeights(
+			[]graph.NeighborLoader{loader1},
+			[]float64{1.0},
+		)
+
+		_, err := composite.GetNeighborsBatch(ctx, []uuid.UUID{nodeID})
+
+		assert.Error(t, err)
+	})
+}
+
 func TestNewCompositeNeighborLoaderWithWeights(t *testing.T) {
 	t.Run("create loader with valid inputs", func(t *testing.T) {
 		loader1 := new(MockNeighborLoader)

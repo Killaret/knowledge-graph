@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// UserSettingModel — модель настроек пользователя
+// UserSettingModel — user settings model
 type UserSettingModel struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null;index:idx_user_settings_user_key,unique"`

@@ -4,17 +4,17 @@ import (
 	"github.com/google/uuid"
 )
 
-// SuggestionResult — результат рекомендации с разложением по компонентам
+// SuggestionResult — recommendation result with component breakdown
 type SuggestionResult struct {
 	NodeID        uuid.UUID
 	Title         string
-	Score         float64 // итоговый комбинированный скор (alpha*Graph + beta*Semantic + gamma*Keyword)
-	GraphScore    float64 // вклад графовых связей (alpha)
-	SemanticScore float64 // вклад семантической близости (beta)
-	KeywordScore  float64 // вклад ключевых слов (gamma)
+	Score         float64 // final combined score (alpha*Graph + beta*Semantic + gamma*Keyword)
+	GraphScore    float64 // graph connections contribution (alpha)
+	SemanticScore float64 // semantic similarity contribution (beta)
+	KeywordScore  float64 // keyword contribution (gamma)
 }
 
-// SuggestionComponents — компоненты скора для комбинирования
+// SuggestionComponents — score components for combining
 type SuggestionComponents struct {
 	Graph    float64
 	Semantic float64

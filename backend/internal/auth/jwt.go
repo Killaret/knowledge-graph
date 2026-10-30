@@ -3,6 +3,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -32,10 +33,12 @@ type TokenClaims struct {
 
 // JWTManager handles JWT token operations
 type JWTManager struct {
-	secret        []byte
-	accessTTL     time.Duration
-	refreshTTL    time.Duration
-	issuer        string
+	secret     []byte
+	accessTTL  time.Duration
+	refreshTTL time.Duration
+	issuer     string
+	// leeway extends exp/nbf validation (clock skew). Tests may set to 0 for precise expiry checks.
+	leeway time.Duration
 }
 
 // NewJWTManager creates a new JWT manager
@@ -45,6 +48,7 @@ func NewJWTManager(secret string, accessTTL, refreshTTL time.Duration) *JWTManag
 		accessTTL:  accessTTL,
 		refreshTTL: refreshTTL,
 		issuer:     "knowledge-graph",
+		leeway:     5 * time.Second,
 	}
 }
 
@@ -64,6 +68,7 @@ func (m *JWTManager) GenerateTokenPair(userID uuid.UUID, login, role string) (*T
 			NotBefore: jwt.NewNumericDate(now),
 			Issuer:    m.issuer,
 			Subject:   userID.String(),
+			ID:        uuid.NewString(),
 		},
 	}
 
@@ -82,6 +87,7 @@ func (m *JWTManager) GenerateTokenPair(userID uuid.UUID, login, role string) (*T
 			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    m.issuer,
 			Subject:   userID.String(),
+			ID:        uuid.NewString(),
 		},
 	}
 
@@ -106,7 +112,7 @@ func (m *JWTManager) ValidateToken(tokenString string, expectedType string) (*To
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return m.secret, nil
-	})
+	}, jwt.WithLeeway(m.leeway))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse token: %w", err)
@@ -148,7 +154,7 @@ type PKCE struct {
 	CodeVerifier        string `json:"code_verifier"`
 }
 
-// GeneratePKCE generates PKCE parameters
+// GeneratePKCE generates PKCE parameters using S256 method (RFC 7636)
 func GeneratePKCE(length int) (*PKCE, error) {
 	// Generate code verifier (random string)
 	verifier, err := GenerateRandomToken(length)
@@ -156,11 +162,13 @@ func GeneratePKCE(length int) (*PKCE, error) {
 		return nil, fmt.Errorf("failed to generate code verifier: %w", err)
 	}
 
-	// For simplicity, we use plain method (in production, use S256)
-	// S256 would require SHA256 hashing of the verifier
+	// S256 method: code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))
+	hash := sha256.Sum256([]byte(verifier))
+	codeChallenge := base64.RawURLEncoding.EncodeToString(hash[:])
+
 	return &PKCE{
-		CodeChallenge:       verifier,
-		CodeChallengeMethod: "plain",
+		CodeChallenge:       codeChallenge,
+		CodeChallengeMethod: "S256",
 		CodeVerifier:        verifier,
 	}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 
 	"github.com/google/uuid"
@@ -44,6 +45,24 @@ func (m *mockNoteRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
+func (m *mockNoteRepo) DeleteBatch(ctx context.Context, ids []uuid.UUID) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, id := range ids {
+		delete(m.notes, id)
+	}
+	return nil
+}
+
+func (m *mockNoteRepo) Restore(ctx context.Context, id uuid.UUID) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.notes[id]; !ok {
+		return note.ErrNoteNotFound
+	}
+	return nil
+}
+
 func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -55,7 +74,7 @@ func (m *mockNoteRepo) FindAll(ctx context.Context) ([]*note.Note, error) {
 	return notes, nil
 }
 
-func (m *mockNoteRepo) Search(ctx context.Context, query string, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepo) Search(ctx context.Context, userID uuid.UUID, query string, limit, offset int) ([]*note.Note, int64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -116,7 +135,7 @@ func contains(s, substr string) bool {
 				findSubstring(s, substr))))
 }
 
-func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
+func (m *mockNoteRepo) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -132,15 +151,15 @@ func (m *mockNoteRepo) List(ctx context.Context, limit, offset int) ([]*note.Not
 	}
 
 	end := offset + limit
-	if end > len(allNotes) {
+	if limit <= 0 || end > len(allNotes) || end < offset {
 		end = len(allNotes)
 	}
 
 	return allNotes[offset:end], total, nil
 }
 
-func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*note.Note, int64, error) {
-	return m.List(ctx, limit, offset)
+func (m *mockNoteRepo) FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*note.Note, int64, error) {
+	return m.List(ctx, userID, limit, offset)
 }
 
 func findSubstring(s, substr string) bool {
@@ -150,4 +169,180 @@ func findSubstring(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+type mockLinkRepo struct {
+	mu    sync.RWMutex
+	links map[uuid.UUID]*link.Link
+}
+
+func newMockLinkRepo() *mockLinkRepo {
+	return &mockLinkRepo{
+		links: make(map[uuid.UUID]*link.Link),
+	}
+}
+
+func (m *mockLinkRepo) Save(ctx context.Context, l *link.Link) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, existing := range m.links {
+		if existing.SourceNoteID() == l.SourceNoteID() &&
+			existing.TargetNoteID() == l.TargetNoteID() &&
+			existing.LinkType().String() == l.LinkType().String() {
+			return link.ErrDuplicateLink
+		}
+	}
+	m.links[l.ID()] = l
+	return nil
+}
+
+func (m *mockLinkRepo) FindByID(ctx context.Context, id uuid.UUID) (*link.Link, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	l, ok := m.links[id]
+	if !ok {
+		return nil, nil
+	}
+	return l, nil
+}
+
+func (m *mockLinkRepo) FindBySource(ctx context.Context, sourceID uuid.UUID) ([]*link.Link, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []*link.Link
+	for _, l := range m.links {
+		if l.SourceNoteID() == sourceID {
+			result = append(result, l)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockLinkRepo) FindByTarget(ctx context.Context, targetID uuid.UUID) ([]*link.Link, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []*link.Link
+	for _, l := range m.links {
+		if l.TargetNoteID() == targetID {
+			result = append(result, l)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockLinkRepo) Update(ctx context.Context, l *link.Link) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.links[l.ID()]; !ok {
+		return link.ErrLinkNotFound
+	}
+	m.links[l.ID()] = l
+	return nil
+}
+
+func (m *mockLinkRepo) FindByPair(ctx context.Context, sourceID, targetID uuid.UUID) ([]*link.Link, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []*link.Link
+	for _, l := range m.links {
+		if l.SourceNoteID() == sourceID && l.TargetNoteID() == targetID {
+			result = append(result, l)
+		}
+	}
+	return result, nil
+}
+
+// SaveUserLink mirrors the postgres create-or-promote semantics: same-type
+// gamma is promoted in place, other-type gammas transfer provenance.
+func (m *mockLinkRepo) SaveUserLink(ctx context.Context, l *link.Link) (*link.Link, bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var sameType *link.Link
+	var gammas []*link.Link
+	for _, existing := range m.links {
+		if existing.SourceNoteID() != l.SourceNoteID() || existing.TargetNoteID() != l.TargetNoteID() {
+			continue
+		}
+		if existing.LinkType().String() == l.LinkType().String() {
+			if existing.SourceType().IsUser() {
+				return nil, false, link.ErrDuplicateLink
+			}
+			sameType = existing
+		}
+		if existing.SourceType().IsGamma() {
+			gammas = append(gammas, existing)
+		}
+	}
+
+	if sameType != nil {
+		sameType.PromoteToUser(l.CreatorID(), l.LinkType(), l.Weight(), l.Metadata())
+		for _, g := range gammas {
+			if g.ID() != sameType.ID() {
+				delete(m.links, g.ID())
+			}
+		}
+		return sameType, false, nil
+	}
+	if len(gammas) > 0 {
+		l.InheritGammaProvenance(gammas[0])
+		for _, g := range gammas {
+			delete(m.links, g.ID())
+		}
+	}
+	m.links[l.ID()] = l
+	return l, true, nil
+}
+
+func (m *mockLinkRepo) DeleteAndSuppress(ctx context.Context, l *link.Link, s *link.Suppression) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.links, l.ID())
+	return nil
+}
+
+func (m *mockLinkRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.links, id)
+	return nil
+}
+
+func (m *mockLinkRepo) DeleteBySource(ctx context.Context, sourceID uuid.UUID) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for id, l := range m.links {
+		if l.SourceNoteID() == sourceID {
+			delete(m.links, id)
+		}
+	}
+	return nil
+}
+
+func (m *mockLinkRepo) FindAll(ctx context.Context) ([]*link.Link, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []*link.Link
+	for _, l := range m.links {
+		result = append(result, l)
+	}
+	return result, nil
+}
+
+func (m *mockLinkRepo) FindAllPaginated(ctx context.Context, limit, offset int) ([]*link.Link, int64, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	all := make([]*link.Link, 0, len(m.links))
+	for _, l := range m.links {
+		all = append(all, l)
+	}
+	total := int64(len(all))
+	if offset >= len(all) {
+		return []*link.Link{}, total, nil
+	}
+	end := offset + limit
+	if end > len(all) {
+		end = len(all)
+	}
+	return all[offset:end], total, nil
 }

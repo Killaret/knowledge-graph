@@ -11,6 +11,7 @@ import (
 type TraversalService struct {
 	loader         NeighborLoader
 	keywordMatcher KeywordMatcher
+	graphClient    GraphServiceClient
 	depth          int
 	decay          float64
 	aggregation    string // "max" или "sum"
@@ -78,6 +79,13 @@ func (s *TraversalService) SetKeywordMatcher(matcher KeywordMatcher) {
 	s.keywordMatcher = matcher
 }
 
+// SetGraphServiceClient sets the optional graph-service client. When set,
+// GetSuggestions and RunBFSWeights delegate to the graph-service and fall back
+// to the in-memory BFS implementation if the service is unavailable.
+func (s *TraversalService) SetGraphServiceClient(client GraphServiceClient) {
+	s.graphClient = client
+}
+
 // RunBFS — экспортируемый метод для тестов (обертка над internal runBFS)
 func (s *TraversalService) RunBFS(ctx context.Context, startID uuid.UUID) map[uuid.UUID]weightedPath {
 	return runBFS(ctx, startID, s.loader, s.depth, s.decay, s.aggregation)
@@ -85,6 +93,16 @@ func (s *TraversalService) RunBFS(ctx context.Context, startID uuid.UUID) map[uu
 
 // RunBFSWeights — возвращает только веса как float64 для удобства тестов
 func (s *TraversalService) RunBFSWeights(ctx context.Context, startID uuid.UUID) map[uuid.UUID]float64 {
+	if s.graphClient != nil {
+		weights, err := s.graphClient.GetNeighbors(ctx, startID, s.depth)
+		if err == nil && weights != nil {
+			if s.normalize {
+				return NormalizeMap(weights)
+			}
+			return weights
+		}
+	}
+
 	paths := runBFS(ctx, startID, s.loader, s.depth, s.decay, s.aggregation)
 	if s.normalize {
 		paths = NormalizeWeights(paths)
@@ -98,7 +116,15 @@ func (s *TraversalService) RunBFSWeights(ctx context.Context, startID uuid.UUID)
 
 // GetSuggestions — основной метод получения рекомендаций
 func (s *TraversalService) GetSuggestions(ctx context.Context, startID uuid.UUID, topN int) ([]SuggestionResult, error) {
-	// 1. Графовый компонент (BFS)
+	// 1. Try graph-service analytics when available.
+	if s.graphClient != nil {
+		results, err := s.graphClient.GetRecommendations(ctx, startID, topN)
+		if err == nil {
+			return results, nil
+		}
+	}
+
+	// 2. Fallback: in-memory BFS traversal.
 	graphWeights := runBFS(ctx, startID, s.loader, s.depth, s.decay, s.aggregation)
 	if s.normalize {
 		graphWeights = NormalizeWeights(graphWeights)

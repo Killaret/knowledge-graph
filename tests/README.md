@@ -7,95 +7,89 @@ This directory contains BDD/Cucumber tests and test support files for the Knowle
 ```
 backend/                          # Go backend
 ├── internal/
-│   ├── domain/*/*_test.go        # 25 tests (entities, value objects)
-│   ├── application/*/*_test.go   # 17 tests (use cases)
-│   ├── infrastructure/*/*_test.go  # 62 tests (repositories, queue, nlp)
-│   └── interfaces/api/*/*_test.go # 14 tests (HTTP handlers)
+│   ├── domain/*/*_test.go        # Domain entities & value objects
+│   ├── application/*/*_test.go   # Use cases
+│   ├── infrastructure/*/*_test.go  # Repositories, queue, nlp, db
+│   └── interfaces/api/*/*_test.go # HTTP handlers & middleware
 └── cmd/checkconfig/main.go       # Config validation CLI
 
 frontend/                         # SvelteKit frontend
-├── src/lib/
-│   ├── components/*.spec.ts      # 18 files, ~200 unit tests
-│   ├── api/*.test.ts             # 3 files, API client tests
-│   └── utils/*.test.ts           # 1 file, utility tests
-├── tests/*.spec.ts               # 10 files, Playwright E2E tests
-└── tests/features/*.feature      # 3 files, BDD scenarios
-
-tests/                            # BDD tests (this directory)
-├── features/*.feature            # 11 files, 98 BDD scenarios
-├── features/step_definitions/    # 6 TypeScript files
-└── support/                      # Test support files
+├── src/components/**/*.spec.ts  # Component unit tests (Vitest)
+├── src/features/**/*.test.ts    # Feature logic tests
+├── src/shared/
+│   ├── api/*.test.ts             # API client tests
+│   ├── services/*.test.ts        # Service tests
+│   ├── stores/*.svelte.test.ts   # Svelte runes store tests
+│   └── utils/*.test.ts           # Utility tests
+├── tests/*.spec.ts               # Playwright E2E tests
+└── tests/features/*.feature      # BDD scenarios
 
 nlp-service/                      # Python NLP service
-└── tests/*.py                    # 2 files, ~15 pytest tests
+└── tests/*.py                     # pytest tests
 ```
-
-## Unit Tests Location
-
-Unit tests follow language-specific best practices:
-
-### Go (backend/)
-- `*_test.go` files next to source code
-- **Total: 31 files, 118 test functions**
-
-### TypeScript (frontend/)
-- `*.spec.ts` — component tests (Vitest + Testing Library)
-- `*.test.ts` — API client and utility tests (Vitest)
-- **Total: 22 test files (~220 tests)**
-  - 18 component tests (.spec.ts)
-  - 4 API/utils tests (.test.ts)
-
-### Python (nlp-service/)
-- `tests/*.py` directory
-- **Total: 2 files, ~15 tests**
 
 ## Running Tests
 
 ### Backend Unit Tests
 ```bash
 cd backend
-go test ./... -v                    # All tests
-go test ./internal/domain/... -v     # Domain only
-go test -race -coverprofile=coverage.out ./...
+go test ./...                         # All unit tests
+go test -race ./...                  # Race detection (requires CGO_ENABLED=1)
+go test -tags=integration ./...      # Integration tests with testcontainers
+go test -coverprofile=coverage.out ./...
 ```
 
 ### Frontend Unit Tests
 ```bash
 cd frontend
-npm run test:unit                   # Vitest (204 tests)
-npm run test:unit:watch            # Watch mode
-npm run test:coverage              # With coverage
+npm run test:unit                      # Vitest
+npm run test:unit:watch               # Watch mode
+npm run test:coverage                 # With coverage
+npx svelte-check --tsconfig ./tsconfig.json  # Svelte/TypeScript check
 ```
 
 ### Frontend E2E Tests (Playwright)
 ```bash
 cd frontend
-npm run test                       # All E2E tests
-npm run test:smoke                 # Smoke tests only
-npm run test:headed               # With browser visible
+npx playwright test                    # All E2E tests
+npm run test:smoke                     # Smoke tests only
+npm run test:headed                    # With browser visible
 ```
 
 ### BDD Tests (Cucumber)
+Run from the project root; the `cucumber.mjs` config uses paths relative to the project root.
 ```bash
-cd frontend
-npm run test:bdd                   # or npm run test:cucumber
+cd /d:/knowledge-graph
+node --import ./frontend/node_modules/tsx/dist/loader.mjs ./frontend/node_modules/@cucumber/cucumber/bin/cucumber.js --config ./cucumber.mjs
 ```
 
 ### NLP Service Tests
 ```bash
 cd nlp-service
+pytest
 pytest tests/ -v
-pytest tests/test_api.py -v
-pytest tests/test_nlp_utils.py -v
 ```
 
 ## Test Counts Summary
 
-| Category | Files | Tests/Scenarios | Status |
-|----------|-------|-----------------|--------|
-| **Go Unit** | 31 | 118 test functions | ✅ Active |
-| **Frontend Unit** | 22 | ~220 tests | ✅ Active |
-| **Playwright E2E** | 10 | 48 tests | ✅ Active |
-| **BDD Features** | 14 | 111 scenarios | ✅ Active |
-| **NLP Python** | 2 | ~15 tests | ✅ Active |
-| **Total** | **79** | **~512** | ✅ |
+| Category | Files | Tests/Scenarios | Latest Result |
+|----------|-------|-------------------|---------------|
+| **Go Unit** | 120 | 51 packages | ✅ pass (прогон 2026-09-05) |
+| **Go Race** | - | - | ⚠️ skipped (CGO_ENABLED=0 on Windows) |
+| **Go Integration** | 5+ | repository/handler suites | ⚠️ requires Linux/WSL Docker + resources |
+| **Frontend Unit** | 107 | 986 tests | ✅ pass (прогон 2026-09-05, 65 с) |
+| **Frontend svelte-check** | - | - | ✅ 0 errors, warnings acceptable |
+| **Frontend Build** | - | - | ✅ success |
+| **Playwright E2E** | 24 | — | не прогонялось при последней сверке |
+| **BDD Features** | 2 исполняемых / 13 осиротевших | 9 исполняемых / 125 неисполняемых | ⚠️ см. находку T-1 |
+| **Smoke Tests** | 1 | 9 tests | ✅ 9 passed |
+| **NLP Python** | 2 | 50 tests | ✅ pass (прогон 2026-09-05) |
+
+> **Note:** Go integration tests are resource-intensive and failed on this run because PostgreSQL testcontainers could not reach the ready state within the startup timeout. They should be run on a clean Docker environment with adequate CPU/memory for accurate results.
+
+## Known Issues
+
+1. **Docker Desktop not available** - Cannot run dev and personal stacks for full integration testing
+2. **Go integration tests:** require a stable Docker Desktop setup with sufficient resources and no stale testcontainers reaper containers
+3. ~~**Swagger UI:** returns 404~~ — исправлено: `/swagger/index.html` на тест-стеке отвечает 200 (проверено 2026-09-05)
+4. **OpenAPI spec:** Missing 403 Forbidden response codes for all endpoints (403 should be documented for authorization errors)
