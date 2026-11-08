@@ -6,13 +6,11 @@ import com.alximac.knowledgegraph.texthandler.application.port.NoteCreatorPort;
 import com.alximac.knowledgegraph.texthandler.application.port.OutboundQueuePort;
 import com.alximac.knowledgegraph.texthandler.domain.service.ChunkingStrategy;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParser;
-import com.alximac.knowledgegraph.texthandler.domain.service.LinkDetector;
 import com.alximac.knowledgegraph.texthandler.infrastructure.HealthCheckService;
 import com.alximac.knowledgegraph.texthandler.infrastructure.chunking.HybridChunker;
 import com.alximac.knowledgegraph.texthandler.infrastructure.db.RedisImportStateRepository;
 import com.alximac.knowledgegraph.texthandler.infrastructure.http.NoteCreatorHttpClient;
 import com.alximac.knowledgegraph.texthandler.infrastructure.http.ResilientNoteCreator;
-import com.alximac.knowledgegraph.texthandler.infrastructure.link.NoOpLinkDetector;
 import com.alximac.knowledgegraph.texthandler.infrastructure.parser.ParserFactory;
 import com.alximac.knowledgegraph.texthandler.infrastructure.parser.TextDocumentParser;
 import com.alximac.knowledgegraph.texthandler.infrastructure.parser.TikaDocumentParser;
@@ -103,7 +101,6 @@ public class AppConfig {
 
         ChunkingStrategy chunk = new HybridChunker();
 
-        LinkDetector linkDetector = new NoOpLinkDetector();
 
 
         OutboundQueuePort outboundQueuePort = new AsynqOutboundAdapter(
@@ -111,7 +108,7 @@ public class AppConfig {
                 "import:responses:pending",
                 objectMapper);
 
-        ImportDocumentHandler handler = new ImportDocumentHandler(chunk, parserFactory, linkDetector, noteCreator,
+        ImportDocumentHandler handler = new ImportDocumentHandler(chunk, parserFactory, noteCreator,
                 outboundQueuePort, repository);
 
 

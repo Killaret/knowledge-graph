@@ -33,7 +33,8 @@ if ($LASTEXITCODE -eq 0) {
             Write-Host "  Страховочный бэкап не удался — сделайте вручную: scripts\devops\backup-personal.ps1" -ForegroundColor Yellow
         }
     }
-} else {
+
+else {
     Write-Host "❌ Ошибка при запуске. Проверьте логи командой выше." -ForegroundColor Red
     exit 1
 }

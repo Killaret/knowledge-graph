@@ -207,6 +207,19 @@ func GetLogin(c *gin.Context) (string, bool) {
 	return l, ok
 }
 
+// GetAuthToken extracts the raw JWT token from the Authorization header
+func GetAuthToken(c *gin.Context) string {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return ""
+	}
+	// Remove "Bearer " prefix
+	if strings.HasPrefix(authHeader, "Bearer ") {
+		return strings.TrimPrefix(authHeader, "Bearer ")
+	}
+	return authHeader
+}
+
 // RequireAuth middleware ensures user is authenticated
 func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {

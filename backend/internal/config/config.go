@@ -170,6 +170,9 @@ type Config struct {
 	NLPServiceURL string
 	NLPModelName  string
 
+	// Source text handler (Java service for import processing)
+	SourceTextHandlerURL string
+
 	// Search
 	SearchFulltextLanguages []string
 	SearchRankingWeights    map[string]float64
@@ -433,6 +436,7 @@ func resolveConfig(jsonCfg *JSONConfig) (*Config, error) {
 		EventChannel:        getEnv("EVENT_CHANNEL", "graph:events"),
 		NLPServiceURL:       getEnv("NLP_SERVICE_URL", "http://localhost:5000"),
 		NLPModelName:        getEnv("NLP_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2"),
+		SourceTextHandlerURL: getEnv("SOURCE_TEXT_HANDLER_URL", "http://localhost:8081"),
 
 		// Search
 		SearchFulltextLanguages: getJSONStringSliceOrDefault(jsonCfg, func(j *JSONConfig) []string { return j.Backend.Search.FulltextLanguages }, slices.Clone(defaultFulltextLanguages)),

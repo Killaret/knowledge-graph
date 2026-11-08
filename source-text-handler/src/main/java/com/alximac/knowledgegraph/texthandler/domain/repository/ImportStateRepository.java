@@ -9,4 +9,6 @@ public interface ImportStateRepository {//идемпотентность
 
      boolean tryClaim(String eventId);
 
+     void releaseClaim(String eventId);
+
 }

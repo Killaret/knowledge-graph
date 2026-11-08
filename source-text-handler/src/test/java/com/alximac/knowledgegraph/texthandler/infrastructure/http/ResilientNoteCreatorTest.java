@@ -93,33 +93,9 @@ class ResilientNoteCreatorTest {
         verify(delegate, times(6)).createNote(chunk, "jwt-token");
     }
 
-    @Test
-    @DisplayName("Must retry link creation and then succeed")
-    void mustRetryLinkAndThenSucceed() throws Exception {
-        Link link = new Link("s", "t", 0.5, null);
 
-        // Первая попытка падает, вторая успешна
-        doThrow(new RemoteServiceException("link fail"))
-                .doNothing()
-                .when(delegate).createLink(link, "jwt-token");
 
-        resilient.createLink(link, "jwt-token");
 
-        verify(delegate, times(2)).createLink(link, "jwt-token");
-    }
-
-    @Test
-    @DisplayName("Must throw RemoteServiceException when link retries are exhausted")
-    void mustThrowWhenLinkRetriesExhausted() throws Exception {
-        Link link = new Link("s", "t", 0.5, null);
-        doThrow(new RemoteServiceException("link fail"))
-                .when(delegate).createLink(link, "jwt-token");
-
-        assertThatThrownBy(() -> resilient.createLink(link, "jwt-token"))
-                .isInstanceOf(RemoteServiceException.class);
-
-        verify(delegate, times(3)).createLink(link, "jwt-token");
-    }
 
     @Test
     @DisplayName("Must not retry on non-RemoteServiceException and wrap it")
@@ -135,28 +111,7 @@ class ResilientNoteCreatorTest {
         verify(delegate, times(1)).createNote(chunk, "jwt-token"); // только одна попытка
     }
 
-    @Test
-    @DisplayName("Must open circuit after link failures and fail fast")
-    void mustOpenCircuitAfterLinkFailures() throws Exception {
-        Link link = new Link("s", "t", 0.5, null);
-        doThrow(new RemoteServiceException("link fail")).when(delegate).createLink(link, "jwt-token");
 
-        // первый вызов – цепь закрыта 3 попытки
-        assertThatThrownBy(() -> resilient.createLink(link, "jwt-token"))
-                .isInstanceOf(RemoteServiceException.class);
-
-        // второй вызов – закрыта, 3 попытки, после чего CB открывается
-        assertThatThrownBy(() -> resilient.createLink(link, "jwt-token"))
-                .isInstanceOf(RemoteServiceException.class);
-
-        assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN);
-
-        // третий вызов – делегат не должен вызываться
-        assertThatThrownBy(() -> resilient.createLink(link, "jwt-token"))
-                .isInstanceOf(RemoteServiceException.class);
-
-        verify(delegate, times(6)).createLink(link, "jwt-token"); // 2 * 3 попытки
-    }
 
     @Test
     @DisplayName("Must allow calls after circuit half-open wait duration")

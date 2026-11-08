@@ -8,7 +8,6 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 
-import java.util.UUID;
 
 public class AsynqOutboundAdapter implements OutboundQueuePort {
     private final RedisClient redisClient;
@@ -27,19 +26,10 @@ public class AsynqOutboundAdapter implements OutboundQueuePort {
         try (StatefulRedisConnection<String, String> connection = redisClient.connect()) {
             RedisCommands<String, String> sync = connection.sync();
 
-            String jsonResultString = objectMapper.writeValueAsString(result);//сериализуем result в json строку
-            AsynqResultEnvelope envelope = new AsynqResultEnvelope(
-                    UUID.randomUUID().toString(), // id
-                    "import:responses",          // queue
-                    jsonResultString,            // payload
-                    0,                           // retry
-                    0                            // state
-            );
-
-            String envelopeJson = objectMapper.writeValueAsString(envelope);
-            sync.rpush(queueKey, envelopeJson);
+            String json = objectMapper.writeValueAsString(result);//сериализуем result в json строку
+            sync.rpush(queueKey, json);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("ImportResult serialization error ", e);
         }
 
 

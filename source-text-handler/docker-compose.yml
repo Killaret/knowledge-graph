@@ -2,8 +2,6 @@ services:
   redis:
     image: redis:7.4-alpine
     container_name: knowledge-graph-redis
-    ports:
-      - "6379:6379"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -18,7 +16,8 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - REDIS_URI=redis://redis:6379/0
+      - REDIS_URI=redis://redis:6379/0 #разные форматы с go, каждый читает свой
+      - BACKEND_URL=http://backend:8080/api/v1
     ports:
       - "8081:8081"
     restart: unless-stopped

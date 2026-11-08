@@ -38,6 +38,14 @@ public class HealthCheckService {
             }
         });
 
+        httpServer.createContext("/health", exchange -> {
+            try {
+                sendResponse(exchange, 200, "{\"status\":\"UP\"}");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
         httpServer.setExecutor(Executors.newSingleThreadExecutor());
         System.out.println("HealthCheckService created on port " + port);
     }

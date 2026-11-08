@@ -1,3 +1,4 @@
+/*
 package com.alximac.knowledgegraph.texthandler.infrastructure.queue;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -10,3 +11,4 @@ public record AsynqTaskEnvelope(
         @JsonProperty("State") int state
 ) {
 }
+*/

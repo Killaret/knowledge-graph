@@ -1,4 +1,7 @@
-package com.alximac.knowledgegraph.texthandler.domain.service;
+/**
+ * не используется в текущей версии мб в будущем
+ */
+/*package com.alximac.knowledgegraph.texthandler.domain.service;
 
 import com.alximac.knowledgegraph.texthandler.domain.model.DocumentChunk;
 import com.alximac.knowledgegraph.texthandler.domain.model.Link;
@@ -9,4 +12,4 @@ import java.util.List;
 public interface LinkDetector {
 
     List<Link> detectLinks(List<DocumentChunk> chunks);
-}
+}*/

@@ -8,7 +8,6 @@ import com.alximac.knowledgegraph.texthandler.domain.repository.ImportStateRepos
 import com.alximac.knowledgegraph.texthandler.domain.service.ChunkingStrategy;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParser;
 import com.alximac.knowledgegraph.texthandler.domain.service.DocumentParserException;
-import com.alximac.knowledgegraph.texthandler.domain.service.LinkDetector;
 import com.alximac.knowledgegraph.texthandler.infrastructure.parser.ParserFactory;
 
 import java.nio.charset.StandardCharsets;
@@ -22,25 +21,22 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
 
     private final ChunkingStrategy chunkingStrategy;
     private final ParserFactory parserFactory;
-    private final LinkDetector linkDetector;
     private final NoteCreatorPort noteCreatorPort;
     private final OutboundQueuePort outboundQueuePort;
     private final ImportStateRepository stateRepository;
 
     public ImportDocumentHandler(
-            ChunkingStrategy chunkingStrategy,
-            ParserFactory parserFactory,
-            LinkDetector linkDetector,
-            NoteCreatorPort noteCreatorPort,
-            OutboundQueuePort outboundQueuePort,
-            ImportStateRepository importStateRepository) {
+        ChunkingStrategy chunkingStrategy,
+        ParserFactory parserFactory,
+        NoteCreatorPort noteCreatorPort,
+        OutboundQueuePort outboundQueuePort,
+        ImportStateRepository importStateRepository) {
 
-            this.chunkingStrategy = chunkingStrategy;
-            this.parserFactory = parserFactory;
-            this.linkDetector = linkDetector;
-            this.noteCreatorPort = noteCreatorPort;
-            this.outboundQueuePort = outboundQueuePort;
-            this.stateRepository = importStateRepository;
+        this.chunkingStrategy = chunkingStrategy;
+        this.parserFactory = parserFactory;
+        this.noteCreatorPort = noteCreatorPort;
+        this.outboundQueuePort = outboundQueuePort;
+        this.stateRepository = importStateRepository;
     }
 
     public void handle(ImportTask task) {
@@ -54,10 +50,10 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
         try {
 
             DocumentParser parser = parserFactory.getSelectedParser(task.type());
-            ParsedDocument parsedDocument = switch (task.type()){
-                case FILE -> parser.parse(getDecoder().decode(task.content()),task.metadata());
+            ParsedDocument parsedDocument = switch (task.type()) {
+                case FILE -> parser.parse(getDecoder().decode(task.content()), task.metadata());
                 case URL -> parser.parseFromUrl(task.content());
-                case TEXT -> parser.parse(task.content().getBytes(StandardCharsets.UTF_8),task.metadata());
+                case TEXT -> parser.parse(task.content().getBytes(StandardCharsets.UTF_8), task.metadata());
             };
 
             List<DocumentChunk> chunks = chunkingStrategy.chunk(parsedDocument.text(), task.importOptions());
@@ -68,15 +64,12 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
 
             List<String> noteIds = new ArrayList<>();
             List<String> errors = new ArrayList<>();
-            List<Link> links = new ArrayList<>();
-            List<DocumentChunk> processedChunks = new ArrayList<>();
+            List<Link> links = List.of();
 
             for (DocumentChunk chunk : chunks) {
                 try {
                     String noteId = noteCreatorPort.createNote(chunk, task.jwt());
-                    DocumentChunk updatedChunk = chunk.withNoteId(noteId);
                     noteIds.add(noteId);
-                    processedChunks.add(updatedChunk);
 
                 } catch (RemoteServiceException e) {
 
@@ -84,17 +77,6 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
                 }
             }
 
-            if (task.importOptions().createLinks() && processedChunks.size() > 1) {
-                List<Link> detected = linkDetector.detectLinks(processedChunks);
-                for (Link link : detected) {
-                    try {
-                        noteCreatorPort.createLink(link, task.jwt());
-                        links.add(link);
-                    } catch (RemoteServiceException e) {
-                        errors.add("Failed to create link: " + e.getMessage());
-                    }
-                }
-            }
             ImportResult.Status status;
 
             if (noteIds.isEmpty()) {
@@ -106,41 +88,49 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
             }
 
             result = new ImportResult(
-                    task.correlationId(),
-                    task.eventId(),
-                    status,
-                    noteIds,
-                    links,
-                    errors,
-                    Instant.now()
+                task.correlationId(),
+                task.eventId(),
+                task.userId(),
+                status,
+                noteIds,
+                links,
+                errors,
+                Instant.now()
             );
 
         } catch (DocumentParserException e) {
             result = new ImportResult(
-                    task.correlationId(),
-                    task.eventId(),
-                    ImportResult.Status.FAILED,
-                    List.of(),
-                    List.of(),
-                    List.of("Parse error: " + e.getMessage()),
-                    Instant.now()
+                task.correlationId(),
+                task.eventId(),
+                task.userId(),
+                ImportResult.Status.FAILED,
+                List.of(),
+                List.of(),
+                List.of("Parse error: " + e.getMessage()),
+                Instant.now()
             );
         } catch (Exception e) {
             result = new ImportResult(
-                    task.correlationId(),
-                    task.eventId(),
-                    ImportResult.Status.FAILED,
-                    List.of(),
-                    List.of(),
-                    List.of("Unexpected error: " + e.getMessage()),
-                    Instant.now()
+                task.correlationId(),
+                task.eventId(),
+                task.userId(),
+                ImportResult.Status.FAILED,
+                List.of(),
+                List.of(),
+                List.of("Unexpected error: " + e.getMessage()),
+                Instant.now()
             );
 
         }
 
         if (result != null) {
+            try {
+                outboundQueuePort.publish(result);
+            } catch (RuntimeException e) {
+                stateRepository.releaseClaim(task.eventId());
+                throw e;
+            }
             stateRepository.markProcessed(task.eventId(), result);
-            outboundQueuePort.publish(result);
         }
 
     }

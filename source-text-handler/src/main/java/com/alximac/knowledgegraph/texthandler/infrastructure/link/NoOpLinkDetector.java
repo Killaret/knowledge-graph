@@ -1,4 +1,9 @@
-package com.alximac.knowledgegraph.texthandler.infrastructure.link;
+/**
+ * не используется в текущей версии мб в будущем
+ */
+
+
+/*package com.alximac.knowledgegraph.texthandler.infrastructure.link;
 
 import com.alximac.knowledgegraph.texthandler.domain.model.DocumentChunk;
 import com.alximac.knowledgegraph.texthandler.domain.model.Link;
@@ -11,4 +16,4 @@ public class NoOpLinkDetector implements LinkDetector {
     public List<Link> detectLinks(List<DocumentChunk> chunks) {
         return List.of();
     }
-}
+}*/

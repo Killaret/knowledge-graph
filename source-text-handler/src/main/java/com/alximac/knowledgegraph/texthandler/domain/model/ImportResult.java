@@ -7,6 +7,7 @@ import java.util.List;
 public record ImportResult(
         String correlationId,
         String eventId,
+        String userId,
         Status status,
         List<String> noteIds,
         List<Link> links,
@@ -20,6 +21,9 @@ public record ImportResult(
         if (eventId == null || eventId.isBlank()) throw new IllegalArgumentException(
                 "EventId must not be null or blank");
 
+        if (userId == null || userId.isBlank()) throw new IllegalArgumentException(
+            "UserId must not be null or blank");
+
         if (status == null) throw new IllegalArgumentException("Status must not be null");
 
         if (noteIds == null)throw new IllegalArgumentException("NoteIds must not be null");
@@ -30,7 +34,7 @@ public record ImportResult(
 
 
         noteIds = List.copyOf(noteIds);
-        links = List.copyOf(links);
+        links = List.of();
         errors = List.copyOf(errors);
     }
 

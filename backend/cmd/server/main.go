@@ -35,6 +35,7 @@ import (
 	"knowledge-graph/internal/infrastructure/nlp"
 	oauthpkg "knowledge-graph/internal/infrastructure/oauth"
 	"knowledge-graph/internal/infrastructure/queue"
+	"knowledge-graph/internal/infrastructure/sourcetexthandler"
 	"knowledge-graph/internal/infrastructure/web"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
@@ -316,6 +317,15 @@ func run(
 	}
 	healthHandler := newHealthHandler(sqlDB, redisPinger, nlpClient)
 	metricsHandler := newMetricsHandler(database)
+
+	// Source text handler (Java service for import processing)
+	var sourceTextHandler *sourcetexthandler.Client
+	var sourceTextQueue *sourcetexthandler.QueueClient
+	if cfg.SourceTextHandlerURL != "" && redisClient != nil {
+		sourceTextHandler = sourcetexthandler.NewClient(cfg.SourceTextHandlerURL)
+		sourceTextQueue = sourcetexthandler.NewQueueClient(redisClient)
+		noteHandler.SetSourceTextHandler(sourceTextHandler, sourceTextQueue)
+	}
 
 	// Router setup with all middleware and routes
 	writeLimiter := newWriteLimiter(cfg)

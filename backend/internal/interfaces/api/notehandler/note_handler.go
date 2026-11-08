@@ -25,6 +25,7 @@ import (
 	apicommon "knowledge-graph/internal/interfaces/api/common"
 	"knowledge-graph/internal/interfaces/api/common/validation"
 	"knowledge-graph/internal/interfaces/api/middleware"
+	"knowledge-graph/internal/infrastructure/sourcetexthandler"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -45,6 +46,8 @@ type Handler struct {
 	achievementService *achievement.Service
 	importSvc          *importer.Service
 	eventPublisher     appevents.Publisher
+	sourceTextHandler  *sourcetexthandler.Client
+	sourceTextQueue    *sourcetexthandler.QueueClient
 }
 
 // SuggestionsResponse represents the response for recommendations
@@ -92,6 +95,12 @@ func (h *Handler) SetEventPublisher(p appevents.Publisher) {
 // SetLinkRepository sets the optional link repository used by batch/import handlers.
 func (h *Handler) SetLinkRepository(repo link.Repository) {
 	h.linkRepo = repo
+}
+
+// SetSourceTextHandler sets the optional source-text-handler client for Java import processing.
+func (h *Handler) SetSourceTextHandler(client *sourcetexthandler.Client, queueClient *sourcetexthandler.QueueClient) {
+	h.sourceTextHandler = client
+	h.sourceTextQueue = queueClient
 }
 
 // enqueueRecommendationTasks queues recommendation refresh tasks for affected notes
@@ -795,6 +804,25 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		return
 	}
 
+	// Try to use Java source-text-handler if available
+	if h.sourceTextHandler != nil && h.sourceTextQueue != nil {
+		if err := h.sourceTextHandler.HealthCheck(c.Request.Context()); err == nil {
+			result, err := h.processWithJava(c, req, userID, noteType, middleware.GetAuthToken(c))
+			if err == nil && result != nil && len(result.NoteIDs) > 0 {
+				// Java successfully created the note
+				c.JSON(201, bookmarkletResponse{
+					NoteID: result.NoteIDs[0],
+					Title:  req.Title,
+					Type:   noteTypeValue,
+				})
+				return
+			}
+			// Log but don't fail - fallback to Go logic
+			log.Printf("[NoteHandler] Java processing failed, falling back to Go: %v", err)
+		}
+	}
+
+	// Fallback: current Go logic
 	content := importer.BuildContent(req.Title, req.URL, req.Text)
 
 	title, err := note.NewTitle(req.Title)
@@ -864,6 +892,31 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		Title:  newNote.Title().String(),
 		Type:   newNote.Type(),
 	})
+}
+
+// processWithJava sends the bookmarklet request to Java source-text-handler
+func (h *Handler) processWithJava(c *gin.Context, req bookmarkletRequest, userID uuid.UUID, noteType note.Type, jwtToken string) (*sourcetexthandler.ImportResult, error) {
+	content := importer.BuildContent(req.Title, req.URL, req.Text)
+
+	task := sourcetexthandler.ImportTask{
+		UserID:  userID.String(),
+		JWT:     jwtToken,
+		Type:    "TEXT",
+		Content: content,
+		ImportOptions: sourcetexthandler.ImportOptions{
+			ChunkSize:      50,
+			Overlap:        2,
+			MinChunkLength: 50,
+			MaxRetries:     3,
+			CreateLinks:    false,
+		},
+		Metadata: map[string]interface{}{
+			"source_url": req.URL,
+			"type":       noteType.String(),
+		},
+	}
+
+	return h.sourceTextQueue.SendImportTask(c.Request.Context(), task)
 }
 
 // --- Mass bookmark import handlers ---

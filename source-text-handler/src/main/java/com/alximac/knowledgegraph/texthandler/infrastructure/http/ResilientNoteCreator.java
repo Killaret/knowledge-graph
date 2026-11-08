@@ -3,7 +3,6 @@ package com.alximac.knowledgegraph.texthandler.infrastructure.http;
 import com.alximac.knowledgegraph.texthandler.application.exception.RemoteServiceException;
 import com.alximac.knowledgegraph.texthandler.application.port.NoteCreatorPort;
 import com.alximac.knowledgegraph.texthandler.domain.model.DocumentChunk;
-import com.alximac.knowledgegraph.texthandler.domain.model.Link;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
 
@@ -37,22 +36,4 @@ public class ResilientNoteCreator implements NoteCreatorPort {
         }
     }
 
-    @Override
-    public void createLink(Link link,String jwt) throws RemoteServiceException {
-        Callable<Void> callable = () -> {
-            noteCreatorPort.createLink(link,jwt);
-            return null;
-        };
-
-        Callable<Void> decorated = Retry.decorateCallable(retry, callable);
-        decorated = CircuitBreaker.decorateCallable(circuitBreaker, decorated);
-
-        try {
-            decorated.call();
-        } catch (RemoteServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RemoteServiceException("Failed to create link", e);
-        }
-    }
 }

@@ -57,14 +57,13 @@ public class AsynqInboundAdapter implements InboundQueuePort {
         }
     }
 
-    private void processMessage(String envelopeJson, Consumer<ImportTask> handler) {
+    private void processMessage(String json, Consumer<ImportTask> handler) {
         try {
-            AsynqTaskEnvelope envelope = objectMapper.readValue(envelopeJson, AsynqTaskEnvelope.class);
-            String payloadJson = envelope.payload();
-            ImportTask task = objectMapper.readValue(payloadJson, ImportTask.class);
+            ImportTask task = objectMapper.readValue(json, ImportTask.class);
             handler.accept(task);
         } catch (Exception e) {
-            System.err.println("Error while processing message: " + e.getMessage());
+            //момент с утечкой jwt - jackson кладет первые 500 символов
+            System.err.println("Error while processing message: " + e.getClass().getSimpleName());
         }
     }
 

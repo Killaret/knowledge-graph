@@ -118,42 +118,9 @@ class NoteCreatorHttpClientTest {
         assertThat(id).isEqualTo("my-id");
     }
 
-    @Test
-    @DisplayName("Must create link successfully when backend returns 200")
-    void mustCreateLinkSuccessfully() throws Exception {
-        wireMockServer.stubFor(post(urlEqualTo("/links"))
-                .willReturn(aResponse()
-                        .withStatus(200)));
 
-        Link link = new Link("src-1", "tgt-1", 0.8, null);
-        assertThatCode(() -> client.createLink(link, "jwt-token"))
-                .doesNotThrowAnyException();
-    }
 
-    @Test
-    @DisplayName("Must throw RemoteServiceException when link creation fails with 500")
-    void mustThrowExceptionOnLink500() {
-        wireMockServer.stubFor(post(urlEqualTo("/links"))
-                .willReturn(aResponse().withStatus(500)));
 
-        Link link = new Link("src-1", "tgt-1", 0.8, null);
-        assertThatThrownBy(() -> client.createLink(link, "jwt-token"))
-                .isInstanceOf(RemoteServiceException.class)
-                .hasMessageContaining("HTTP 500");
-    }
 
-    @Test
-    @DisplayName("Must send correct JSON body for link creation")
-    void mustSendCorrectJsonForLink() throws Exception {
-        wireMockServer.stubFor(post(urlEqualTo("/links"))
-                .willReturn(aResponse().withStatus(200)));
 
-        Link link = new Link("src", "tgt", 0.75, null);
-        client.createLink(link, "jwt-token");
-
-        wireMockServer.verify(postRequestedFor(urlEqualTo("/links"))
-                .withRequestBody(containing("\"sourceNoteId\":\"src\""))
-                .withRequestBody(containing("\"targetNoteId\":\"tgt\""))
-                .withRequestBody(containing("\"weight\":0.75")));
-    }
 }

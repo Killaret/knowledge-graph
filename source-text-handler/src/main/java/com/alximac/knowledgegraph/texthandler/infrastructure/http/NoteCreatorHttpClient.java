@@ -3,7 +3,6 @@ package com.alximac.knowledgegraph.texthandler.infrastructure.http;
 import com.alximac.knowledgegraph.texthandler.application.port.NoteCreatorPort;
 import com.alximac.knowledgegraph.texthandler.application.exception.RemoteServiceException;
 import com.alximac.knowledgegraph.texthandler.domain.model.DocumentChunk;
-import com.alximac.knowledgegraph.texthandler.domain.model.Link;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -19,14 +18,12 @@ public class NoteCreatorHttpClient implements NoteCreatorPort {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final String notesUrl;
-    private final String linksUrl;
 
     public NoteCreatorHttpClient(HttpClient httpClient, ObjectMapper objectMapper,
                                  String baseUrl) {
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
         this.notesUrl = baseUrl + "/notes";
-        this.linksUrl = baseUrl + "/links";
     }
 
     private static final long WAIT_DURATION = 5;
@@ -46,17 +43,6 @@ public class NoteCreatorHttpClient implements NoteCreatorPort {
 
     }
 
-    @Override
-    public void createLink(Link link,String jwt) throws RemoteServiceException {
-        CreateLinkRequest request = new CreateLinkRequest(
-                link.sourceNoteId(),
-                link.targetNoteId(),
-                link.linkType(),
-                link.weight());
-
-        String json = toJson(request);
-        executePost(linksUrl, json,jwt);   // ответ не важен
-    }
 
     private HttpResponse<String> executePost(String url, String json,String jwt) throws RemoteServiceException {
         try {

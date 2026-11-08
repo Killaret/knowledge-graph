@@ -31,8 +31,16 @@ public class RedisImportStateRepository implements ImportStateRepository {
         try (StatefulRedisConnection<String, String> connection = redisClient.connect()) {
             RedisCommands<String, String> sync = connection.sync();
             String response = sync.set(keyPrefix + eventId, "processing",
-                    SetArgs.Builder.nx().ex(claimTtlSeconds));
+                SetArgs.Builder.nx().ex(claimTtlSeconds));
             return "OK".equals(response);
+        }
+    }
+
+    @Override
+    public void releaseClaim(String eventId) {
+        try (StatefulRedisConnection<String, String> connection = redisClient.connect()) {
+            RedisCommands<String,String> sync = connection.sync();
+            sync.del(keyPrefix + eventId);
         }
     }
 
