@@ -731,3 +731,16 @@ Create a new bullet under the right section with:
   - `npx playwright test tests/comet-1.spec.ts --project=chromium-skip-auth` → 2 passed: спек сам создаёт пять комет (reminder/+6ч/+30д/−1д/без даты), ждёт `comet_reminder` по API, проверяет `.ics`, группы «Ближайшие дела», архив-предложение и клик «Move to debris» → тип `debris`, заметка уходит из списка комет.
 - **Найденный дефект (исправлен на месте):** `GET /notes/{id}` не возвращал `due_at`/`done_at`/`remind_before_seconds` — панель деталей не видела дату, архив-предложение не появлялось. Добавлены в `note_handler.Get`, регрессионный тест `TestGetNote_CometFields` (мутация «убрать due_at» — красная).
 - **Screenshot / Logs:** `docs/agents/screenshots/comet-1/upcoming-panel.png` (группы overdue/upcoming/undated + 📅), `graph-comets.png` (кометы на графе, light-стиль), `archive-suggestion.png` («The date has passed. Move it to the debris archive?»); `docker logs kg-test-worker` — `notification delivered`.
+
+### SMART-CREATE-1 — ревью, живая проверка (тест-стек, заглушка Java)
+
+- **Scope:** план ручной проверки постановки SMART-CREATE-1, пункты 1–6.
+- **Date:** 2026-11-08
+- **Agent:** Claude Code
+- **Tests executed:**
+  - `start-test.ps1` с `SKIP_AUTH=false` из `D:\knowledge-graph-review-smart` (`af84657`); `seed-test-data.ps1` → 20 заметок.
+  - Заглушка Java по ТЗ (ключ слушателя, `BLPOP import:document:pending`, `POST /import/batch` с JWT из задачи, ответ по §4) — скрипт ревьюера, в репозиторий не входит.
+  - Playwright headless, `testuser`: кнопка слева от «＋», без Java серая; с заглушкой активна. Отправка из окна → **403** «Cross-site POST form submissions are forbidden» (CSRF SvelteKit, у фронтенда нет `ORIGIN`) — блокер.
+  - Через API бэкенда (18083): TEXT, URL, FILE → `done`; `PARTIAL` → `raw_chunks_count`; `FAILED` → `errors`; частный URL и файл > 8 МиБ → 400; чужой статус → 404; ключ пропал → `available=false` за 14 с, отправка → 503.
+  - С `ORIGIN=http://127.0.0.1:3002` у фронтенд-контейнера (override, код не менялся): все состояния окна, сворачивание, значок «1», серая кнопка через 21 с.
+- **Screenshot / Logs:** `docs/agents/screenshots/smart-create-1/` — `1-no-java.png`, `2-text-completed.png`, `3-text-partial.png`, `3-text-failed.png`, `4-collapsed-waiting.png`, `4-badge.png`, `5-grey-again.png`; разбор — `docs/tasks/SMART-CREATE-1-review-findings.md`. Стек снесён после прогона.
