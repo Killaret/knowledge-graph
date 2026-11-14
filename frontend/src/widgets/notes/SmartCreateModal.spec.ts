@@ -120,6 +120,56 @@ describe("SmartCreateModal", () => {
     expect(screen.getByText("The handler did not answer")).toBeInTheDocument();
   });
 
+  it("uses the singular form for exactly one raw fragment", async () => {
+    vi.mocked(getImportStatus).mockResolvedValue({ ...doneStatus, raw_chunks_count: 1 });
+    render(SmartCreateModal, { props: { open: true } });
+
+    await fireEvent.input(screen.getByTestId("smart-create-text"), { target: { value: "t" } });
+    await fireEvent.click(screen.getByTestId("smart-create-submit"));
+
+    await waitFor(() => expect(screen.getByTestId("smart-create-raw")).toBeInTheDocument());
+    expect(screen.getByTestId("smart-create-raw")).toHaveTextContent(
+      "1 fragment did not become a note"
+    );
+  });
+
+  it("shows a localized message instead of a raw error string on submit failure", async () => {
+    const { HTTPError } = await import("ky");
+    const response = new Response(JSON.stringify({ code: "source_text_handler_unavailable" }), {
+      status: 503,
+    });
+    const httpError = new HTTPError(response, new Request("http://x/api"), {} as never);
+    vi.mocked(createSmartImport).mockRejectedValue(httpError);
+    render(SmartCreateModal, { props: { open: true } });
+
+    await fireEvent.input(screen.getByTestId("smart-create-text"), { target: { value: "t" } });
+    await fireEvent.click(screen.getByTestId("smart-create-submit"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("smart-create-submit-error")).toBeInTheDocument()
+    );
+    expect(screen.getByTestId("smart-create-submit-error")).toHaveTextContent(
+      "Document handler is unavailable"
+    );
+    expect(screen.getByTestId("smart-create-submit-error")).not.toHaveTextContent(
+      "Request failed with status code"
+    );
+  });
+
+  it("asks for the text instead of reusing the URL-empty message", async () => {
+    render(SmartCreateModal, { props: { open: true } });
+
+    await fireEvent.click(screen.getByTestId("smart-create-submit"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("smart-create-submit-error")).toBeInTheDocument()
+    );
+    expect(screen.getByTestId("smart-create-submit-error")).toHaveTextContent(
+      "Paste the text first."
+    );
+    expect(createSmartImport).not.toHaveBeenCalled();
+  });
+
   it("collapse hides the window while the task stays queued", async () => {
     const onClose = vi.fn();
     render(SmartCreateModal, { props: { open: true, onClose } });

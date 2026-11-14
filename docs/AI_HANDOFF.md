@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-11-14 — e9c00bc
-Прочитано: Devin — 2026-11-14 — eddb081
+Прочитано: Devin — 2026-11-14 — 14f7b55
 ```
 
 ---
@@ -21,7 +21,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **SMART-CREATE-1:** кнопка слева от «＋» — заметки через `source-text-handler` | [`tasks/SMART-CREATE-1-document-button-via-source-text-handler.md`](tasks/SMART-CREATE-1-document-button-via-source-text-handler.md) | **в работе** — доработка по [разбору](tasks/SMART-CREATE-1-review-findings.md): блокер CSRF 403, контрактный тест по фикстуре ТЗ §3, мелочи | 2026-11-14 |
+| **SMART-CREATE-1:** кнопка слева от «＋» — заметки через `source-text-handler` | [`tasks/SMART-CREATE-1-document-button-via-source-text-handler.md`](tasks/SMART-CREATE-1-document-button-via-source-text-handler.md) | **в работе** — ждёт слот ревью (5/5 занято). Доработка по [разбору](tasks/SMART-CREATE-1-review-findings.md): тело octet-stream вместо multipart (CSRF 403), контракт §3 сверяется целиком, sweep по таймеру, 500 на внутренних ошибках, новые i18n-ключи; живой прогон и e2e-спек за рецензентом | 2026-11-14 |
 | **UX-3:** подсказка связи над заметкой; «чёрная дыра» под легендой; «Invalid date» в «Сообществе» | [`tasks/UX-3-canvas-hover-and-black-hole.md`](tasks/UX-3-canvas-hover-and-black-hole.md) | **на ревью** — ревью №1 · Devin 30.09: заметка ищется до связи; дыра — влево от легенды. [`tasks/UX-3-review-findings.md`](tasks/UX-3-review-findings.md) | 2026-11-14 |
 | **SYNC-1 (этапы B, C):** применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **на ревью** — ревью №2 · Devin 01.10: этапы B и C готовы | 2026-11-14 |
 | **UX-1:** связи из правого меню, связь существующих заметок, пропадание канваса | [`tasks/UX-1-link-creation-and-canvas-refresh.md`](tasks/UX-1-link-creation-and-canvas-refresh.md) | **на ревью** — ревью №3 · Devin 01.10: «Связать с…» в контекст-меню, пикер заметок; канвас не гаснет | 2026-11-14 |

@@ -178,3 +178,36 @@ curl -s -X POST http://127.0.0.1:3002/api/v1/import/document -H "Origin: http://
 | Таймаут 10 мин | не проверялся вживую | только `TestFailTimedOutTasks` |
 
 Снимки — `docs/agents/screenshots/smart-create-1/`.
+
+---
+
+## Доработка по вердикту — Devin, 2026-11-14
+
+### Блокер 1 — CSRF 403 на `POST /import/document`
+
+Контракт заменён: тело — сырое `application/octet-stream`, метаданные (`type`, `filename`, `content_type`) — в query. Multipart и form-urlencoded отклоняются 400 — конверт не уходит в тело документа мусором. Сравнение альтернатив: `ORIGIN` держит один канонический origin на контейнер и ломается при localhost/127 или смене порта; `checkOrigin: false` гасит защиту для всех form-POST через refresh-куку; `trustedOrigins` задаётся на сборке и расходится между стеками; base64 в JSON раздувает 8 МиБ до ~10,9 МБ > `client_max_body_size 10m`. Правки: `parseDocumentRequest` в `document_import.go`, `createSmartImport` в `shared/api/import.ts`; `hooks.server.ts` не тронут (query проходит проксей). Регресс: e2e `tests/smart-create-document.spec.ts` (@auth-real) шлёт через фронтенд :3002 и ждёт 503 `source_text_handler_unavailable` — на 403 краснеет; юнит-страж — `import.test.ts` требует octet-stream и отсутствие `multipart/`.
+
+### Блокер 2 — контрактный тест
+
+`TestSubmitDocument_TaskContract` и `TestDocumentQueue_TaskContractOnRedis` переведены на фикстуру ТЗ §3 дословно: полный набор верхнеуровневых полей и `import_options` целиком, глубокое сравнение. Мутации рецензента воспроизведены: `overlap` 50→5 и `intra_chunk_cohesion`→`intra_cohesion` — оба теста красные.
+
+### Мелочи
+
+- 503 на submit → `import.smartCreateUnavailable`; прочие — `getApiErrorMessage` (был сырой `e.message` от ky).
+- Пустой текст/ссылка → `import.smartEmptyText`/`smartEmptyUrl` (был `import.emptyList` «Нет URL»).
+- Внутренние ошибки `SubmitDocument` → 500 без утечки `err.Error()` (было 400 с текстом ошибки).
+- Sweep по таймеру `sweepInterval` (воркер: 1 мин) при любом потоке ответов — раньше протухшие задачи гасли только на таймауте `BLPOP`. Тест `TestRunDocumentResultLoop_SweepsDuringResultStream` краснеет на реверте («Condition never satisfied»).
+- «1 fragments…» → выбор ключа по числу: ru — 3 формы, en — 2 (`smartRawChunksOne/Few`); кейс ед.ч. в спеке модала.
+- Правка заметок раздела выше: `popTimeout` в воркере — **5 с** (не 15); задачи массового импорта получают `user_id` в `StartImport` (`service.go`) и попадают под проверку владельца — оговорка «поведение прежнее» касается только задач, созданных до этой правки.
+
+### Файлы (дельта)
+
+backend: `application/import/document.go(+test)`, `interfaces/api/notehandler/document_import.go(+test)`, `infrastructure/queue/document_queue_test.go`, `cmd/worker/main.go`, `openAPI.yaml`, `docs/api/API_EN.md`.
+frontend: `shared/api/import.ts(+test)`, `widgets/notes/SmartCreateModal.svelte(+spec)`, `shared/utils/i18n/messages/import.ts`, `tests/smart-create-document.spec.ts`.
+
+### Прогоны (worktree ai-agents)
+
+- `go test ./internal/application/import ./internal/interfaces/api/notehandler ./internal/infrastructure/queue` — ok; `go build ./...` — ok; `go test ./...` — все пакеты ok, падений нет.
+- `svelte-check` — 0/0; vitest `import.test` + `SmartCreateModal.spec` — 16/16; kg-layers: grep-сторожа слоёв пустые, `check:circular` — 249 файлов, циклов нет.
+- Мутации: §3 (`overlap`, `intra_cohesion`) и sweep — красные, откачены, набор снова зелёный.
+- Живой прогон на тест-стеке — за рецензентом; e2e-спек добавлен именно для этого окна.

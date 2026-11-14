@@ -148,20 +148,37 @@ export async function getSmartCreateAvailability(): Promise<SmartCreateAvailabil
 
 /**
  * SMART-CREATE-1: send a document (text, URL or file) to the source-text
- * handler queue. Multipart fields follow the backend contract: type, content,
- * file.
+ * handler queue.
+ *
+ * The body is raw bytes (application/octet-stream) with the metadata in the
+ * query string — deliberately NOT multipart/form-data. Form content types run
+ * through SvelteKit's CSRF origin check, and the frontend container sets no
+ * ORIGIN, so every multipart POST to /api/v1 died with 403 at the proxy
+ * before reaching the backend. A raw body skips that check and survives every
+ * deployment origin unchanged.
  */
 export async function createSmartImport(input: {
   type: SmartImportType;
   content?: string;
   file?: File;
 }): Promise<ImportTask> {
-  const form = new FormData();
-  form.set("type", input.type);
-  if (input.content !== undefined) form.set("content", input.content);
-  if (input.file) form.set("file", input.file);
+  const searchParams: Record<string, string> = { type: input.type };
+  let body: BodyInit;
+  if (input.type === "FILE") {
+    if (!input.file) throw new Error("file is required for FILE");
+    searchParams.filename = input.file.name;
+    if (input.file.type) searchParams.content_type = input.file.type;
+    body = input.file;
+  } else {
+    body = input.content ?? "";
+  }
   const res = await api
-    .post("v1/import/document", { body: form, timeout: 120000 })
+    .post("v1/import/document", {
+      searchParams,
+      body,
+      headers: { "content-type": "application/octet-stream" },
+      timeout: 120000,
+    })
     .json<{ data: ImportTask }>();
   return res.data;
 }

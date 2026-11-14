@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"log"
+	"sort"
 	"testing"
 	"time"
 
@@ -17,11 +19,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// fakeDocumentQueue is an in-memory DocumentQueue for unit tests.
+// fakeDocumentQueue is an in-memory DocumentQueue for unit tests. endless is
+// answered on every poll once results are drained — it simulates a continuous
+// response stream (the sweep must not starve behind it).
 type fakeDocumentQueue struct {
 	alive   bool
 	pushed  [][]byte
 	results [][]byte
+	endless []byte
 }
 
 func (q *fakeDocumentQueue) IsListenerAlive(ctx context.Context) (bool, error) {
@@ -35,6 +40,9 @@ func (q *fakeDocumentQueue) PushTask(ctx context.Context, payload []byte) error 
 
 func (q *fakeDocumentQueue) PopResult(ctx context.Context, timeout time.Duration) ([]byte, error) {
 	if len(q.results) == 0 {
+		if q.endless != nil {
+			return q.endless, nil
+		}
 		return nil, ErrResultTimeout
 	}
 	payload := q.results[0]
@@ -83,8 +91,48 @@ func TestSubmitDocument_NoListener(t *testing.T) {
 	require.Empty(t, dq.pushed, "nothing may be queued while the listener is down")
 }
 
+// tz3TaskFixture is the §3 example of TZ-Java-source-text-handler-2026-08-30.md
+// verbatim. The contract is defined by this literal, not by a key list typed
+// from memory — the review mutation (a renamed smart_weights field and an
+// overlap value change) went unnoticed under the old check because it verified
+// only two of nine weights and two of eight options.
+const tz3TaskFixture = `{
+	"event_id": "uuid-task-1",
+	"correlation_id": "uuid-correlation-1",
+	"user_id": "uuid-user-1",
+	"jwt": "eyJhbGci...",
+	"type": "FILE|URL|TEXT",
+	"content": "base64-string | URL | plain text",
+	"content_type": "application/pdf",
+	"import_options": {
+		"chunk_size": 500,
+		"overlap": 50,
+		"min_chunk_length": 100,
+		"max_chunk_length": 8000,
+		"max_retries": 3,
+		"create_links": false,
+		"smart_threshold": 70,
+		"smart_weights": {
+			"has_heading": 25,
+			"section_boundary": 10,
+			"intra_chunk_cohesion": 20,
+			"punctuation_completeness": 15,
+			"chunk_ending_weight": 15,
+			"length_ok": 10,
+			"keyword_trend_stable": 5,
+			"punctuation_balance": 5,
+			"metadata_present": 5
+		}
+	},
+	"metadata": {
+		"filename": "doc.pdf",
+		"source": "telegram"
+	}
+}`
+
 // Criterion 2: the queued message parses into exactly the §3 structure —
-// same field set, snake_case, no envelope.
+// the same top-level field set, import_options deep-equal to the §3 literal,
+// snake_case everywhere, no envelope.
 func TestSubmitDocument_TaskContract(t *testing.T) {
 	svc, _, _, dq := newDocumentService()
 	userID := uuid.New()
@@ -97,21 +145,18 @@ func TestSubmitDocument_TaskContract(t *testing.T) {
 	require.NotEmpty(t, taskID)
 	require.Len(t, dq.pushed, 1)
 
+	var fixture map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal([]byte(tz3TaskFixture), &fixture))
+	// §3 marks content_type as FILE-only; a TEXT task must not carry it.
+	delete(fixture, "content_type")
+
 	var task map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(dq.pushed[0], &task))
 
-	wantKeys := []string{
-		"event_id", "correlation_id", "user_id", "jwt", "type",
-		"content", "import_options", "metadata",
-	}
-	for _, key := range wantKeys {
-		require.Contains(t, task, key)
-	}
-	// No extra top-level fields and no asynq envelope.
-	require.Len(t, task, len(wantKeys)+0, "unexpected top-level fields: %v", keysOf(task))
-	require.NotContains(t, task, "content_type")
-	require.NotContains(t, task, "typename")
-	require.NotContains(t, task, "payload")
+	// Top-level field set: exactly the §3 keys — no missing field, no extra
+	// field, no asynq envelope.
+	require.Equal(t, sortedKeys(fixture), sortedKeys(task),
+		"top-level fields differ from the §3 contract")
 
 	require.Equal(t, `"TEXT"`, string(task["type"]))
 	require.Equal(t, `"three paragraphs of text"`, string(task["content"]))
@@ -119,25 +164,22 @@ func TestSubmitDocument_TaskContract(t *testing.T) {
 	require.Equal(t, `"`+userID.String()+`"`, string(task["user_id"]))
 	require.Equal(t, `"`+taskID+`"`, string(task["correlation_id"]))
 
-	var options map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(task["import_options"], &options))
-	for _, key := range []string{
-		"chunk_size", "overlap", "min_chunk_length", "max_chunk_length",
-		"max_retries", "create_links", "smart_threshold", "smart_weights",
-	} {
-		require.Contains(t, options, key)
-	}
-	require.Equal(t, `500`, string(options["chunk_size"]))
-	require.Equal(t, `70`, string(options["smart_threshold"]))
+	// import_options — the whole object, not sampled keys: every key and
+	// every value must equal the §3 literal.
+	var wantOptions, gotOptions map[string]interface{}
+	require.NoError(t, json.Unmarshal(fixture["import_options"], &wantOptions))
+	require.NoError(t, json.Unmarshal(task["import_options"], &gotOptions))
+	require.Equal(t, wantOptions, gotOptions)
 
-	var weights map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(options["smart_weights"], &weights))
-	require.Equal(t, `25`, string(weights["has_heading"]))
-	require.Equal(t, `5`, string(weights["metadata_present"]))
-
-	var meta map[string]json.RawMessage
+	var meta map[string]interface{}
 	require.NoError(t, json.Unmarshal(task["metadata"], &meta))
-	require.Equal(t, `"web"`, string(meta["source"]))
+	require.Equal(t, "web", meta["source"])
+}
+
+func sortedKeys(m map[string]json.RawMessage) []string {
+	keys := keysOf(m)
+	sort.Strings(keys)
+	return keys
 }
 
 func TestSubmitDocument_FileBase64(t *testing.T) {
@@ -326,6 +368,38 @@ func TestFailTimedOutTasks_SkipsBookmarkTasks(t *testing.T) {
 	after, err := svc.GetTaskStatus(ctx, stale.TaskID)
 	require.NoError(t, err)
 	require.Equal(t, "pending", after.Status)
+}
+
+// The timeout sweep must not starve behind a continuous result stream: when
+// every BLPOP answers instantly, pending tasks past their deadline still fail
+// — the mutation "sweep only on an empty pop" turns this red.
+func TestRunDocumentResultLoop_SweepsDuringResultStream(t *testing.T) {
+	svc, _, _, dq := newDocumentService()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// The endless results all carry unknown correlation ids — the drop log
+	// line would fire thousands of times otherwise.
+	old := log.Writer()
+	log.SetOutput(io.Discard)
+	defer log.SetOutput(old)
+
+	staleID, err := svc.SubmitDocument(ctx, uuid.New(), "jwt", DocumentInput{Type: "TEXT", Content: "x"})
+	require.NoError(t, err)
+	stale, err := svc.loadStatus(ctx, staleID)
+	require.NoError(t, err)
+	stale.CreatedAt = time.Now().Add(-time.Hour)
+	require.NoError(t, svc.storeStatus(ctx, stale))
+
+	// An endless stream of unknown-correlation results keeps every pop hot.
+	dq.endless = []byte(`{"correlation_id":"` + uuid.New().String() + `","status":"COMPLETED"}`)
+
+	go svc.RunDocumentResultLoop(ctx, time.Millisecond, 2*time.Millisecond, 10*time.Minute)
+
+	require.Eventually(t, func() bool {
+		st, err := svc.GetTaskStatus(ctx, staleID)
+		return err == nil && st.Status == statusFailed && st.Reason == reasonTimeout
+	}, 5*time.Second, 10*time.Millisecond)
 }
 
 // Criterion 4: a foreign status answers with the cache-miss sentinel the

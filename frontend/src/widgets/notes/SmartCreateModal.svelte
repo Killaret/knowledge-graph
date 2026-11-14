@@ -1,6 +1,7 @@
 <script lang="ts">
   /* eslint-disable prefer-const -- Svelte 5 bindable props require let */
   import { goto } from "$app/navigation";
+  import { HTTPError } from "ky";
   import Modal from "$components/atoms/Modal.svelte";
   import Button from "$components/atoms/Button.svelte";
   import {
@@ -9,11 +10,37 @@
     type ImportTaskStatus,
     type SmartImportType,
   } from "$shared/api/import";
+  import { getApiErrorMessage } from "$shared/api/errorMessage";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
+
+  // ru has three plural forms (1 фрагмент, 2–4 фрагмента, 5+ фрагментов),
+  // en has two — the locale picks the key, the dictionaries carry all three.
+  function rawChunksKey(count: number): string {
+    if (locale === "ru") {
+      const mod10 = count % 10;
+      const mod100 = count % 100;
+      if (mod10 === 1 && mod100 !== 11) return "import.smartRawChunksOne";
+      if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+        return "import.smartRawChunksFew";
+      }
+      return "import.smartRawChunks";
+    }
+    return count === 1 ? "import.smartRawChunksOne" : "import.smartRawChunks";
+  }
+
+  async function submitErrorMessage(e: unknown): Promise<string> {
+    // A 503 on this endpoint means the document handler went offline between
+    // the availability poll and the submit — show the dedicated text, not a
+    // raw ky error string.
+    if (e instanceof HTTPError && e.response.status === 503) {
+      return t("import.smartCreateUnavailable");
+    }
+    return getApiErrorMessage(e, locale);
+  }
 
   interface Props {
     open: boolean;
@@ -109,14 +136,14 @@
     try {
       if (source === "TEXT") {
         if (!text.trim()) {
-          submitError = t("import.emptyList");
+          submitError = t("import.smartEmptyText");
           return;
         }
         const res = await createSmartImport({ type: "TEXT", content: text });
         taskId = res.task_id;
       } else if (source === "URL") {
         if (!url.trim()) {
-          submitError = t("import.emptyList");
+          submitError = t("import.smartEmptyUrl");
           return;
         }
         const res = await createSmartImport({ type: "URL", content: url.trim() });
@@ -130,7 +157,7 @@
         taskId = res.task_id;
       }
     } catch (e) {
-      submitError = e instanceof Error ? e.message : String(e);
+      submitError = await submitErrorMessage(e);
     } finally {
       submitting = false;
     }
@@ -222,7 +249,7 @@
         {/if}
         {#if result.raw_chunks_count}
           <p class="smart-raw" data-testid="smart-create-raw">
-            {t("import.smartRawChunks", { count: result.raw_chunks_count })}
+            {t(rawChunksKey(result.raw_chunks_count), { count: result.raw_chunks_count })}
           </p>
         {/if}
         <div class="smart-actions">
