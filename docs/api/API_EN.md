@@ -219,7 +219,7 @@ front that pipeline:
 
 ```bash
 GET  /api/v1/import/document/availability   # {available} — listener wrote source-text-handler:alive
-POST /api/v1/import/document                # octet-stream body; query: type=TEXT|URL|FILE, filename, content_type (FILE); ≤ 8 MiB
+POST /api/v1/import/document                # multipart: type=TEXT|URL|FILE, content, file ≤ 8 MiB
 ```
 
 `availability` mirrors a Redis liveness key the Java listener is expected to write on

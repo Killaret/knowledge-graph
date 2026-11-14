@@ -231,16 +231,13 @@ func (s *Service) GetTaskStatusForUser(ctx context.Context, taskID string, userI
 }
 
 // RunDocumentResultLoop drains import:responses:pending until ctx is done.
-// Every sweepInterval it fails document tasks whose answer never arrived
-// within taskTimeout (TZ is silent about timeouts — the deadline is Go-side
-// only). The sweep runs on a timer, not only on an empty BLPOP: a continuous
-// result stream must not starve it (review finding SMART-CREATE-1).
-func (s *Service) RunDocumentResultLoop(ctx context.Context, popTimeout, sweepInterval, taskTimeout time.Duration) {
+// Between polls it fails document tasks whose answer never arrived within
+// taskTimeout (TZ is silent about timeouts — the deadline is Go-side only).
+func (s *Service) RunDocumentResultLoop(ctx context.Context, popTimeout, taskTimeout time.Duration) {
 	if s.docQueue == nil {
 		log.Println("[ImportService] document queue not configured — result reader disabled")
 		return
 	}
-	nextSweep := time.Now()
 	for {
 		select {
 		case <-ctx.Done():
@@ -251,7 +248,7 @@ func (s *Service) RunDocumentResultLoop(ctx context.Context, popTimeout, sweepIn
 		payload, err := s.docQueue.PopResult(ctx, popTimeout)
 		switch {
 		case errors.Is(err, ErrResultTimeout):
-			// Empty queue — fall through to the scheduled sweep.
+			s.failTimedOutTasks(ctx, taskTimeout)
 		case err != nil:
 			if ctx.Err() != nil {
 				return
@@ -260,11 +257,6 @@ func (s *Service) RunDocumentResultLoop(ctx context.Context, popTimeout, sweepIn
 			time.Sleep(time.Second)
 		default:
 			s.ApplyDocumentResult(ctx, payload)
-		}
-
-		if !time.Now().Before(nextSweep) {
-			s.failTimedOutTasks(ctx, taskTimeout)
-			nextSweep = time.Now().Add(sweepInterval)
 		}
 	}
 }

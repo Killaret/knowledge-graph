@@ -135,7 +135,7 @@ func main() {
 	importSvc.SetDocumentQueue(docQueue)
 	docCtx, stopDocResults := context.WithCancel(context.Background())
 	defer stopDocResults()
-	go importSvc.RunDocumentResultLoop(docCtx, 5*time.Second, time.Minute, 10*time.Minute)
+	go importSvc.RunDocumentResultLoop(docCtx, 5*time.Second, 10*time.Minute)
 
 	// SYNC-1 A2: graph events no longer leave through handler calls — the
 	// outbox relayer drains graph_outbox to the Redis channel. Started here

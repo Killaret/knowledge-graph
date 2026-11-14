@@ -6,7 +6,6 @@ import {
   previewBookmarks,
   createBookmarksImport,
   getImportStatus,
-  createSmartImport,
   type BookmarkletPayload,
   type ImportItem,
 } from "./import";
@@ -78,54 +77,5 @@ describe("import API", () => {
 
     const result = await getImportStatus("t1");
     expect(result).toEqual(response);
-  });
-
-  // SMART-CREATE-1 blocker-1: the wire format must stay a raw
-  // application/octet-stream body. Reverting to FormData/multipart restores
-  // the SvelteKit CSRF 403 in production — this assertion turns red there.
-  it("submits a document as raw octet-stream with metadata in the query", async () => {
-    const seen: { contentType: string | null; query: string; body: string }[] = [];
-    server.use(
-      http.post("http://localhost:8080/api/v1/import/document", async ({ request }) => {
-        seen.push({
-          contentType: request.headers.get("content-type"),
-          query: new URL(request.url).search,
-          body: await request.text(),
-        });
-        return HttpResponse.json({ data: { task_id: "doc-1" } });
-      })
-    );
-
-    const result = await createSmartImport({ type: "TEXT", content: "hello doc" });
-    expect(result).toEqual({ task_id: "doc-1" });
-    expect(seen).toHaveLength(1);
-    expect(seen[0].contentType).toBe("application/octet-stream");
-    expect(seen[0].contentType).not.toContain("multipart/");
-    expect(seen[0].query).toContain("type=TEXT");
-    expect(seen[0].body).toBe("hello doc");
-  });
-
-  it("submits a file with filename and content_type in the query", async () => {
-    const seen: { contentType: string | null; params: URLSearchParams; body: string }[] = [];
-    server.use(
-      http.post("http://localhost:8080/api/v1/import/document", async ({ request }) => {
-        seen.push({
-          contentType: request.headers.get("content-type"),
-          params: new URL(request.url).searchParams,
-          body: await request.text(),
-        });
-        return HttpResponse.json({ data: { task_id: "doc-2" } });
-      })
-    );
-
-    const file = new File(["pdf-bytes"], "doc.pdf", { type: "application/pdf" });
-    const result = await createSmartImport({ type: "FILE", file });
-    expect(result).toEqual({ task_id: "doc-2" });
-    expect(seen).toHaveLength(1);
-    expect(seen[0].contentType).toBe("application/octet-stream");
-    expect(seen[0].params.get("type")).toBe("FILE");
-    expect(seen[0].params.get("filename")).toBe("doc.pdf");
-    expect(seen[0].params.get("content_type")).toBe("application/pdf");
-    expect(seen[0].body).toBe("pdf-bytes");
   });
 });

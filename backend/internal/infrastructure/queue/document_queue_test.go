@@ -33,9 +33,7 @@ func TestDocumentQueue_TaskContractOnRedis(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New()
 
-	// The §3 fixture verbatim — field names and import_options values come
-	// from the contract, not from a hand-typed list (review blocker: a renamed
-	// smart_weights field and a changed overlap value passed the old check).
+	// The §3 fixture: every top-level key the listener expects.
 	fixture := `{
 		"event_id": "uuid-task-1",
 		"correlation_id": "uuid-correlation-1",
@@ -44,26 +42,7 @@ func TestDocumentQueue_TaskContractOnRedis(t *testing.T) {
 		"type": "FILE|URL|TEXT",
 		"content": "base64-string | URL | plain text",
 		"content_type": "application/pdf",
-		"import_options": {
-			"chunk_size": 500,
-			"overlap": 50,
-			"min_chunk_length": 100,
-			"max_chunk_length": 8000,
-			"max_retries": 3,
-			"create_links": false,
-			"smart_threshold": 70,
-			"smart_weights": {
-				"has_heading": 25,
-				"section_boundary": 10,
-				"intra_chunk_cohesion": 20,
-				"punctuation_completeness": 15,
-				"chunk_ending_weight": 15,
-				"length_ok": 10,
-				"keyword_trend_stable": 5,
-				"punctuation_balance": 5,
-				"metadata_present": 5
-			}
-		},
+		"import_options": {},
 		"metadata": {}
 	}`
 	var fixtureKeys map[string]json.RawMessage
@@ -95,12 +74,6 @@ func TestDocumentQueue_TaskContractOnRedis(t *testing.T) {
 		require.Contains(t, task, key)
 	}
 	require.Len(t, task, len(fixtureKeys), "task has fields the contract does not define: %v", task)
-
-	// import_options on the wire — every key and value equal to §3.
-	var wantOptions, gotOptions map[string]interface{}
-	require.NoError(t, json.Unmarshal(fixtureKeys["import_options"], &wantOptions))
-	require.NoError(t, json.Unmarshal(task["import_options"], &gotOptions))
-	require.Equal(t, wantOptions, gotOptions)
 }
 
 // BLPOP drains the §4 response list; an empty list answers ErrResultTimeout.

@@ -867,45 +867,28 @@ paths:
   /api/v1/import/document:
     post:
       summary: SMART-CREATE-1 — queue a document (text, URL or file) for the source-text-handler
-      description: >-
-        Raw-body upload: the document is the request body sent as
-        application/octet-stream, metadata travels in the query string. Not
-        multipart — SvelteKit's CSRF check rejects form content types whenever
-        Origin does not match the server origin, and the frontend container
-        sets no ORIGIN, so a multipart post died with 403 at the proxy.
       tags: [Import]
       security:
         - bearerAuth: []
         - cookieAuth: []
-      parameters:
-        - name: type
-          in: query
-          required: true
-          schema:
-            type: string
-            enum: [TEXT, URL, FILE]
-        - name: filename
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Original filename (required when type=FILE)
-        - name: content_type
-          in: query
-          required: false
-          schema:
-            type: string
-          description: File MIME type (type=FILE; defaults to application/octet-stream)
       requestBody:
         required: true
         content:
-          application/octet-stream:
+          multipart/form-data:
             schema:
-              type: string
-              format: binary
-              description: >-
-                Raw payload: plain text (TEXT), the page URL (URL) or the file
-                bytes (FILE). Max 8 MiB.
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: string
+                  enum: [TEXT, URL, FILE]
+                content:
+                  type: string
+                  description: Plain text or URL (required for TEXT and URL)
+                file:
+                  type: string
+                  format: binary
+                  description: Document file, max 8 MiB (required for FILE)
       responses:
         '202':
           description: Document task queued, returns task_id (= correlation_id)
