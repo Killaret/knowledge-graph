@@ -93,7 +93,7 @@
 | **MODEL-3:** выбор модели эмбеддингов на большем массиве данных, возможно не только на заметках владельца | [`tasks/MODEL-3-model-choice-on-larger-corpus.md`](tasks/MODEL-3-model-choice-on-larger-corpus.md) | **бэклог** — после 1.0: решение 88 | 2026-09-29 |
 | **DEPLOY-2:** публиковать проверенные образы из CI | [`tasks/DEPLOY-2-review-findings.md`](tasks/DEPLOY-2-review-findings.md) | **бэклог** — заблокировано: токен Docker Hub, владелец сделает, когда будет время (решение 45) | 2026-09-21 |
 | **VERIFY-SPEC-1:** пилот доказательного тестирования на одной задаче Devin | [`tasks/VERIFY-SPEC-1-evidence-testing-pilot.md`](tasks/VERIFY-SPEC-1-evidence-testing-pilot.md) | **бэклог** — вводится (решение 108); ждёт выбора первой задачи владельцем | 2026-11-14 |
-| **KG-WORK-REVIEW-1:** ревью правок обвязки Claude Code — `kg-work` шаги 0 и 5, `.claude/settings.json`, `kg-new-chat` (решения 109–111) | [`tasks/RULES-IMPORT-1-external-skill-set.md`](tasks/RULES-IMPORT-1-external-skill-set.md) | **бэклог** — ждёт Devin, когда освободится слот ревью: свою обвязку Claude Code не проверяет | 2026-11-14 |
+
 | **BACKUP-4:** пустой дамп проходит проверку свежести, MongoDB без бэкапа, стек из чужого каталога | [`tasks/BACKUP-4-backup-gaps.md`](tasks/BACKUP-4-backup-gaps.md) | **бэклог** — Devin: пп. 1–3; Claude Code: п. 4, восстановление из архивов томов | 2026-11-14 |
 | **GRAPH-LIGHT-1-TAIL:** спецэлементы графа в одном лёгком стиле (решение 104) | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **бэклог** — ждёт Claude Code: живой макет владельцу, затем постановка Devin | 2026-11-14 |
 
