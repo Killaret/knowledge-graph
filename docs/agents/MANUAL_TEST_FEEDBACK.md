@@ -693,6 +693,25 @@ Create a new bullet under the right section with:
 - **Screenshot / Logs:** снимки у ревьюера; разбор — `docs/tasks/UX-3-review-findings.md`.
 - **Result:** NOTES-LIMIT-1 принято; UX-3 отклонено.
 
+### UX-3 — ревью доработки, живая проверка
+
+- **Scope:** UX-3 (`677eb6a`) — одна подсказка над заметкой, «чёрная дыра» видна целиком у легенды и принимает заметку.
+- **Date:** 2026-11-14
+- **Agent:** Claude Code
+- **Environment:** тест-стек `start-test.ps1` с `SKIP_AUTH=true` на `b6ce496`, сид 200 заметок и 300 связей (907 в
+  графе); Playwright headless, окно 1280 × 720; вид — `?graphStyle=light` и `?graphStyle=classic`.
+- **Observed:**
+  - Наведение в центр 80 заметок в каждом виде: подсказка связи — 0 из 80 и 0 из 80; у 76 и 78 из них чужая связь
+    ближе 8 единиц. Середина связи вдали от заметок — подсказка 3 из 3.
+  - Дыра против легенды, 20 кадров на замер: два вида × развёрнута и свёрнута × r = 19,2 и r = 144 — перекрытие 0 px,
+    выход за холст 0 px.
+  - Бросок заметки на дыру — подтверждение, `DELETE` → 204. Узел при `SKIP_AUTH` остаётся на холсте дольше 20 с —
+    кэш граф-сервиса, не UX-3 (разбор, «Попутно»).
+- **Screenshot / Logs:** `docs/agents/screenshots/ux-3/review-2-light-legend-expanded.png`,
+  `review-2-classic-legend-collapsed.png`, `review-2-light-legend-expanded-max-zoom.png`; лог граф-сервиса и замеры —
+  `docs/tasks/UX-3-review-findings.md`.
+- **Result:** UX-3 принято.
+
 
 ## Verification
 
