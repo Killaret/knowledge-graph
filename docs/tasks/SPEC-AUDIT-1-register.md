@@ -199,6 +199,8 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | URL-HEADING-1-findings-probe.md | не начат |
 | URL-HEADING-1-heading-extraction.md | не начат |
 | URL-HEADING-1-review-findings.md | не начат |
+| SMART-CREATE-1-document-button-via-source-text-handler.md | не начат |
+| SMART-CREATE-1-review-findings.md | не начат |
 
 ## Этап C. NLP, связи, рекомендации
 
@@ -359,8 +361,10 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | PROJECT-SKILLS-1-review-findings.md | не начат |
 | PROTO-CRITERIA-1-review-findings.md | не начат |
 | RELEASE-1-scope-1.0.md | не начат |
+| RULES-IMPORT-1-external-skill-set.md | не начат |
 | RELEASE-TEST-1-manual-run-1.0.md | не начат |
 | SPEC-AUDIT-1-specs-vs-code.md | не начат (сама постановка) |
+| VERIFY-SPEC-1-evidence-testing-pilot.md | не начат |
 | SPEC-AUDIT-1-review-findings.md | не начат (разбор этой задачи) |
 | SPECS-1-review-findings.md | не начат |
 | TASKS-INDEX-1-review-findings.md | не начат |
