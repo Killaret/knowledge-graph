@@ -15,6 +15,10 @@
       "Bash(git diff*)",
       "Bash(git log*)",
       "Bash(git show*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git fetch*)",
+      "Bash(git push origin HEAD:ai-agents)",
       "Bash(docker compose ps*)",
       "Bash(docker ps*)"
     ],
