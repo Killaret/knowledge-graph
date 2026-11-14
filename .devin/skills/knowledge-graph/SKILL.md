@@ -40,6 +40,7 @@ Stored once under `.devin/skills/`; `.claude/skills/` holds pointers to the same
 - `kg-regression` — test stack and the full regression cycle
 - `kg-backup` — Personal stack data safety
 - `kg-layers` — layer boundaries and how to check them
+- `kg-new-chat` — when to start a fresh session and how to hand over (decision 107)
 
 ### Note type taxonomy
 

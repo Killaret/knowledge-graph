@@ -10,6 +10,8 @@
 4. [`docs/DECISIONS.md`](docs/DECISIONS.md) — решения владельца: что решили, когда и где разбор.
 5. [`docs/PROJECT_REVIEW_AI_AGENTS.md`](docs/PROJECT_REVIEW_AI_AGENTS.md) — состояние проекта, недавние правки, известные риски.
 
+Пункты 2–5 живут в ветке `ai-agents` и читаются в каталоге Claude Code `D:\knowledge-graph-review` после синхронизации с `origin/ai-agents` (карта — [`docs/agents/WORKTREES.md`](docs/agents/WORKTREES.md), решение 111). Сессия открыта в `D:\knowledge-graph` (`main`) — доска там отстаёт: сказать об этом и читать из своего каталога.
+
 По теме задачи дополнительно: [`docs/architecture/ARCHITECTURE_SUMMARY.md`](docs/architecture/ARCHITECTURE_SUMMARY.md), [`docs/operations/TESTING.md`](docs/operations/TESTING.md), [`docs/operations/REGRESSION_TEST_PLAN.md`](docs/operations/REGRESSION_TEST_PLAN.md), [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md), [`docs/operations/ARGOS.md`](docs/operations/ARGOS.md).
 
 Актуальный аудит обвязки и цепочки верификации — [`docs/agents/AI_PROCESS_AUDIT.md`](docs/agents/AI_PROCESS_AUDIT.md).
@@ -41,6 +43,7 @@
 - `kg-regression` — [тест-стек и полный цикл](.devin/skills/kg-regression/SKILL.md)
 - `kg-backup` — [сохранность данных Personal-стека](.devin/skills/kg-backup/SKILL.md)
 - `kg-layers` — [границы слоёв](.devin/skills/kg-layers/SKILL.md)
+- `kg-new-chat` — [пора ли новая сессия и передача дел](.devin/skills/kg-new-chat/SKILL.md)
 
 Правила написания новых — в [протоколе](docs/AI_AGENT_PROTOCOL.md), раздел «Как писать скиллы». Коротко: скилл пишется задним числом, обязан ссылаться на реальные артефакты и не дублирует норму.
 
