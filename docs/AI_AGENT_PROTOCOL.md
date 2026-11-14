@@ -105,6 +105,7 @@ DeepSeek не имеет доступа к файлам, поэтому полу
 | [`kg-graph-3d`](../.devin/skills/kg-graph-3d/SKILL.md) | Карта подсистемы 3D и её ловушки |
 | [`kg-regression`](../.devin/skills/kg-regression/SKILL.md) | Тест-стек и полный регрессионный цикл |
 | [`kg-backup`](../.devin/skills/kg-backup/SKILL.md) | Сохранность данных Personal-стека |
+| [`kg-new-chat`](../.devin/skills/kg-new-chat/SKILL.md) | Пора ли начать новую сессию и как передать дела — ради расхода контекста (решение 107) |
 | [`kg-layers`](../.devin/skills/kg-layers/SKILL.md) | Границы слоёв и как их проверить |
 
 ### Как писать скиллы

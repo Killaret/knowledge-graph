@@ -10,31 +10,37 @@
 
 ```
 Прочитано: Claude Code — 2026-11-14 — e9c00bc
-Прочитано: Devin — 2026-11-14 — 7ad7903
+Прочитано: Devin — 2026-11-14 — 5907fca
 ```
 
 ---
 
 ## На Devin
 
-Порядок владельца, 2026-09-29: ISOLATION-1 и доработка LINK-TYPES-1 приняты 30.09; дальше — бэклог сверху вниз. 2026-10-17: первой — CHUNK-PERF-1 (решение 103).
+Порядок 2026-11-14 (разбор доски, RULES-IMPORT-1): первой — доработка SMART-CREATE-1. Строки «на ревью» — очередь ревью Claude Code №1–5; №6–16 — в начале «Бэклога».
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
+| **SMART-CREATE-1:** кнопка слева от «＋» — заметки через `source-text-handler` | [`tasks/SMART-CREATE-1-document-button-via-source-text-handler.md`](tasks/SMART-CREATE-1-document-button-via-source-text-handler.md) | **отклонено** — отправка из окна 403 (CSRF SvelteKit, нет `ORIGIN`); тест контракта не по ТЗ §3 · [разбор](tasks/SMART-CREATE-1-review-findings.md) | 2026-11-08 |
+| **UX-3:** подсказка связи над заметкой; «чёрная дыра» под легендой; «Invalid date» в «Сообществе» | [`tasks/UX-3-canvas-hover-and-black-hole.md`](tasks/UX-3-canvas-hover-and-black-hole.md) | **на ревью** — ревью №1 · Devin 30.09: заметка ищется до связи; дыра — влево от легенды. [`tasks/UX-3-review-findings.md`](tasks/UX-3-review-findings.md) | 2026-11-14 |
+| **SYNC-1 (этапы B, C):** применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **на ревью** — ревью №2 · Devin 01.10: этапы B и C готовы | 2026-11-14 |
+| **UX-1:** связи из правого меню, связь существующих заметок, пропадание канваса | [`tasks/UX-1-link-creation-and-canvas-refresh.md`](tasks/UX-1-link-creation-and-canvas-refresh.md) | **на ревью** — ревью №3 · Devin 01.10: «Связать с…» в контекст-меню, пикер заметок; канвас не гаснет | 2026-11-14 |
+| **PANEL-LINKS-1:** панель «Links (undefined)» — клиент ждёт массив, API отдаёт `{incoming, outgoing}`; при починке — пояснение при удалении связи | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **на ревью** — ревью №4 · Devin 01.10: пояснение при удалении — как на холсте (решение 95) | 2026-11-14 |
+| **CONFIG-AUDIT-1:** каждая настройка читается и переопределяется как задумано | [`tasks/CONFIG-AUDIT-1-config-precedence.md`](tasks/CONFIG-AUDIT-1-config-precedence.md) | **на ревью** — ревью №5 · Devin 01.10: блокеры закрыты, решение 102. [`tasks/CONFIG-AUDIT-1-review-findings.md`](tasks/CONFIG-AUDIT-1-review-findings.md) | 2026-11-14 |
 
 ## На Claude Code
 
-Сейчас в работе — RELEASE-1. Очередь Claude Code — строки раздела «Бэклог» с пометкой «ждёт Claude Code», сверху вниз.
+Сейчас в работе — RELEASE-1. Очередь Claude Code с 2026-11-14 — ревью готовой работы Devin по номерам: №1–5 — строки «на ревью» в разделе «На Devin», №6–16 — в начале «Бэклога»; затем строки «Бэклога» с пометкой «ждёт Claude Code».
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **RELEASE-1:** рамки версии 1.0 — что входит в выпуск, что откладываем, критерии готовности; бэклог разросся, без рамки 1.0 не выпустить | — | **в работе** — срок 31 октября, состав полный (решение 101); дальше — ревью работ Devin и прогон RELEASE-TEST-1 | 2026-09-30 |
+| **RELEASE-1:** рамки версии 1.0 — что входит в выпуск, что откладываем, критерии готовности; бэклог разросся, без рамки 1.0 не выпустить | — | **в работе** — срок 31.10 прошёл; новая дата — за владельцем после очереди ревью (16 задач Devin). Дальше — ревью и RELEASE-TEST-1 | 2026-11-14 |
 
 ## На человеке
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **RULES-IMPORT-1:** что взять из переданного набора скиллов — доска из `origin/ai-agents`, сторож давности строк, `в работе` в бэклоге мимо лимита (14 строк), мнение до работы | [`tasks/RULES-IMPORT-1-external-skill-set.md`](tasks/RULES-IMPORT-1-external-skill-set.md) | **решает владелец** — решены пп. 1, 3–5, 8 (решение 107); автопуш — решение 109, сделан; открыты сроки давности, 14 строк бэклога, пп. 2, 6, 7; вехи — «План внедрения» | 2026-11-14 |
+| **RULES-IMPORT-1:** что взять из переданного набора скиллов — доска из `origin/ai-agents`, сторож давности строк, `в работе` в бэклоге мимо лимита (14 строк), мнение до работы | [`tasks/RULES-IMPORT-1-external-skill-set.md`](tasks/RULES-IMPORT-1-external-skill-set.md) | **решает владелец** — сделаны вехи 1–3 и 5 (решения 109–111, `kg-new-chat`); открыты сроки давности, N для «Прочитано», п. 6 — нужны для вехи 4 | 2026-11-14 |
 
 ---
 
@@ -44,25 +50,19 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **SMART-CREATE-1:** кнопка слева от «＋» — заметки через `source-text-handler` | [постановка](tasks/SMART-CREATE-1-document-button-via-source-text-handler.md) | **отклонено** — 403 CSRF на multipart из окна; тест контракта не по §3 · [разбор](tasks/SMART-CREATE-1-review-findings.md) | 2026-11-08 |
-| **MODEL-2:** включить конвейер на текущей модели, один пересчёт, разметка владельца | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **в работе** — 1.0 · Devin: on по умолчанию, config-sync починен; ждёт пересчёта владельца — [`tasks/MODEL-2-final-findings.md`](tasks/MODEL-2-final-findings.md) | 2026-09-30 |
-| **CONFIG-AUDIT-1:** каждая настройка читается и переопределяется как задумано | [`tasks/CONFIG-AUDIT-1-config-precedence.md`](tasks/CONFIG-AUDIT-1-config-precedence.md) | **на ревью** — 1.0 · Devin: блокеры закрыты, решение 102 — NLP читает общий конфиг, 11 ключей убраны. [`tasks/CONFIG-AUDIT-1-review-findings.md`](tasks/CONFIG-AUDIT-1-review-findings.md) | 2026-09-30 |
-| **UX-3:** подсказка связи над заметкой; «чёрная дыра» под легендой; «Invalid date» в «Сообществе» | [`tasks/UX-3-canvas-hover-and-black-hole.md`](tasks/UX-3-canvas-hover-and-black-hole.md) | **на ревью** — 1.0 · Devin: заметка ищется до связи; дыра — влево от легенды, живой спек. [`tasks/UX-3-review-findings.md`](tasks/UX-3-review-findings.md) | 2026-09-30 |
-| **I18N-1:** три ключа есть только в ru — `field.password`, `graphOverlay.fogWarning`, `graphOverlay.fogRecovery`: в английском интерфейсе виден сырой ключ; нужен тест «ключи en и ru совпадают» | `frontend/src/shared/utils/i18n/messages/` | **в работе** — 1.0 · Devin: en-ключи добавлены, тест паритета en/ru; ждёт слот ревью (5/5) | 2026-09-30 |
-| **DEPENDABOT-2:** 14 открытых PR Dependabot: 9 безопасных — проверить, 5 крупных — после 1.0 | [`tasks/DEPENDABOT-2-open-prs-2026-09.md`](tasks/DEPENDABOT-2-open-prs-2026-09.md) | **на ревью** — Devin: 8 смержены, #120 закрыт ботом; main починен (#133,#134); 2 красных флага не от мержей — [`tasks/DEPENDABOT-2-review-findings.md`](tasks/DEPENDABOT-2-review-findings.md) | 2026-09-30 |
-| **NOTE-DELETE-1-TAIL:** тест маршрута восстановления через `setupRouter`; тесты с удалённой заметкой на граф, ключевые слова и векторы | [`tasks/NOTE-DELETE-1-review-findings.md`](tasks/NOTE-DELETE-1-review-findings.md) | **в работе** — 1.0 · Devin: 4 теста, мутации красные; ждёт слот ревью (5/5) | 2026-09-30 |
-| **LINK-TYPES-1-TAIL:** миграция 037: фикстуры A′ и D′ (правила выбора выжившей), вес как в `SaveUserLink`, умолчание в пакетном импорте, E′ | [`tasks/LINK-TYPES-1-review-findings.md`](tasks/LINK-TYPES-1-review-findings.md) | **в работе** — 1.0 · Devin: все 4 пункта + UNIQUE-кейс; мутации красные; ждёт слот ревью (5/5) | 2026-10-01 |
-| **DOC-AUDIT-2:** документация против кода: утверждения сверить с кодом, «нет в коде» — владельцу | [`tasks/DOC-AUDIT-2-docs-vs-code.md`](tasks/DOC-AUDIT-2-docs-vs-code.md) | **на ревью** — 1.0 · Devin: все «верно» перепроверены, 5 промахов исправлены. [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) | 2026-09-30 |
-| **SPEC-AUDIT-1:** все постановки против кода: вердикт с доказательством на каждое требование | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md) | **на ревью** — 1.0 · Devin: шаги CI в `core-checks.tsv`, sync 34/34. [`tasks/SPEC-AUDIT-1-review-findings.md`](tasks/SPEC-AUDIT-1-review-findings.md) | 2026-09-30 |
-| **UX-1:** связи из правого меню, связь существующих заметок, пропадание канваса | [`tasks/UX-1-link-creation-and-canvas-refresh.md`](tasks/UX-1-link-creation-and-canvas-refresh.md) | **в работе** — 1.0 · Devin: «Связать с…» в контекст-меню + пикер заметок; канвас не гаснет (chip). Ждёт слот ревью (5/5) | 2026-10-01 |
-| **SYNC-1 (этапы B, C):** применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **в работе** — 1.0 · Devin: B+C готовы, ждёт слот ревью (5/5) | 2026-10-01 |
-| **PANEL-LINKS-1:** панель «Links (undefined)» — клиент ждёт массив, API отдаёт `{incoming, outgoing}`; при починке — пояснение при удалении связи | [`tasks/LINKS-2-review-findings.md`](tasks/LINKS-2-review-findings.md) | **в работе** — 1.0 · Devin: пояснение при удалении = холст; массовое — без решения; ждёт слот ревью (5/5) | 2026-10-01 |
-| **NOTE-HEALTH-1:** здоровье заметки: техническое и пользовательское раздельно; этап 0 — скрыть «HEALTH», «Качество» → «Обработка» | [`tasks/NOTE-HEALTH-1-technical-and-user-health.md`](tasks/NOTE-HEALTH-1-technical-and-user-health.md) | **в работе** — 1.0 · Devin: этап 0 готов (HEALTH скрыт, строка при проблеме); ждёт слот ревью (5/5) | 2026-10-01 |
-| **FREEZE-3D-1:** 3D заморожен до готовности 2D: переключатель 3D выключен настройкой, код и тесты остаются | [`tasks/FREEZE-3D-1-hide-3d-view.md`](tasks/FREEZE-3D-1-hide-3d-view.md) | **в работе** — 1.0 · Devin: `3d.enabled=false`, кнопки нет, `/graph/3d` → 2D; ждёт слот ревью (5/5) | 2026-10-01 |
-| **P11-3:** два пустых набора ключевых слов дают полное сходство | [`tasks/P11-3-keyword-normalization.md`](tasks/P11-3-keyword-normalization.md) | **в работе** — 1.0 · Devin: метрик пять (косинус тоже), все → 0.0; ждёт слот ревью (5/5) | 2026-10-01 |
+| **NOTE-DELETE-1-TAIL:** тест маршрута восстановления через `setupRouter`; тесты с удалённой заметкой на граф, ключевые слова и векторы | [`tasks/NOTE-DELETE-1-review-findings.md`](tasks/NOTE-DELETE-1-review-findings.md) | **бэклог** — готово у Devin 01.10, ревью №6: 4 теста, мутации красные | 2026-11-14 |
+| **LINK-TYPES-1-TAIL:** миграция 037: фикстуры A′ и D′ (правила выбора выжившей), вес как в `SaveUserLink`, умолчание в пакетном импорте, E′ | [`tasks/LINK-TYPES-1-review-findings.md`](tasks/LINK-TYPES-1-review-findings.md) | **бэклог** — готово у Devin 01.10, ревью №7: 4 пункта и UNIQUE-кейс, мутации красные | 2026-11-14 |
+| **FREEZE-3D-1:** 3D заморожен до готовности 2D: переключатель 3D выключен настройкой, код и тесты остаются | [`tasks/FREEZE-3D-1-hide-3d-view.md`](tasks/FREEZE-3D-1-hide-3d-view.md) | **бэклог** — готово у Devin 01.10, ревью №8: `3d.enabled=false`, `/graph/3d` → 2D | 2026-11-14 |
+| **I18N-1:** три ключа есть только в ru — `field.password`, `graphOverlay.fogWarning`, `graphOverlay.fogRecovery`: в английском интерфейсе виден сырой ключ; нужен тест «ключи en и ru совпадают» | `frontend/src/shared/utils/i18n/messages/` | **бэклог** — готово у Devin 01.10, ревью №9: en-ключи, тест паритета en/ru (решение 105) | 2026-11-14 |
+| **P11-3:** два пустых набора ключевых слов дают полное сходство | [`tasks/P11-3-keyword-normalization.md`](tasks/P11-3-keyword-normalization.md) | **бэклог** — готово у Devin 01.10, ревью №10: пять метрик, пустые наборы → 0.0 | 2026-11-14 |
+| **COMET-1:** кометы — дела с необязательной датой и напоминанием: поля, напоминание, `.ics`, «Ближайшие дела», комета «приближается» на графе | [`tasks/COMET-1-event-reminder-fields.md`](tasks/COMET-1-event-reminder-fields.md) | **бэклог** — готово у Devin 01.10, ревью №11: этапы A–F, живой прогон есть | 2026-11-14 |
+| **NOTE-HEALTH-1:** здоровье заметки: техническое и пользовательское раздельно; этап 0 — скрыть «HEALTH», «Качество» → «Обработка» | [`tasks/NOTE-HEALTH-1-technical-and-user-health.md`](tasks/NOTE-HEALTH-1-technical-and-user-health.md) | **бэклог** — готово у Devin 01.10, ревью №12: этап 0 — HEALTH скрыт, строка при проблеме | 2026-11-14 |
+| **PROMISES-1:** каталог обещаний пользователю (около десятка) и сквозной тест на каждое; сторож: у каждого обещания есть живой тест | [`tasks/PROMISES-1-user-promises.md`](tasks/PROMISES-1-user-promises.md) | **бэклог** — готово у Devin 01.10, ревью №13: каталог, спек 8/8, сторож | 2026-11-14 |
+| **DEPENDABOT-2:** 14 открытых PR Dependabot: 9 безопасных — проверить, 5 крупных — после 1.0 | [`tasks/DEPENDABOT-2-open-prs-2026-09.md`](tasks/DEPENDABOT-2-open-prs-2026-09.md) | **бэклог** — готово у Devin 30.09, ревью №14: 8 смержены, main починен. [`tasks/DEPENDABOT-2-review-findings.md`](tasks/DEPENDABOT-2-review-findings.md) | 2026-11-14 |
+| **DOC-AUDIT-2:** документация против кода: утверждения сверить с кодом, «нет в коде» — владельцу | [`tasks/DOC-AUDIT-2-docs-vs-code.md`](tasks/DOC-AUDIT-2-docs-vs-code.md) | **бэклог** — готово у Devin 30.09, ревью №15: 5 промахов исправлены. [`tasks/DOC-AUDIT-2-review-findings.md`](tasks/DOC-AUDIT-2-review-findings.md) | 2026-11-14 |
+| **SPEC-AUDIT-1:** все постановки против кода: вердикт с доказательством на каждое требование | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md) | **бэклог** — готово у Devin 30.09, ревью №16: шаги CI, sync 34/34. [`tasks/SPEC-AUDIT-1-review-findings.md`](tasks/SPEC-AUDIT-1-review-findings.md) | 2026-11-14 |
+| **MODEL-2:** включить конвейер на текущей модели, один пересчёт, разметка владельца | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **бэклог** — ждёт пересчёта владельца; on по умолчанию, config-sync починен — [`tasks/MODEL-2-final-findings.md`](tasks/MODEL-2-final-findings.md) | 2026-11-14 |
 | **P11-4:** кластеризация графа: гибрид векторов и связей, два уровня с семантическим масштабом, цветные области, имена по леммам | [`tasks/P11-4-graph-clustering.md`](tasks/P11-4-graph-clustering.md) | **бэклог** — 1.0 · Devin; после MODEL-2 (решения 28, 79) | 2026-09-27 |
-| **COMET-1:** кометы — дела с необязательной датой и напоминанием: поля, напоминание, `.ics`, «Ближайшие дела», комета «приближается» на графе | [`tasks/COMET-1-event-reminder-fields.md`](tasks/COMET-1-event-reminder-fields.md) | **в работе** — 1.0 · Devin: этапы A–F готовы, живой прогон есть; ждёт слот ревью | 2026-10-01 |
-| **PROMISES-1:** каталог обещаний пользователю (около десятка) и сквозной тест на каждое; сторож: у каждого обещания есть живой тест | [`tasks/PROMISES-1-user-promises.md`](tasks/PROMISES-1-user-promises.md) | **в работе** — 1.0 · Devin: каталог + спек 8/8 живьём + сторож; фикс промоушена gamma; ждёт слот ревью (5/5) | 2026-10-01 |
 | **RELEASE-TEST-1:** полный ручной прогон 1.0 — сложить, связать, найти, не потерять, 2D и 3D, кластеры, напоминания; два прохода | [`tasks/RELEASE-TEST-1-manual-run-1.0.md`](tasks/RELEASE-TEST-1-manual-run-1.0.md) | **бэклог** — 1.0 · чек-лист дополнен 30.09; прогоны — на кандидате в выпуск | 2026-09-30 |
 | **FACE-1:** лицо проекта из интервью с владельцем | [`tasks/FACE-1-project-face-from-interview.md`](tasks/FACE-1-project-face-from-interview.md) | **бэклог** — 1.0 · Claude Code: пишется последним, после состава (решения 15, 67) | 2026-09-26 |
 | **TEST-AUDIT-1:** все тесты — на смысл, а не покрытие: ловит ли тест поломку, соответствует ли нормам и скиллам, оправдан ли | [`tasks/TEST-AUDIT-1-tests-that-matter.md`](tasks/TEST-AUDIT-1-tests-that-matter.md) | **бэклог** — после 1.0 · Devin, большая, по этапам: решения 86, 90 | 2026-09-29 |
@@ -93,6 +93,9 @@
 | **MODEL-3:** выбор модели эмбеддингов на большем массиве данных, возможно не только на заметках владельца | [`tasks/MODEL-3-model-choice-on-larger-corpus.md`](tasks/MODEL-3-model-choice-on-larger-corpus.md) | **бэклог** — после 1.0: решение 88 | 2026-09-29 |
 | **DEPLOY-2:** публиковать проверенные образы из CI | [`tasks/DEPLOY-2-review-findings.md`](tasks/DEPLOY-2-review-findings.md) | **бэклог** — заблокировано: токен Docker Hub, владелец сделает, когда будет время (решение 45) | 2026-09-21 |
 | **VERIFY-SPEC-1:** пилот доказательного тестирования на одной задаче Devin | [`tasks/VERIFY-SPEC-1-evidence-testing-pilot.md`](tasks/VERIFY-SPEC-1-evidence-testing-pilot.md) | **бэклог** — вводится (решение 108); ждёт выбора первой задачи владельцем | 2026-11-14 |
+| **KG-WORK-REVIEW-1:** ревью правок обвязки Claude Code — `kg-work` шаги 0 и 5, `.claude/settings.json`, `kg-new-chat` (решения 109–111) | [`tasks/RULES-IMPORT-1-external-skill-set.md`](tasks/RULES-IMPORT-1-external-skill-set.md) | **бэклог** — ждёт Devin, когда освободится слот ревью: свою обвязку Claude Code не проверяет | 2026-11-14 |
+| **BACKUP-4:** пустой дамп проходит проверку свежести, MongoDB без бэкапа, стек из чужого каталога | [`tasks/BACKUP-4-backup-gaps.md`](tasks/BACKUP-4-backup-gaps.md) | **бэклог** — Devin: пп. 1–3; Claude Code: п. 4, восстановление из архивов томов | 2026-11-14 |
+| **GRAPH-LIGHT-1-TAIL:** спецэлементы графа в одном лёгком стиле (решение 104) | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **бэклог** — ждёт Claude Code: живой макет владельцу, затем постановка Devin | 2026-11-14 |
 
 ---
 

@@ -280,6 +280,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | BACKUP-2-review-findings.md | не начат |
 | BACKUP-3-automatic-backups.md | не начат |
 | BACKUP-3-review-findings.md | не начат |
+| BACKUP-4-backup-gaps.md | не начат |
 | BACKUP-DIR-1-review-findings.md | не начат |
 | CI-1-circular-dependency.md | не начат |
 | CI-3-local-check-runner.md | не начат |
