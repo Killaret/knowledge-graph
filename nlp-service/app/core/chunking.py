@@ -515,16 +515,6 @@ def _is_false_boundary_at(
 # matches before a final "\n", hence the trimming.
 
 
-def _last_token(text: str) -> str:
-    # re.search(r"([^\s]+)$", text), or "" when it does not match; the regex was quadratic in the
-    # length of a long token followed by a space.
-    if text.endswith("\n"):
-        text = text[:-1]
-    if not text or text[-1].isspace():
-        return ""
-    return text.rsplit(None, 1)[-1]
-
-
 def _starts_with_dotted_word(text: str) -> bool:
     # re.match(r"\s*[a-zа-яё]+\.", text, flags=re.IGNORECASE)
     rest = text.lstrip()

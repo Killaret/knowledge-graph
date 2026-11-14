@@ -12,7 +12,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.core.chunking import (
     ChunkingParams,
     _ends_with_initials,
-    _last_token,
     _match_heading,
     _starts_with_dotted_word,
     aggregate,
@@ -93,6 +92,35 @@ class TestChunking:
         assert fragment in chunks[0].text
         assert "Final sentence." not in chunks[0].text
         assert_no_non_whitespace_loss(text, chunks)
+
+    @pytest.mark.parametrize(
+        "text,joined",
+        [
+            # one-letter token + dotted word after the point (table bound 1):
+            # "e. g." must not split inside
+            ("A e. g. case. Next.", "e. g. case."),
+            # initials chain of 9 chars (table bound 9); the ")" trailer keeps the
+            # window rules from answering, so only the table row sees the token
+            ("Written a.b.c.d.e). Next.", "a.b.c.d.e). Next."),
+            # longest abbreviation in _ABBREVIATIONS (table bound = max len)
+            ("See approx). Next.", "approx). Next."),
+            # "www." marker inside the token; "See www." still splits at the "www|x" point
+            ("See www.x.ru. Next.", "x.ru. Next."),
+        ],
+        ids=["one-letter", "initials-9", "abbreviation", "url-marker"],
+    )
+    def test_token_rule_suppresses_the_boundary(self, text, joined):
+        # Each input pins one _TOKEN_RULES row that the trailing window checks cannot
+        # reach: on the pre-index equivalence run, shrinking a row's bound or dropping
+        # the marker/rule changed these verdicts.
+        chunks = chunk(text, params(target=1, max_tokens=60))
+        assert any(joined in item.text for item in chunks)
+
+    def test_doubled_separator_is_a_real_boundary(self):
+        # "1..2" is not a clean number: the doubled separator inside disables the
+        # number rule, so the point after it is a real boundary (last_pair index).
+        chunks = chunk("Val 1..2. Next.", params(target=1, max_tokens=60))
+        assert chunks[-1].text == "Next."
 
     def test_random_texts_preserve_non_whitespace_and_spans(self):
         rng = random.Random(42)
@@ -209,8 +237,6 @@ class TestRegexFreeScans:
             expected = (len(match.group(1)), match.group(2).strip()) if match else None
             assert _match_heading(text) == expected, repr(text)
         for text in self.random_texts(3000):
-            match = re.search(r"([^\s]+)$", text)
-            assert _last_token(text) == (match.group(1) if match else ""), repr(text)
             expected = bool(re.match(r"\s*[a-zа-яё]+\.", text, flags=re.IGNORECASE))
             assert _starts_with_dotted_word(text) == expected, repr(text)
             lowered = text.lower()
