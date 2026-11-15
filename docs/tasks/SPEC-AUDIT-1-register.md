@@ -356,6 +356,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | DOC-REORG-1-review-findings.md | не начат |
 | DOCS-LINKS-1-review-findings.md | не начат |
 | FACE-1-project-face-from-interview.md | не начат |
+| FREEZE-3D-1-review-findings.md | не начат |
 | GORDON-1-gordon-documents-review.md | не начат |
 | GORDON-2-deployment-package-analysis.md | не начат |
 | HOUSEKEEPING-1-review-findings.md | не начат |
