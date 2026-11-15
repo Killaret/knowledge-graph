@@ -40,6 +40,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
+| **GRAPH-LIGHT-1-TAIL:** спецэлементы графа в одном лёгком стиле (решение 104) | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **решает владелец** — живой макет `docs/product/mockups/graph-special.html`: ядро знаний, неизвестный тип, зона удаления, «+» — по два варианта; после выбора Claude Code пишет постановку Devin | 2026-11-15 |
 | **RULES-IMPORT-1:** что взять из переданного набора скиллов — доска из `origin/ai-agents`, сторож давности строк, `в работе` в бэклоге мимо лимита (14 строк), мнение до работы | [`tasks/RULES-IMPORT-1-external-skill-set.md`](tasks/RULES-IMPORT-1-external-skill-set.md) | **решает владелец** — сделаны вехи 1–3 и 5 (решения 109–111, `kg-new-chat`); открыты сроки давности, N для «Прочитано», п. 6 — нужны для вехи 4 | 2026-11-14 |
 
 ---
@@ -94,7 +95,6 @@
 | **VERIFY-SPEC-1:** пилот доказательного тестирования на одной задаче Devin | [`tasks/VERIFY-SPEC-1-evidence-testing-pilot.md`](tasks/VERIFY-SPEC-1-evidence-testing-pilot.md) | **бэклог** — вводится (решение 108); ждёт выбора первой задачи владельцем | 2026-11-14 |
 
 | **BACKUP-4:** пустой дамп проходит проверку свежести, MongoDB без бэкапа, стек из чужого каталога | [`tasks/BACKUP-4-backup-gaps.md`](tasks/BACKUP-4-backup-gaps.md) | **в работе** — ждёт слот ревью (5/5). Devin: пп. 1–3 готовы; Claude: п. 4 | 2026-11-15 |
-| **GRAPH-LIGHT-1-TAIL:** спецэлементы графа в одном лёгком стиле (решение 104) | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **бэклог** — ждёт Claude Code: живой макет владельцу, затем постановка Devin | 2026-11-14 |
 
 ---
 

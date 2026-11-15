@@ -1,0 +1,782 @@
+<title>Спецэлементы графа</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500&family=Unbounded:wght@400;500&display=swap">
+<style>
+/* Макет одной сцены: граф светом слева, панель выбора справа (на телефоне — под графом). Один тёмный мир, как в приложении. */
+:root{color-scheme:dark;--ink:#05070f;--panel:#080b16;--line:#1b2238;--line-2:#2a3452;--text:#e4e9f6;--muted:#8d96ae;--faint:#6a7390;--accent:#aebcff;--accent-ink:#0a0f1f;--warn:#ff8f80;--ui:"Onest","Segoe UI",system-ui,sans-serif;--display:"Unbounded","Onest","Segoe UI",system-ui,sans-serif}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{background:var(--ink);color:var(--text);font:14px/1.45 var(--ui);display:flex;flex-direction:column;gap:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;box-sizing:border-box}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.brand{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin-right:auto;min-width:0}
+h1{font:500 17px/1.2 var(--display);letter-spacing:.02em;margin:0}
+.cap{color:var(--muted);font-size:12.5px}
+button{font:500 13px/1 var(--ui);color:var(--text);background:transparent;border:1px solid var(--line-2);border-radius:8px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:#3d4a70;background:#0e1427}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:2px;border:1px solid var(--line-2);border-radius:10px}
+.seg button{border:0;border-radius:8px;padding:7px 12px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.wrap{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;min-height:0}
+@media (max-width:960px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.stage{position:relative;min-height:460px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#04060d}
+#cv{position:absolute;inset:0;display:block;touch-action:none;cursor:grab}
+.tag{position:absolute;top:12px;padding:6px 9px;border-radius:6px;background:rgba(8,11,22,.82);border:1px solid var(--line-2);font:500 11px/1 var(--display);letter-spacing:.06em;pointer-events:none}
+.tag-l{left:calc(25% - 30px)}.tag-r{left:calc(75% - 30px)}
+.tip{position:absolute;left:0;top:0;max-width:260px;display:flex;flex-direction:column;gap:2px;padding:9px 11px;border-radius:9px;background:rgba(9,12,24,.95);border:1px solid var(--line-2);font-size:12.5px;line-height:1.4;pointer-events:none}
+.tip b{font-weight:500;font-size:13px}
+.tip span{color:var(--muted)}
+.hint{position:absolute;left:12px;bottom:12px;max-width:calc(100% - 130px);padding:6px 10px;border-radius:8px;background:rgba(8,11,22,.72);color:var(--faint);font-size:12px;pointer-events:none}
+.toast{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:8px 8px 8px 14px;border-radius:10px;background:rgba(10,14,28,.96);border:1px solid var(--line-2);font-size:13px;white-space:nowrap}
+.toast button{padding:6px 10px}
+aside{display:flex;flex-direction:column;gap:10px;min-width:0;overflow:auto}
+.grp{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.grp-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+h2{font:500 12px/1.3 var(--display);letter-spacing:.05em;margin:0}
+.show{font-size:12px;padding:5px 9px;color:var(--muted)}
+.what{color:var(--text);font-size:13px;margin:0}
+.peek{display:block;width:100%;border-radius:8px;background:#04060d;border:1px solid var(--line)}
+.now{color:var(--faint);font-size:12.5px;margin:0}
+.now b{color:var(--muted);font-weight:500}
+.sub{color:var(--muted);font-size:12px}
+.pick{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border:1px solid var(--line-2);border-radius:12px}
+.pick p{margin:0;font-size:13px}
+.pick code{font:12.5px/1.45 var(--ui);color:var(--accent)}
+.foot{color:var(--faint);font-size:12px;margin:0}
+</style>
+
+<header class="bar">
+  <div class="brand">
+    <h1>Спецэлементы графа</h1>
+    <span class="cap">макет к решению 104 · «Сейчас» — по коду ветки ai-agents · заметки примерные</span>
+  </div>
+  <div class="seg" role="group" aria-label="Вид">
+    <button id="v-now" type="button" aria-pressed="false">Сейчас</button>
+    <button id="v-light" type="button" aria-pressed="true">Предлагаю</button>
+    <button id="v-cmp" type="button" aria-pressed="false">Сравнить</button>
+  </div>
+  <button id="bt-restore" type="button">Вернуть удалённые</button>
+</header>
+
+<div class="wrap">
+  <main class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="Граф из сорока с лишним заметок в трёх кластерах со спецэлементами: ядро знаний, заметки неизвестного типа, кнопка создания и зона удаления"></canvas>
+    <div class="tag tag-l" id="tag-now" hidden>Сейчас</div>
+    <div class="tag tag-r" id="tag-light" hidden>Предлагаю</div>
+    <div class="tip" id="tip" hidden></div>
+    <div class="hint" id="hint">заметку в правый нижний угол — удалить · «+» — создать · колесо — масштаб · Esc — назад</div>
+    <div class="toast" id="toast" hidden><span id="toast-t"></span><button id="toast-undo" type="button">Вернуть</button></div>
+  </main>
+
+  <aside aria-label="Варианты">
+    <section class="grp" data-g="core">
+      <div class="grp-h"><h2>Ядро знаний</h2><button class="show" type="button" data-show="core">Показать</button></div>
+      <div class="seg" role="group" aria-label="Ядро знаний">
+        <button type="button" data-v="A" aria-pressed="true">Маяк</button>
+        <button type="button" data-v="B" aria-pressed="false">Прибор</button>
+      </div>
+      <p class="what" data-what></p>
+      <p class="now"><b>Сейчас:</b> серый диск в кольце, читается как обычная тусклая заметка.</p>
+    </section>
+
+    <section class="grp" data-g="anom">
+      <div class="grp-h"><h2>Неизвестный тип</h2><button class="show" type="button" data-show="anom">Показать</button></div>
+      <div class="seg" role="group" aria-label="Неизвестный тип">
+        <button type="button" data-v="A" aria-pressed="true">Четыре вида</button>
+        <button type="button" data-v="B" aria-pressed="false">Один вид</button>
+      </div>
+      <p class="what" data-what></p>
+      <p class="now"><b>Сейчас:</b> все четыре аномалии — одно фиолетовое разорванное кольцо. В классическом виде они различались.</p>
+    </section>
+
+    <section class="grp" data-g="zone">
+      <div class="grp-h"><h2>Зона удаления</h2><button class="show" type="button" data-show="zone">Показать</button></div>
+      <div class="seg" role="group" aria-label="Вид зоны удаления">
+        <button type="button" data-v="A" aria-pressed="true">Воронка</button>
+        <button type="button" data-v="B" aria-pressed="false">Вихрь</button>
+      </div>
+      <div class="seg" role="group" aria-label="Когда видна зона удаления" data-sub="zoneWhen">
+        <button type="button" data-w="always" aria-pressed="false">Видна всегда</button>
+        <button type="button" data-w="drag" aria-pressed="true">Только при перетаскивании</button>
+      </div>
+      <p class="what" data-what></p>
+      <p class="now"><b>Сейчас:</b> фиолетовый диск с кольцом и тенью — та же форма, что у заметки «чёрная дыра», только крупнее. Видна всегда.</p>
+    </section>
+
+    <section class="grp" data-g="ghost">
+      <div class="grp-h"><h2>Кнопка «+»</h2><button class="show" type="button" data-show="ghost">Показать</button></div>
+      <div class="seg" role="group" aria-label="Кнопка создания">
+        <button type="button" data-v="A" aria-pressed="true">Нерождённая звезда</button>
+        <button type="button" data-v="B" aria-pressed="false">Пустая орбита</button>
+      </div>
+      <p class="what" data-what></p>
+      <p class="now"><b>Сейчас:</b> белый шар с тенью — единственный матовый предмет в светящемся графе.</p>
+    </section>
+
+    <section class="pick" aria-live="polite">
+      <p class="sub">Ваш выбор — его можно скопировать и прислать мне</p>
+      <p><code id="pick-t"></code></p>
+      <div><button id="bt-copy" type="button">Скопировать</button></div>
+    </section>
+    <p class="foot">Не меняются: места «+» и зоны, их размеры и зона захвата (в полтора раза больше видимой) — как в приложении. Меняется только то, как они нарисованы.</p>
+  </aside>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const TAU = Math.PI * 2;
+  const RM = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const easeIO = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+  function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const R = rng(20261115);
+  const gauss = () => { let u = 0, v = 0; while (!u) u = R(); while (!v) v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v); };
+  const hex = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const rgba = (c, a) => "rgba(" + (c[0] | 0) + "," + (c[1] | 0) + "," + (c[2] | 0) + "," + clamp(a, 0, 1).toFixed(3) + ")";
+  const WHITE = [255, 255, 255], DARK = [3, 4, 9];
+  const TECH = hex("#c8d0e0"), TECH_NOW = hex("#9aa3b5"), UNK = hex("#c9b8ff"), COLD = hex("#aad2ff"), WARN = hex("#ff8f80"), TOOL = hex("#dce4ff");
+
+  const CLUSTERS = [
+    { name: "go · горутины · gin", hue: hex("#7fb2ff") },
+    { name: "postgres · индексы · redis", hue: hex("#5fd4c0") },
+    { name: "svelte · canvas · анимации", hue: hex("#b59cff") },
+  ];
+  const RAW = [
+    [["galaxy","Go"],["star","Конкурентность в Go","Go"],["star","HTTP-сервисы на Gin","Go"],["planet","Горутины и каналы","Конкурентность в Go"],["planet","context: отмена и дедлайны","Конкурентность в Go"],["planet","Middleware в Gin","HTTP-сервисы на Gin"],["planet","Тесты с testify","Go"],["moon","errgroup","Горутины и каналы"],["moon","Таймауты клиента","context: отмена и дедлайны"],["asteroid","Статья про select","Горутины и каналы"],["nebula","Идея: свой планировщик","Конкурентность в Go"],["comet","Обновить Go до 1.25","Go",12],["unknown","Заметка из старого импорта","HTTP-сервисы на Gin",null,"rift"]],
+    [["galaxy","Базы данных"],["star","PostgreSQL","Базы данных"],["star","Redis","Базы данных"],["planet","Индексы","PostgreSQL"],["planet","pgvector","PostgreSQL"],["planet","Миграции без простоя","PostgreSQL"],["planet","Redis Streams","Redis"],["moon","HNSW","pgvector"],["moon","EXPLAIN ANALYZE","Индексы"],["asteroid","Доклад про VACUUM","PostgreSQL"],["satellite","Чек-лист миграции","Миграции без простоя"],["blackhole","Почему медленный запрос?","Индексы"],["unknown","Тип «рецепт» из импорта","Базы данных",null,"maw"],["dust","Закладка без разбора",null]],
+    [["galaxy","Фронтенд"],["star","Svelte 5","Фронтенд"],["star","Графика в браузере","Фронтенд"],["planet","Руны и реактивность","Svelte 5"],["planet","Canvas 2D","Графика в браузере"],["planet","d3-force","Графика в браузере"],["moon","requestAnimationFrame","Canvas 2D"],["moon","$derived","Руны и реактивность"],["asteroid","Статья про FLIP-анимации","Графика в браузере"],["nebula","Идея: граф из света","Графика в браузере"],["comet","Разобрать отзывы","Фронтенд",3],["unknown","Карточка из другой программы","Графика в браузере",null,"whisper"],["unknown","Файл без типа","Svelte 5",null,"abom"],["debris","Старые заметки про jQuery","Фронтенд"]],
+  ];
+  const EXTRA = [["pgvector","Canvas 2D"],["Redis Streams","Горутины и каналы"],["Тесты с testify","Чек-лист миграции"]];
+  const TYPE_RU = { galaxy: "галактика", star: "звезда", planet: "планета", moon: "луна", asteroid: "астероид", nebula: "туманность", comet: "комета", satellite: "спутник", blackhole: "чёрная дыра — открытый вопрос", dust: "пыль", debris: "обломки", technical: "служебная заметка приложения", unknown: "неизвестный тип" };
+  const VARIETY_RU = { rift: "Разлом", maw: "Пасть", whisper: "Шёпот", abom: "Чудовище" };
+  const RANK = { dust: 0, debris: 1, asteroid: 2, moon: 3, satellite: 4, comet: 5, unknown: 6, nebula: 6, planet: 7, technical: 7, blackhole: 8, star: 9, galaxy: 10 };
+  const BASE_R = { galaxy: 4.6, star: 3.6, planet: 3.1, moon: 2.0, asteroid: 1.9, nebula: 2.8, comet: 2.5, satellite: 2.1, blackhole: 2.9, dust: 1.7, debris: 1.8, technical: 3.0, unknown: 2.8 };
+
+  const nodes = [], byTitle = new Map();
+  function mkNode(c, type, title, parent, days, variety) {
+    const n = { id: nodes.length, c, type, title, parent: parent || null, days: days == null ? null : days, variety: variety || null, x: 0, y: 0, vx: 0, vy: 0, alpha: 1, vis: 1, appear: -1e9, seed: R(), rot: R() * TAU, alive: true, born: 0 };
+    n.shape = Array.from({ length: 6 }, () => 0.75 + R() * 0.45);
+    n.blobs = Array.from({ length: 3 }, () => [gauss() * 0.9, gauss() * 0.6, 0.7 + R() * 0.6]);
+    n.specks = Array.from({ length: 4 }, () => [gauss() * 0.8, gauss() * 0.8, 0.6 + R() * 0.8]);
+    n.crack = Array.from({ length: 7 }, (_, i) => [(i / 6 - 0.5) * 5.2, gauss() * 0.55]);
+    n.whisp = Array.from({ length: 7 }, (_, i) => [R() * TAU, 1.5 + i * 0.32 + R() * 0.2, (R() < 0.5 ? -1 : 1) * (0.12 + R() * 0.18)]);
+    nodes.push(n); byTitle.set(title, n); return n;
+  }
+  RAW.forEach((rows, c) => rows.forEach(([type, title, parent, days, variety]) => mkNode(c, type, title, parent, days, variety)));
+  const core = mkNode(-1, "technical", "Ядро знаний", null, null, null);
+  const T = (s) => byTitle.get(s);
+
+  const links = [];
+  const addLink = (a, b) => { if (a && b && a !== b) links.push({ s: a, t: b, bend: (R() < 0.5 ? 1 : -1) * (0.06 + R() * 0.09), fa: 1 }); };
+  nodes.forEach((n) => { if (n.parent) addLink(T(n.parent), n); });
+  EXTRA.forEach(([a, b]) => addLink(T(a), T(b)));
+  const adj = new Map(nodes.map((n) => [n.id, new Set()]));
+  links.forEach((l) => { adj.get(l.s.id).add(l.t.id); adj.get(l.t.id).add(l.s.id); });
+
+  const centers = CLUSTERS.map((_, i) => { const a = -Math.PI / 2 + Math.PI / 6 + (i * TAU) / 3; return [Math.cos(a) * 175, Math.sin(a) * 135]; });
+  const graph = nodes.filter((n) => n.c >= 0);
+  graph.forEach((n) => { const [cx, cy] = centers[n.c]; n.x = cx + (n.type === "galaxy" ? 0 : gauss() * 45); n.y = cy + (n.type === "galaxy" ? 0 : gauss() * 45); });
+  (function layout() {
+    let alpha = 1;
+    for (let it = 0; it < 420; it++) {
+      for (let i = 0; i < graph.length; i++) for (let j = i + 1; j < graph.length; j++) {
+        const a = graph[i], b = graph[j]; let dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy;
+        if (d2 < 0.01) { dx = R() - 0.5; dy = R() - 0.5; d2 = dx * dx + dy * dy; }
+        const d = Math.sqrt(d2), f = ((a.c === b.c ? 900 : 1300) * alpha) / d2, fx = (dx / d) * f, fy = (dy / d) * f;
+        a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+        if (d < 20) { const p = ((20 - d) / d) * 0.5; a.vx -= dx * p; a.vy -= dy * p; b.vx += dx * p; b.vy += dy * p; }
+      }
+      for (const l of links) {
+        const a = l.s, b = l.t, dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+        const rest = a.type === "galaxy" || b.type === "galaxy" ? 80 : a.type === "star" || b.type === "star" ? 54 : 38;
+        const f = ((d - rest) / d) * 0.09 * alpha * (a.c === b.c ? 1 : 0.2);
+        a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+      }
+      for (const n of graph) { const [cx, cy] = centers[n.c]; n.vx += (cx - n.x) * 0.014 * alpha; n.vy += (cy - n.y) * 0.014 * alpha; n.vx *= 0.55; n.vy *= 0.55; n.x += n.vx; n.y += n.vy; }
+      alpha = Math.max(0.03, alpha * 0.99);
+    }
+  })();
+  let B = graph.reduce((b, n) => ({ x0: Math.min(b.x0, n.x), y0: Math.min(b.y0, n.y), x1: Math.max(b.x1, n.x), y1: Math.max(b.y1, n.y) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
+  core.x = B.x0 + 10; core.y = B.y0 + 10;
+  B = { x0: B.x0 - 10, y0: B.y0 - 10, x1: B.x1, y1: B.y1 };
+  const WC = [(B.x0 + B.x1) / 2, (B.y0 + B.y1) / 2];
+  nodes.forEach((n) => { const dx = n.x - WC[0], dy = n.y - WC[1], m = Math.hypot(dx, dy) || 1; n.dir = [dx / m, dy / m]; });
+  CLUSTERS.forEach((cl, i) => { const ms = graph.filter((n) => n.c === i); cl.cx = ms.reduce((s, n) => s + n.x, 0) / ms.length; cl.top = Math.min(...ms.map((n) => n.y)); });
+
+  const stage = document.getElementById("stage"), cv = document.getElementById("cv"), mainCtx = cv.getContext("2d");
+  let ctx = mainCtx;
+  const tip = document.getElementById("tip");
+  let W = 800, H = 500, DPR = 1, fitK = 1, camTouched = false, stars = [], t = 0;
+  const cam = { x: WC[0], y: WC[1], k: 1 };
+  const pick = { core: "A", anom: "A", zone: "A", zoneWhen: "drag", ghost: "A" };
+  const st = { view: "light", hover: null, hoverTool: null, selected: null, drag: null, pan: null, press: null, camAnim: null, deleting: [], deleted: [], flash: null, spawnCount: 0 };
+  const GHOST_R = 16, ZONE_R = 24, MARGIN = 16;
+
+  const fitFor = (w) => Math.max(0.2, Math.min((w - 120) / (B.x1 - B.x0), (H - 120) / (B.y1 - B.y0)));
+  const panes = () => st.view === "cmp"
+    ? [{ x0: 0, w: W / 2, style: "now" }, { x0: W / 2, w: W / 2, style: "light" }]
+    : [{ x0: 0, w: W, style: st.view }];
+  const paneScale = (p) => fitFor(p.w) / fitFor(W);
+  const paneAt = (mx) => panes().find((p) => mx >= p.x0 && mx < p.x0 + p.w) || panes()[0];
+  const sx = (n, p) => (n.x - cam.x) * cam.k * paneScale(p) + p.x0 + p.w / 2;
+  const sy = (n, p) => (n.y - cam.y) * cam.k * paneScale(p) + H / 2;
+  const toWorld = (mx, my, p) => [(mx - p.x0 - p.w / 2) / (cam.k * paneScale(p)) + cam.x, (my - H / 2) / (cam.k * paneScale(p)) + cam.y];
+  const ghostPos = (p) => [p.x0 + MARGIN + GHOST_R, MARGIN + GHOST_R];
+  const zonePos = (p) => [p.x0 + p.w - MARGIN - ZONE_R * 1.44, H - MARGIN - ZONE_R * 1.44];
+
+  function makeStars() {
+    const r2 = rng(7), n = Math.round((W * H) / 3600), out = [];
+    for (let i = 0; i < n; i++) { const L = r2() < 0.62 ? 0 : r2() < 0.72 ? 1 : 2; out.push({ x: r2(), y: r2(), f: [0.04, 0.1, 0.2][L], r: [0.7, 1, 1.5][L] * (0.7 + r2() * 0.6), a: [0.22, 0.34, 0.52][L] * (0.5 + r2() * 0.5), tw: r2() < 0.12 ? 0.6 + r2() * 1.4 : 0, ph: r2() * TAU }); }
+    return out;
+  }
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    W = Math.max(320, r.width); H = Math.max(300, r.height); DPR = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); cv.style.width = W + "px"; cv.style.height = H + "px";
+    fitK = fitFor(W);
+    if (!camTouched) { cam.x = WC[0]; cam.y = WC[1]; cam.k = fitK; }
+    stars = makeStars();
+    if (typeof sizePeeks === "function") sizePeeks();
+  }
+
+  /* ---------- primitives ---------- */
+  function halo(x, y, r, c, a) {
+    if (a <= 0.003 || r <= 0.2) return;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, rgba(c, a)); g.addColorStop(0.28, rgba(c, a * 0.32)); g.addColorStop(1, rgba(c, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+  }
+  function disc(x, y, r, c, a) { if (a <= 0.003 || r <= 0) return; ctx.fillStyle = rgba(c, a); ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
+  function ring(x, y, r, c, a, w, a0, a1) { if (a <= 0.003) return; ctx.strokeStyle = rgba(c, a); ctx.lineWidth = w; ctx.beginPath(); ctx.arc(x, y, r, a0 || 0, a1 == null ? TAU : a1); ctx.stroke(); }
+  const lighter = (fn) => { ctx.globalCompositeOperation = "lighter"; fn(); ctx.globalCompositeOperation = "source-over"; };
+  const tm = () => (RM ? 0 : t);
+
+  /* ---------- regular notes: the accepted light style ---------- */
+  const GL = {
+    galaxy(n, x, y, r, c, a) { lighter(() => { halo(x, y, r * 8, c, 0.2 * a); ctx.save(); ctx.translate(x, y); ctx.rotate(n.rot); ctx.scale(1, 0.34); halo(0, 0, r * 5.2, mix(c, WHITE, 0.25), 0.34 * a); ctx.restore(); halo(x, y, r * 2.4, mix(c, WHITE, 0.45), 0.75 * a); disc(x, y, r * 0.7, mix(c, WHITE, 0.85), a); }); },
+    star(n, x, y, r, c, a) { lighter(() => { halo(x, y, r * 5.5, c, 0.26 * a); const L = r * 4; ctx.lineWidth = 0.8; ctx.strokeStyle = rgba(mix(c, WHITE, 0.55), 0.32 * a); ctx.beginPath(); ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.stroke(); halo(x, y, r * 1.9, mix(c, WHITE, 0.5), 0.8 * a); disc(x, y, r * 0.62, mix(c, WHITE, 0.9), a); }); },
+    planet(n, x, y, r, c, a) { lighter(() => halo(x, y, r * 2.8, c, 0.16 * a)); const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r); g.addColorStop(0, rgba(mix(c, WHITE, 0.55), a)); g.addColorStop(0.7, rgba(c, a * 0.95)); g.addColorStop(1, rgba(mix(c, [8, 10, 24], 0.45), a)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); },
+    moon(n, x, y, r, c, a) { lighter(() => halo(x, y, r * 2.2, c, 0.1 * a)); disc(x, y, r * 0.85, mix(c, [206, 214, 230], 0.6), 0.85 * a); },
+    asteroid(n, x, y, r, c, a) { ctx.fillStyle = rgba(mix(c, [140, 148, 168], 0.62), 0.85 * a); ctx.beginPath(); n.shape.forEach((k, i) => { const an = n.rot + (i / 6) * TAU, X = x + Math.cos(an) * r * k, Y = y + Math.sin(an) * r * k; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); }); ctx.closePath(); ctx.fill(); },
+    nebula(n, x, y, r, c, a) { lighter(() => { n.blobs.forEach(([ox, oy, s]) => halo(x + ox * r, y + oy * r, r * 3 * s, c, 0.22 * a)); disc(x, y, r * 0.35, mix(c, WHITE, 0.8), 0.9 * a); }); },
+    comet(n, x, y, r, c, a) { const u = clamp(1 - (n.days - 1) / 20, 0.12, 1); lighter(() => { const len = r * (3 + 12 * u), w = r * 0.95, dx = -0.72, dy = -0.69, tx = x + dx * len, ty = y + dy * len, g = ctx.createLinearGradient(x, y, tx, ty); g.addColorStop(0, rgba(mix(c, WHITE, 0.4), (0.25 + 0.5 * u) * a)); g.addColorStop(1, rgba(c, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x - dy * w, y + dx * w); ctx.lineTo(tx, ty); ctx.lineTo(x + dy * w, y - dx * w); ctx.closePath(); ctx.fill(); halo(x, y, r * (2.2 + 2 * u), c, (0.2 + 0.35 * u) * a); disc(x, y, r * 0.6, mix(c, WHITE, 0.85), a); }); },
+    satellite(n, x, y, r, c, a) { lighter(() => { halo(x, y, r * 2.2, c, 0.25 * a); disc(x, y, r * 0.6, mix(c, WHITE, 0.75), a); }); ctx.strokeStyle = rgba(mix(c, WHITE, 0.3), 0.45 * a); ctx.lineWidth = 0.8; ctx.beginPath(); ctx.ellipse(x, y, r * 2.6, r * 1.1, n.rot, 0, TAU); ctx.stroke(); },
+    blackhole(n, x, y, r, c, a) { lighter(() => { halo(x, y, r * 3.6, c, 0.12 * a); ring(x, y, r * 1.45, mix(c, WHITE, 0.35), 0.85 * a, 1.3); }); disc(x, y, r * 1.15, DARK, 0.95 * a); ring(x, y, r * 0.8, c, 0.35 * a, 0.6); },
+    dust(n, x, y, r, c, a) { lighter(() => n.specks.forEach(([ox, oy, s]) => disc(x + ox * r * 1.7, y + oy * r * 1.7, r * 0.34 * s, mix(c, WHITE, 0.35), 0.55 * a))); },
+    debris(n, x, y, r, c, a) { ctx.fillStyle = rgba([124, 132, 150], 0.5 * a); ctx.beginPath(); ctx.moveTo(x + Math.cos(n.rot) * r * 1.2, y + Math.sin(n.rot) * r * 1.2); ctx.lineTo(x + Math.cos(n.rot + 2.3) * r, y + Math.sin(n.rot + 2.3) * r); ctx.lineTo(x + Math.cos(n.rot + 4.1) * r * 0.9, y + Math.sin(n.rot + 4.1) * r * 0.9); ctx.closePath(); ctx.fill(); },
+  };
+
+  /* ---------- special notes ---------- */
+  // Сейчас: как в light/glyphs.ts ветки ai-agents.
+  function coreNow(n, x, y, r, a) { disc(x, y, r * 0.8, TECH_NOW, 0.7 * a); ring(x, y, r * 1.6, TECH_NOW, 0.45 * a, 0.8); }
+  function anomNow(n, x, y, r, a) {
+    const b = RM ? 1 : 1 + 0.08 * Math.sin(t * 0.9 + n.seed * TAU);
+    lighter(() => { halo(x, y, r * 4.5, UNK, 0.24 * b * a); disc(x, y, r * 0.55, mix(UNK, WHITE, 0.7), 0.95 * a); });
+    for (let i = 0; i < 3; i++) { const s = n.rot + (i * TAU) / 3; ring(x, y, r * 1.7, UNK, 0.55 * a, 0.9, s, s + TAU / 5); }
+  }
+  // Предлагаю: ядро знаний.
+  function coreBeacon(n, x, y, r, a) {
+    const ang = n.rot + tm() * 0.45, L = r * 8;
+    lighter(() => {
+      for (const s of [0, Math.PI]) {
+        const ex = x + Math.cos(ang + s) * L, ey = y + Math.sin(ang + s) * L, g = ctx.createLinearGradient(x, y, ex, ey);
+        g.addColorStop(0, rgba(TECH, 0.42 * a)); g.addColorStop(1, rgba(TECH, 0));
+        const w = r * 0.7, px = -Math.sin(ang + s) * w, py = Math.cos(ang + s) * w;
+        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x + px * 0.25, y + py * 0.25); ctx.lineTo(ex + px, ey + py); ctx.lineTo(ex - px, ey - py); ctx.lineTo(x - px * 0.25, y - py * 0.25); ctx.closePath(); ctx.fill();
+      }
+      halo(x, y, r * 3, TECH, 0.22 * a); disc(x, y, r * 0.55, mix(TECH, WHITE, 0.8), 0.95 * a);
+    });
+    ring(x, y, r * 1.25, TECH, 0.5 * a, 0.8);
+  }
+  function coreDial(n, x, y, r, a) {
+    lighter(() => { halo(x, y, r * 3, TECH, 0.18 * a); disc(x, y, r * 0.5, mix(TECH, WHITE, 0.8), 0.95 * a); });
+    ring(x, y, r * 1.6, TECH, 0.6 * a, 0.9);
+    ctx.strokeStyle = rgba(TECH, 0.55 * a); ctx.lineWidth = 0.9; ctx.beginPath();
+    for (let i = 0; i < 4; i++) { const an = Math.PI / 4 + (i * TAU) / 4; ctx.moveTo(x + Math.cos(an) * r * 1.6, y + Math.sin(an) * r * 1.6); ctx.lineTo(x + Math.cos(an) * r * 2.3, y + Math.sin(an) * r * 2.3); }
+    ctx.stroke();
+    ctx.setLineDash([1, 3]); ring(x, y, r * 2.7, TECH, 0.32 * a, 0.8); ctx.setLineDash([]);
+  }
+  // Предлагаю: неизвестный тип, четыре вида.
+  const flick = (n) => (RM ? 1 : 0.82 + 0.1 * Math.sin(t * 5.3 + n.seed * 40) + 0.08 * Math.sin(t * 13.1 + n.seed * 9));
+  function rift(n, x, y, r, a, k) {
+    const f = flick(n), cs = Math.cos(n.rot), sn = Math.sin(n.rot), pts = n.crack.map(([u, v]) => [x + (u * cs - v * sn) * r * k, y + (u * sn + v * cs) * r * k]);
+    lighter(() => {
+      halo(x, y, r * 3.2 * k, UNK, 0.16 * a * f);
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      pts.forEach(([X, Y]) => halo(X, Y, r * 1.1 * k, UNK, 0.12 * a * f));
+      for (const [w, al, c] of [[4, 0.28, UNK], [1.2, 0.95, mix(UNK, WHITE, 0.7)]]) { ctx.strokeStyle = rgba(c, al * a * f); ctx.lineWidth = w; ctx.beginPath(); pts.forEach(([X, Y], i) => (i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y))); ctx.stroke(); }
+      disc(x, y, r * 0.42, mix(UNK, WHITE, 0.85), 0.95 * a);
+    });
+  }
+  function maw(n, x, y, r, a, k) {
+    lighter(() => {
+      halo(x, y, r * 3.4 * k, UNK, 0.18 * a);
+      ctx.lineCap = "round";
+      for (let arm = 0; arm < 3; arm++) for (let i = 0; i < 14; i++) {
+        const u0 = i / 14, u1 = (i + 1) / 14, ang = (u) => n.rot + (arm * TAU) / 3 + u * 2.6 - tm() * 0.7, rad = (u) => r * k * (3.4 * (1 - u) + 0.45);
+        ctx.strokeStyle = rgba(mix(UNK, WHITE, 0.3 + 0.5 * u1), (0.08 + 0.7 * u1) * a); ctx.lineWidth = 0.6 + 1.1 * u1;
+        ctx.beginPath(); ctx.moveTo(x + Math.cos(ang(u0)) * rad(u0), y + Math.sin(ang(u0)) * rad(u0)); ctx.lineTo(x + Math.cos(ang(u1)) * rad(u1), y + Math.sin(ang(u1)) * rad(u1)); ctx.stroke();
+      }
+      disc(x, y, r * 0.5, mix(UNK, WHITE, 0.9), a);
+    });
+  }
+  function whisper(n, x, y, r, a, k) {
+    const c = mix(UNK, COLD, 0.55), pts = n.whisp.map(([p0, rr, sp]) => { const an = p0 + tm() * sp; return [x + Math.cos(an) * r * rr * k, y + Math.sin(an) * r * rr * k]; });
+    lighter(() => {
+      halo(x, y, r * 2.4 * k, c, 0.1 * a);
+      ctx.strokeStyle = rgba(c, 0.16 * a); ctx.lineWidth = 0.6; ctx.beginPath(); pts.forEach(([X, Y], i) => (i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y))); ctx.stroke();
+      pts.forEach(([X, Y], i) => disc(X, Y, r * (0.16 + 0.06 * (i % 3)), mix(c, WHITE, 0.5), 0.8 * a));
+      disc(x, y, r * 0.38, mix(c, WHITE, 0.6), 0.6 * a);
+    });
+  }
+  function abom(n, x, y, r, a) {
+    const f = flick(n);
+    lighter(() => halo(x, y, r * 5, UNK, 0.14 * a * f));
+    maw(n, x, y, r, a * 0.75, 1.15); rift(n, x, y, r, a, 1.25); whisper(n, x, y, r, a * 0.8, 1.2);
+  }
+  const ANOM = { rift: (n, x, y, r, a) => rift(n, x, y, r, a, 1), maw: (n, x, y, r, a) => maw(n, x, y, r, a, 1), whisper: (n, x, y, r, a) => whisper(n, x, y, r, a, 1), abom };
+  function anomOne(n, x, y, r, a) {
+    const b = RM ? 1 : 1 + 0.1 * Math.sin(t * 0.9 + n.seed * TAU), spin = n.rot + tm() * 0.35;
+    lighter(() => { halo(x, y, r * 4.2, UNK, 0.22 * b * a); disc(x, y, r * 0.5, mix(UNK, WHITE, 0.8), 0.95 * a); });
+    ctx.lineCap = "round";
+    for (let i = 0; i < 3; i++) { const s = spin + (i * TAU) / 3; ring(x, y, r * 1.7, mix(UNK, WHITE, 0.25), 0.6 * a, 1, s, s + TAU / 5); ring(x, y, r * 2.4, UNK, 0.25 * a, 0.7, s + 0.9, s + 0.9 + TAU / 9); }
+  }
+
+  function drawNote(n, x, y, r, a, style) {
+    const c = n.c >= 0 ? CLUSTERS[n.c].hue : TECH;
+    if (n.type === "technical") return style === "now" ? coreNow(n, x, y, r, a) : pick.core === "A" ? coreBeacon(n, x, y, r, a) : coreDial(n, x, y, r, a);
+    if (n.type === "unknown") return style === "now" ? anomNow(n, x, y, r, a) : pick.anom === "A" ? ANOM[n.variety](n, x, y, r, a) : anomOne(n, x, y, r, a);
+    GL[n.type](n, x, y, r, c, a);
+  }
+
+  /* ---------- service tools ---------- */
+  function zoneNow(x, y, armed, over) {
+    const pulse = RM ? 0.5 : Math.sin(t * 3) * 0.5 + 0.5, s = over ? 1 + pulse * 0.2 : 1, R0 = ZONE_R * s;
+    ctx.save(); ctx.shadowBlur = 20 + pulse * 10; ctx.shadowColor = "rgba(138,43,226,0.6)";
+    const g = ctx.createRadialGradient(x, y, 0, x, y, R0); g.addColorStop(0, "#000000"); g.addColorStop(0.6, "#1a0033"); g.addColorStop(1, "#4b0082");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, R0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = "rgba(138,43,226," + (0.3 + pulse * 0.3).toFixed(3) + ")"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, R0 * 1.2, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
+  function zoneColor(over) { return over ? WARN : TOOL; }
+  function zoneFunnel(x, y, show, armed, over) {
+    const c = zoneColor(over), base = (armed ? 0.55 : 0.28) * show, sp = armed ? 0.5 : 0.22, R0 = ZONE_R * (armed ? 1.25 : 1);
+    lighter(() => {
+      halo(x, y, R0 * 1.7, c, (over ? 0.22 : 0.08) * show);
+      for (let i = 0; i < 4; i++) {
+        const u = RM ? i / 4 : ((tm() * sp + i / 4) % 1), rr = R0 * (1.25 - u * 1.05), al = base * Math.sin(Math.PI * u);
+        ring(x, y, rr, c, al, 0.9 + u * 0.5);
+      }
+      disc(x, y, 1.6, mix(c, WHITE, 0.6), (armed ? 0.9 : 0.5) * show);
+    });
+  }
+  function zoneVortex(x, y, show, armed, over) {
+    const c = zoneColor(over), R0 = ZONE_R * (armed ? 1.25 : 1), al = (armed ? 0.75 : 0.4) * show, spin = tm() * (armed ? 1.6 : 0.6);
+    lighter(() => {
+      halo(x, y, R0 * 1.7, c, (over ? 0.22 : 0.08) * show);
+      ctx.lineCap = "round";
+      for (let arm = 0; arm < 4; arm++) for (let i = 0; i < 12; i++) {
+        const u0 = i / 12, u1 = (i + 1) / 12, ang = (u) => (arm * TAU) / 4 + u * 3 + spin, rad = (u) => R0 * (1.3 - 1.15 * u);
+        ctx.strokeStyle = rgba(mix(c, WHITE, 0.4 * u1), al * (0.15 + 0.85 * u1)); ctx.lineWidth = 0.5 + 1.1 * u1;
+        ctx.beginPath(); ctx.moveTo(x + Math.cos(ang(u0)) * rad(u0), y + Math.sin(ang(u0)) * rad(u0)); ctx.lineTo(x + Math.cos(ang(u1)) * rad(u1), y + Math.sin(ang(u1)) * rad(u1)); ctx.stroke();
+      }
+      disc(x, y, 1.8, mix(c, WHITE, 0.7), al);
+    });
+  }
+  function zoneLabel(x, y, over) {
+    ctx.save(); ctx.font = "500 11.5px Onest, 'Segoe UI', sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.shadowColor = "rgba(4,6,13,0.95)"; ctx.shadowBlur = 6;
+    ctx.fillStyle = over ? rgba(WARN, 0.95) : "rgba(220,228,255,0.75)";
+    ctx.fillText(over ? "отпустите — удалить" : "удалить", x - (over ? 30 : 0), y - ZONE_R * 1.6);
+    ctx.restore();
+  }
+  function ghostNow(x, y, hov) {
+    const pulse = RM ? 0.5 : Math.sin(t * 2) * 0.5 + 0.5, base = hov ? 0.6 : 0.4, s = 1 + pulse * 0.05;
+    ctx.save(); ctx.shadowBlur = 15 + pulse * 10; ctx.shadowColor = "rgba(255,255,255," + (0.2 + pulse * 0.2).toFixed(3) + ")";
+    const g = ctx.createRadialGradient(x - GHOST_R * 0.3, y - GHOST_R * 0.3, 0, x, y, GHOST_R * s);
+    g.addColorStop(0, "rgba(255,255,255," + (base + 0.2) + ")"); g.addColorStop(0.5, "rgba(200,220,255," + base + ")"); g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, GHOST_R * s, 0, TAU); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(255,255,255," + (base + 0.3) + ")"; ctx.lineWidth = 2; const p = GHOST_R * 0.5;
+    ctx.beginPath(); ctx.moveTo(x - p, y); ctx.lineTo(x + p, y); ctx.moveTo(x, y - p); ctx.lineTo(x, y + p); ctx.stroke(); ctx.restore();
+  }
+  function ghostStar(x, y, hov) {
+    const b = RM ? 1 : 0.85 + 0.15 * Math.sin(t * 1.6), L = GHOST_R * (hov ? 1.15 : 0.85), a = hov ? 0.95 : 0.55 * b;
+    lighter(() => {
+      halo(x, y, GHOST_R * (hov ? 1.9 : 1.5), TOOL, (hov ? 0.22 : 0.1) * b);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const g = ctx.createLinearGradient(x, y, x + dx * L, y + dy * L); g.addColorStop(0, rgba(mix(TOOL, WHITE, 0.6), a)); g.addColorStop(1, rgba(TOOL, 0));
+        ctx.strokeStyle = g; ctx.lineWidth = hov ? 1.6 : 1.2; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx * L, y + dy * L); ctx.stroke();
+      }
+      disc(x, y, hov ? 2.2 : 1.6, mix(TOOL, WHITE, 0.8), a);
+    });
+  }
+  function ghostOrbit(x, y, hov) {
+    const spin = tm() * 0.3, a = hov ? 0.85 : 0.42;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(spin); ctx.setLineDash(hov ? [3, 2.5] : [1.5, 4]); ring(0, 0, GHOST_R * 0.92, TOOL, a, 1); ctx.restore(); ctx.setLineDash([]);
+    lighter(() => { if (hov) halo(x, y, GHOST_R * 1.6, TOOL, 0.14); });
+    const p = GHOST_R * 0.34; ctx.strokeStyle = rgba(TOOL, a + 0.1); ctx.lineWidth = 1.3; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x - p, y); ctx.lineTo(x + p, y); ctx.moveTo(x, y - p); ctx.lineTo(x, y + p); ctx.stroke();
+  }
+
+  /* ---------- scene ---------- */
+  function background(p) {
+    ctx.fillStyle = "#04060d"; ctx.fillRect(p.x0, 0, p.w, H);
+    const g = ctx.createRadialGradient(p.x0 + p.w * 0.5, H * 0.45, 0, p.x0 + p.w * 0.5, H * 0.45, Math.max(p.w, H) * 0.75);
+    g.addColorStop(0, "rgba(22,30,58,0.55)"); g.addColorStop(0.55, "rgba(10,14,30,0.3)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g; ctx.fillRect(p.x0, 0, p.w, H);
+    const ox = -cam.x * cam.k, oy = -cam.y * cam.k;
+    for (const s of stars) {
+      let x = (s.x * W + ox * s.f) % W; if (x < 0) x += W; if (x < p.x0 || x > p.x0 + p.w) continue;
+      let y = (s.y * H + oy * s.f) % H; if (y < 0) y += H;
+      const a = s.tw && !RM ? s.a * (0.65 + 0.35 * Math.sin(t * s.tw + s.ph)) : s.a;
+      ctx.fillStyle = "rgba(210,222,255," + a.toFixed(3) + ")"; ctx.fillRect(x, y, s.r, s.r);
+    }
+  }
+  function nebulae(p) {
+    const k = cam.k * paneScale(p), z = cam.k / fitK, m = clamp((3.2 - z) / 2.2, 0.12, 1) * (st.hover ? 0.55 : 1), base = Math.min(62 * k, 240);
+    lighter(() => {
+      for (const n of graph) {
+        if (!n.alive) continue;
+        const x = sx(n, p), y = sy(n, p), w = base * (n.type === "galaxy" ? 1.9 : n.type === "star" ? 1.35 : 1), hue = CLUSTERS[n.c].hue, a = 0.04 * m * n.vis;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, w); g.addColorStop(0, rgba(hue, a)); g.addColorStop(0.55, rgba(hue, a * 0.45)); g.addColorStop(1, rgba(hue, 0));
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, w, 0, TAU); ctx.fill();
+      }
+    });
+    const za = clamp((1.32 - z) / 0.42, 0, 1) * 0.8 * (st.hover ? 0.3 : 1);
+    if (za > 0.01) {
+      ctx.save(); ctx.font = '500 12px "Unbounded", "Onest", sans-serif'; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      for (const cl of CLUSTERS) { ctx.fillStyle = rgba(mix(cl.hue, WHITE, 0.3), za); ctx.fillText(cl.name, (cl.cx - cam.x) * k + p.x0 + p.w / 2, (cl.top - cam.y) * k + H / 2 - 18); }
+      ctx.restore();
+    }
+  }
+  function threads(p) {
+    const lw = clamp(Math.pow(cam.k / fitK, 0.45), 0.7, 1.9);
+    lighter(() => {
+      ctx.lineCap = "round";
+      for (const l of links) {
+        if (!l.s.alive || !l.t.alive) continue;
+        const vis = Math.min(l.s.vis, l.t.vis), a = (0.28 * l.fa + 0.57 * (l.fa > 0.5 && st.hover && (l.s === st.hover || l.t === st.hover) ? 1 : 0)) * vis;
+        if (a <= 0.004) continue;
+        const x1 = sx(l.s, p), y1 = sy(l.s, p), x2 = sx(l.t, p), y2 = sy(l.t, p), dx = x2 - x1, dy = y2 - y1, cx = (x1 + x2) / 2 - dy * l.bend, cy = (y1 + y2) / 2 + dx * l.bend;
+        const g = ctx.createLinearGradient(x1, y1, x2, y2), c1 = l.s.c >= 0 ? CLUSTERS[l.s.c].hue : TECH, c2 = l.t.c >= 0 ? CLUSTERS[l.t.c].hue : TECH;
+        g.addColorStop(0, rgba(mix(c1, WHITE, 0.22), a)); g.addColorStop(1, rgba(mix(c2, WHITE, 0.22), a));
+        ctx.strokeStyle = g; ctx.lineWidth = 1.05 * lw; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(cx, cy, x2, y2); ctx.stroke();
+      }
+    });
+  }
+  const order = () => nodes.filter((n) => n.alive).sort((a, b) => RANK[a.type] - RANK[b.type]);
+  function radius(n) { return BASE_R[n.type] * clamp(Math.pow(cam.k / fitK, 0.5), 0.6, 2.4) * (1 + Math.min(adj.get(n.id).size, 10) * 0.025) * (0.55 + 0.45 * n.vis); }
+  function notes(p) {
+    const going = new Set(st.deleting.map((d) => d.n));
+    for (const n of order()) {
+      if (n.vis <= 0.01 || going.has(n)) continue;
+      const x = sx(n, p), y = sy(n, p);
+      if (x < p.x0 - 60 || x > p.x0 + p.w + 60 || y < -60 || y > H + 60) continue;
+      const r = radius(n);
+      drawNote(n, x, y, r, n.alpha * n.vis, p.style);
+      if (n === st.selected) { const ph = RM ? 0.35 : (t * 0.55) % 1, c = n.c >= 0 ? CLUSTERS[n.c].hue : TECH; ring(x, y, Math.max(r * 2.3, 8) + ph * 16, mix(c, WHITE, 0.5), (1 - ph) * 0.7, 1.2); }
+    }
+    for (const d of st.deleting) {
+      const n = d.n, u = RM ? 1 : clamp((performance.now() - d.t0) / 700, 0, 1), e = easeIO(u), [zx, zy] = zonePos(p);
+      const x0 = d.sx != null && d.pane === p.style ? d.sx : sx(n, p), y0 = d.sx != null && d.pane === p.style ? d.sy : sy(n, p);
+      const ang = (1 - e) * 2.4, dx = (x0 - zx) * (1 - e), dy = (y0 - zy) * (1 - e);
+      const x = zx + dx * Math.cos(ang) - dy * Math.sin(ang), y = zy + dx * Math.sin(ang) + dy * Math.cos(ang);
+      if (u < 1) drawNote(n, x, y, radius(n) * (1 - 0.85 * e), 1 - 0.6 * e, p.style);
+      else if (p.style !== "now") { const v = clamp((performance.now() - d.t0 - 700) / 500, 0, 1); lighter(() => ring(zx, zy, ZONE_R * (0.4 + 1.4 * v), WARN, 0.6 * (1 - v), 1.2)); }
+    }
+  }
+  function labels(p) {
+    const z = cam.k / fitK, f = st.hover, placed = [];
+    ctx.save(); ctx.font = "12px Onest, 'Segoe UI', sans-serif"; ctx.textBaseline = "middle"; ctx.shadowColor = "rgba(4,6,13,0.95)"; ctx.shadowBlur = 5;
+    const cands = order().reverse().filter((n) => {
+      if (n.vis < 0.5 || n.alpha < 0.3) return false;
+      if (f) return n === f || adj.get(f.id).has(n.id);
+      if (n.type === "galaxy" || n.type === "star") return true;
+      if (n.type === "technical" || n.type === "unknown" || n.type === "blackhole") return z > 1.25;
+      return z > 1.9;
+    });
+    for (const n of cands) {
+      const x = sx(n, p) + radius(n) * 2 + 5, y = sy(n, p), w = ctx.measureText(n.title).width;
+      const box = [x - 2, y - 8, x + w + 2, y + 8];
+      if (box[2] > p.x0 + p.w - 4 || placed.some((b) => !(box[2] < b[0] || box[0] > b[2] || box[3] < b[1] || box[1] > b[3]))) continue;
+      placed.push(box);
+      ctx.fillStyle = rgba([228, 233, 246], (n === f ? 1 : 0.82) * n.alpha);
+      ctx.fillText(n.title, x, y);
+    }
+    ctx.restore();
+  }
+  function tools(p) {
+    const armed = !!st.drag && st.drag.moved, over = armed && st.drag.over;
+    const [gx, gy] = ghostPos(p), hovG = st.hoverTool && st.hoverTool.kind === "ghost" && st.hoverTool.pane === p.style;
+    if (p.style === "now") ghostNow(gx, gy, hovG); else if (pick.ghost === "A") ghostStar(gx, gy, hovG); else ghostOrbit(gx, gy, hovG);
+    const [zx, zy] = zonePos(p);
+    if (p.style === "now") zoneNow(zx, zy, armed, over);
+    else {
+      const show = pick.zoneWhen === "always" ? 1 : st.zoneShow;
+      if (show > 0.01) { if (pick.zone === "A") zoneFunnel(zx, zy, show, armed, over); else zoneVortex(zx, zy, show, armed, over); }
+      if (armed) zoneLabel(zx, zy, over);
+    }
+    if (st.flash) {
+      const u = clamp((performance.now() - st.flash.t0) / 1400, 0, 1), [fx, fy] = st.flash.kind === "ghost" ? [gx, gy] : [zx, zy];
+      for (let i = 0; i < 2; i++) { const v = (u * 2 + i * 0.5) % 1; ring(fx, fy, 14 + v * 46, [174, 188, 255], (1 - v) * 0.7 * (1 - u * 0.6), 1.2); }
+      if (u >= 1) st.flash = null;
+    }
+  }
+
+  /* ---------- close-up showcase in the panel ---------- */
+  const byVariety = (v) => nodes.find((n) => n.variety === v);
+  const ZONE_STATES = ["покой", "тянут заметку", "над зоной"];
+  const PEEK = {
+    core: [["Сейчас", "now", (a) => coreNow(core, 0, 0, 7, a)], ["Маяк", "A", (a) => coreBeacon(core, 0, 0, 7, a)], ["Прибор", "B", (a) => coreDial(core, 0, 0, 7, a)]],
+    anom: [["Разлом", "A", (a) => rift(byVariety("rift"), 0, 0, 6, a, 1)], ["Пасть", "A", (a) => maw(byVariety("maw"), 0, 0, 6, a, 1)], ["Шёпот", "A", (a) => whisper(byVariety("whisper"), 0, 0, 6, a, 1)],
+           ["Чудовище", "A", (a) => abom(byVariety("abom"), 0, 0, 6, a)], ["Один вид", "B", (a) => anomOne(byVariety("rift"), 0, 0, 6, a)], ["Сейчас", "now", (a) => anomNow(byVariety("rift"), 0, 0, 6, a)]],
+    zone: [["Сейчас", "now", (a, ph) => { ctx.scale(0.8, 0.8); zoneNow(0, 0, ph > 0, ph === 2); }], ["Воронка", "A", (a, ph) => { ctx.scale(0.8, 0.8); zoneFunnel(0, 0, 1, ph > 0, ph === 2); }], ["Вихрь", "B", (a, ph) => { ctx.scale(0.8, 0.8); zoneVortex(0, 0, 1, ph > 0, ph === 2); }]],
+    ghost: [["Сейчас", "now", (a, ph) => { ctx.scale(1.3, 1.3); ghostNow(0, 0, ph === 1); }], ["Звезда", "A", (a, ph) => { ctx.scale(1.3, 1.3); ghostStar(0, 0, ph === 1); }], ["Орбита", "B", (a, ph) => { ctx.scale(1.3, 1.3); ghostOrbit(0, 0, ph === 1); }]],
+  };
+  const CELL_H = 92, CAP_H = 20;
+  const peeks = [];
+  document.querySelectorAll(".grp").forEach((g) => {
+    const c = document.createElement("canvas"); c.className = "peek"; c.setAttribute("role", "img");
+    c.setAttribute("aria-label", "Крупно: " + PEEK[g.dataset.g].map((x) => x[0]).join(", "));
+    g.insertBefore(c, g.querySelector("[data-what]"));
+    peeks.push({ key: g.dataset.g, c, x: c.getContext("2d"), w: 0, h: 0 });
+  });
+  function sizePeeks() {
+    for (const p of peeks) {
+      const w = Math.max(200, p.c.clientWidth || 300), rows = Math.ceil(PEEK[p.key].length / 3), h = rows * CELL_H;
+      if (w === p.w && h === p.h) continue;
+      p.w = w; p.h = h; p.c.width = Math.round(w * DPR); p.c.height = Math.round(h * DPR); p.c.style.height = h + "px";
+    }
+  }
+  function drawPeeks() {
+    const ph = RM ? 1 : Math.floor(t / 1.8) % 3;
+    for (const p of peeks) {
+      if (!p.w) continue;
+      ctx = p.x; ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      ctx.fillStyle = "#04060d"; ctx.fillRect(0, 0, p.w, p.h);
+      const cells = PEEK[p.key], cw = p.w / 3;
+      cells.forEach(([name, v, draw], i) => {
+        const cx = (i % 3) * cw + cw / 2, cy = Math.floor(i / 3) * CELL_H + (CELL_H - CAP_H) / 2 + 4, on = v === pick[p.key];
+        if (on) { ctx.fillStyle = "rgba(174,188,255,0.07)"; ctx.fillRect((i % 3) * cw + 2, Math.floor(i / 3) * CELL_H + 2, cw - 4, CELL_H - 4); }
+        ctx.save(); ctx.beginPath(); ctx.rect((i % 3) * cw, Math.floor(i / 3) * CELL_H, cw, CELL_H - CAP_H); ctx.clip();
+        ctx.translate(cx, cy); draw(1, p.key === "ghost" ? ph % 2 : ph); ctx.restore();
+        ctx.font = "12px Onest, 'Segoe UI', sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = on ? "#aebcff" : v === "now" ? "#6a7390" : "#8d96ae";
+        ctx.fillText((v === "now" ? "" : v === "A" ? "А · " : "Б · ") + name, cx, Math.floor(i / 3) * CELL_H + CELL_H - 7);
+      });
+      if (p.key === "zone" || p.key === "ghost") {
+        ctx.font = "11px Onest, 'Segoe UI', sans-serif"; ctx.textAlign = "left"; ctx.fillStyle = "#6a7390";
+        ctx.fillText(p.key === "zone" ? ZONE_STATES[ph] : ph % 2 ? "наведение" : "покой", 8, 15);
+      }
+    }
+    ctx = mainCtx;
+  }
+
+  /* ---------- update ---------- */
+  function updateCam(now) {
+    const a = st.camAnim; if (!a) return;
+    const u = clamp((now - a.t0) / a.dur, 0, 1), e = easeIO(u);
+    cam.x = lerp(a.from.x, a.to.x, e); cam.y = lerp(a.from.y, a.to.y, e); cam.k = Math.exp(lerp(Math.log(a.from.k), Math.log(a.to.k), e));
+    if (u >= 1) st.camAnim = null;
+  }
+  function flyTo(v) { camTouched = true; if (RM) { Object.assign(cam, v); return; } st.camAnim = { from: { x: cam.x, y: cam.y, k: cam.k }, to: v, t0: performance.now(), dur: 750 }; }
+  st.zoneShow = 0;
+  function update(now, dt) {
+    updateCam(now);
+    const k = RM ? 1 : 1 - Math.exp(-dt * 11), f = st.hover;
+    for (const n of nodes) {
+      n.vis = RM ? 1 : easeOut(clamp((now - n.appear) / 650, 0, 1));
+      const tg = f && n !== f ? (adj.get(f.id).has(n.id) ? 1 : 0.15) : 1;
+      n.alpha += (tg - n.alpha) * k;
+    }
+    for (const l of links) { const tg = f ? (l.s === f || l.t === f ? 1 : 0.12) : 1; l.fa += (tg - l.fa) * k; }
+    const want = st.drag && st.drag.moved ? 1 : 0;
+    st.zoneShow = RM ? want : st.zoneShow + (want - st.zoneShow) * (1 - Math.exp(-dt * (want ? 14 : 5)));
+    st.deleting = st.deleting.filter((d) => {
+      if (performance.now() - d.t0 < (RM ? 0 : 1200)) return true;
+      d.n.alive = false; return false;
+    });
+  }
+  function frame(now) {
+    const dt = Math.min(0.05, (now - (frame.last || now)) / 1000); frame.last = now; t = now / 1000;
+    update(now, dt);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    for (const p of panes()) {
+      ctx.save(); ctx.beginPath(); ctx.rect(p.x0, 0, p.w, H); ctx.clip();
+      background(p); nebulae(p); threads(p); notes(p); labels(p); tools(p);
+      ctx.restore();
+    }
+    if (st.view === "cmp") { ctx.fillStyle = "rgba(42,52,82,0.9)"; ctx.fillRect(W / 2 - 0.5, 0, 1, H); }
+    drawPeeks();
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- pointer ---------- */
+  const local = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const near = (mx, my, x, y, r) => Math.hypot(mx - x, my - y) <= r;
+  function hitNode(mx, my, p) {
+    let best = null, bd = Infinity;
+    for (const n of nodes) {
+      if (!n.alive || n.vis < 0.5 || st.deleting.some((d) => d.n === n)) continue;
+      const d = Math.hypot(mx - sx(n, p), my - sy(n, p)), lim = Math.max(10, radius(n) * 2.2);
+      if (d < lim && d < bd) { best = n; bd = d; }
+    }
+    return best;
+  }
+  function hitTool(mx, my, p) {
+    const [gx, gy] = ghostPos(p); if (near(mx, my, gx, gy, GHOST_R * 1.2)) return { kind: "ghost", pane: p.style };
+    const [zx, zy] = zonePos(p), zoneVisible = p.style === "now" || pick.zoneWhen === "always";
+    if (zoneVisible && near(mx, my, zx, zy, ZONE_R * 1.5)) return { kind: "zone", pane: p.style };
+    return null;
+  }
+  function showTip(mx, my, html) {
+    tip.innerHTML = html; tip.hidden = false;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.transform = "translate(" + clamp(mx + 14, 8, W - w - 8) + "px," + clamp(my + 14, 8, H - h - 8) + "px)";
+  }
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  function noteTip(n) {
+    let what = TYPE_RU[n.type];
+    if (n.type === "unknown") what += " · " + (pick.anom === "A" ? "вид «" + VARIETY_RU[n.variety] + "»" : "все неизвестные одинаковы");
+    if (n.type === "technical") what += " · не удаляется и не связывается";
+    if (n.type === "blackhole") what += " · это заметка, а не зона удаления";
+    return "<b>" + esc(n.title) + "</b><span>" + esc(what) + "</span>";
+  }
+  cv.addEventListener("pointerdown", (e) => {
+    const [mx, my] = local(e), p = paneAt(mx); cv.setPointerCapture(e.pointerId);
+    const tool = hitTool(mx, my, p);
+    if (tool && tool.kind === "ghost") { st.press = { tool, mx, my }; return; }
+    const n = hitNode(mx, my, p);
+    if (n) { const [wx, wy] = toWorld(mx, my, p); st.drag = { n, p, ox: n.x - wx, oy: n.y - wy, mx, my, moved: false, over: false }; tip.hidden = true; return; }
+    st.pan = { mx, my, cx: cam.x, cy: cam.y, p, moved: false }; cv.style.cursor = "grabbing";
+  });
+  cv.addEventListener("pointermove", (e) => {
+    const [mx, my] = local(e), p = paneAt(mx);
+    if (st.drag) {
+      const d = st.drag; if (!d.moved && Math.hypot(mx - d.mx, my - d.my) > 4) { d.moved = true; st.hover = null; }
+      if (d.moved) {
+        const [wx, wy] = toWorld(mx, my, d.p); d.n.x = wx + d.ox; d.n.y = wy + d.oy;
+        const [zx, zy] = zonePos(d.p); d.over = d.n.type !== "technical" && near(mx, my, zx, zy, ZONE_R * 1.5);
+        d.lx = mx; d.ly = my;
+        if (d.n.type === "technical" && near(mx, my, zx, zy, ZONE_R * 1.5)) showTip(mx, my, "<b>Ядро знаний не удаляется</b><span>служебная заметка приложения</span>"); else tip.hidden = true;
+      }
+      return;
+    }
+    if (st.pan) {
+      const d = st.pan, k = cam.k * paneScale(d.p);
+      if (Math.hypot(mx - d.mx, my - d.my) > 3) { d.moved = true; camTouched = true; st.camAnim = null; }
+      cam.x = d.cx - (mx - d.mx) / k; cam.y = d.cy - (my - d.my) / k; return;
+    }
+    const tool = hitTool(mx, my, p);
+    st.hoverTool = tool;
+    if (tool) { st.hover = null; showTip(mx, my, tool.kind === "ghost" ? "<b>Создать заметку</b><span>клик — новая заметка в центре вида</span>" : "<b>Зона удаления</b><span>перетащите сюда заметку, чтобы удалить</span>"); cv.style.cursor = tool.kind === "ghost" ? "pointer" : "default"; return; }
+    const n = hitNode(mx, my, p);
+    st.hover = n; cv.style.cursor = n ? "pointer" : "grab";
+    if (n) showTip(mx, my, noteTip(n)); else tip.hidden = true;
+  });
+  function endPointer(e) {
+    const [mx, my] = local(e);
+    if (st.press) { const p = paneAt(mx), tool = hitTool(mx, my, p); if (tool && tool.kind === "ghost") spawn(); st.press = null; return; }
+    if (st.drag) {
+      const d = st.drag; st.drag = null;
+      if (!d.moved) { st.selected = st.selected === d.n ? null : d.n; return; }
+      if (d.over) remove(d.n, d.lx, d.ly, d.p.style);
+      tip.hidden = true; return;
+    }
+    if (st.pan) { if (!st.pan.moved) st.selected = null; st.pan = null; cv.style.cursor = "grab"; }
+  }
+  cv.addEventListener("pointerup", endPointer);
+  cv.addEventListener("pointercancel", () => { st.drag = null; st.pan = null; st.press = null; });
+  cv.addEventListener("pointerleave", () => { if (!st.drag && !st.pan) { st.hover = null; st.hoverTool = null; tip.hidden = true; } });
+  cv.addEventListener("wheel", (e) => {
+    e.preventDefault(); const [mx, my] = local(e), p = paneAt(mx), [wx, wy] = toWorld(mx, my, p);
+    cam.k = clamp(cam.k * Math.exp(-e.deltaY * 0.0015), fitK * 0.5, fitK * 9); camTouched = true; st.camAnim = null;
+    const k = cam.k * paneScale(p); cam.x = wx - (mx - p.x0 - p.w / 2) / k; cam.y = wy - (my - H / 2) / k;
+  }, { passive: false });
+  addEventListener("keydown", (e) => { if (e.key === "Escape") { st.selected = null; flyTo({ x: WC[0], y: WC[1], k: fitK }); } });
+
+  /* ---------- actions ---------- */
+  const toast = document.getElementById("toast"), toastT = document.getElementById("toast-t");
+  let toastTimer = 0;
+  function remove(n, lx, ly, pane) {
+    st.deleting.push({ n, t0: performance.now(), sx: lx, sy: ly, pane }); st.deleted.push(n);
+    if (st.selected === n) st.selected = null;
+    toastT.textContent = "Заметка «" + n.title + "» удалена"; toast.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 6000);
+  }
+  function restore(list) {
+    const now = performance.now();
+    list.forEach((n) => { n.alive = true; n.appear = now; st.deleting = st.deleting.filter((d) => d.n !== n); });
+    st.deleted = st.deleted.filter((n) => !list.includes(n)); toast.hidden = true;
+  }
+  document.getElementById("toast-undo").addEventListener("click", () => { const n = st.deleted[st.deleted.length - 1]; if (n) restore([n]); });
+  document.getElementById("bt-restore").addEventListener("click", () => restore(st.deleted.slice()));
+  function spawn() {
+    const c = st.spawnCount % 3, n = mkNode(c, "planet", "Новая заметка " + (++st.spawnCount), null, null, null);
+    n.x = cam.x + gauss() * 14; n.y = cam.y + gauss() * 14; n.appear = performance.now(); n.dir = [0, 1];
+    adj.set(n.id, new Set()); graph.push(n); st.selected = n;
+  }
+
+  /* ---------- panel ---------- */
+  const WHAT = {
+    core: { A: "Маяк: ровный нейтральный свет и два медленно вращающихся луча. Служебное видно сразу, но не спорит с галактиками.", B: "Прибор: неподвижный свет в кольце с рисками, как шкала. Без движения, самый тихий вариант." },
+    anom: { A: "У каждой разновидности своя форма света: Разлом — трещина, Пасть — свет закручивается внутрь, Шёпот — холодные искры по орбитам, Чудовище — всё сразу. Цвет общий, фиолетовый.", B: "Один вид для всех: свет в разорванных кольцах, кольца медленно вращаются. Неизвестное видно, но разновидности не различаются." },
+    zone: { A: "Воронка: светлые кольца стягиваются к центру — видно, что зона затягивает. Тёмного диска нет, с заметкой «чёрная дыра» не спутать. Над зоной кольца краснеют.", B: "Вихрь: четыре световых рукава закручиваются к центру. Тёмного диска нет. Над зоной рукава краснеют, вращение ускоряется." },
+    ghost: { A: "Нерождённая звезда: «+» из четырёх лучей — тот же язык, что у звезды. При наведении лучи вытягиваются и ярчают.", B: "Пустая орбита: пунктирный круг с маленьким «+» — место для будущей заметки. При наведении пунктир уплотняется." },
+  };
+  const NAMES = { core: { A: "Маяк", B: "Прибор" }, anom: { A: "четыре вида", B: "один вид" }, zone: { A: "Воронка", B: "Вихрь" }, ghost: { A: "Нерождённая звезда", B: "Пустая орбита" } };
+  const pickText = () => "Ядро — " + NAMES.core[pick.core] + "; неизвестный тип — " + NAMES.anom[pick.anom] + "; зона — " + NAMES.zone[pick.zone] + ", " + (pick.zoneWhen === "always" ? "видна всегда" : "только при перетаскивании") + "; «+» — " + NAMES.ghost[pick.ghost] + ".";
+  function syncPanel() {
+    document.querySelectorAll(".grp").forEach((g) => {
+      const key = g.dataset.g;
+      g.querySelectorAll("[data-v]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === pick[key])));
+      g.querySelectorAll("[data-w]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.w === pick.zoneWhen)));
+      g.querySelector("[data-what]").textContent = WHAT[key][pick[key]];
+    });
+    document.getElementById("pick-t").textContent = pickText();
+    try { localStorage.setItem("kg-special-pick", JSON.stringify(pick)); } catch (_) { /* недоступно — не страшно */ }
+  }
+  try { const saved = JSON.parse(localStorage.getItem("kg-special-pick") || "null"); if (saved) for (const k of Object.keys(pick)) if (saved[k]) pick[k] = saved[k]; } catch (_) { /* пусто */ }
+  document.querySelectorAll(".grp").forEach((g) => {
+    const key = g.dataset.g;
+    g.querySelectorAll("[data-v]").forEach((b) => b.addEventListener("click", () => { pick[key] = b.dataset.v; if (st.view === "now") setView("light"); syncPanel(); }));
+    g.querySelectorAll("[data-w]").forEach((b) => b.addEventListener("click", () => { pick.zoneWhen = b.dataset.w; if (st.view === "now") setView("light"); syncPanel(); }));
+  });
+  document.querySelectorAll("[data-show]").forEach((b) => b.addEventListener("click", () => {
+    const k = b.dataset.show;
+    if (k === "core") { st.selected = core; flyTo({ x: core.x + 8, y: core.y + 4, k: fitK * 6 }); }
+    else if (k === "anom") {
+      const u = nodes.filter((n) => n.type === "unknown" && n.alive); if (!u.length) return;
+      st.anomIdx = ((st.anomIdx == null ? -1 : st.anomIdx) + 1) % u.length;
+      const n = u[st.anomIdx]; st.selected = null; flyTo({ x: n.x + 6, y: n.y, k: fitK * 7 });
+      b.textContent = "Следующая · " + (st.anomIdx + 1) + " из " + u.length;
+    } else { st.flash = { kind: k, t0: performance.now() }; if (k === "zone" && pick.zoneWhen === "drag" && st.view !== "now") { st.zoneShow = 1; } }
+  }));
+  const tagNow = document.getElementById("tag-now"), tagLight = document.getElementById("tag-light");
+  function setView(v) {
+    st.view = v;
+    [["v-now", "now"], ["v-light", "light"], ["v-cmp", "cmp"]].forEach(([id, key]) => document.getElementById(id).setAttribute("aria-pressed", String(v === key)));
+    tagNow.hidden = tagLight.hidden = v !== "cmp";
+    document.getElementById("hint").hidden = v === "cmp";
+  }
+  document.getElementById("v-now").addEventListener("click", () => setView("now"));
+  document.getElementById("v-light").addEventListener("click", () => setView("light"));
+  document.getElementById("v-cmp").addEventListener("click", () => setView("cmp"));
+  document.getElementById("bt-copy").addEventListener("click", (e) => {
+    const text = pickText(), btn = e.currentTarget;
+    const done = () => { btn.textContent = "Скопировано"; setTimeout(() => { btn.textContent = "Скопировать"; }, 1600); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(document.getElementById("pick-t")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Выделено — Ctrl+C"; };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (_) { fallback(); }
+  });
+
+  syncPanel(); setView("light");
+  const ro = new ResizeObserver(resize); ro.observe(stage); ro.observe(document.querySelector("aside")); resize();
+  requestAnimationFrame(frame);
+})();
+</script>
