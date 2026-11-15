@@ -9,6 +9,7 @@ import { isAuthenticated } from "$shared/stores/auth.svelte";
 import * as notesApi from "$shared/api/notes";
 import * as linksApi from "$shared/api/links";
 import { loadGraph } from "$shared/services/graphLoader";
+import { isGraph3DEnabled } from "$shared/config/config";
 import * as preloadHooks from "$features/preload/hooks/usePreloadedData";
 import * as preloadService from "$shared/services/PreloadService";
 import * as graph3d from "$features/graph-3d";
@@ -53,6 +54,11 @@ vi.mock("$shared/services/PreloadService", () => ({
 
 vi.mock("$shared/services/graphLoader", () => ({
   loadGraph: vi.fn(),
+}));
+
+vi.mock("$shared/config/config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("$shared/config/config")>()),
+  isGraph3DEnabled: vi.fn(() => true),
 }));
 
 vi.mock("$features/graph-3d", () => ({
@@ -117,6 +123,7 @@ function setDefaultMocks() {
 describe("Home Page State", () => {
   beforeEach(() => {
     setDefaultMocks();
+    vi.mocked(isGraph3DEnabled).mockReturnValue(true);
     (window as any).__SKIP_AUTH__ = true;
     localStorage.removeItem("graph-view-mode");
     graphView.restore();
@@ -205,6 +212,14 @@ describe("Home Page State", () => {
     await homePage.handleToggleLayoutProvider("graph-service");
     expect(graph3d.createLayoutProvider).toHaveBeenCalled();
     expect(homePage.layoutProvider).toBe("graph-service");
+  });
+
+  it("FREEZE-3D-1: a stored '3d' view reads as 'graph' while 3D is disabled", async () => {
+    vi.mocked(isGraph3DEnabled).mockReturnValue(false);
+    const homePage = await getHomePage();
+
+    homePage.handleToggleView("3d");
+    expect(graphStore.currentView).toBe("graph");
   });
 
   it("manages selection and batch delete", async () => {

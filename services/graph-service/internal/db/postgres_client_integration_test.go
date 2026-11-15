@@ -62,7 +62,9 @@ func TestPostgresClient_Integration(t *testing.T) {
 			updated_at TIMESTAMP DEFAULT NOW(),
 			deleted_at TIMESTAMP,
 			creator_id UUID,
-			is_public BOOLEAN NOT NULL DEFAULT false
+			is_public BOOLEAN NOT NULL DEFAULT false,
+			due_at TIMESTAMP,
+			done_at TIMESTAMP
 		);
 
 		CREATE TABLE IF NOT EXISTS links (
