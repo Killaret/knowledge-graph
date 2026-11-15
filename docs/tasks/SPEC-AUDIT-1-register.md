@@ -376,6 +376,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | SKILLS-AUDIT-1-skills-and-commands.md | не начат |
 | SPEC-AUDIT-1-specs-vs-code.md | не начат (сама постановка) |
 | VERIFY-SPEC-1-evidence-testing-pilot.md | не начат |
+| VERIFY-ANCHORS-1-requirements-anchors.md | не начат |
 | SPEC-AUDIT-1-review-findings.md | не начат (разбор этой задачи) |
 | SPECS-1-review-findings.md | не начат |
 | TASKS-INDEX-1-review-findings.md | не начат |
