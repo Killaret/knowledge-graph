@@ -99,7 +99,7 @@ func TestPostgresClient_Integration(t *testing.T) {
 
 	_, err = pool.Exec(ctx, `
 		INSERT INTO links (id, source_note_id, target_note_id, link_type, weight, source_type, metadata) VALUES
-			('660e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001', 'related', 0.5, 'user', '{}'),
+			('660e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001', 'related', 0.5, NULL, '{}'),
 			('660e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'related', 0.7, 'gamma', '{}'),
 			('660e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440000', 'related', 0.9, 'user', '{"gamma": {"score": 0.95, "generated_at": "2026-09-23T00:00:00Z"}}');
 	`)
@@ -133,7 +133,7 @@ func TestPostgresClient_Integration(t *testing.T) {
 			byID[l.ID] = l
 		}
 
-		assert.False(t, byID["660e8400-e29b-41d4-a716-446655440000"].GammaOrigin, "pure user link")
+		assert.False(t, byID["660e8400-e29b-41d4-a716-446655440000"].GammaOrigin, "null source type defaults to user")
 		assert.True(t, byID["660e8400-e29b-41d4-a716-446655440001"].GammaOrigin, "live gamma link")
 		assert.True(t, byID["660e8400-e29b-41d4-a716-446655440002"].GammaOrigin, "promoted link keeps provenance")
 	})
@@ -142,7 +142,20 @@ func TestPostgresClient_Integration(t *testing.T) {
 		notes, links, err := client.GetNotes(ctx, NotesFilter{RootID: "550e8400-e29b-41d4-a716-446655440000", Depth: 2})
 		require.NoError(t, err)
 		assert.Greater(t, len(notes), 0)
-		assert.Greater(t, len(links), 0)
+		require.NotEmpty(t, links)
+		for _, l := range links {
+			require.NotEmpty(t, l.ID)
+		}
+		byID := make(map[string]*Link, len(links))
+		for _, l := range links {
+			byID[l.ID] = l
+		}
+		gammaLink, ok := byID["660e8400-e29b-41d4-a716-446655440001"]
+		require.True(t, ok)
+		promotedLink, ok := byID["660e8400-e29b-41d4-a716-446655440002"]
+		require.True(t, ok)
+		assert.True(t, gammaLink.GammaOrigin)
+		assert.True(t, promotedLink.GammaOrigin)
 	})
 
 	t.Run("GetEmbeddings", func(t *testing.T) {
@@ -190,5 +203,31 @@ func TestPostgresClient_Integration(t *testing.T) {
 		assert.Equal(t, 2, revDist)
 		assert.Equal(t, "550e8400-e29b-41d4-a716-446655440002", rev[0])
 		assert.Equal(t, "550e8400-e29b-41d4-a716-446655440000", rev[len(rev)-1])
+	})
+
+	// NOTE-DELETE-1-TAIL: a trashed note leaves the graph on every read path —
+	// the node itself, its cascade-deleted links and as a traversal root.
+	// Mutation "drop deleted_at IS NULL from the notes query" turns this red.
+	t.Run("GetNotes_ExcludesDeleted", func(t *testing.T) {
+		// Real deletion marks the note's links via deleted_via_note_id;
+		// emulate the cascade so only link 0 -> 1 survives.
+		_, err := pool.Exec(ctx, `
+			UPDATE notes SET deleted_at = NOW() WHERE id = '550e8400-e29b-41d4-a716-446655440002';
+			UPDATE links SET deleted_at = NOW()
+				WHERE source_note_id = '550e8400-e29b-41d4-a716-446655440002'
+				   OR target_note_id = '550e8400-e29b-41d4-a716-446655440002';
+		`)
+		require.NoError(t, err)
+
+		notes, links, err := client.GetNotes(ctx, NotesFilter{})
+		require.NoError(t, err)
+		assert.Equal(t, 2, len(notes), "the trashed note must stay off the graph")
+		assert.Equal(t, 2, len(links), "only the links cascade-deleted with the note are gone")
+
+		// A trashed root yields no neighbourhood at all.
+		notes, links, err = client.GetNotes(ctx, NotesFilter{RootID: "550e8400-e29b-41d4-a716-446655440002", Depth: 2})
+		require.NoError(t, err)
+		assert.Empty(t, notes)
+		assert.Empty(t, links)
 	})
 }

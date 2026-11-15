@@ -7,6 +7,9 @@ import { createGraphSimulation } from "./simulation";
 import { autoZoomToFit, centerCameraOnNode } from "./camera";
 import { filterValidLinks } from "$shared/utils/graphUtils";
 import { graphConfig3D, graphPerformanceConfig } from "$shared/config/config";
+import { computeLabeledNodeIds } from "$entities/graph-canvas/lib/labels";
+import { computeDependencyChain } from "$entities/graph-canvas/lib/dependency-chain";
+import { graphDependencyHighlightDepth } from "$shared/config/config";
 import { createPerformanceMonitor } from "$shared/lib/performance-monitor";
 import { toSimulationNodes } from "../config";
 import { applyFogPreset } from "./fog";
@@ -38,6 +41,8 @@ export class Graph3DEngine {
   private labelManager: LabelManager;
   private sim: ReturnType<typeof createGraphSimulation> | null = null;
   private simNodes: SimulationNode[] = [];
+  private selectedNodeId: string | null = null;
+  private hoveredNodeId: string | null = null;
   private simLinks: GraphLink[] = [];
   private rafId: number | null = null;
   private disposed = false;
@@ -117,7 +122,7 @@ export class Graph3DEngine {
 
       this.nodeManager.setNodes(this.simNodes);
       this.linkManager.setLinks(this.simLinks, this.nodeManager.getPositionMap(this.simNodes));
-      this.labelManager.setLabels(this.simNodes);
+      this.labelManager.setLabels(this.simNodes, this.computeLabeledIds());
 
       this.updateScene();
       this.centerCamera();
@@ -354,7 +359,25 @@ export class Graph3DEngine {
 
   setSelectedNodeId(nodeId: string | null | undefined) {
     if (this.disposed) return;
+    this.selectedNodeId = nodeId ?? null;
     this.nodeManager.setSelectedNodeId(nodeId);
+    // UI-GRAPH-1: the selected node always carries a label.
+    if (this.simNodes.length > 0) {
+      this.labelManager.setLabels(this.simNodes, this.computeLabeledIds());
+    }
+  }
+
+  /**
+   * UI-GRAPH-1: selective labels — the shared top-N hub rule from
+   * `entities/graph-canvas/lib/labels` plus the selected node. `undefined`
+   * means "label every node" (small graphs stay fully captioned).
+   */
+  private computeLabeledIds(): Set<string> | undefined {
+    return computeLabeledNodeIds(this.simNodes, this.simLinks, {
+      // 3D has no zoom-based reveal; labels stay selective at any distance.
+      zoomK: 0,
+      selectedId: this.selectedNodeId,
+    });
   }
 
   handleResize() {
@@ -395,6 +418,22 @@ export class Graph3DEngine {
         type: node.type,
       });
     }
+  }
+
+  /**
+   * LINK-TYPES-1: hovering a node highlights its dependency chain (both
+   * directions, bounded depth) — chain links brighten or turn red on cycles,
+   * everything else dims.
+   */
+  handlePointerMove(event: MouseEvent) {
+    if (this.disposed || this.simNodes.length === 0) return;
+    const nodeId = this.raycastNodeId(event);
+    if (nodeId === this.hoveredNodeId) return;
+    this.hoveredNodeId = nodeId;
+
+    const chain = computeDependencyChain(nodeId, this.simLinks, graphDependencyHighlightDepth);
+    this.linkManager.applyChainHighlight(chain);
+    this.nodeManager.applyChainVisibility(chain?.nodeDepth ?? null);
   }
 
   private raycastNodeId(event: MouseEvent): string | null {

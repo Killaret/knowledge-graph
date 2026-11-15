@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	appcache "knowledge-graph/internal/application/cache"
 	importer "knowledge-graph/internal/application/import"
@@ -77,6 +78,14 @@ func (m *noteRepoMock) FindAllPaginated(ctx context.Context, userID uuid.UUID, l
 	return nil, int64(0), nil
 }
 
+func (m *noteRepoMock) FindComets(ctx context.Context, userID uuid.UUID) ([]*note.Note, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*note.Note), args.Error(1)
+}
+
 type recRepoMock struct{ mock.Mock }
 
 func (m *recRepoMock) Count(ctx context.Context, noteID uuid.UUID) (int64, error) {
@@ -118,7 +127,17 @@ func (m *embeddingRepoMock) FindSimilarNotesBatch(ctx context.Context, noteIDs [
 	return nil, nil
 }
 
-type taskQueueMock struct{ mock.Mock }
+type cometRemindCall struct {
+	noteID   uuid.UUID
+	remindAt time.Time
+}
+
+type taskQueueMock struct {
+	mock.Mock
+	normalizeCalls   []string
+	cleanupCalls     []string
+	cometRemindCalls []cometRemindCall
+}
 
 func (m *taskQueueMock) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
 	return nil
@@ -223,6 +242,27 @@ func TestCreateNote_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Test Note")
 	repo.AssertExpectations(t)
 	tq.AssertExpectations(t)
+	// NLP-4: creating a note enqueues normalization (the queue client
+	// itself gates on nlp.pipeline.enabled — the handler always calls).
+	assert.Len(t, tq.normalizeCalls, 1)
+}
+
+func TestCreateBatch_EnqueuesNormalize(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+
+	body := `{"notes":[{"title":"Batch 1","content":"one"},{"title":"Batch 2","content":"two"}]}`
+	_, c := newContext(t, http.MethodPost, "/notes/batch/create", body)
+	h.CreateBatch(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	repo.AssertExpectations(t)
+	// NLP-4: each note created in a batch goes through normalization.
+	assert.Len(t, tq.normalizeCalls, 2)
 }
 
 func TestCreateNote_WithUser(t *testing.T) {
@@ -373,6 +413,9 @@ func TestUpdateNote_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "New Title")
 	repo.AssertExpectations(t)
 	tq.AssertExpectations(t)
+	// NLP-4: editing note text re-enqueues normalization — without it the
+	// artifact silently goes stale.
+	assert.Len(t, tq.normalizeCalls, 1)
 }
 
 func TestUpdateNote_NoTextChange(t *testing.T) {
@@ -391,6 +434,7 @@ func TestUpdateNote_NoTextChange(t *testing.T) {
 	assert.Equal(t, http.StatusOK, c.Writer.Status())
 	tq.AssertNotCalled(t, "EnqueueExtractKeywords")
 	tq.AssertNotCalled(t, "EnqueueComputeEmbedding")
+	assert.Empty(t, tq.normalizeCalls, "no text change — no normalization")
 }
 
 func TestUpdateNote_InvalidID(t *testing.T) {
@@ -499,7 +543,7 @@ func TestUpdateNote_SaveError(t *testing.T) {
 }
 
 func TestDeleteNote_Success(t *testing.T) {
-	h, repo, _, _, _, _ := setupUnitHandler(t)
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
 	userID := uuid.New()
 	n := newTestNote(t, "ToDelete", "Content", "star")
 
@@ -513,6 +557,8 @@ func TestDeleteNote_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusNoContent, c.Writer.Status())
 	repo.AssertExpectations(t)
+	// NLP-4 criterion 4: deleting a note cascades to its nlp_artifacts docs.
+	assert.Equal(t, []string{n.ID().String()}, tq.cleanupCalls)
 }
 
 func TestDeleteNote_InvalidID(t *testing.T) {
@@ -570,7 +616,7 @@ func TestDeleteNote_DeleteError(t *testing.T) {
 }
 
 func TestDeleteBatchNotes_Success(t *testing.T) {
-	h, repo, _, _, _, _ := setupUnitHandler(t)
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
 	owner := uuid.New()
 	n1 := newTestNote(t, "T1", "C1", "star")
 	n2 := newTestNote(t, "T2", "C2", "star")
@@ -588,6 +634,8 @@ func TestDeleteBatchNotes_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusNoContent, c.Writer.Status())
 	repo.AssertExpectations(t)
+	// NLP-4 criterion 4: each deleted note gets its own cleanup task.
+	assert.ElementsMatch(t, []string{n1.ID().String(), n2.ID().String()}, tq.cleanupCalls)
 }
 
 // SEC-1: a batch containing a foreign note must be refused wholesale —
@@ -732,6 +780,28 @@ func TestGetNote_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "GetTest")
 }
 
+// COMET-1: GET /notes/:id must return the scheduling fields — the details
+// panel and archive suggestion depend on due_at/done_at.
+func TestGetNote_CometFields(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	n := newTestNote(t, "CometGet", "Content", "comet")
+	due := time.Now().UTC().Add(24 * time.Hour).Truncate(time.Second)
+	var remind int64 = 900
+	require.NoError(t, n.SetCometFields(&due, &remind, nil))
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String(), "")
+	withID(c, n.ID())
+	h.Get(c)
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	body := w.Body.String()
+	assert.Contains(t, body, due.Format(time.RFC3339))
+	assert.Contains(t, body, `"remind_before_seconds":900`)
+	assert.Contains(t, body, `"done_at":null`)
+}
+
 func TestGetNote_InvalidID(t *testing.T) {
 	h, _, _, _, _, _ := setupUnitHandler(t)
 
@@ -861,12 +931,14 @@ func TestGetSuggestions_SemanticFallback(t *testing.T) {
 }
 
 func TestGetSuggestions_CacheFallback(t *testing.T) {
-	h, _, tq, recRepo, embRepo, cache := setupUnitHandler(t)
+	h, repo, tq, recRepo, embRepo, cache := setupUnitHandler(t)
 	n := newTestNote(t, "Sug", "Content", "star")
 	suggestionID := uuid.New()
 
 	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{}, nil)
 	embRepo.On("FindSimilarNotes", mock.Anything, n.ID(), 5).Return([]recommendation.SimilarNote{}, nil)
+	// The cache path re-resolves each entry — deleted/gone notes drop out.
+	repo.On("FindByID", mock.Anything, suggestionID).Return(newTestNote(t, "Cached", "Body", "planet"), nil)
 
 	cached := fmt.Sprintf(`[{"note_id":%q,"score":0.7}]`, suggestionID.String())
 	_ = cache.Set(context.Background(), "recommendations:"+n.ID().String(), cached, 0)
@@ -880,6 +952,60 @@ func TestGetSuggestions_CacheFallback(t *testing.T) {
 	assert.Equal(t, http.StatusOK, c.Writer.Status())
 	assert.Equal(t, "redis", w.Header().Get("X-Recommendations-Source"))
 	assert.Contains(t, w.Body.String(), suggestionID.String())
+	tq.AssertExpectations(t)
+}
+
+// NOTE-DELETE-1 regression: a trashed note must not be suggested — the
+// precomputed table and the cache both carry stale rows. Mutation "keep
+// appending when FindByID returns nil" turns these red.
+func TestGetSuggestions_PrecomputedSkipsTrashed(t *testing.T) {
+	h, repo, _, recRepo, _, _ := setupUnitHandler(t)
+	n := newTestNote(t, "Sug", "Content", "star")
+	live := newTestNote(t, "Live", "Content", "planet")
+	trashedID := uuid.New()
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("FindByID", mock.Anything, live.ID()).Return(live, nil)
+	repo.On("FindByID", mock.Anything, trashedID).Return(nil, nil) // in the trash
+	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{
+		{NoteID: n.ID(), RecommendedNoteID: live.ID(), Score: 0.9, UpdatedAt: time.Now().Add(time.Hour)},
+		{NoteID: n.ID(), RecommendedNoteID: trashedID, Score: 0.8, UpdatedAt: time.Now().Add(time.Hour)},
+	}, nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions", "")
+	withID(c, n.ID())
+	h.GetSuggestions(c)
+	_ = w
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.Contains(t, w.Body.String(), live.ID().String())
+	assert.NotContains(t, w.Body.String(), trashedID.String(), "trashed note must not be suggested")
+}
+
+func TestGetSuggestions_CacheSkipsTrashed(t *testing.T) {
+	h, repo, tq, recRepo, embRepo, cache := setupUnitHandler(t)
+	n := newTestNote(t, "Sug", "Content", "star")
+	liveID := uuid.New()
+	trashedID := uuid.New()
+
+	recRepo.On("GetRecommendations", mock.Anything, n.ID(), 5).Return([]recommendation.Recommendation{}, nil)
+	embRepo.On("FindSimilarNotes", mock.Anything, n.ID(), 5).Return([]recommendation.SimilarNote{}, nil)
+	repo.On("FindByID", mock.Anything, liveID).Return(newTestNote(t, "Live", "Body", "planet"), nil)
+	repo.On("FindByID", mock.Anything, trashedID).Return(nil, nil)
+
+	cached := fmt.Sprintf(`[{"note_id":%q,"score":0.7},{"note_id":%q,"score":0.6}]`, liveID.String(), trashedID.String())
+	_ = cache.Set(context.Background(), "recommendations:"+n.ID().String(), cached, 0)
+	tq.On("EnqueueRefreshRecommendations", mock.Anything, n.ID(), mock.AnythingOfType("time.Duration")).Return(nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/suggestions", "")
+	withID(c, n.ID())
+	h.GetSuggestions(c)
+	_ = w
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.Equal(t, "redis", w.Header().Get("X-Recommendations-Source"))
+	assert.Contains(t, w.Body.String(), liveID.String())
+	assert.NotContains(t, w.Body.String(), trashedID.String(), "cached suggestion for a trashed note must be dropped")
 	tq.AssertExpectations(t)
 }
 
@@ -1069,16 +1195,21 @@ func TestBookmarklet_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "asteroid")
 	repo.AssertExpectations(t)
 	tq.AssertExpectations(t)
+	// NLP-4: bookmarklet-created notes go through normalization too.
+	assert.Len(t, tq.normalizeCalls, 1)
 }
 
 func TestBookmarklet_DefaultTypeAndTruncation(t *testing.T) {
 	h, repo, tq, _, _, _ := setupUnitHandler(t)
 	userID := uuid.New()
 
-	hugeText := strings.Repeat("x", 20000)
+	// URL-HEADING-1: the domain Content limit is 50 000 runes and the request
+	// DTO rejects anything above 50 000 chars — so the old 10 000-byte cut no
+	// longer fires here; truncation itself stays covered by TestBuildContent.
+	hugeText := strings.Repeat("x", 40000)
 
 	repo.On("Save", mock.Anything, mock.MatchedBy(func(n *note.Note) bool {
-		return n.Type() == "asteroid" && len(n.Content().String()) <= 10000
+		return n.Type() == "asteroid" && utf8.RuneCountInString(n.Content().String()) <= 50000
 	})).Return(nil)
 	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
 	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
@@ -1116,4 +1247,277 @@ func TestBookmarklet_ValidationError(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
 	repo.AssertNotCalled(t, "Save")
 	_ = w
+}
+
+// NLP-4 criteria 4-5: normalize enqueue on content-changing writes and the
+// deletion cascade are observable — the mock records both so removing the
+// call sites reddens the delete/create tests below.
+func (m *taskQueueMock) EnqueueNormalizeNote(ctx context.Context, noteID string) error {
+	m.normalizeCalls = append(m.normalizeCalls, noteID)
+	return nil
+}
+
+func (m *taskQueueMock) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
+	m.cleanupCalls = append(m.cleanupCalls, noteID)
+	return nil
+}
+
+// COMET-1 stage C: recorded so tests can assert a comet with a reminder
+// enqueues comet:remind and a note without one does not.
+func (m *taskQueueMock) EnqueueCometRemind(ctx context.Context, noteID uuid.UUID, remindAt time.Time) error {
+	m.cometRemindCalls = append(m.cometRemindCalls, cometRemindCall{noteID: noteID, remindAt: remindAt})
+	return nil
+}
+
+// --- COMET-1: поля планирования и «Ближайшие дела» ---
+
+func TestCreateNote_CometFields(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	var saved *note.Note
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).
+		Run(func(args mock.Arguments) { saved = args.Get(1).(*note.Note) }).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+	tq.On("EnqueueRefreshRecommendations", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	body := `{"title":"Дело","content":"Сходить к врачу","type":"comet","due_at":"2026-10-05T10:00:00Z","remind_before_seconds":3600}`
+	w, c := newContext(t, http.MethodPost, "/notes", body, userID)
+	h.Create(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	require.NotNil(t, saved)
+	require.NotNil(t, saved.DueAt())
+	assert.Equal(t, int64(3600), *saved.RemindBeforeSeconds())
+	assert.Nil(t, saved.DoneAt())
+	assert.Contains(t, w.Body.String(), "due_at")
+}
+
+func TestCreateNote_RemindWithoutDue_BadRequest(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+	_ = tq
+	userID := uuid.New()
+
+	body := `{"title":"Дело","content":"x","type":"comet","remind_before_seconds":3600}`
+	_, c := newContext(t, http.MethodPost, "/notes", body, userID)
+	h.Create(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+	repo.AssertNotCalled(t, "Save")
+	tq.AssertNotCalled(t, "EnqueueExtractKeywords")
+}
+
+func TestCreateNote_NegativeRemind_BadRequest(t *testing.T) {
+	h, _, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	body := `{"title":"Дело","content":"x","type":"comet","due_at":"2026-10-05T10:00:00Z","remind_before_seconds":-5}`
+	_, c := newContext(t, http.MethodPost, "/notes", body, userID)
+	h.Create(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+}
+
+// COMET-1 stage C: creating a comet with due_at + reminder enqueues
+// comet:remind for due_at − remind_before.
+func TestCreateNote_CometEnqueuesReminder(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueNormalizeNote", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+	tq.On("EnqueueRefreshRecommendations", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	due := time.Date(2026, 10, 5, 10, 0, 0, 0, time.UTC)
+	body := fmt.Sprintf(`{"title":"Дело","content":"x","type":"comet","due_at":%q,"remind_before_seconds":3600}`, due.Format(time.RFC3339))
+	_, c := newContext(t, http.MethodPost, "/notes", body, userID)
+	h.Create(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	require.Len(t, tq.cometRemindCalls, 1, "comet with due_at + reminder must enqueue comet:remind")
+	assert.Equal(t, due.Add(-time.Hour), tq.cometRemindCalls[0].remindAt)
+}
+
+// A comet without a reminder must not enqueue comet:remind.
+func TestCreateNote_CometWithoutReminderNoEnqueue(t *testing.T) {
+	h, repo, tq, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+	tq.On("EnqueueExtractKeywords", mock.Anything, mock.AnythingOfType("string"), 10).Return(nil)
+	tq.On("EnqueueComputeEmbedding", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueNormalizeNote", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	tq.On("EnqueueRecalculateLinkWeights", mock.Anything, mock.AnythingOfType("uuid.UUID"), mock.AnythingOfType("time.Duration")).Return(nil)
+	tq.On("EnqueueRefreshRecommendations", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	body := `{"title":"Дело","content":"x","type":"comet","due_at":"2026-10-05T10:00:00Z"}`
+	_, c := newContext(t, http.MethodPost, "/notes", body, userID)
+	h.Create(c)
+
+	assert.Equal(t, http.StatusCreated, c.Writer.Status())
+	assert.Empty(t, tq.cometRemindCalls)
+}
+
+func TestUpdateNote_CometFieldsMergeAndClear(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	n := newTestNote(t, "Comet", "Content", "comet")
+	due := time.Now().Add(24 * time.Hour).UTC().Truncate(time.Second)
+	var remind int64 = 900
+	require.NoError(t, n.SetCometFields(&due, &remind, nil))
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+
+	// Only done_at present — due_at and remind keep their stored values.
+	body := `{"done_at":"` + time.Now().UTC().Format(time.RFC3339) + `"}`
+	_, c := newContext(t, http.MethodPut, "/notes/"+n.ID().String(), body, userID)
+	withID(c, n.ID())
+	h.Update(c)
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.NotNil(t, n.DoneAt(), "done_at must be applied")
+	assert.Equal(t, due, *n.DueAt(), "absent due_at keeps the stored value")
+	assert.Equal(t, int64(900), *n.RemindBeforeSeconds())
+}
+
+func TestUpdateNote_ClearDueAt(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	n := newTestNote(t, "Comet", "Content", "comet")
+	due := time.Now().Add(24 * time.Hour)
+	var remind int64 = 900
+	require.NoError(t, n.SetCometFields(&due, &remind, nil))
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+	repo.On("Save", mock.Anything, mock.AnythingOfType("*note.Note")).Return(nil)
+
+	// null clears both date and reminder — a reminder without a date is rejected.
+	body := `{"due_at":null,"remind_before_seconds":null}`
+	_, c := newContext(t, http.MethodPut, "/notes/"+n.ID().String(), body, userID)
+	withID(c, n.ID())
+	h.Update(c)
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.Nil(t, n.DueAt())
+	assert.Nil(t, n.RemindBeforeSeconds())
+}
+
+func TestUpdateNote_RemindWithoutDue_BadRequest(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	n := newTestNote(t, "Comet", "Content", "comet")
+
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+
+	// remind_before on a note without due_at → 400, nothing saved.
+	body := `{"remind_before_seconds":3600}`
+	_, c := newContext(t, http.MethodPut, "/notes/"+n.ID().String(), body, userID)
+	withID(c, n.ID())
+	h.Update(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+	repo.AssertNotCalled(t, "Save")
+}
+
+func TestComets_GroupsOverdueUpcomingUndated(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	now := time.Now()
+
+	mk := func(title string, dueAt *time.Time) *note.Note {
+		n := newTestNote(t, title, "c", "comet")
+		n.SetCreatorID(userID)
+		require.NoError(t, n.SetCometFields(dueAt, nil, nil))
+		return n
+	}
+	overdue := mk("overdue", ptrTime(now.Add(-time.Hour)))
+	upcoming := mk("upcoming", ptrTime(now.Add(time.Hour)))
+	undated := mk("undated", nil)
+
+	// Repo returns due_at ASC NULLS LAST — overdue naturally first.
+	repo.On("FindComets", mock.Anything, userID).Return([]*note.Note{overdue, upcoming, undated}, nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/comets", "", userID)
+	h.Comets(c)
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	body := w.Body.String()
+	ioverdue := strings.Index(body, "overdue")
+	iupcoming := strings.Index(body, "upcoming")
+	iundated := strings.Index(body, "undated")
+	require.GreaterOrEqual(t, ioverdue, 0)
+	assert.Contains(t, body[ioverdue:], `"`+overdue.ID().String()+`"`)
+	assert.Contains(t, body[iupcoming:], `"`+upcoming.ID().String()+`"`)
+	assert.Contains(t, body[iundated:], `"`+undated.ID().String()+`"`)
+}
+
+func ptrTime(t time.Time) *time.Time { return &t }
+
+func TestCalendarICS_DatedComet(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	n := newTestNote(t, "Launch, report", "Prep; send", "comet")
+	n.SetCreatorID(userID)
+	due := time.Now().Add(24 * time.Hour).UTC().Truncate(time.Second)
+	remind := int64(3600)
+	require.NoError(t, n.SetCometFields(&due, &remind, nil))
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+
+	w, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/calendar.ics", "", userID)
+	withID(c, n.ID())
+	h.CalendarICS(c)
+
+	assert.Equal(t, http.StatusOK, c.Writer.Status())
+	assert.Equal(t, "text/calendar; charset=utf-8", w.Header().Get("Content-Type"))
+	assert.Contains(t, w.Header().Get("Content-Disposition"), n.ID().String())
+	body := w.Body.String()
+	assert.Contains(t, body, "BEGIN:VEVENT")
+	assert.Contains(t, body, "DTSTART:"+due.Format("20060102T150405Z"))
+	assert.Contains(t, body, "TRIGGER:-PT3600S")
+	// escaping: comma in title, semicolon in description
+	assert.Contains(t, body, "SUMMARY:Launch\\, report")
+	assert.Contains(t, body, "DESCRIPTION:Prep\\; send")
+}
+
+func TestCalendarICS_UndatedComet_BadRequest(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	n := newTestNote(t, "Comet", "", "comet")
+	repo.On("FindByID", mock.Anything, n.ID()).Return(n, nil)
+
+	_, c := newContext(t, http.MethodGet, "/notes/"+n.ID().String()+"/calendar.ics", "", userID)
+	withID(c, n.ID())
+	h.CalendarICS(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
+}
+
+func TestCalendarICS_NotFound(t *testing.T) {
+	h, repo, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+	id := uuid.New()
+	repo.On("FindByID", mock.Anything, id).Return(nil, nil)
+
+	_, c := newContext(t, http.MethodGet, "/notes/"+id.String()+"/calendar.ics", "", userID)
+	withID(c, id)
+	h.CalendarICS(c)
+
+	assert.Equal(t, http.StatusNotFound, c.Writer.Status())
+}
+
+func TestCalendarICS_BadUUID(t *testing.T) {
+	h, _, _, _, _, _ := setupUnitHandler(t)
+	userID := uuid.New()
+
+	_, c := newContext(t, http.MethodGet, "/notes/nope/calendar.ics", "", userID)
+	c.Params = gin.Params{{Key: "id", Value: "nope"}}
+	h.CalendarICS(c)
+
+	assert.Equal(t, http.StatusBadRequest, c.Writer.Status())
 }

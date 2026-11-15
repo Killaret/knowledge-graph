@@ -15,7 +15,9 @@ import (
 
 func setupTestDB(t *testing.T) (*gorm.DB, func()) {
 	db, cleanup := testutil.SetupTestDB(t)
-	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}); err != nil {
+	// NOTE-DELETE-1: Delete also sweeps the note's links, so the fixture
+	// needs the links table even when a test never touches it.
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &LinkModel{}); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
 	return db, cleanup

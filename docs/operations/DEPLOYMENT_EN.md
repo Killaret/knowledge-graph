@@ -112,24 +112,21 @@ docker-compose logs -f nlp
 
 ### 4. Database Initialization
 
-```bash
-# Apply migrations
-docker-compose exec backend migrate -path /app/migrations -database "$DATABASE_URL" up
+Migrations apply automatically at `server` startup (`postgres.RunMigrations`, `./migrations` inside the image) — there is **no `migrate` CLI** in the backend container. Check `docker-compose logs backend` for the migration report.
 
-# Seed test data (optional)
-docker-compose exec backend ./seed
+```bash
+# Seed test data — only on the test stack (APP_ENV=test):
+# use scripts/testing/seed-test-data.ps1 instead; the image binary is
+# ./test-seed and it refuses to run outside APP_ENV=test.
 ```
 
 ### 5. Health Verification
 
 ```bash
-# Health check backend
-curl http://localhost:18086/health
-# → {"status":"ok"}
-
-# Health check DB
-curl http://localhost:18086/db-check
-# → {"status":"db ok"}
+# Backend /health checks dependencies (Postgres, Redis, Mongo, NLP)
+curl http://localhost:9000/health   # direct backend port
+curl http://localhost:18080/health  # nginx gateway health (static "OK")
+# There is no /db-check endpoint — backend /health already reports each dependency.
 
 # NLP service
 curl http://localhost:5000/health
@@ -471,7 +468,12 @@ commit — that is the contract-identity check.
 
 ## Kubernetes (K8s)
 
-### Manifest Structure
+> **Target architecture — not implemented.** The repository contains no `k8s/`
+> manifests today; the tree and commands below describe the intended layout for a
+> future deployment, not files you can `kubectl apply` now. Docker Compose is the
+> only supported runtime at this stage.
+
+### Manifest Structure (planned)
 
 ```
 k8s/
@@ -547,14 +549,14 @@ docker-compose exec postgres pg_dump -U kb_user knowledge_base > backup_$(date +
 # 2. Pull new images
 docker-compose pull
 
-# 3. Apply migrations
-docker-compose run --rm backend migrate -path /app/migrations -database "$DATABASE_URL" up
-
-# 4. Restart with zero-downtime (if configured)
+# 3. Recreate containers — pending *.up.sql migrations apply
+#    automatically when the server starts (RunMigrations)
 docker-compose up -d
 
-# 5. Verification
-./scripts/health-check.sh
+# 4. Verification
+curl http://localhost:9000/health          # backend + dependencies
+curl http://localhost:18080/health         # nginx gateway
+docker-compose ps                        # all services healthy
 ```
 
 ### Rolling Update in Kubernetes
@@ -587,13 +589,11 @@ docker-compose up --build -d
 
 ### Migration Rollback
 
-```bash
-# Rollback N versions
-docker-compose exec backend migrate -path /app/migrations -database "$DATABASE_URL" down 3
-
-# Rollback all
-docker-compose exec backend migrate -path /app/migrations -database "$DATABASE_URL" down
-```
+There is no `migrate` CLI inside the backend image — migrations only run forward
+at server startup. Rolling back means restoring the database from the backup
+taken before the update (step above). The `*.down.sql` files in
+`backend/migrations/` exist for a future CLI and can be applied manually with a
+local `golang-migrate` install if a table-level revert is unavoidable.
 
 ---
 
@@ -602,13 +602,16 @@ docker-compose exec backend migrate -path /app/migrations -database "$DATABASE_U
 ### Health Checks
 
 ```bash
-# Automatic check
-./scripts/health-check.sh
+# There is no scripts/health-check.sh — check each component:
 
-# Manual check of all components
-curl http://localhost:18086/health
-curl http://localhost:18086/db-check
+# Backend: verifies Postgres, Redis, Mongo and NLP in one call
+curl http://localhost:9000/health
+
+# Nginx gateway (static OK) and NLP service
+curl http://localhost:18080/health
 curl http://localhost:5000/health
+
+# Redis
 docker-compose exec redis redis-cli ping
 ```
 
@@ -627,13 +630,9 @@ docker-compose logs backend --format json
 
 ### Metrics (optional)
 
-```bash
-# Prometheus + Grafana
-docker-compose -f docker-compose.monitoring.yml up -d
-
-# Access Grafana
-curl http://localhost:3000  # admin/admin
-```
+> **Not implemented.** There is no `docker-compose.monitoring.yml` and no
+> `/metrics` endpoint in the current code — Prometheus/Grafana are a future
+> enhancement, not an optional extra you can start today.
 
 ---
 
@@ -646,11 +645,12 @@ curl http://localhost:3000  # admin/admin
 docker-compose logs backend
 
 # Common causes:
-# 1. No database connection
-docker-compose exec backend nc -zv postgres 5432
+# 1. No database connection — check credentials and postgres health
+docker-compose exec postgres pg_isready -U kb_user
 
-# 2. Unapplied migrations
-docker-compose exec backend migrate -path /app/migrations -database "$DATABASE_URL" up
+# 2. Failed migrations — the server logs "Failed to run migrations" at
+#    startup and continues; fix the reported error and restart:
+docker-compose restart backend
 ```
 
 ### Problem: NLP Service is Slow

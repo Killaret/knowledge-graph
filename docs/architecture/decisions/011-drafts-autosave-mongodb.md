@@ -3,6 +3,8 @@
 ## Status
 Accepted
 
+**Implementation status:** implemented — drafts live in MongoDB `drafts` collection with a 7-day TTL index (`infrastructure/mongo/draft_repo.go`); verified in DOC-AUDIT-2, 2026-09-26.
+
 ## Context
 Knowledge Graph users expect autosave functionality:
 - Frequent saves while typing (every 30 seconds)

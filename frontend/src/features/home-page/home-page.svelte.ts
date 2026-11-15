@@ -18,6 +18,7 @@ import {
   getPreloadedGraph,
 } from "$shared/services/PreloadService";
 import { loadGraph } from "$shared/services/graphLoader";
+import { subscribeGraphEvents } from "$shared/services/graphEvents";
 import { isAuthenticated, initAuth } from "$shared/stores/auth.svelte";
 import { graphStore } from "$shared/stores/graph.svelte";
 import { graphView } from "$shared/stores/graph-view.svelte";
@@ -25,7 +26,7 @@ import { createLayoutProvider, toRuntimeConfig } from "$features/graph-3d";
 import type { ErrorResponse } from "$shared/types/errors";
 import { CelestialBody, FilterState } from "$entities";
 import { formatMessage, getCurrentLocale, type MessageParams } from "$shared/utils/i18n";
-import type { GraphNode, GraphLink } from "$shared/api/graph";
+import type { GraphNode, GraphLink, GraphDeltaData } from "$shared/api/graph";
 
 interface Graph3DViewerProps {
   nodes: GraphNode[];
@@ -56,6 +57,9 @@ export function createHomePageState() {
   let loading = $state(true);
   let apiError = $state<ErrorResponse | null>(null);
   let showCreateModal = $state(false);
+  let showSmartCreateModal = $state(false);
+  let smartCreatePending = $state(false);
+  let smartCreateUnread = $state(false);
   let createChildParent = $state<{ id: string; title: string; type?: string } | null>(null);
   let showEditModal = $state(false);
   let noteToEdit = $state<string | null>(null);
@@ -79,6 +83,10 @@ export function createHomePageState() {
 
   // Graph state - always show full graph on main page
   let graphData = $state<GraphData>({ nodes: [], links: [] });
+  // SYNC-1 stage B: the last delta fetched by refreshAfterMutation, handed to
+  // GraphCanvas so it lands in place on the live simulation instead of
+  // rebuilding the layout. Null on resync/full reloads.
+  let graphDelta = $state<GraphDeltaData | null>(null);
   let layoutProvider = $state<"d3" | "graph-service">(toRuntimeConfig().layoutProvider);
   let searchQuery = $state("");
 
@@ -118,6 +126,7 @@ export function createHomePageState() {
   let requestVersion = 0;
   let deltaInterval: ReturnType<typeof setInterval> | undefined;
   let handleFocus: (() => void) | undefined;
+  let graphEventsHandle: { stop(): void } | null = null;
   let authPanelTab = $state<"login" | "register">("login");
   let lastScopeKey: string | null = null;
 
@@ -231,6 +240,15 @@ export function createHomePageState() {
       };
       window.addEventListener("focus", handleFocus);
 
+      // SYNC-1 stage C: live delivery via SSE — the server pushes a bare
+      // "graph changed" signal and we fetch the delta; the 30 s poll above
+      // remains the fallback while the stream is down.
+      graphEventsHandle = subscribeGraphEvents({
+        onGraphChanged: () => {
+          void refreshAfterMutation();
+        },
+      });
+
       // Expose flag for E2E tests to assert background sync is gated by auth.
       (window as unknown as Record<string, unknown>).__kgGraphPollingActive = true;
     } else {
@@ -242,6 +260,8 @@ export function createHomePageState() {
       deltaInterval = undefined;
       if (handleFocus) window.removeEventListener("focus", handleFocus);
       handleFocus = undefined;
+      graphEventsHandle?.stop();
+      graphEventsHandle = null;
       (window as unknown as Record<string, unknown>).__kgGraphPollingActive = false;
       requestVersion += 1;
     };
@@ -274,6 +294,12 @@ export function createHomePageState() {
         viewMode: mode,
         nocache,
         fullGraphLoader: (bypass) => getGraphWithPreload(1000, bypass ?? nocache, mode),
+        // UI-LOAD-1: the notes list becomes usable before the graph arrives.
+        onNotesReady: (ready) => {
+          if (!isCurrent()) return;
+          allNotes = ready;
+          applyFiltersAndSort();
+        },
       });
 
       if (!isCurrent()) return;
@@ -372,6 +398,10 @@ export function createHomePageState() {
           graphData = updated;
           allNotes = notes;
           applyFiltersAndSort();
+          // SYNC-1 stage B: a resync delta already replaced the cached graph
+          // wholesale — the canvas rebuilds from the new props. A regular
+          // delta is handed to the canvas so it lands in place.
+          graphDelta = delta.resync ? null : delta;
         }
         return;
       }
@@ -526,12 +556,41 @@ export function createHomePageState() {
     }
   }
 
-  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
+  async function handleLinkCreate(link: {
+    source: string;
+    target: string;
+    link_type: string;
+    weight: number;
+  }) {
+    try {
+      await createLink({
+        source_note_id: link.source,
+        target_note_id: link.target,
+        link_type: link.link_type,
+        weight: link.weight,
+      });
+      await refreshAfterMutation();
+    } catch {
+      if (browser) {
+        alert(t("note.createChildLinkError"));
+      }
+    }
+  }
+
+  async function handleNoteCreate(data: {
+    title: string;
+    content: string;
+    type: string;
+    due_at?: string | null;
+    remind_before_seconds?: number | null;
+  }) {
     try {
       await createNote({
         title: data.title,
         content: data.content,
         type: data.type,
+        due_at: data.due_at,
+        remind_before_seconds: data.remind_before_seconds,
       });
       await refreshAfterMutation();
     } catch {
@@ -641,6 +700,24 @@ export function createHomePageState() {
     set showCreateModal(value) {
       showCreateModal = value;
     },
+    get showSmartCreateModal() {
+      return showSmartCreateModal;
+    },
+    set showSmartCreateModal(value) {
+      showSmartCreateModal = value;
+    },
+    get smartCreatePending() {
+      return smartCreatePending;
+    },
+    set smartCreatePending(value) {
+      smartCreatePending = value;
+    },
+    get smartCreateUnread() {
+      return smartCreateUnread;
+    },
+    set smartCreateUnread(value) {
+      smartCreateUnread = value;
+    },
     get createChildParent() {
       return createChildParent;
     },
@@ -676,6 +753,9 @@ export function createHomePageState() {
     },
     get graphData() {
       return graphData;
+    },
+    get graphDelta() {
+      return graphDelta;
     },
     get layoutProvider() {
       return layoutProvider;
@@ -782,6 +862,7 @@ export function createHomePageState() {
     handleNoteDelete,
     handleUndoRestore,
     handleNoteCreate,
+    handleLinkCreate,
     handleNoteCreated,
     handleCreateChildNote,
     resetCreateChildParent,

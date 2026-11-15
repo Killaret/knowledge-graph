@@ -171,6 +171,8 @@ token.json
 # Misc artifacts
 *.html
 !frontend/**/*.html
+!backend/**/testdata/**/*.html
+!docs/product/mockups/*.html
 *.bat
 !start-personal.bat
 *.ps1
@@ -196,3 +198,9 @@ work-nlp4/notes_dataset.json
 work-*/notes_dataset*.json
 # MODEL-1B: артефакты с названиями заметок (пары, выдача, лист разметки) — только локально
 work-model1b/local/
+work-model2/
+# NOTE-QUALITY-1: выгрузка quality-recompute --export — только локально
+work-quality/local/
+
+# W-1 / MODEL-1B: the owner's notes corpus stays local (decisions 47, 56)
+work-w1/dataset.json

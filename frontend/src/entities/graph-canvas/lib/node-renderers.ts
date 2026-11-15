@@ -13,6 +13,7 @@ import { drawCosmicAbomination } from "$shared/lib/graph/renderer/anomalies/cosm
 import type { NodeVariation } from "$shared/utils/variation";
 import { stringHash, seededRand } from "./renderer-utils";
 import { hexToRgba } from "$shared/lib/graph/helpers";
+import { cometUrgency, isCometSettled } from "$shared/utils/comet";
 
 /**
  * Draw a star node with glow, gradient and corona
@@ -204,13 +205,26 @@ export function drawComet(
   variation?: NodeVariation,
   nodeId?: string,
   nodeCount?: number,
-  time?: number
+  time?: number,
+  dueAt?: string | null,
+  doneAt?: string | null
 ): void {
   const sizeMultiplier = variation?.sizeMultiplier ?? 1;
   const adjustedR = r * sizeMultiplier;
   const cometColor = variation?.color ?? "#e879f9";
   const glowColor = variation?.glowColor ?? cometColor;
   const nodePhase = variation?.phaseShift ?? 0;
+
+  // COMET-1 stage E: «приближается» — urgency 0..1 делает комету ярче и хвост
+  // длиннее; прошедшая/сделанная тусклая и без хвоста; без даты — как раньше.
+  const dimmed = isCometSettled(dueAt, doneAt);
+  const urgency = cometUrgency(dueAt, doneAt) ?? 0;
+  const alpha = dimmed ? 0.35 : 1;
+  const glowBoost = 1 + urgency; // up to 2x glow near the date
+  const tailLength = 60 * (1 + urgency) * sizeMultiplier;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
 
   // Apply glow effect
   if (
@@ -220,7 +234,7 @@ export function drawComet(
     nodeCount < (graphConfig2D.shadows_threshold ?? 100)
   ) {
     const glowIntensity = getGlowIntensity(nodeId, time, nodeCount);
-    ctx.shadowBlur = 12 * glowIntensity;
+    ctx.shadowBlur = 12 * glowIntensity * glowBoost;
     ctx.shadowColor = glowColor;
   }
 
@@ -229,25 +243,27 @@ export function drawComet(
   ctx.fillStyle = cometColor;
   ctx.fill();
 
-  // Longer tail (up to 60px)
-  const tailLength = 60 * sizeMultiplier;
-  const tailAngle = angle;
-  const tipX = x + Math.cos(tailAngle) * tailLength;
-  const tipY = y + Math.sin(tailAngle) * tailLength;
+  // Settled comets (done or past due) draw no tail — the arc has flown by.
+  if (!dimmed) {
+    const tailAngle = angle;
+    const tipX = x + Math.cos(tailAngle) * tailLength;
+    const tipY = y + Math.sin(tailAngle) * tailLength;
 
-  // Curved tail using quadratic curve with a per-node phase offset so
-  // comet tails don’t all wag in perfect unison.
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  const midX = x + Math.cos(tailAngle) * (tailLength * 0.5);
-  const midY = y + Math.sin(tailAngle) * (tailLength * 0.5);
-  const localTime = (time ?? 0) + nodePhase * 1000;
-  const curveOffset = 15 * Math.sin(localTime / 500);
-  ctx.quadraticCurveTo(midX + curveOffset, midY + curveOffset, tipX, tipY);
-  ctx.lineWidth = 4 * sizeMultiplier;
-  ctx.strokeStyle = hexToRgba(glowColor, 0.6);
-  ctx.stroke();
+    // Curved tail using quadratic curve with a per-node phase offset so
+    // comet tails don’t all wag in perfect unison.
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    const midX = x + Math.cos(tailAngle) * (tailLength * 0.5);
+    const midY = y + Math.sin(tailAngle) * (tailLength * 0.5);
+    const localTime = (time ?? 0) + nodePhase * 1000;
+    const curveOffset = 15 * Math.sin(localTime / 500);
+    ctx.quadraticCurveTo(midX + curveOffset, midY + curveOffset, tipX, tipY);
+    ctx.lineWidth = 4 * sizeMultiplier;
+    ctx.strokeStyle = hexToRgba(glowColor, 0.6);
+    ctx.stroke();
+  }
 
+  ctx.restore();
   // Reset shadow
   ctx.shadowBlur = 0;
   ctx.shadowColor = "transparent";

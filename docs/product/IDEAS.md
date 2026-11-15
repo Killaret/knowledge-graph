@@ -200,7 +200,7 @@ _Add future ideas above the next section break._
 
 ## Functionality
 - [ ] **Note versioning** (change history, diff).
-- [x] **Different coefficients for different link types** (reference, dependency, related). **Implemented (link_type field with weights).**
+- [ ] **Different coefficients for different link types** (reference, dependency, related). Not implemented (2026-09-30, DOC-AUDIT-2 review): `link_type` exists but all weights are uniform — per-type coefficients are plan P11-4.
 - [ ] **GraphQL** — for complex aggregated queries (suggestions + recommendations + graph in one request).
 - [ ] **Notification queues** — notifications for new links/recommendations.
 - [ ] **Orchestration service (Saga)** — for distributed transactions (as it grows).

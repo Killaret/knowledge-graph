@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createNote, type Note } from "$shared/api/notes";
+  import { localInputToIso, remindChoiceToSeconds, type RemindChoice } from "$shared/utils/comet";
   import Modal from "$components/atoms/Modal.svelte";
   import NoteForm from "$components/molecules/NoteForm.svelte";
   import type { ErrorResponse } from "$shared/types/errors";
@@ -25,6 +26,10 @@
   let title = $state("");
   let content = $state("");
   let type = $state<string>(CelestialBody.STAR.type);
+  // COMET-1: поля кометы, активны только при type === "comet"
+  let dueAtLocal = $state("");
+  let remindChoice = $state<RemindChoice>("none");
+  let customMinutes = $state(60);
   let loading = $state(false);
   let apiError = $state<ErrorResponse | null>(null);
   let currentMode = $state("standard");
@@ -99,6 +104,12 @@
         content: content.trim(),
         type,
         metadata: {},
+        ...(type === "comet"
+          ? {
+              due_at: localInputToIso(dueAtLocal),
+              remind_before_seconds: remindChoiceToSeconds(remindChoice, customMinutes),
+            }
+          : {}),
       });
 
       onSuccess?.(note);
@@ -115,6 +126,9 @@
     title = "";
     content = "";
     type = initialType;
+    dueAtLocal = "";
+    remindChoice = "none";
+    customMinutes = 60;
     apiError = null;
     onClose?.();
   }
@@ -130,6 +144,9 @@
     bind:title
     bind:content
     bind:type
+    bind:dueAtLocal
+    bind:remindChoice
+    bind:customMinutes
     types={CelestialBody.UI_TYPES}
     {loading}
     error={apiError}

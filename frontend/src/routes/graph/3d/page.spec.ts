@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, fireEvent, cleanup } from "@testing-library/svelte";
 import Page from "./+page.svelte";
+import { goto } from "$app/navigation";
 import { graphView } from "$shared/stores/graph-view.svelte";
 import { authState } from "$shared/stores/auth-session.svelte";
+import { isGraph3DEnabled } from "$shared/config/config";
 
 // Regression guard: the 3D graph page must wait for initAuth() before
 // calling the layout provider. Without the await, the graph request fires
@@ -35,8 +37,14 @@ vi.mock("$widgets/graph-3d-viewer/Graph3DViewer.svelte", () => ({
   default: null,
 }));
 
+vi.mock("$shared/config/config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("$shared/config/config")>()),
+  isGraph3DEnabled: vi.fn(() => true),
+}));
+
 describe("Graph 3D page - auth ordering", () => {
   beforeEach(() => {
+    vi.mocked(isGraph3DEnabled).mockReturnValue(true);
     (window as any).__SKIP_AUTH__ = false;
     authState.currentUser = null;
     authState.accessToken = null;
@@ -50,6 +58,22 @@ describe("Graph 3D page - auth ordering", () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it("FREEZE-3D-1: redirects to the 2D graph when 3D is disabled", async () => {
+    vi.mocked(isGraph3DEnabled).mockReturnValue(false);
+    initAuthMock.mockResolvedValue(undefined);
+
+    render(Page);
+
+    await waitFor(() =>
+      expect(vi.mocked(goto)).toHaveBeenCalledWith("/graph", {
+        replaceState: true,
+      })
+    );
+    await Promise.resolve();
+    expect(loadMock).not.toHaveBeenCalled();
+    expect(initAuthMock).not.toHaveBeenCalled();
   });
 
   it("does not call layoutProvider.load until initAuth resolves", async () => {

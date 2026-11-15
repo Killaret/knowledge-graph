@@ -73,7 +73,15 @@ describe("graphLoader", () => {
       const raw = {
         nodes: [{ id: "n1" }, { id: "n2" }],
         links: [
-          { source_note_id: "n1", target_note_id: "n2", weight: 0.8, link_type: "related" },
+          {
+            id: "promoted-link",
+            source_note_id: "n1",
+            target_note_id: "n2",
+            weight: 0.8,
+            link_type: "related",
+            source_type: "user",
+            gamma_origin: true,
+          },
           { source: "n2", target: "n1" },
         ],
       };
@@ -82,11 +90,13 @@ describe("graphLoader", () => {
 
       expect(result.links).toHaveLength(2);
       expect(result.links[0]).toMatchObject({
+        id: "promoted-link",
         source: "n1",
         target: "n2",
         weight: 0.8,
         link_type: "related",
         source_type: "user",
+        gamma_origin: true,
       });
       expect(result.links[1]).toMatchObject({
         source: "n2",
@@ -94,6 +104,7 @@ describe("graphLoader", () => {
         weight: 0.5,
         link_type: "related",
         source_type: "user",
+        gamma_origin: false,
       });
     });
 

@@ -4,10 +4,19 @@
  * The core performance fix is: drawAllLinks must resolve link endpoints
  * through the node id Map, not by calling `nodes.find()` in a loop.
  */
-import { describe, it, expect, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { drawAllLinks, drawAllNodes, draw, resetView } from "./renderer";
 import { createMockCanvasContext } from "./test-canvas-mock";
 import type { SimulationNode, SimulationLink } from "./types";
+
+import { getGraphStyle, setGraphStyle } from "./light/style";
+
+// Classic look: these tests describe the classic renderer and its geometry
+// (fit capped at 1:1, icon drawers). The light style (GRAPH-LIGHT-1) has its
+// own tests in entities/graph-canvas/lib/light.
+const styleBefore = getGraphStyle();
+beforeAll(() => setGraphStyle("classic"));
+afterAll(() => setGraphStyle(styleBefore));
 
 function makeNodes(count: number): SimulationNode[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -139,6 +148,60 @@ describe("renderer-orchestrator performance regressions", () => {
     const strokeCalls = (ctx.stroke as any).mock.calls;
     // node-0 and node-2 are stars and each calls ctx.stroke once.
     expect(strokeCalls.length).toBe(2);
+  });
+
+  it("drawAllNodes draws titles only for ids in labeledNodeIds (UI-GRAPH-1)", () => {
+    const nodes = makeNodes(3).map((n, i) => ({ ...n, x: i * 50, y: i * 50 }));
+    const ctx = createMockCanvasContext();
+    const angles = new Map<string, number>();
+
+    drawAllNodes(
+      ctx,
+      nodes,
+      angles,
+      false,
+      undefined,
+      false,
+      0,
+      null,
+      null,
+      false,
+      undefined,
+      undefined,
+      false,
+      undefined,
+      new Set(["node-1"])
+    );
+
+    const titles = vi.mocked(ctx.fillText).mock.calls.map((c) => c[0]);
+    expect(titles).toEqual(["Note 1"]);
+  });
+
+  it("drawAllNodes draws every title in deterministic snapshot mode", () => {
+    const nodes = makeNodes(3).map((n, i) => ({ ...n, x: i * 50, y: i * 50 }));
+    const ctx = createMockCanvasContext();
+    const angles = new Map<string, number>();
+
+    drawAllNodes(
+      ctx,
+      nodes,
+      angles,
+      false,
+      undefined,
+      true, // disableVariation — stableRender snapshot
+      0,
+      null,
+      null,
+      false,
+      undefined,
+      undefined,
+      false,
+      undefined,
+      new Set(["node-1"])
+    );
+
+    const titles = vi.mocked(ctx.fillText).mock.calls.map((c) => c[0]);
+    expect(titles.length).toBe(3);
   });
 
   it("drawAllNodes draws simplified circles when zoomed out", () => {
@@ -385,6 +448,22 @@ describe("renderer-orchestrator performance regressions", () => {
     expect(transform.k).toBeGreaterThan(0);
     expect(transform.x).toBeDefined();
     expect(transform.y).toBeDefined();
+  });
+
+  it("resetView leaves the camera alone when the canvas has no size", () => {
+    const ctx = createMockCanvasContext();
+    const nodes = [
+      { id: "a", title: "A", x: 0, y: 0 },
+      { id: "b", title: "B", x: 100, y: 100 },
+    ];
+    for (const [w, h] of [
+      [400, -80],
+      [0, 300],
+    ]) {
+      const transform = { x: 7, y: 9, k: 1.5 };
+      resetView(ctx, w, h, nodes, transform);
+      expect(transform).toEqual({ x: 7, y: 9, k: 1.5 });
+    }
   });
 
   it("resetView does nothing when there are no nodes", () => {

@@ -1,4 +1,5 @@
 import type { GraphData } from "$shared/api/graph";
+import { isGraph3DEnabled } from "$shared/config/config";
 
 /**
  * Cross-view graph UI state shared between 2D canvas, 3D viewer and list view.
@@ -16,6 +17,8 @@ export interface GraphUIState {
   /** Link types that are currently hidden from the graph. Empty = all visible. */
   hiddenLinkTypes: string[];
   minLinkWeight: number;
+  /** Model-suggested (source_type "gamma") links visible. UI-GRAPH-1: one-button toggle. */
+  showAutoLinks: boolean;
 }
 
 function createGraphStore(initial: Partial<GraphUIState> = {}) {
@@ -27,6 +30,7 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
   let hoveredNodeId = $state<string | null>(initial.hoveredNodeId ?? null);
   let hiddenLinkTypes = $state<string[]>(initial.hiddenLinkTypes ?? []);
   let minLinkWeight = $state(initial.minLinkWeight ?? 0);
+  let showAutoLinks = $state(initial.showAutoLinks ?? true);
 
   return {
     get selectedNodeId() {
@@ -51,7 +55,10 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
     },
 
     get currentView() {
-      return currentView;
+      // FREEZE-3D-1: a remembered "3d" view opens as "graph" while 3D is frozen.
+      // Normalization lives only in the getter: writes keep the raw value,
+      // reads always answer the view that is actually allowed.
+      return currentView === "3d" && !isGraph3DEnabled() ? "graph" : currentView;
     },
     set currentView(value: "graph" | "list" | "3d") {
       currentView = value;
@@ -85,6 +92,17 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
       minLinkWeight = value;
     },
 
+    get showAutoLinks() {
+      return showAutoLinks;
+    },
+    set showAutoLinks(value: boolean) {
+      showAutoLinks = value;
+    },
+
+    toggleAutoLinks() {
+      showAutoLinks = !showAutoLinks;
+    },
+
     /** Toggle whether a link type is hidden from the graph. */
     toggleLinkType(type: string) {
       if (hiddenLinkTypes.includes(type)) {
@@ -111,6 +129,7 @@ function createGraphStore(initial: Partial<GraphUIState> = {}) {
       hoveredNodeId = null;
       hiddenLinkTypes = [];
       minLinkWeight = 0;
+      showAutoLinks = true;
     },
   };
 }

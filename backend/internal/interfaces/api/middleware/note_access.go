@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 
 	"knowledge-graph/internal/domain/note"
@@ -20,7 +21,19 @@ const (
 	// NoteAccessWrite allows only the owner, regardless of visibility.
 	// Use it for mutations and for owner-scoped views (shares, drafts).
 	NoteAccessWrite
+	// NoteAccessWriteIncludeDeleted is owner-only like NoteAccessWrite, but
+	// the lookup sees soft-deleted notes — the restore route's target sits
+	// in the trash. It needs a repository that implements
+	// FindByIDIncludingDeleted; one that does not fails loudly with 500.
+	NoteAccessWriteIncludeDeleted
 )
+
+// deletedAwareNoteRepo is the extra lookup the trash-level access check asks
+// for. It lives on the concrete repositories (PurgeDeletedBefore precedent)
+// rather than the domain interface.
+type deletedAwareNoteRepo interface {
+	FindByIDIncludingDeleted(ctx context.Context, id uuid.UUID) (*note.Note, error)
+}
 
 // RequireNoteAccess enforces object-level authorization on routes carrying
 // a note id in the `:id` param. Every refusal answers 404 — the existence of
@@ -40,7 +53,18 @@ func RequireNoteAccess(noteRepo note.Repository, access NoteAccessLevel) gin.Han
 			return
 		}
 
-		n, err := noteRepo.FindByID(c.Request.Context(), id)
+		var n *note.Note
+		if access == NoteAccessWriteIncludeDeleted {
+			dr, ok := noteRepo.(deletedAwareNoteRepo)
+			if !ok {
+				apicommon.InternalErrorWithMessage(c, "note repository cannot see deleted notes")
+				c.Abort()
+				return
+			}
+			n, err = dr.FindByIDIncludingDeleted(c.Request.Context(), id)
+		} else {
+			n, err = noteRepo.FindByID(c.Request.Context(), id)
+		}
 		if err != nil {
 			apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
 			c.Abort()

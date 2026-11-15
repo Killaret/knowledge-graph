@@ -46,6 +46,9 @@
     onToggleLayoutProvider?: (provider: "d3" | "graph-service") => void;
     onNodeSelect?: (id: string | null) => void;
     onNoteCreate?: () => void;
+    onSmartCreate?: () => void;
+    smartCreatePending?: boolean;
+    smartCreateUnread?: boolean;
     onNoteDelete?: (id: string) => void;
     onNoteEdit?: (id: string) => void;
     onCreateChildNote?: (note: NoteItem) => void;
@@ -77,6 +80,9 @@
     onToggleLayoutProvider,
     onNodeSelect,
     onNoteCreate,
+    onSmartCreate,
+    smartCreatePending,
+    smartCreateUnread,
     onNoteDelete,
     onNoteEdit,
     onCreateChildNote,
@@ -130,6 +136,9 @@
   onExport={auth ? onExport : undefined}
   {onToggleFullGraph}
   onNoteCreate={auth ? onNoteCreate : undefined}
+  onSmartCreate={auth ? onSmartCreate : undefined}
+  {smartCreatePending}
+  {smartCreateUnread}
   onNoteDelete={canMutate ? onNoteDelete : undefined}
   onNoteEdit={canMutate ? onNoteEdit : undefined}
   onCreateChildNote={canMutate ? onCreateChildNote : undefined}

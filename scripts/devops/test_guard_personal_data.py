@@ -6,6 +6,7 @@ Run: python scripts/devops/test_guard_personal_data.py
 
 from __future__ import annotations
 
+import gzip
 import importlib.util
 import json
 import os
@@ -16,6 +17,7 @@ import time
 from pathlib import Path
 
 GUARD = Path(__file__).with_name("guard-personal-data.py")
+EMPTY_DUMP = Path(__file__).parent / "testdata" / "backup-personal-empty-envelope.dump"
 
 spec = importlib.util.spec_from_file_location("guard_personal_data", GUARD)
 guard = importlib.util.module_from_spec(spec)
@@ -115,8 +117,72 @@ def check_resolve_backup_dir() -> int:
     return failures
 
 
-def check_newest_backup() -> int:
-    """newest_backup must ignore empty files and pick the newest real one."""
+def write_sql_gz(path: Path, line: bytes = b"COPY public.notes (id) FROM stdin;\n") -> None:
+    path.write_bytes(gzip.compress(line))
+
+
+def write_mongo_gz(path: Path, ns: bytes = b"knowledge_personal.nlp_artifacts") -> None:
+    path.write_bytes(gzip.compress(b"\x00hdr\x00" + ns + b"\x00data"))
+
+
+def check_backup_has_data() -> int:
+    """backup_has_data is the BACKUP-4 item-1 gate: an envelope must fail."""
+    failures = 0
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+
+        good = root / "good.sql.gz"
+        write_sql_gz(good)
+        if not guard.backup_has_data(good):
+            failures += 1
+            print("FAIL backup_has_data rejected a sql.gz with COPY notes")
+
+        insert_only = root / "insert.sql.gz"
+        write_sql_gz(insert_only, b"INSERT INTO public.notes VALUES (1);\n")
+        if not guard.backup_has_data(insert_only):
+            failures += 1
+            print("FAIL backup_has_data rejected INSERT INTO notes")
+
+        sibling = root / "sibling.sql.gz"
+        write_sql_gz(sibling, b"COPY public.notes_archive (id) FROM stdin;\n")
+        if guard.backup_has_data(sibling):
+            failures += 1
+            print("FAIL backup_has_data counted notes_archive as notes")
+
+        garbage = root / "garbage.sql.gz"
+        garbage.write_bytes(b"not a gzip at all")
+        if guard.backup_has_data(garbage):
+            failures += 1
+            print("FAIL backup_has_data counted non-gzip bytes as sql.gz")
+
+        empty_dump = root / "backup-personal-auto-empty.dump"
+        empty_dump.write_bytes(EMPTY_DUMP.read_bytes())
+        if guard.backup_has_data(empty_dump):
+            failures += 1
+            print("FAIL the 913-byte envelope dump was counted as a backup")
+
+        mongo = root / "ok.mongo.gz"
+        write_mongo_gz(mongo)
+        if not guard.backup_has_data(mongo):
+            failures += 1
+            print("FAIL backup_has_data rejected mongo.gz with the DB namespace")
+
+        mongo_empty = root / "empty.mongo.gz"
+        write_mongo_gz(mongo_empty, b"nothing-real-here")
+        if guard.backup_has_data(mongo_empty):
+            failures += 1
+            print("FAIL backup_has_data counted mongo.gz without the namespace")
+
+        raw = root / "personal-volumes-raw-x-pgdata_personal.tar.gz"
+        raw.write_bytes(b"tar-bytes")
+        if not guard.backup_has_data(raw):
+            failures += 1
+            print("FAIL backup_has_data rejected a non-empty raw volume archive")
+    return failures
+
+
+def check_newest_usable_backup() -> int:
+    """newest_usable_backup ignores unusable files and splits pg from mongo."""
     failures = 0
     with tempfile.TemporaryDirectory() as tmp:
         with_home_env(tmp)
@@ -124,30 +190,42 @@ def check_newest_backup() -> int:
         backups.mkdir(parents=True)
         os.environ["KG_BACKUP_DIR"] = str(backups)
 
-        found, _, _ = guard.newest_backup(guard.resolve_backup_dir())
+        found, _, _ = guard.newest_usable_backup(guard.resolve_backup_dir(), "pg")
         if found is not None:
             failures += 1
-            print(f"FAIL newest_backup on empty dir returned {found}")
+            print(f"FAIL pg lookup on empty dir returned {found}")
 
         (backups / "backup-personal-2026-01-01.sql.gz").write_bytes(b"")
-        found, _, _ = guard.newest_backup(guard.resolve_backup_dir())
+        found, _, _ = guard.newest_usable_backup(guard.resolve_backup_dir(), "pg")
         if found is not None:
             failures += 1
-            print(f"FAIL newest_backup counted a zero-byte file: {found}")
+            print(f"FAIL pg lookup counted a zero-byte file: {found}")
 
         old = backups / "backup-personal-2026-01-02.sql.gz"
-        old.write_bytes(b"old")
+        write_sql_gz(old)
         os.utime(old, (time.time() - 7200, time.time() - 7200))
-        new = backups / "personal-volumes-raw-2026-01-03.tar.gz"
+        new = backups / "personal-volumes-raw-2026-01-03-pgdata_personal.tar.gz"
         new.write_bytes(b"new")
 
-        found, _, size = guard.newest_backup(guard.resolve_backup_dir())
+        found, _, size = guard.newest_usable_backup(guard.resolve_backup_dir(), "pg")
         if found != new:
             failures += 1
-            print(f"FAIL newest_backup picked {found}, expected {new.name}")
+            print(f"FAIL pg lookup picked {found}, expected {new.name}")
         if size != 3:
             failures += 1
-            print(f"FAIL newest_backup reported size {size}, expected 3")
+            print(f"FAIL pg lookup reported size {size}, expected 3")
+
+        # A fresh mongo dump must not leak into the pg answer.
+        mongo = backups / "backup-personal-2026-01-04.mongo.gz"
+        write_mongo_gz(mongo)
+        found, _, _ = guard.newest_usable_backup(guard.resolve_backup_dir(), "pg")
+        if found != new:
+            failures += 1
+            print(f"FAIL pg lookup counted the mongo dump: {found}")
+        found, _, _ = guard.newest_usable_backup(guard.resolve_backup_dir(), "mongo")
+        if found != mongo:
+            failures += 1
+            print(f"FAIL mongo lookup picked {found}, expected {mongo.name}")
     return failures
 
 
@@ -201,27 +279,51 @@ def check_backup_gate() -> int:
             failures += 1
             print(f"FAIL only an empty backup: expected deny, got {got}")
 
-        stale = backups / "backup-personal-stale.sql.gz"
-        stale.write_bytes(b"data")
-        old = time.time() - 72 * 3600
-        os.utime(stale, (old, old))
+        # An envelope with no tables is not a backup either (BACKUP-4 item 1).
+        envelope = backups / "backup-personal-auto-empty.dump"
+        envelope.write_bytes(EMPTY_DUMP.read_bytes())
         got = decision_of(run_guard(root, destructive, {"KG_BACKUP_DIR": kg_backup_dir}))
         if got != "deny":
             failures += 1
-            print(f"FAIL stale backup: expected deny, got {got}")
+            print(f"FAIL only a tableless .dump: expected deny, got {got}")
+        envelope.unlink()
 
-        # The same stale backup passes once the threshold is raised.
+        # Stale backups on both sides are denied at the default threshold.
+        stale = backups / "backup-personal-stale.sql.gz"
+        write_sql_gz(stale)
+        stale_mongo = backups / "backup-personal-stale.mongo.gz"
+        write_mongo_gz(stale_mongo)
+        old = time.time() - 72 * 3600
+        os.utime(stale, (old, old))
+        os.utime(stale_mongo, (old, old))
+        got = decision_of(run_guard(root, destructive, {"KG_BACKUP_DIR": kg_backup_dir}))
+        if got != "deny":
+            failures += 1
+            print(f"FAIL stale backups: expected deny, got {got}")
+
+        # The same stale backups pass once the threshold is raised.
         got = decision_of(run_guard(root, destructive, {"KG_BACKUP_DIR": kg_backup_dir, "KG_BACKUP_MAX_AGE_HOURS": "999"}))
         if got != "allow":
             failures += 1
             print(f"FAIL raised threshold: expected allow, got {got}")
 
-        fresh = backups / "backup-personal-fresh.sql.gz"
-        fresh.write_bytes(b"data")
+        # Fresh files on both sides pass at the default threshold.
+        fresh_sql = backups / "backup-personal-fresh.sql.gz"
+        write_sql_gz(fresh_sql)
+        fresh_mongo = backups / "backup-personal-fresh.mongo.gz"
+        write_mongo_gz(fresh_mongo)
         got = decision_of(run_guard(root, destructive, {"KG_BACKUP_DIR": kg_backup_dir}))
         if got != "allow":
             failures += 1
-            print(f"FAIL fresh backup: expected allow, got {got}")
+            print(f"FAIL fresh pg + mongo: expected allow, got {got}")
+
+        # Fresh pg backup alone is not enough: MongoDB needs its own file.
+        stale_mongo.unlink()
+        fresh_mongo.unlink()
+        got = decision_of(run_guard(root, destructive, {"KG_BACKUP_DIR": kg_backup_dir}))
+        if got != "deny":
+            failures += 1
+            print(f"FAIL fresh pg without mongo: expected deny, got {got}")
 
         # A harmless command is never gated, backup or not.
         got = decision_of(run_guard(root, "npm run test:unit", {"KG_BACKUP_DIR": kg_backup_dir}))
@@ -232,8 +334,14 @@ def check_backup_gate() -> int:
 
 
 def main() -> int:
-    failures = check_commands() + check_resolve_backup_dir() + check_newest_backup() + check_backup_gate()
-    total = len(COMMAND_CASES) + 7 + 6
+    failures = (
+        check_commands()
+        + check_resolve_backup_dir()
+        + check_backup_has_data()
+        + check_newest_usable_backup()
+        + check_backup_gate()
+    )
+    total = len(COMMAND_CASES) + 2 + 8 + 6 + 8
     if failures:
         print(f"\n{failures} checks failed")
         return 1

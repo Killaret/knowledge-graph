@@ -64,11 +64,17 @@ The backup system includes:
 
 | Producer | When it fires | Writes to | File name | Caveat |
 |---|---|---|---|---|
-| Worker on note change (`worker_personal`) | ~30 s after any note mutation, 5-min dedup | `/backups` = the synced host folder | `backup-personal-auto-<ts>.sql.gz` | **Primary path** — fires exactly when there is something to save |
-| `backup_scheduler` cron | 02:00 daily, 23:00 Sun weekly | `/backups` = synced folder | `backup-personal-{daily,weekly}-<ts>.sql.gz` | Only when the stack is up at that minute — on a laptop that sleeps at night it almost never fires |
-| `scripts/devops/backup-personal.ps1` by hand | When the owner remembers | synced folder | `backup-personal-<mode>-<ts>.sql.gz` | Not automation; also run as insurance by `start-personal.ps1` when the newest backup is stale |
+| Worker on note change (`worker_personal`) | ~30 s after any note mutation, 5-min dedup | `/backups` = the synced host folder | `backup-personal-auto-<ts>.sql.gz` + `.mongo.gz` | **Primary path** — fires exactly when there is something to save |
+| `backup_scheduler` cron | 02:00 daily, 23:00 Sun weekly | `/backups` = synced folder | `backup-personal-{daily,weekly}-<ts>.sql.gz` + `.mongo.gz` | Only when the stack is up at that minute — on a laptop that sleeps at night it almost never fires |
+| `scripts/devops/backup-personal.ps1` by hand | When the owner remembers | synced folder | `backup-personal-<mode>-<ts>.sql.gz` + `.mongo.gz` | Not automation; also run as insurance by `start-personal.ps1` when the newest backup is stale |
+
+Since BACKUP-4 every producer also writes `backup-personal-<mode>-<ts>.mongo.gz` — a `mongodump --archive --gzip` of the personal MongoDB (`nlp_artifacts`, `quality_log`), same timestamp as the SQL file. The worker runs `mongodump` from `mongodb-tools` in its image; the cron container installs the same package; the host scripts fall back to `docker exec kg-mongo-personal` when `mongodump` is not on PATH.
 
 Retention is per-producer: the worker deletes only `backup-personal-auto-*` older than `BACKUP_RETENTION_DAYS`, the cron script only its own mode (`daily`/`weekly`), so one producer's cleanup cannot eat another's snapshots. `start-personal.ps1` additionally prints the freshness line (`check-personal-backup.ps1`) on every start and makes a `daily` dump when the newest backup is older than `KG_BACKUP_MAX_AGE_HOURS`.
+
+**What counts as a backup (BACKUP-4).** `guard-personal-data.py` and `check-personal-backup.{ps1,sh}` accept a file only when it provably holds data: `.sql[.gz]` must contain a `COPY`/`INSERT` for the `notes` table (the 913-byte envelope dump that used to pass is rejected), `.dump` must list tables via `pg_restore --list` (no `pg_restore` → unverifiable → rejected), `.mongo.gz` must mention the `knowledge_personal.` namespace, `personal-volumes-raw-*` counts for its own datastore by name (`pgdata`/`mongodbdata`). A usable state needs a fresh file for **both** Postgres and MongoDB — a single fresh dump no longer covers the other store.
+
+**Where the stack may start (BACKUP-4).** `start-personal.{ps1,sh}` refuse to run unless the Compose project name resolves to `knowledge-graph` (`COMPOSE_PROJECT_NAME`, else the directory name). Compose prefixes named volumes with the project name, so a start from another worktree would boot on empty volumes and its backups would overwrite the real ones — the 2026-09-30 incident.
 
 ### Event-driven backup flow
 
@@ -114,8 +120,7 @@ Retention is per-producer: the worker deletes only `backup-personal-auto-*` olde
       }
     },
     "schedule": "0 2 * * *",
-    "retention_days": 7,
-    "draft_ttl_hours": 168
+    "retention_days": 7
   }
 }
 ```
@@ -131,7 +136,6 @@ Retention is per-producer: the worker deletes only `backup-personal-auto-*` olde
 - `cloud.yandex.max_backups` — maximum number of backups to keep in cloud (currently not enforced; all backups are kept on Yandex.Disk by design)
 - `schedule` — cron schedule (default `0 2 * * *` — daily at 2:00 AM)
 - `retention_days` — number of days to keep local backups
-- `draft_ttl_hours` — draft TTL in MongoDB in hours
 
 ### Step 2: Get Yandex.Disk OAuth Token
 

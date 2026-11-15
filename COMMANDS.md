@@ -135,6 +135,8 @@ go run ./cmd/embed-recompute       # Пересчёт эмбеддингов (-d
 go run ./cmd/keyword-recompute     # Пересчёт ключевых слов (те же флаги; NLP-2)
 go run ./cmd/gamma-links-regenerate # Пересоздание автосвязей (-dry-run; LINKS-1)
 #   ⚠ до LINKS-3 не запускать: пакетный подбор соседей выбирает наименьшие UUID, а не ближайших
+go run ./cmd/nlp-artifacts-recompute # Бэкфилл nlp_artifacts (-dry-run; NLP-4)
+go run ./cmd/quality-recompute      # Бэкфилл оценок качества (-dry-run, -export; NOTE-QUALITY-1)
 ```
 
 ### Тестирование
@@ -272,11 +274,11 @@ docker compose logs backend | grep ERROR
 
 ### Health checks
 ```bash
-# Backend health endpoint
-curl http://localhost:8080/health
+# Backend health endpoint (host-published port is 9000; 8080 is in-container)
+curl http://localhost:9000/health
 
-# NLP service health
-curl http://localhost:8000/health
+# NLP service health (host-published port is 5000)
+curl http://localhost:5000/health
 ```
 
 ### Database
@@ -329,7 +331,7 @@ npm run clean:test-artifacts:dry   # предпросмотр без удале�
 - `-RemoveVolumes` — удаляет только анонимные (64-hex) dangling-тома; именованные, `*personal*` и помеченные `protected` сохраняются всегда;
 - `-WslOptimize` — сжатие `docker_data.vhdx` через diskpart. **Требует запуск от администратора** — без повышения шаг помечается `[SKIP]` с причиной; процессы WSL/Docker при этом не убиваются: скрипт ждёт освобождения файла и отказывается с сообщением, если он остался заблокированным.
 
-**Защита томов.** Шаги, способные тронуть тома (`-RemoveVolumes`, `-Full`), отказываются без свежего непустого бэкапа Personal-стека (`backups/backup-personal-*`, порог — `scripts/devops/backup-policy.env`). Политика та же, что у хука `guard-personal-data.py`.
+**Защита томов.** Шаги, способные тронуть тома (`-RemoveVolumes`, `-Full`), отказываются без свежего бэкапа Personal-стека с реальным содержимым — дамп Postgres с таблицей `notes` и дамп MongoDB с пространством `knowledge_personal.` (`backups/backup-personal-*`, порог — `scripts/devops/backup-policy.env`). Политика та же, что у хука `guard-personal-data.py`.
 
 **Порядок и периодичность:**
 

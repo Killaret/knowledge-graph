@@ -2,6 +2,7 @@
 
 ## Status
 Accepted
+**Implementation status:** design accepted; **partially** implemented — `user_roles`/`role_permissions` tables exist (migration 016), `middleware/permissions.go` + `permission_repo.go` enforce per-permission checks with a Redis cache, JWT carries a `role` claim, and `RequireNoteAccess` covers object-level access. The tenant-scoped parts (`tenant_id`, per-tenant role definitions) do not exist (verified in DOC-AUDIT-2, 2026-09-26).
 
 ## Context
 Multi-tenant SaaS requires fine-grained access control. Different roles need different permissions:

@@ -184,6 +184,56 @@ func (s *NoteHandlerSemanticIntegrationTestSuite) TestGetSuggestions_SemanticFal
 	s.Greater(suggestion.Score, 0.0, "returned score must be a positive real value, not a default zero from alias mismatch")
 }
 
+// ISOLATION-1: the semantic fallback must not return notes owned by a
+// different user — a foreign note with the closest vector is invisible.
+func (s *NoteHandlerSemanticIntegrationTestSuite) TestGetSuggestions_SemanticFallback_OwnerIsolation() {
+	ctx := context.Background()
+
+	source := s.createNote("Owner A note", "content of owner A", "star")
+	own := s.createNote("Owner A second note", "more of owner A", "star")
+
+	// A second user's note — nearest neighbour by distance.
+	otherUserID := uuid.New()
+	s.Require().NoError(s.db.Create(&postgres.UserModel{
+		ID:           otherUserID,
+		Login:        "otheruser",
+		Email:        "other@example.com",
+		PasswordHash: "test-hash",
+		CreatedAt:    time.Now(),
+	}).Error)
+	t, _ := note.NewTitle("Owner B note")
+	c, _ := note.NewContent("content of owner B")
+	m, _ := note.NewMetadata(nil)
+	foreign := note.NewNoteWithCreator(t, c, note.MustType("star"), m, otherUserID)
+	s.Require().NoError(s.noteRepo.Save(ctx, foreign))
+
+	base := make([]float32, 384)
+	for i := range base {
+		base[i] = float32(i) / 384.0
+	}
+	nearForeign := make([]float32, 384)
+	copy(nearForeign, base)
+	nearForeign[0] += 0.0001
+	far := make([]float32, 384)
+	copy(far, base)
+	far[0] += 0.5
+
+	s.Require().NoError(s.embeddingRepo.Upsert(ctx, source.ID(), pgvector.NewVector(base)))
+	s.Require().NoError(s.embeddingRepo.Upsert(ctx, foreign.ID(), pgvector.NewVector(nearForeign)))
+	s.Require().NoError(s.embeddingRepo.Upsert(ctx, own.ID(), pgvector.NewVector(far)))
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/notes/%s/suggestions?limit=5", source.ID().String()), nil)
+	s.router.ServeHTTP(w, req)
+
+	s.Equal(http.StatusOK, w.Code)
+	var resp SuggestionsResponse
+	s.Require().NoError(json.Unmarshal(w.Body.Bytes(), &resp))
+	s.Len(resp.Suggestions, 1, "only the owner's own note may be suggested")
+	s.Equal(own.ID().String(), resp.Suggestions[0].NoteID)
+	s.NotEqual(foreign.ID().String(), resp.Suggestions[0].NoteID)
+}
+
 func TestNoteHandlerSemanticIntegrationSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")

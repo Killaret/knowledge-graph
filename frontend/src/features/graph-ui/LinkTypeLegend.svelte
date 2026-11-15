@@ -1,18 +1,21 @@
 <script lang="ts">
-  import { LinkType } from "$entities";
+  /* eslint-disable prefer-const -- Svelte 5 $props() with $bindable requires let */
+  import { LinkType, AUTO_LINK_COLOR } from "$entities";
+  import { isLightStyle } from "$entities/graph-canvas/lib/light/style";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
     formatMessage(key, locale, params);
 
-  const {
+  let {
     hiddenTypes = [],
     onToggle,
     onMinWeightChange,
     minWeight = 0,
     showMinWeight = false,
     collapsible = true,
+    collapsed = $bindable(false),
   }: {
     hiddenTypes?: string[];
     onToggle?: (type: string) => void;
@@ -20,10 +23,20 @@
     minWeight?: number;
     showMinWeight?: boolean;
     collapsible?: boolean;
+    collapsed?: boolean;
   } = $props();
+  /* eslint-enable prefer-const */
 
-  let collapsed = $state(false);
-  const types = $derived(LinkType.ALL_TYPES);
+  let legendContainer: HTMLDivElement | null = $state(null);
+
+  /** Expose the rendered container so the parent can measure footprint. */
+  export function getContainer(): HTMLDivElement | null {
+    return legendContainer;
+  }
+  // LINK-TYPES-1: manual (UI-visible) types only — legacy `reference`/`custom`
+  // and system `parent`/`child` never appear here. Automatic model-suggested
+  // links get a separate, non-toggleable row below.
+  const types = $derived(LinkType.UI_TYPES);
   const isInteractive = $derived(!!onToggle);
   const areAllVisible = $derived(hiddenTypes.length === 0);
   const areAllHidden = $derived(hiddenTypes.length === types.length);
@@ -53,7 +66,7 @@
   }
 </script>
 
-<div class="link-type-legend" class:collapsed>
+<div class="link-type-legend" class:collapsed bind:this={legendContainer}>
   <button
     type="button"
     class="legend-header"
@@ -114,12 +127,40 @@
             </button>
           </div>
         {/each}
+        <!-- LINK-TYPES-1: model-suggested (gamma) links have their own colour;
+             the row is informational — autos are not a manual link type and are
+             not toggleable through the type filter. -->
+        <div class="legend-list-item" role="listitem">
+          <div class="legend-item legend-item-auto">
+            <span class="legend-line" style="background: {AUTO_LINK_COLOR}"></span>
+            <span class="legend-icon">✨</span>
+            <span class="legend-label">{t("linkLegend.auto")}</span>
+          </div>
+        </div>
+        {#if isLightStyle()}
+          <!-- GRAPH-LIGHT-1, decision 81: recommendations appear only on hover. -->
+          <div class="legend-list-item" role="listitem">
+            <div class="legend-item legend-item-auto" data-testid="legend-recommendation">
+              <span class="legend-line legend-line-dashed"></span>
+              <span class="legend-icon">⋯</span>
+              <span class="legend-label">{t("linkLegend.recommendation")}</span>
+            </div>
+          </div>
+        {/if}
       </div>
     </div>
   {/if}
 </div>
 
 <style>
+  .legend-line-dashed {
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(223, 231, 255, 0.85) 0 4px,
+      transparent 4px 7px
+    );
+  }
+
   .link-type-legend {
     position: absolute;
     bottom: 16px;

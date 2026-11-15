@@ -5,6 +5,7 @@ package postgres
 import (
 	"context"
 	"testing"
+	"time"
 
 	"knowledge-graph/internal/domain/note"
 	"knowledge-graph/internal/testutil"
@@ -190,6 +191,48 @@ func (s *NoteRepositoryIntegrationTestSuite) TestFindByID_AfterDelete() {
 	found, err = s.repo.FindByID(s.ctx, id)
 	s.NoError(err)
 	s.Nil(found)
+}
+
+// COMET-1: «Ближайшие дела» — незакрытые кометы пользователя, датированные по
+// возрастанию due_at (просроченные первыми), бездатные в конце.
+func (s *NoteRepositoryIntegrationTestSuite) TestFindComets_OrderingAndFilters() {
+	now := time.Now()
+
+	mkUser := func(login string) uuid.UUID {
+		u := UserModel{ID: uuid.New(), Login: login, Email: login + "@t.local", PasswordHash: "x"}
+		s.Require().NoError(s.db.Create(&u).Error)
+		return u.ID
+	}
+	user := mkUser("comet-owner")
+	other := mkUser("comet-stranger")
+
+	mk := func(title string, creator uuid.UUID, typ string, due, done *time.Time) *note.Note {
+		ttl, _ := note.NewTitle(title)
+		cnt, _ := note.NewContent("content")
+		meta, _ := note.NewMetadata(nil)
+		n := note.NewNoteWithCreator(ttl, cnt, note.MustType(typ), meta, creator)
+		s.Require().NoError(n.SetCometFields(due, nil, done))
+		s.Require().NoError(s.repo.Save(s.ctx, n))
+		return n
+	}
+	ptr := func(t time.Time) *time.Time { return &t }
+
+	soon := mk("soon", user, "comet", ptr(now.Add(time.Hour)), nil)
+	oldOverdue := mk("oldOverdue", user, "comet", ptr(now.Add(-48*time.Hour)), nil)
+	undated := mk("undated", user, "comet", nil, nil)
+	mk("done", user, "comet", ptr(now.Add(time.Hour)), ptr(now))  // закрыта — не в списке
+	mk("stranger", other, "comet", ptr(now.Add(-time.Hour)), nil) // чужая — не в списке
+	mk("notComet", user, "star", ptr(now.Add(-time.Hour)), nil)   // не комета — не в списке
+	deleted := mk("deleted", user, "comet", ptr(now.Add(time.Hour)), nil)
+	s.Require().NoError(s.repo.Delete(s.ctx, deleted.ID())) // soft-deleted — не в списке
+
+	got, err := s.repo.FindComets(s.ctx, user)
+	s.Require().NoError(err)
+	s.Require().Len(got, 3)
+
+	s.Equal(oldOverdue.ID(), got[0].ID(), "самая просроченная — первая")
+	s.Equal(soon.ID(), got[1].ID())
+	s.Equal(undated.ID(), got[2].ID(), "бездатная — последней")
 }
 
 // Запускаем тесты

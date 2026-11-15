@@ -8,15 +8,18 @@ import (
 )
 
 type Note struct {
-	id        uuid.UUID
-	title     Title
-	content   Content
-	type_     NoteType
-	metadata  Metadata
-	creatorID *uuid.UUID
-	isPublic  bool
-	createdAt time.Time
-	updatedAt time.Time
+	id                  uuid.UUID
+	title               Title
+	content             Content
+	type_               NoteType
+	metadata            Metadata
+	creatorID           *uuid.UUID
+	isPublic            bool
+	dueAt               *time.Time
+	remindBeforeSeconds *int64
+	doneAt              *time.Time
+	createdAt           time.Time
+	updatedAt           time.Time
 }
 
 // NoteOption configures a Note during construction.
@@ -34,6 +37,16 @@ func WithIsPublic(isPublic bool) NoteOption {
 func WithID(id uuid.UUID) NoteOption {
 	return func(n *Note) {
 		n.id = id
+	}
+}
+
+// WithCometFields restores comet scheduling fields when reconstructing a note.
+// The fields are kept for any type so re-typing a comet does not lose the date.
+func WithCometFields(dueAt *time.Time, remindBeforeSeconds *int64, doneAt *time.Time) NoteOption {
+	return func(n *Note) {
+		n.dueAt = dueAt
+		n.remindBeforeSeconds = remindBeforeSeconds
+		n.doneAt = doneAt
 	}
 }
 
@@ -175,6 +188,41 @@ func (n *Note) SetType(noteType NoteType) {
 func (n *Note) SetIsPublic(isPublic bool) {
 	n.isPublic = isPublic
 	n.updatedAt = time.Now()
+}
+
+func (n *Note) DueAt() *time.Time {
+	return n.dueAt
+}
+
+func (n *Note) RemindBeforeSeconds() *int64 {
+	return n.remindBeforeSeconds
+}
+
+func (n *Note) DoneAt() *time.Time {
+	return n.doneAt
+}
+
+// SetCometFields replaces the comet scheduling fields. A reminder offset is
+// meaningless without a due date, so clearing dueAt clears the offset too.
+func (n *Note) SetCometFields(dueAt *time.Time, remindBeforeSeconds *int64, doneAt *time.Time) error {
+	if dueAt == nil && remindBeforeSeconds != nil {
+		return fmt.Errorf("remind_before requires due_at")
+	}
+	n.dueAt = dueAt
+	n.remindBeforeSeconds = remindBeforeSeconds
+	n.doneAt = doneAt
+	n.updatedAt = time.Now()
+	return nil
+}
+
+// RemindAt returns the moment a reminder is due, or nil when the note has no
+// date or no reminder offset. Done notes are not reminded.
+func (n *Note) RemindAt() *time.Time {
+	if n.dueAt == nil || n.remindBeforeSeconds == nil || n.doneAt != nil {
+		return nil
+	}
+	t := n.dueAt.Add(-time.Duration(*n.remindBeforeSeconds) * time.Second)
+	return &t
 }
 
 func (n *Note) CreatedAt() time.Time {

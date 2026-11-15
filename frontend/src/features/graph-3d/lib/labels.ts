@@ -13,12 +13,18 @@ export class LabelManager {
     this.config = config;
   }
 
-  setLabels(nodes: SimulationNode[]) {
+  /**
+   * UI-GRAPH-1: labels are selective — pass `labeledIds` to caption only the
+   * nodes that matter (hubs, the selected node). Omitted = label every node
+   * (legacy behaviour for small graphs/tests).
+   */
+  setLabels(nodes: SimulationNode[], labeledIds?: Set<string>) {
     this.clear();
 
     if (!this.config.enableLabels) return;
 
     for (const node of nodes) {
+      if (labeledIds && !labeledIds.has(node.id)) continue;
       const body = CelestialBody.fromString(node.type);
       const text = `${body.emoji} ${node.title || node.id.slice(0, 6)}`;
       const div = document.createElement("div");
@@ -42,6 +48,11 @@ export class LabelManager {
       this.scene.add(label);
       this.labels.set(node.id, label);
     }
+  }
+
+  /** Number of labels currently in the scene (tests / diagnostics). */
+  get size(): number {
+    return this.labels.size;
   }
 
   updatePositions(nodes: SimulationNode[]) {

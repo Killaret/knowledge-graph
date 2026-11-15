@@ -22,7 +22,9 @@ type JaccardSimilarity struct{}
 // Similarity implements KeywordSimilarity
 func (j *JaccardSimilarity) Similarity(source []string, target []string, weightsSource map[string]float64, weightsTarget map[string]float64) float64 {
 	if len(source) == 0 && len(target) == 0 {
-		return 1.0 // Оба пустые — полное сходство
+		// P11-3 (решение владельца 17.09): две заметки без ключевых слов не похожи —
+		// они обе не готовы. Было 1.0 («оба пустые — полное сходство»).
+		return 0.0
 	}
 	if len(source) == 0 || len(target) == 0 {
 		return 0.0 // Один пустой — нет сходства
@@ -64,7 +66,9 @@ type OverlapSimilarity struct{}
 // Similarity implements KeywordSimilarity
 func (o *OverlapSimilarity) Similarity(source []string, target []string, weightsSource map[string]float64, weightsTarget map[string]float64) float64 {
 	if len(source) == 0 && len(target) == 0 {
-		return 1.0
+		// P11-3 (решение владельца 17.09): две заметки без ключевых слов не похожи —
+		// они обе не готовы. Было 1.0 («оба пустые — полное сходство»).
+		return 0.0
 	}
 	if len(source) == 0 || len(target) == 0 {
 		return 0.0
@@ -111,7 +115,9 @@ type TverskySimilarity struct {
 // Similarity implements KeywordSimilarity
 func (t *TverskySimilarity) Similarity(source []string, target []string, weightsSource map[string]float64, weightsTarget map[string]float64) float64 {
 	if len(source) == 0 && len(target) == 0 {
-		return 1.0
+		// P11-3 (решение владельца 17.09): две заметки без ключевых слов не похожи —
+		// они обе не готовы. Было 1.0 («оба пустые — полное сходство»).
+		return 0.0
 	}
 	if len(source) == 0 || len(target) == 0 {
 		return 0.0
@@ -171,7 +177,9 @@ func (w *WeightedJaccardSimilarity) Similarity(source []string, target []string,
 	}
 
 	if len(source) == 0 && len(target) == 0 {
-		return 1.0
+		// P11-3 (решение владельца 17.09): две заметки без ключевых слов не похожи —
+		// они обе не готовы. Было 1.0 («оба пустые — полное сходство»).
+		return 0.0
 	}
 	if len(source) == 0 || len(target) == 0 {
 		return 0.0
@@ -228,7 +236,9 @@ type CosineSimilarity struct{}
 // Similarity implements KeywordSimilarity
 func (c *CosineSimilarity) Similarity(source []string, target []string, weightsSource map[string]float64, weightsTarget map[string]float64) float64 {
 	if len(source) == 0 && len(target) == 0 {
-		return 1.0
+		// P11-3 (решение владельца 17.09): две заметки без ключевых слов не похожи —
+		// они обе не готовы. Было 1.0 («оба пустые — полное сходство»).
+		return 0.0
 	}
 	if len(source) == 0 || len(target) == 0 {
 		return 0.0

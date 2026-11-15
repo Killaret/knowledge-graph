@@ -10,9 +10,9 @@ Knowledge Graph uses Docker Compose for containerization with microservices arch
 
 | Service | Container | Port | Description |
 |---------|-----------|------|-------------|
-| Frontend | kg-frontend | 5173 | SvelteKit production build (adapter-node) |
+| Frontend | kg-frontend | — (via nginx :18081) | SvelteKit production build (adapter-node); 5173 is the `npm run dev` Vite port, not this container |
 | Backend | kg-backend | 9000 (127.0.0.1) | Go API server (Gin + GORM) |
-| Graph Service | kg-graph-service | 9091 | gRPC layout service (Go 1.24) |
+| Graph Service | kg-graph-service | 9091 (HTTP), 9090 (gRPC) | Graph layout/delta service (Go); gRPC listener has no in-repo clients yet |
 | Nginx | kg-nginx | 18080, 18081 | API gateway & reverse proxy |
 | Worker | kg-worker | - | Background worker for async tasks |
 
@@ -21,7 +21,7 @@ Knowledge Graph uses Docker Compose for containerization with microservices arch
 | Service | Container | Port | Description |
 |---------|-----------|------|-------------|
 | PostgreSQL | kg-postgres | 15432 | pgvector for semantic search |
-| Redis | kg-redis | 6379 | Cache & job queue |
+| Redis | kg-redis | 16379 (127.0.0.1) | Cache & job queue |
 | MongoDB | kg-mongo | 27017 | Drafts storage |
 | NLP | kg-nlp | 5000 | Embeddings service (Python/FastAPI) |
 
@@ -257,9 +257,9 @@ The personal stack uses different ports to avoid conflicts:
 | Nginx API | 18080 | 18082 |
 | Nginx frontend | 18081 | 18084 |
 | Graph Service | 9091 | 9092 |
-| Frontend | 5173 | 3001 |
+| Frontend | — (nginx 18081; `npm run dev` uses 5173) | 3001 |
 | PostgreSQL | 15432 | 5433 |
-| Redis | 6379 | 6380 |
+| Redis | 16379 | 16380 |
 | MongoDB | 27017 | 27018 |
 
 ## Monitoring

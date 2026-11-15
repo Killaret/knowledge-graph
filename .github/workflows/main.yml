@@ -448,7 +448,7 @@ jobs:
         run: docker build -t knowledge-graph-frontend -f ./frontend/Dockerfile .
 
       - name: Build NLP service image
-        run: docker build -t knowledge-graph-nlp ./nlp-service
+        run: docker build -f ./nlp-service/Dockerfile -t knowledge-graph-nlp .
 
       - name: Test docker-compose
         run: |

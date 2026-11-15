@@ -9,7 +9,6 @@ import (
 
 	"knowledge-graph/internal/application/achievement"
 	"knowledge-graph/internal/application/cache"
-	appevents "knowledge-graph/internal/application/events"
 	"knowledge-graph/internal/domain/link"
 	"knowledge-graph/internal/domain/note"
 	apicommon "knowledge-graph/internal/interfaces/api/common"
@@ -24,14 +23,6 @@ type Handler struct {
 	noteRepo           note.Repository
 	achievementService *achievement.Service
 	graphCache         *cache.GraphCache
-	eventPublisher     appevents.Publisher
-}
-
-func getUserIDString(c *gin.Context) string {
-	if userID, exists := middleware.GetUserID(c); exists && userID != uuid.Nil {
-		return userID.String()
-	}
-	return ""
 }
 
 func New(linkRepo link.Repository, noteRepo note.Repository, achievementService *achievement.Service, graphCache *cache.GraphCache) *Handler {
@@ -43,15 +34,10 @@ func New(linkRepo link.Repository, noteRepo note.Repository, achievementService 
 	}
 }
 
-// SetEventPublisher sets the optional graph event publisher for cache invalidation.
-func (h *Handler) SetEventPublisher(p appevents.Publisher) {
-	h.eventPublisher = p
-}
-
 type createLinkRequest struct {
 	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
 	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
-	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom parent child"`
+	LinkType     string                 `json:"link_type" binding:"omitempty,oneof=reference dependency related custom parent child"`
 	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
 	Metadata     map[string]interface{} `json:"metadata"`
 }
@@ -132,7 +118,11 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	linkType, err := link.NewLinkType(req.LinkType)
+	rawType := req.LinkType
+	if rawType == "" {
+		rawType = "related"
+	}
+	linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(rawType))
 	if err != nil {
 		apicommon.BadRequest(c, []apicommon.FieldError{
 			apicommon.NewFieldErrorWithValue("link_type", apicommon.ReasonInvalidValue, err.Error(), req.LinkType),
@@ -184,12 +174,6 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 	newLink = savedLink
-
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishLinkCreated(context.Background(), newLink.SourceNoteID().String(), newLink.TargetNoteID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[LinkHandler] Failed to publish LinkCreated event: %v", err)
-		}
-	}
 
 	// Check for achievements asynchronously with bounded context
 	if userID, exists := middleware.GetUserID(c); exists && h.achievementService != nil {
@@ -281,7 +265,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	modified := false
 	if req.LinkType != "" {
-		linkType, err := link.NewLinkType(req.LinkType)
+		linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(req.LinkType))
 		if err != nil {
 			apicommon.BadRequest(c, []apicommon.FieldError{
 				apicommon.NewFieldErrorWithValue("link_type", apicommon.ReasonInvalidValue, err.Error(), req.LinkType),
@@ -317,12 +301,6 @@ func (h *Handler) Update(c *gin.Context) {
 		}
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveLink)
 		return
-	}
-
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishLinkUpdated(context.Background(), l.SourceNoteID().String(), l.TargetNoteID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[LinkHandler] Failed to publish LinkUpdated event: %v", err)
-		}
 	}
 
 	// Invalidate graph cache for the user
@@ -454,12 +432,6 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishLinkDeleted(context.Background(), l.SourceNoteID().String(), l.TargetNoteID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[LinkHandler] Failed to publish LinkDeleted event: %v", err)
-		}
-	}
-
 	// Invalidate graph cache for the user
 	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
 		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
@@ -484,12 +456,6 @@ func (h *Handler) DeleteByNote(c *gin.Context) {
 	if err := h.linkRepo.DeleteBySource(ctx, noteID); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedDeleteLink)
 		return
-	}
-
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishLinkDeleted(context.Background(), noteID.String(), "", getUserIDString(c)); err != nil {
-			log.Printf("[LinkHandler] Failed to publish LinkDeleted event for DeleteByNote: %v", err)
-		}
 	}
 
 	apicommon.NoContent(c)

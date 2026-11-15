@@ -48,6 +48,28 @@ func TestNewWeight(t *testing.T) {
 	}
 }
 
+func TestNormalizeLinkTypeValue(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"reference→related", "reference", "related"},
+		{"custom→related", "custom", "related"},
+		{"related unchanged", "related", "related"},
+		{"dependency unchanged", "dependency", "dependency"},
+		{"parent unchanged", "parent", "parent"},
+		{"child unchanged", "child", "child"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NormalizeLinkTypeValue(tt.input); got != tt.want {
+				t.Errorf("NormalizeLinkTypeValue(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestNewMetadata(t *testing.T) {
 	_, err := NewMetadata(map[string]interface{}{"description": "test"})
 	if err != nil {

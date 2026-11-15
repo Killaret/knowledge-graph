@@ -3,7 +3,7 @@
 <div align="center">
 
 [![CI](https://github.com/Killaret/knowledge-graph/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/Killaret/knowledge-graph/actions/workflows/main.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
 ![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)
 ![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
@@ -291,7 +291,7 @@ Directory index: [`docs/README.md`](docs/README.md).
 
 | Topic | Document |
 |---|---|
-| Where the project is going | [`ROADMAP.md`](ROADMAP.md), [`docs/product/BACKLOG.md`](docs/product/BACKLOG.md), [`docs/product/IDEAS.md`](docs/product/IDEAS.md) |
+| Where the project is going | [`ROADMAP.md`](ROADMAP.md), [`ROADMAP.ru.md`](ROADMAP.ru.md), [`docs/product/BACKLOG.md`](docs/product/BACKLOG.md), [`docs/product/IDEAS.md`](docs/product/IDEAS.md) |
 | What shipped | [`CHANGELOG.md`](CHANGELOG.md) |
 | Architecture | [`docs/architecture/README.md`](docs/architecture/README.md), [`docs/architecture/ARCHITECTURE_SUMMARY.md`](docs/architecture/ARCHITECTURE_SUMMARY.md) |
 | Deployment and configuration | [`DEPLOY.md`](DEPLOY.md) · [`DEPLOY.ru.md`](DEPLOY.ru.md), [`docs/operations/DEPLOYMENT_EN.md`](docs/operations/DEPLOYMENT_EN.md), [`docs/operations/CONFIGURATION_EN.md`](docs/operations/CONFIGURATION_EN.md), [`docs/operations/DOCKER.md`](docs/operations/DOCKER.md) |
@@ -317,7 +317,9 @@ one — findings are confirmed by reading the context or by running the thing.
 
 ## 📄 License
 
-MIT — see [`LICENSE`](LICENSE).
+[PolyForm Noncommercial 1.0.0](LICENSE): personal and other noncommercial use is allowed; selling the
+software or offering it as a paid service is not. Versions up to and including commit `bcd092e`
+were published under the MIT License.
 
 ---
 

@@ -1,5 +1,14 @@
-import { describe, it, expect, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createZoomPanState, handleZoom, handleTouchStart, resetViewToCenter } from "./zoom-pan";
+
+import { getGraphStyle, setGraphStyle } from "$entities/graph-canvas/lib/light/style";
+
+// Classic look: these tests describe the classic renderer and its geometry
+// (fit capped at 1:1, icon drawers). The light style (GRAPH-LIGHT-1) has its
+// own tests in entities/graph-canvas/lib/light.
+const styleBefore = getGraphStyle();
+beforeAll(() => setGraphStyle("classic"));
+afterAll(() => setGraphStyle(styleBefore));
 
 function createCanvas(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");

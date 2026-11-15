@@ -2,12 +2,12 @@
 
 ## Overview
 
-The Knowledge Graph frontend is a **note-centric Svelte 5 application** with graph visualization as a secondary view. The architecture supports both 2D and 3D visualization modes, with **3D Progressive Rendering (Fog of War)** as the primary graph interface for modern browsers.
+The Knowledge Graph frontend is a **note-centric Svelte 5 application** with graph visualization as a secondary view. The architecture supports both 2D (D3-force + Canvas, default) and 3D (Three.js, `features/graph-3d`) visualization modes with progressive rendering (fog + batched node reveal).
 
 ### Key Features
-- **Progressive Graph Loading**: 3D graph loads nodes incrementally with animated "fog of war" effect
-- **Three.js Modular Architecture**: Organized core/simulation/rendering/camera modules
-- **Device-Adaptive**: Automatic quality adjustment based on GPU capabilities
+- **Progressive Graph Loading**: graphs reveal nodes incrementally — fog-of-war in 3D (`features/graph-3d/lib/fog.ts`), batched reveal in 2D (`entities/graph-canvas/lib/incremental.ts`)
+- **Three.js Modular Architecture**: `features/graph-3d/lib/` (scene, simulation, camera, fog, nodes, links, labels, engine)
+- **Device-Adaptive**: *not implemented* — `SmartGraph.svelte` is a thin 2D wrapper and `shared/utils/deviceCapabilities.ts` (WebGL/low-end probe) is currently unused; 2D vs 3D is chosen by route (`/graph/:id` vs `/graph/3d/:id`). Awaiting owner decision (DOC-AUDIT-2).
 - **SSR-Safe**: All browser APIs properly guarded for server-side rendering
 
 ## Core Principles
@@ -30,36 +30,25 @@ The Knowledge Graph frontend is a **note-centric Svelte 5 application** with gra
 
 ## Three.js Module Architecture
 
-The 3D graph visualization is organized in modular layers:
+The 3D graph visualization is organized in modular layers under `frontend/src/`:
 
 ```
-(frozen/removed for v1.0 — the src/shared/three/ module no longer exists)
+features/graph-3d/
+├── lib/          # engine, scene, simulation, camera, fog, nodes, links, labels
+├── model/        # layout-provider (server layout / delta integration)
+├── ui/           # Graph3DScene.svelte
+└── config.ts     # quality presets, fog configs
+widgets/graph-3d-viewer/Graph3DViewer.svelte   # embeddable viewer widget
 ```
 
 ### Progressive Rendering (Fog of War)
 
-**Concept**: Nodes gradually appear from "fog" with camera animation
+**Concept**: Nodes gradually appear from "fog" with camera animation (3D); in 2D — batched reveal of the live simulation.
 
-```typescript
-// Initialization
-sceneSetup.init(scene, camera, renderer)
-  └── scene.fog = new THREE.FogExp2(0x000000, 0.02)  // Dense fog
+Real entry points today:
 
-// Progressive loading
-forceSimulation.addNodesToSimulation(nodes, incremental = true)
-  └── Animate nodes from camera position to final position
-  └── Fade in opacity over time
-  └── Reduce fog density as more nodes appear
-
-// Camera controls
-cameraUtils.lerpCamera(targetPosition, duration)
-cameraUtils.autoZoomToFit(nodes, padding)
-```
-
-**Key Functions**:
-- `addNodesToSimulation()`: Adds nodes incrementally with animation
-- `lerpCamera()`: Smooth camera transitions
-- `animateFogDensity()`: Gradually clears fog during loading
+- 3D: `features/graph-3d/lib/scene.ts` (fog presets via `applyFogPreset`), `lib/simulation.ts`, `lib/camera.ts`, `lib/fog.ts`
+- 2D: `entities/graph-canvas/lib/incremental.ts` — `addNodesToSimulation()` re-heats the live layout (`alpha(0.4).restart()`), see UI-LOAD-1 section below
 
 ## Architecture Diagram
 
@@ -67,20 +56,20 @@ cameraUtils.autoZoomToFit(nodes, padding)
 ┌─────────────────────────────────────────────────────────────────┐
 │  App Shell (/*) - All Pages                                      │
 │  ┌─────────┬──────────────────────────────────────────────────┐  │
-│  │Sidebar  │              Main Content Area                    │  │
-│  │(CCC)    │                                                  │  │
-│  │[v2.0]   │  ┌───────────────────────────────────────────┐  │  │
-│  │width:0  │  │           Main Page (/)                    │  │  │
-│  │(hidden) │  │                                            │  │  │
+│  │ (no     │              Main Content Area                    │  │
+│  │ sidebar │                                                  │  │
+│  │ in v1.0 │  ┌───────────────────────────────────────────┐  │  │
+│  │ — CCC   │  │           Main Page (/)                    │  │  │
+│  │ planned)│  │                                            │  │  │
 │  │         │  │  ┌─────────────────────────────────────┐   │  │  │
 │  │         │  │  │      NoteListView (Primary)         │   │  │  │
 │  │         │  │  │   Grid of note cards with search    │   │  │  │
 │  │         │  │  └─────────────────────────────────────┘   │  │  │
 │  │         │  │         │                                   │  │  │
-│  │         │  │    ┌────┴────┐        ┌────┴────┐          │  │  │
-│  │         │  │    │Floating │        │  Note   │          │  │  │
-│  │         │  │    │Controls │        │SidePanel│          │  │  │
-│  │         │  │    └─────────┘        └─────────┘          │  │  │
+│  │         │  │    ┌─────────────┐   ┌───────────────┐    │  │  │
+│  │         │  │    │FloatingAuth │   │ CockpitNote   │    │  │  │
+│  │         │  │    │Panel        │   │ Details       │    │  │  │
+│  │         │  │    └─────────────┘   └───────────────┘    │  │  │
 │  │         │  └───────────────────────────────────────────┘  │  │
 │  │         │                                                  │  │
 │  │         │  ┌─────────────────┐  ┌─────────────────────┐   │  │
@@ -132,17 +121,15 @@ onMount(() => {
 });
 ```
 
-### 2. FloatingControls.svelte
+### 2. FloatingAuthPanel.svelte (`widgets/floating-auth-panel/`)
 
-Persistent floating control panel with:
-- Create note button (+)
-- Search button/overlay
-- View toggle (2D/3D)
-- Import/Export menu
+Floating panel on the main page: auth controls and, in batch mode, a floating batch-delete panel (see `routes/+page.svelte`).
 
-### 3. NoteSidePanel.svelte
+> Historical: the doc previously described a `FloatingControls.svelte` (create/search/view-toggle/export) — that component no longer exists; controls live in page/features widgets.
 
-Slide-out panel for note details:
+### 3. Note details panel (`CockpitNoteDetails.svelte`, `widgets/cosmic-cockpit/`)
+
+Slide-out/panel display for note details:
 - Title and content display
 - Edit/Delete actions
 - Related notes section
@@ -170,17 +157,17 @@ Reusable confirmation dialog:
 
 ### 6. SmartGraph.svelte
 
-Smart component that decides between 2D and 3D:
-- Detects device capabilities
-- Checks WebGL support
-- Respects user preference via URL param (`?force3d=1`)
-- Falls back to 2D on low-end devices
+Thin wrapper used on `/graph/:id`: shows a loading state, then renders
+`GraphCanvas` (2D). The documented device-adaptive behaviour (WebGL probe,
+`?force3d=1` URL param, 2D fallback on low-end devices) is **not implemented** —
+`shared/utils/deviceCapabilities.ts` exists but has no callers; 3D is reached by
+navigating to `/graph/3d/:id`. Awaiting owner decision (DOC-AUDIT-2).
 
-### 7. Sidebar.svelte (Context Control Center) 🆕
+### 7. Sidebar / Context Control Center 🆕 (planned)
 
-Reserved component for the future **Context Control Center (CCC)** - a left navigation panel for advanced filtering and graph navigation.
+**Context Control Center (CCC)** — left navigation panel for advanced filtering and graph navigation.
 
-**Status**: Reserved/Stub (width: 0, hidden)
+**Status**: not implemented — no sidebar component exists in `frontend/src/` (checked at DOC-AUDIT-2). The app-shell flex layout still allows adding a panel later.
 
 **Planned Modules (v2.0)**:
 1. **Note Groups (Projects/Folders)** - Manual grouping with drag-and-drop
@@ -202,16 +189,19 @@ Reserved component for the future **Context Control Center (CCC)** - a left navi
 }
 ```
 
-### 8. Graph3D.svelte (3D Visualization)
+### 8. Graph3DViewer.svelte (`widgets/graph-3d-viewer/`)
 
-Three.js-based 3D graph visualization with progressive loading:
+Three.js-based 3D graph visualization with progressive loading (scene/engine live in `features/graph-3d/`):
 
-**Props**:
+**Props** (actual):
 ```typescript
 {
-  noteId: string;              // Central note ID to build graph from
-  loadDepth?: number;         // Graph traversal depth (default: 2)
-  performanceMode?: boolean;  // Reduce quality for low-end devices
+  nodes: Node[];
+  links: Link[];
+  centerNodeId: string;
+  selectedNodeId: string | null;
+  onNodeClick: (id: string) => void;
+  onNodeDoubleClick: (id: string) => void;
 }
 ```
 
@@ -222,7 +212,7 @@ Three.js-based 3D graph visualization with progressive loading:
 - **Camera Animation**: Smooth transitions between views
 - **Stats Bar**: Shows loading progress and node count
 
-**Three.js Integration** — 3D graph is **frozen/removed for v1.0**; the `src/shared/three/` module no longer exists:
+**Three.js Integration** — modules live in `features/graph-3d/lib/` (`scene`, `simulation`, `camera`, `fog`, `nodes`, `links`, `labels`, `engine`). The historical `src/shared/three/` sketch below is kept for context only:
 ```typescript
 // Core modules (historical — 3D frozen/removed)
 // import { setupScene } from '$shared/three/core/sceneSetup';
@@ -320,46 +310,51 @@ sequenceDiagram
 3. **Reactive filtering**: `filteredNotes` and `filteredGraphData` are derived from `filterState`; `FloatingControls` updates `filterState` immutably via `filterState.with({...})`.
 4. **Cache busting**: `getNotes`, `getFreshGraph`, and `getGraphWithPreload` use `cache: "no-store"` so that tests and reloads never reuse stale responses.
 
+### Progressive rendering (UI-LOAD-1)
+
+Loading never covers the UI with a blocking overlay:
+
+- **Notes first**: `loadGraph()` accepts `onNotesReady` and fires it as soon as the notes list resolves — `+page.svelte` shows the list and search while the graph request is still in flight.
+- **No covering layer**: the old full-screen `.loading-overlay` is gone; a non-blocking `.loading-chip` (`pointer-events: none`) in the corner shows "Loading…" instead. `SplashScreen` is decorative and also `pointer-events: none`, so it never swallows clicks or typing.
+- **Batched reveal**: `GraphCanvas` with `progressiveReveal` renders large graphs (> 40 nodes) in portions — the ~25 most-linked nodes start the simulation, then batches of 12 nodes every ~120 ms join the *live* simulation via `addNodesToSimulation()` (`entities/graph-canvas/lib/incremental.ts`): `simulation.nodes()` is extended, the link force gets the new edges, and the layout is reheated (`alpha(0.4).restart()`) rather than rebuilt. A `N of M` chip reports progress and disappears when done.
+- **Below the threshold** the graph starts in one pass — no artificial staging for small datasets.
+
 ### Related code
 
-- `frontend/src/routes/+page.svelte` — `loadDataParallel()`, `loadGraphData()`, `applyFiltersAndSort()`
-- `frontend/src/entities/filter-state.ts` — `FilterState.filterGraphData()` / `applyFiltersAndSort()`
+- `frontend/src/features/home-page/home-page.svelte.ts` — `loadData()`, `applyFiltersAndSort()`
+- `frontend/src/routes/+page.svelte` — view switching, `loading-chip`
+- `frontend/src/shared/services/graphLoader.ts` — `loadGraph()` / `onNotesReady`
+- `frontend/src/widgets/graph-canvas/GraphCanvas.svelte` — progressive reveal loop
+- `frontend/src/entities/graph-canvas/lib/incremental.ts` — `addNodesToSimulation()`
+- `frontend/src/entities/graph/model/index.ts` — `FilterState` (`filterGraphData()` / `applyFiltersAndSort()`)
 - `frontend/src/shared/api/notes.ts` — `getNotes()`
 - `frontend/src/shared/api/graph.ts` — `getFreshGraph()`, `getGraphWithPreload()`, `getFullGraphData()`
 
 ## State Management
 
-### Graph Store (`$shared/stores/graph.ts`)
+Svelte 5 runes (no `writable` stores for graph state):
 
-```typescript
-interface GraphState {
-  nodes: Node[];
-  links: Link[];
-  selectedNodeId: string | null;
-  viewMode: '2d' | '3d';
-  transform: { x: number; y: number; k: number };
-}
-
-export const graphStore = writable<GraphState>({
-  nodes: [],
-  links: [],
-  selectedNodeId: null,
-  viewMode: '2d',
-  transform: { x: 0, y: 0, k: 1 }
-});
-```
+- `frontend/src/features/graph-canvas/canvas-state.svelte.ts` — canvas/view state
+- `frontend/src/entities/graph/model/index.ts` — `FilterState` (graph + list filtering)
+- `frontend/src/shared/services/PreloadService.ts` — graph data lifecycle (snapshot, delta, resync)
 
 ## Routing Structure
 
 ```
 /                           → Main page with note list (note-centric)
 /?search=:query             → Main page with search active
+/notes/new                  → Create note page (alternative to modal)
 /notes/:id                  → Note detail page
 /notes/:id/edit             → Note edit page
-/notes/create               → Create note page (alternative to modal)
+/graph                      → Full-graph view
 /graph/:id                  → 2D graph view for note
-/graph/3d/:id               → 3D graph view with progressive rendering
-/search?q=:query            → Search results page (redirects to /?search=)
+/graph/3d                   → Full 3D graph
+/graph/3d/:id               → 3D graph view for note
+/search?q=:query            → Search results page
+/auth/login|register|forgot-password|reset-password → Auth pages
+/import, /import/bookmarks  → Import flows
+/profile                    → User profile
+/test/*                     → Test fixtures (dev only)
 ```
 
 ### Route Details
@@ -455,22 +450,26 @@ function handleDelete() {
 ## BDD Testing with Cucumber
 
 ### Feature Files Location
+
+The wired suite (what `npm run test:cucumber` / `test:bdd` actually runs —
+`cucumber.mjs` points at `frontend/tests/features/`):
+
 ```
-tests/features/
-├── graph_navigation.feature      # Graph interaction scenarios
-├── import_export.feature          # Import/export functionality
-├── graph_view.feature             # 2D/3D view modes
-├── note_management.feature        # CRUD operations
-└── search_and_discovery.feature   # Search functionality
+frontend/tests/features/           # 2 feature files:
+├── graph_2d_list.feature          # 2D graph on the list page
+└── login.feature                  # Auth flow
+frontend/tests/features/step_definitions/
+├── auth.steps.ts
+├── common.steps.ts
+├── graph_3d_loading.steps.ts
+└── graph_interaction.steps.ts
 ```
 
-### Step Definitions
-```
-tests/features/step_definitions/
-├── graph_steps.ts                 # Graph-specific steps
-├── navigation_steps.ts            # Navigation steps
-└── common_steps.ts                # Shared steps
-```
+A legacy set of 13 feature files (`achievements.feature`,
+`camera_navigation.feature`, …) plus 7 step files still lives under the
+repository-root `tests/features/` — it is **not referenced** by `cucumber.mjs`,
+`package.json`, CI, or the test scripts, so it does not execute
+(DOC-AUDIT-2; retirement/rewiring is on the owner's list).
 
 ### Running Tests
 
@@ -490,11 +489,12 @@ CUCUMBER_TAGS="@smoke" npm run test:cucumber
 
 ## Performance Optimizations
 
-1. **Lazy Loading**: 3D component is dynamically imported only when needed
+1. **Lazy Loading**: 3D module is dynamically imported only when needed
 2. **Canvas Rendering**: 2D graph uses Canvas API for smooth 60fps animation
-3. **Device Detection**: Automatic quality adjustment based on GPU capabilities
-4. **Virtual Scrolling**: For large note lists in list view
-5. **Debounced Search**: 500ms debounce on search input
+3. **Batched progressive reveal**: large graphs (2D and 3D) render in batches instead of one blocking pass
+4. ~~Device Detection~~ — *not implemented*: `SmartGraph` does not adjust the 2D/3D choice (DOC-AUDIT-2)
+
+> Not implemented (historical text removed): virtual scrolling in the note list, fixed 500 ms search debounce.
 
 ## Accessibility (a11y)
 

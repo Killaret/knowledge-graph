@@ -11,6 +11,7 @@
   import type { Props as Graph3DViewerProps } from "$widgets/graph-3d-viewer/Graph3DViewer.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
   import { initAuth } from "$shared/stores/auth.svelte";
+  import { isGraph3DEnabled } from "$shared/config/config";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const runtimeConfig = toRuntimeConfig();
@@ -40,6 +41,11 @@
 
   onMount(async () => {
     if (!browser) return;
+    // FREEZE-3D-1: with 3D disabled the route shows the 2D graph instead.
+    if (!isGraph3DEnabled()) {
+      await goto(`/graph/${getRouteId()}`, { replaceState: true });
+      return;
+    }
     // Wait for session restore before loading: a refresh may be in flight,
     // and isAuthenticated() stays false until it resolves — an early call
     // would hit the public endpoint and render the anonymous scene.

@@ -20,6 +20,7 @@ import (
 	"knowledge-graph/internal/infrastructure/db"
 	"knowledge-graph/internal/infrastructure/db/postgres"
 	"knowledge-graph/internal/infrastructure/events"
+	"knowledge-graph/internal/infrastructure/outbox"
 	"knowledge-graph/internal/infrastructure/queue"
 	"knowledge-graph/internal/infrastructure/recompute"
 )
@@ -56,8 +57,10 @@ func main() {
 		}
 	}()
 
-	noteRepo := postgres.NewNoteRepository(database, nil)
-	linkRepo := postgres.NewLinkRepository(database)
+	// SYNC-1 A2: writes go through the outbox decorators — LinkDeleted and
+	// LinkCreated rows are recorded with each write and flushed to Redis at
+	// the end of the run (and by the worker's relayer if this tool crashes).
+	linkRepo := outbox.NewLinkRepository(postgres.NewLinkRepository(database), database)
 	embeddingRepo := postgres.NewEmbeddingRepository(database, cfg.NLPModelName)
 	gammaGen := recommendation.NewGammaLinkGenerator(embeddingRepo, linkRepo, 2, cfg.GammaLinkMinScore)
 
@@ -90,15 +93,16 @@ func main() {
 		return
 	}
 
-	// Event publisher and task queue so the graph-service refreshes
-	// note_links_closure and recommendation caches pick up the new edges.
+	// Task queue so the graph-service refreshes note_links_closure and
+	// recommendation caches pick up the new edges. Events themselves ride
+	// the outbox; the publisher is needed only for the final relay flush.
 	var eventPublisher *events.Publisher
 	if cfg.EventChannel != "" {
 		eventPublisher = events.NewPublisher(cacheClient, cfg.EventChannel)
 	} else {
-		log.Println("WARNING: EVENT_CHANNEL not set, LinkCreated/LinkDeleted events will not be published")
+		log.Println("WARNING: EVENT_CHANNEL not set, outbox events will wait for the worker relay")
 	}
-	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled)
+	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled, cfg.NLPQualityEnabled)
 	if err != nil {
 		log.Printf("WARNING: failed to create task queue client: %v", err)
 		taskQueue = nil
@@ -111,34 +115,8 @@ func main() {
 	}
 	taskDelay := time.Duration(cfg.RecommendationTaskDelaySeconds) * time.Second
 
-	creators := map[uuid.UUID]string{}
-	creatorOf := func(noteID uuid.UUID) string {
-		if id, ok := creators[noteID]; ok {
-			return id
-		}
-		n, err := noteRepo.FindByID(ctx, noteID)
-		if err != nil || n == nil {
-			creators[noteID] = ""
-			return ""
-		}
-		id := ""
-		if n.CreatorID() != nil {
-			id = n.CreatorID().String()
-		}
-		creators[noteID] = id
-		return id
-	}
-
-	// Publish LinkDeleted for every gamma link before removal so caches and
-	// the closure view reflect the deletion.
-	for _, l := range existing {
-		if eventPublisher != nil {
-			if err := eventPublisher.PublishLinkDeleted(ctx, l.SourceNoteID().String(), l.TargetNoteID().String(), creatorOf(l.SourceNoteID())); err != nil {
-				log.Printf("Failed to publish LinkDeleted %s -> %s: %v", l.SourceNoteID(), l.TargetNoteID(), err)
-			}
-		}
-	}
-
+	// LinkDeleted events are recorded by the repository decorator for every
+	// row removed below — no manual publishing here.
 	deleted, err := linkRepo.DeleteBySourceType(ctx, gammaSourceType)
 	if err != nil {
 		log.Fatalf("failed to delete gamma links: %v", err)
@@ -155,11 +133,6 @@ func main() {
 	for sourceID, links := range createdMap {
 		for _, l := range links {
 			createdCount++
-			if eventPublisher != nil {
-				if err := eventPublisher.PublishLinkCreated(ctx, l.SourceNoteID().String(), l.TargetNoteID().String(), creatorOf(l.SourceNoteID())); err != nil {
-					log.Printf("Failed to publish LinkCreated %s -> %s: %v", l.SourceNoteID(), l.TargetNoteID(), err)
-				}
-			}
 			if !refreshed[l.TargetNoteID()] {
 				refreshed[l.TargetNoteID()] = true
 			}
@@ -173,6 +146,17 @@ func main() {
 			if err := taskQueue.EnqueueRefreshRecommendations(ctx, noteID, taskDelay); err != nil {
 				log.Printf("Failed to enqueue refresh for %s: %v", noteID, err)
 			}
+		}
+	}
+
+	// Deliver the events this run recorded — without the flush they would
+	// wait in graph_outbox until the next worker relay tick.
+	if eventPublisher != nil {
+		relayer := outbox.NewRelayer(database, eventPublisher, 0, cfg.OutboxBatchSize)
+		if n, err := relayer.Flush(ctx); err != nil {
+			log.Printf("WARNING: outbox flush incomplete (%d sent): %v — the worker relay will deliver the rest", n, err)
+		} else if n > 0 {
+			log.Printf("Outbox flush delivered %d event(s)", n)
 		}
 	}
 

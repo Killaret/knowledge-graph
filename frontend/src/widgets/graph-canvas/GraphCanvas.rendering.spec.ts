@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
 import { render } from "@testing-library/svelte";
 
@@ -106,6 +106,15 @@ vi.mock("d3-force", () => {
 });
 
 import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
+
+import { getGraphStyle, setGraphStyle } from "$entities/graph-canvas/lib/light/style";
+
+// Classic look: these tests describe the classic renderer and its geometry
+// (fit capped at 1:1, icon drawers). The light style (GRAPH-LIGHT-1) has its
+// own tests in entities/graph-canvas/lib/light.
+const styleBefore = getGraphStyle();
+beforeAll(() => setGraphStyle("classic"));
+afterAll(() => setGraphStyle(styleBefore));
 
 // Track canvas context calls
 let ctxCalls: {

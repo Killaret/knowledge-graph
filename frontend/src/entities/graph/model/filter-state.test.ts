@@ -80,6 +80,27 @@ describe("FilterState", () => {
     expect(result.links).toHaveLength(0);
   });
 
+  // NOTES-LIMIT-1: with no filter selected the graph keeps nodes whose notes
+  // are missing from the list (e.g. beyond the backend page cap).
+  it("keeps graph nodes not present in the notes list when no filter is active", () => {
+    const graphData = {
+      nodes: [
+        { id: "1", title: "A" },
+        { id: "2", title: "B" },
+        { id: "3", title: "C" },
+      ],
+      links: [
+        { source: "1", target: "2" },
+        { source: "2", target: "3" },
+      ],
+    };
+    const notes = [note({ id: "1" }), note({ id: "2" })];
+    const f = new FilterState();
+    const result = f.filterGraphData(graphData, notes, getNoteType);
+    expect(result.nodes).toHaveLength(3);
+    expect(result.links).toHaveLength(2);
+  });
+
   it("creates an updated copy", () => {
     const f = new FilterState({ selectedType: "all", searchQuery: "foo" });
     const next = f.with({ selectedType: "star" });

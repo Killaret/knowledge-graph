@@ -1,0 +1,334 @@
+import random
+import re
+import sys
+import os
+import time
+
+import numpy as np
+import pytest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app.core.chunking import (
+    ChunkingParams,
+    _ends_with_initials,
+    _match_heading,
+    _starts_with_dotted_word,
+    aggregate,
+    chunk,
+    embedding_inputs,
+)
+
+
+def word_tokens(text: str) -> int:
+    return len(re.findall(r"[\w]+", text, flags=re.UNICODE))
+
+
+def params(target: int = 8, max_tokens: int = 12, title: str | None = None):
+    return ChunkingParams(
+        token_counter=word_tokens,
+        target_tokens=target,
+        max_tokens=max_tokens,
+        title=title,
+        title_injection=True,
+    )
+
+
+def assert_exact_spans(text: str, chunks):
+    cursor = -1
+    for item in chunks:
+        start, end = item.char_span
+        assert start >= 0
+        assert end <= len(text)
+        assert start < end
+        assert start >= cursor
+        assert text[start:end] == item.text
+        cursor = end
+
+
+def assert_no_non_whitespace_loss(text: str, chunks):
+    assert_exact_spans(text, chunks)
+    source = "".join(text.split())
+    emitted = "".join("".join(item.text for item in chunks).split())
+    assert emitted == source
+
+
+class TestChunking:
+    def test_window_invariant_for_long_runs_code_and_table(self):
+        text = (
+            " ".join(f"word{i}" for i in range(40))
+            + "\n\n```python\n"
+            + "code " * 30
+            + "\n```\n\n"
+            + "| h1 | h2 |\n|---|---|\n"
+            + "| " + "cell " * 20 + "|\n"
+            + "| tail | row |"
+        )
+        chunks = chunk(text, params(target=6, max_tokens=8))
+
+        assert chunks
+        assert all(item.token_count <= 8 for item in chunks)
+        assert any(item.forced_split for item in chunks)
+        assert {item.kind for item in chunks} >= {"prose", "code", "table"}
+        assert_no_non_whitespace_loss(text, chunks)
+
+    @pytest.mark.parametrize(
+        "fragment",
+        [
+            "Это т.е. проверка",
+            "Это т. е. проверка",
+            "Один др. вариант",
+            "For example e.g. this",
+            "Pi is 3.14 exactly",
+            "Pushkin А.С. wrote",
+            "See https://example.com/path. today",
+        ],
+    )
+    def test_false_sentence_boundaries_do_not_split(self, fragment):
+        text = f"{fragment}. Final sentence."
+        chunks = chunk(text, params(target=1, max_tokens=60))
+
+        assert chunks
+        assert fragment in chunks[0].text
+        assert "Final sentence." not in chunks[0].text
+        assert_no_non_whitespace_loss(text, chunks)
+
+    @pytest.mark.parametrize(
+        "text,joined",
+        [
+            # one-letter token + dotted word after the point (table bound 1):
+            # "e. g." must not split inside
+            ("A e. g. case. Next.", "e. g. case."),
+            # initials chain of 9 chars (table bound 9); the ")" trailer keeps the
+            # window rules from answering, so only the table row sees the token
+            ("Written a.b.c.d.e). Next.", "a.b.c.d.e). Next."),
+            # longest abbreviation in _ABBREVIATIONS (table bound = max len)
+            ("See approx). Next.", "approx). Next."),
+            # "www." marker inside the token; "See www." still splits at the "www|x" point
+            ("See www.x.ru. Next.", "x.ru. Next."),
+        ],
+        ids=["one-letter", "initials-9", "abbreviation", "url-marker"],
+    )
+    def test_token_rule_suppresses_the_boundary(self, text, joined):
+        # Each input pins one _TOKEN_RULES row that the trailing window checks cannot
+        # reach: on the pre-index equivalence run, shrinking a row's bound or dropping
+        # the marker/rule changed these verdicts.
+        chunks = chunk(text, params(target=1, max_tokens=60))
+        assert any(joined in item.text for item in chunks)
+
+    def test_doubled_separator_is_a_real_boundary(self):
+        # "1..2" is not a clean number: the doubled separator inside disables the
+        # number rule, so the point after it is a real boundary (last_pair index).
+        chunks = chunk("Val 1..2. Next.", params(target=1, max_tokens=60))
+        assert chunks[-1].text == "Next."
+
+    def test_random_texts_preserve_non_whitespace_and_spans(self):
+        rng = random.Random(42)
+        alphabet = "abcde fg."
+        for _ in range(50):
+            text = "".join(rng.choice(alphabet) for _ in range(rng.randint(1, 300)))
+            chunks = chunk(text, params(target=7, max_tokens=11))
+            assert_no_non_whitespace_loss(text, chunks)
+
+    def test_structured_text_preserves_all_blocks_and_spans(self):
+        text = (
+            "# Root\n\nIntro sentence.\n\n## Child\n"
+            "Body one. Body two.\n\n```\ncode line\n```\n\n"
+            "| a |\n|---|\n| b |"
+        )
+        chunks = chunk(text, params(target=50, max_tokens=60))
+
+        assert_no_non_whitespace_loss(text, chunks)
+        prose = [item for item in chunks if item.kind == "prose"]
+        assert prose[-1].heading_path == ["Root", "Child"]
+
+    def test_nested_heading_path(self):
+        text = "# Root\n\n## Child\n\n### Leaf\n\nDeep text."
+        chunks = chunk(text, params(target=50, max_tokens=60))
+        prose = [item for item in chunks if item.kind == "prose"]
+
+        assert prose[-1].heading_path == ["Root", "Child", "Leaf"]
+
+    def test_sibling_and_level_up_heading_paths(self):
+        text = (
+            "# Guide\n\n## Install\n\nInstall text.\n\n"
+            "## Usage\n\nUsage text.\n\n"
+            "### Advanced\n\nAdvanced text.\n\n"
+            "# Appendix\n\nAppendix text."
+        )
+        chunks = chunk(text, params(target=50, max_tokens=60))
+        prose = [item for item in chunks if item.kind == "prose"]
+
+        by_text = {item.text.split("\n")[-1]: item.heading_path for item in prose}
+        assert by_text["Install text."] == ["Guide", "Install"]
+        assert by_text["Usage text."] == ["Guide", "Usage"]
+        assert by_text["Advanced text."] == ["Guide", "Usage", "Advanced"]
+        assert by_text["Appendix text."] == ["Appendix"]
+
+    def test_heading_link_stub_is_no_content(self):
+        text = "## [Imported page](https://example.com/page)"
+        assert chunk(text, params()) == []
+
+    def test_empty_and_whitespace_text(self):
+        assert chunk("", params()) == []
+        assert chunk("   \n\n  ", params()) == []
+
+    def test_one_token_text(self):
+        chunks = chunk("word", params())
+        assert len(chunks) == 1
+        assert chunks[0].text == "word"
+        assert chunks[0].token_count == 1
+
+    def test_exact_max_boundary_no_split(self):
+        text = "one two three four five six seven eight"
+        chunks = chunk(text, params(target=8, max_tokens=8))
+        assert len(chunks) == 1
+        assert chunks[0].forced_split is False
+        assert chunks[0].token_count == 8
+
+    def test_long_unbreakable_token_forces_char_split(self):
+        char_params = ChunkingParams(
+            token_counter=len, target_tokens=5, max_tokens=10
+        )
+        text = "x" * 200
+        chunks = chunk(text, char_params)
+        assert len(chunks) > 1
+        assert all(item.forced_split for item in chunks)
+        assert all(item.token_count <= 10 for item in chunks)
+        assert_no_non_whitespace_loss(text, chunks)
+
+    def test_title_injection_adds_title_to_model_input_not_source_span(self):
+        text = "First sentence. Second sentence. Third sentence."
+        chunk_params = params(target=5, max_tokens=6, title="Note title")
+        chunks = chunk(text, chunk_params)
+        inputs = embedding_inputs(chunks, chunk_params)
+
+        assert len(chunks) > 1
+        assert all(item.text.startswith("First") or "title" not in item.text.lower() for item in chunks)
+        assert all(value.startswith("Note title\n\n") for value in inputs)
+        assert all(word_tokens(value) <= 6 for value in inputs)
+
+    def test_title_overhead_is_reserved_from_chunk_budget(self):
+        text = "one two three four five six"
+        chunk_params = params(target=6, max_tokens=6, title="seven eight")
+        chunks = chunk(text, chunk_params)
+        inputs = embedding_inputs(chunks, chunk_params)
+
+        assert all(word_tokens(value) <= 6 for value in inputs)
+        assert_no_non_whitespace_loss(text, chunks)
+
+
+class TestRegexFreeScans:
+    """Text scans that replaced regexes backtracking polynomially on note text (CodeQL py/polynomial-redos)."""
+
+    PIECES = ["#", "##", "#######", "a", "Z", "т", "Ё", "İ", "ſ", ".", "!", "…", "1", '"', "www.",
+              "https://", "т. е", "e.g", " ", "  ", "\t", "\xa0", " ", "\n"]
+
+    def random_texts(self, count: int, newlines: bool = True):
+        rng = random.Random(7)
+        pieces = self.PIECES if newlines else self.PIECES[:-1]
+        for _ in range(count):
+            yield "".join(rng.choice(pieces) for _ in range(rng.randint(0, 12)))
+
+    def test_scans_agree_with_the_regexes_they_replaced(self):
+        heading = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
+        for text in self.random_texts(3000, newlines=False):
+            match = heading.match(text)
+            expected = (len(match.group(1)), match.group(2).strip()) if match else None
+            assert _match_heading(text) == expected, repr(text)
+        for text in self.random_texts(3000):
+            expected = bool(re.match(r"\s*[a-zа-яё]+\.", text, flags=re.IGNORECASE))
+            assert _starts_with_dotted_word(text) == expected, repr(text)
+            lowered = text.lower()
+            expected = bool(re.search(r"(?:[a-zа-яё]{1,3}\.\s*)+[a-zа-яё]$", lowered))
+            assert _ends_with_initials(lowered) == expected, repr(text)
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "# a" + " " * 2000 + "b",
+            "see " + "www." * 1000 + " .",
+            "x" * 20000 + " .",
+        ],
+        ids=["heading-with-spaces", "www-chain", "long-token"],
+    )
+    def test_adversarial_text_is_chunked_quickly(self, text):
+        # with the regexes these took 13 s, 28 s and 3 s
+        started = time.perf_counter()
+        chunk(text, params(target=50, max_tokens=60))
+
+        assert time.perf_counter() - started < 1.0
+
+
+def _long_prose(size: int) -> str:
+    words = "альфа бета гамма дельта эпсилон текст пример см. т.е. 3.14 А.С. www.site.ru".split()
+    rnd = random.Random(1)
+    out = []
+    while sum(map(len, out)) < size:
+        out.append(
+            " ".join(rnd.choice(words) for _ in range(rnd.randint(5, 15))).capitalize() + "."
+        )
+    return " ".join(out)[:size]
+
+
+class TestLongParagraphScaling:
+    """CHUNK-PERF-1: a paragraph of hundreds of KB must not take quadratic time.
+
+    A "paragraph" for the chunker is everything up to a blank line, so glued-together
+    text or a page of single newlines is one paragraph. On the pre-index code these
+    inputs took 12-94 s each; the "1." case never finished in the measurement window.
+    """
+
+    @pytest.mark.parametrize(
+        "make_text,limit",
+        [
+            (lambda: _long_prose(400_000), 1.0),
+            (lambda: "www." * 100_000, 1.0),
+            (lambda: "1." * 200_000, 1.5),
+            (lambda: "a." * 200_000, 1.5),
+        ],
+        ids=["prose-400K", "www-400K", "ones-400K", "a.-400K"],
+    )
+    def test_long_paragraph_is_chunked_quickly(self, make_text, limit):
+        text = make_text()
+        fast_params = ChunkingParams(
+            token_counter=word_tokens, target_tokens=126, max_tokens=126
+        )
+
+        started = time.perf_counter()
+        chunk(text, fast_params)
+
+        assert time.perf_counter() - started < limit
+
+    def test_nonmonotonic_counter_keeps_window_and_text_invariants(self):
+        # "ё" lowers the count, so appending a character can shrink it — the doubling
+        # probe and binary search must still emit spans that fit the window. Real
+        # tokenizers behave this way (SentencePiece merges can reduce the count).
+        def wavy(s: str) -> int:
+            return len(s) - 5 * s.count("ё")
+
+        # One unbreakable token: every span comes from the doubling probe and the
+        # binary search. (Packing across whitespace gaps is a separate pre-existing
+        # path — see the CHUNK-PERF-1 findings; it is not exercised here.)
+        text = "ё" * 40 + "x" * 400 + "ё" * 40 + "y" * 300 + "z"
+        wavy_params = ChunkingParams(
+            token_counter=wavy, target_tokens=10, max_tokens=10
+        )
+        chunks = chunk(text, wavy_params)
+
+        assert chunks
+        assert all(item.token_count <= 10 for item in chunks)
+        assert_no_non_whitespace_loss(text, chunks)
+
+
+class TestAggregate:
+    def test_mean_with_l2_normalization(self):
+        result = aggregate(np.asarray([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32))
+
+        assert result == pytest.approx([2**-0.5, 2**-0.5])
+        assert float(np.linalg.norm(result)) == pytest.approx(1.0)
+
+    def test_empty_vectors(self):
+        result = aggregate([])
+
+        assert result is None

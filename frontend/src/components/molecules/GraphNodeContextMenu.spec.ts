@@ -75,6 +75,42 @@ describe("GraphNodeContextMenu", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  // UX-1: "Link to…" opens the target picker — the item exists only where
+  // link creation is wired (not on readonly/community canvases).
+  it("renders link-to item only when onLinkTo is provided", () => {
+    const { rerender } = render(GraphNodeContextMenu, {
+      props: { x: 100, y: 100, visible: true, node, onClose: vi.fn(), onCreateChild: vi.fn() },
+    });
+
+    expect(screen.queryByTestId("context-menu-link-to")).not.toBeInTheDocument();
+
+    rerender({ onLinkTo: vi.fn() });
+    expect(screen.getByTestId("context-menu-link-to")).toBeInTheDocument();
+  });
+
+  it("calls onLinkTo and onClose when link-to is clicked", async () => {
+    const onLinkTo = vi.fn();
+    const onClose = vi.fn();
+
+    render(GraphNodeContextMenu, {
+      props: {
+        x: 100,
+        y: 100,
+        visible: true,
+        node,
+        onClose,
+        onCreateChild: vi.fn(),
+        onLinkTo,
+      },
+    });
+
+    const btn = screen.getByTestId("context-menu-link-to");
+    await fireEvent.click(btn);
+
+    expect(onLinkTo).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it("closes on Escape key", async () => {
     const onClose = vi.fn();
 

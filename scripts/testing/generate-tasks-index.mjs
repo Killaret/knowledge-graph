@@ -1,10 +1,11 @@
 // Generated task index for docs/tasks/README.md.
 //
-// Scans docs/tasks/*.md, docs/AI_HANDOFF.md (board) and docs/AI_LOG.md (journal)
-// to build a machine-readable, human-usable index. Run after adding, removing or
+// Scans docs/tasks/*.md, docs/AI_HANDOFF.md (board), docs/archive/board/*.md
+// (closed rows, BOARD-3) and docs/AI_LOG.md (journal) to build a
+// machine-readable, human-usable index. Run after adding, removing or
 // renaming task files.
 
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join, resolve, relative, basename } from "node:path";
 import { exec, execSync } from "node:child_process";
 import { promisify } from "node:util";
@@ -15,6 +16,7 @@ const repoRoot = resolve(process.argv[2] ?? ".");
 
 const tasksDir = join(repoRoot, "docs", "tasks");
 const handoffPath = join(repoRoot, "docs", "AI_HANDOFF.md");
+const boardArchiveDir = join(repoRoot, "docs", "archive", "board");
 const logPath = join(repoRoot, "docs", "AI_LOG.md");
 const readmePath = join(repoRoot, "docs", "tasks", "README.md");
 
@@ -27,7 +29,9 @@ const ID_RE = /[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*(?:[a-z])?(?![A-Za-z0-9])/g;
 // number, used when scanning known text rather than filenames.
 const ID_RE_WITH_LC = /[A-Z][A-Z0-9]*(?:-[A-Z0-9]+[a-z]?)*(?![A-Za-z0-9])/g;
 
-const fileLinkRe = /\[([^\]]*)\]\(tasks\/([^)\s]+?)(?:#[^)]*)?\)/g;
+// Board rows link tasks as `tasks/x.md` (relative to docs/); archived rows in
+// docs/archive/board/ link them as `../../tasks/x.md`. Both resolve here.
+const fileLinkRe = /\[([^\]]*)\]\((?:\.\.\/)*tasks\/([^)\s]+?)(?:#[^)]*)?\)/g;
 
 const isTaskFile = (name) => name.endsWith(".md");
 
@@ -104,18 +108,18 @@ function extractIdsFromCell(cell) {
     for (const token of cleaned.split(/[\/\,\;\&\s]/)) {
         const trimmed = token.replace(/[.:;!]+$/, "").trim();
         if (!trimmed) continue;
+        // A task id always carries a hyphen (PUB-2, BOARD-1); a bare all-caps
+        // word like "API" or "NLP" is prose, not an identifier - letting it
+        // through once made BACKUP-1 inherit NOTE-QUALITY-1's board status.
+        if (!trimmed.includes("-")) continue;
         const m = trimmed.match(idPattern);
         if (m) out.add(m[0]);
     }
     return out;
 }
 
-function parseHandoff() {
-    const known = new Map(); // filename -> Set(ids)
-    const boardStatus = new Map(); // id -> status text
-    const ids = new Set();
-
-    for (const parts of parseTableLines(readText(handoffPath))) {
+function collectBoardRows(text, known, boardStatus, ids) {
+    for (const parts of parseTableLines(text)) {
         if (parts.length < 4) continue;
         // First column carries the task identifier(s).
         const rowIds = extractIdsFromCell(parts[0]);
@@ -135,6 +139,31 @@ function parseHandoff() {
             }
         }
     }
+}
+
+function parseHandoff() {
+    const known = new Map(); // filename -> Set(ids)
+    const boardStatus = new Map(); // id -> status text
+    const ids = new Set();
+
+    collectBoardRows(readText(handoffPath), known, boardStatus, ids);
+
+    // Closed rows live in the board archive (BOARD-3); their statuses count
+    // too, but live board rows win for ids present in both places.
+    if (existsSync(boardArchiveDir)) {
+        const months = readdirSync(boardArchiveDir)
+            .filter((name) => /^\d{4}-\d{2}\.md$/.test(name))
+            .sort();
+        for (const name of months) {
+            collectBoardRows(
+                readText(join(boardArchiveDir, name)),
+                known,
+                boardStatus,
+                ids,
+            );
+        }
+    }
+
     return { known, boardStatus, ids };
 }
 
@@ -250,8 +279,12 @@ export async function generateTaskIndex() {
 }
 
 function normalizeStatusLinks(status) {
-    // README.md lives in docs/tasks/, so links to `tasks/X.md` should be `X.md`.
-    return status.replace(/\[([^\]]*)\]\(tasks\/([^)\s]+?)(?:#[^)]*)?\)/g, "[$1]($2)");
+    // README.md lives in docs/tasks/, so links to `tasks/X.md` (board) or
+    // `../../tasks/X.md` (archive files) should both be `X.md`.
+    return status.replace(
+        /\[([^\]]*)\]\((?:\.\.\/)*tasks\/([^)\s]+?)(?:#[^)]*)?\)/g,
+        "[$1]($2)",
+    );
 }
 
 export function renderReadme(entries) {

@@ -319,6 +319,23 @@ describe("links API", () => {
       expect(result[0].id).toBe("link-1");
     });
 
+    it("should merge incoming/outgoing envelopes and dedupe self-loops", async () => {
+      const inLink = { ...mockLink, id: "link-in" };
+      const outLink = { ...mockLink, id: "link-out" };
+      const selfLoop = { ...mockLink, id: "link-self" };
+      server.use(
+        http.get("http://localhost:8080/api/v1/notes/note-1/links", () =>
+          HttpResponse.json({
+            data: { incoming: [inLink, selfLoop], outgoing: [outLink, selfLoop] },
+          })
+        )
+      );
+
+      const result = await getNoteLinks("note-1");
+
+      expect(result.map((l) => l.id).sort()).toEqual(["link-in", "link-out", "link-self"]);
+    });
+
     it("should return empty array when note has no links", async () => {
       server.use(
         http.get("http://localhost:8080/api/v1/notes/note-1/links", () =>

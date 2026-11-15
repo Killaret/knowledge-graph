@@ -4,7 +4,9 @@ import LinkTypeLegend from "./LinkTypeLegend.svelte";
 import { LinkType } from "$entities";
 
 describe("LinkTypeLegend", () => {
-  const allTypes = LinkType.ALL_TYPES;
+  // LINK-TYPES-1: the legend lists only UI-visible (manual) types — legacy
+  // `reference`/`custom` never appear — plus a static auto-link row.
+  const allTypes = LinkType.UI_TYPES;
 
   beforeEach(() => {
     cleanup();
@@ -17,6 +19,10 @@ describe("LinkTypeLegend", () => {
     for (const type of allTypes) {
       expect(screen.getByText(type.label)).toBeInTheDocument();
     }
+    // LINK-TYPES-1: legacy types are gone, the auto-link row is present.
+    expect(screen.queryByText(LinkType.REFERENCE.label)).not.toBeInTheDocument();
+    expect(screen.queryByText(LinkType.CUSTOM.label)).not.toBeInTheDocument();
+    expect(screen.getByText("Auto link (model)")).toBeInTheDocument();
   });
 
   it("collapses and expands content", async () => {

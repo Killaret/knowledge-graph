@@ -123,6 +123,8 @@
     position: fixed;
     inset: 0;
     z-index: 9999;
+    /* UI-LOAD-1: decorative layer — never swallows clicks or typing. */
+    pointer-events: none;
     display: flex;
     flex-direction: column;
     align-items: center;

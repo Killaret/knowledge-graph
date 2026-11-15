@@ -1,13 +1,22 @@
 /**
  * Visual tests for GraphCanvas renderer - anomaly types
  */
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { drawNode, drawStar, drawUnknown } from "./renderer";
 import { drawRealityRift } from "$shared/lib/graph/renderer/anomalies/reality-rift";
 import { getAnomalyParams } from "$shared/lib/graph/renderer/anomalies/helpers";
 import { getGlowIntensity } from "$shared/lib/graph/glow-intensity";
 import { getNodeGradient } from "$shared/lib/graph/node-gradient";
 import { graphConfig2D } from "$shared/config";
+
+import { getGraphStyle, setGraphStyle } from "./light/style";
+
+// Classic look: these tests describe the classic renderer and its geometry
+// (fit capped at 1:1, icon drawers). The light style (GRAPH-LIGHT-1) has its
+// own tests in entities/graph-canvas/lib/light.
+const styleBefore = getGraphStyle();
+beforeAll(() => setGraphStyle("classic"));
+afterAll(() => setGraphStyle(styleBefore));
 
 // Mock CanvasRenderingContext2D
 const mockCtx = {

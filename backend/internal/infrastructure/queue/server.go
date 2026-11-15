@@ -83,3 +83,17 @@ func BackupToCloudHandler(svc tasks.BackupServiceInterface) func(context.Context
 		return tasks.HandleBackupToCloud(ctx, t, svc)
 	}
 }
+
+// CleanupSoftDeletedHandler returns a handler that dispatches to tasks.HandleCleanupSoftDeleted.
+func CleanupSoftDeletedHandler(svc tasks.CleanupServiceInterface) func(context.Context, *asynq.Task) error {
+	return func(ctx context.Context, t *asynq.Task) error {
+		return tasks.HandleCleanupSoftDeleted(ctx, t, svc)
+	}
+}
+
+// CometRemindHandler returns a handler that dispatches to tasks.HandleCometRemind.
+func CometRemindHandler(svc tasks.CometReminderService) func(context.Context, *asynq.Task) error {
+	return func(ctx context.Context, t *asynq.Task) error {
+		return tasks.HandleCometRemind(ctx, t, svc)
+	}
+}

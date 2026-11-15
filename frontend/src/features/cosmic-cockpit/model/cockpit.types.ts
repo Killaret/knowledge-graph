@@ -56,5 +56,8 @@ export const COCKPIT_DEFAULT_SIZES: Record<CockpitPanelPosition, number> = {
   right: 320,
 };
 
-export const COCKPIT_EDGE_SIZE = 14;
+/** Visible strip of a collapsed panel — large enough to read as a handle. */
+export const COCKPIT_EDGE_SIZE = 22;
 export const COCKPIT_PANEL_GAP = 0;
+/** Dwell time before an auto-collapsing panel actually slides away (ms). */
+export const COCKPIT_CLOSE_DELAY = 600;

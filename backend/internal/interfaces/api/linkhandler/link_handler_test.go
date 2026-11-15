@@ -199,6 +199,55 @@ func TestCreateLink(t *testing.T) {
 	}
 }
 
+// LINK-TYPES-1: link_type is optional on create; an omitted type defaults
+// to `related` (the generic link type).
+func TestCreateLinkDefaultsToRelated(t *testing.T) {
+	r, linkRepo, noteRepo := setupLinkRouter()
+
+	sourceID := uuid.New()
+	targetID := uuid.New()
+
+	title1, _ := note.NewTitle("Source Note")
+	content1, _ := note.NewContent("Source content")
+	metadata1, _ := note.NewMetadata(nil)
+	sourceNote := note.NewNote(title1, content1, note.MustType("star"), metadata1)
+	sourceNote = note.ReconstructNote(sourceID, title1, content1, note.MustType("star"), metadata1, sourceNote.CreatedAt(), sourceNote.UpdatedAt())
+
+	title2, _ := note.NewTitle("Target Note")
+	content2, _ := note.NewContent("Target content")
+	metadata2, _ := note.NewMetadata(nil)
+	targetNote := note.NewNote(title2, content2, note.MustType("star"), metadata2)
+	targetNote = note.ReconstructNote(targetID, title2, content2, note.MustType("star"), metadata2, targetNote.CreatedAt(), targetNote.UpdatedAt())
+
+	noteRepo.notes[sourceID] = sourceNote
+	noteRepo.notes[targetID] = targetNote
+
+	body := map[string]interface{}{
+		"source_note_id": sourceID.String(),
+		"target_note_id": targetID.String(),
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest("POST", "/links", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusCreated, w.Code, "omitted link_type must not return 400")
+
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	data, ok := resp["data"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, "related", data["link_type"])
+
+	linkID, _ := uuid.Parse(data["id"].(string))
+	saved, err := linkRepo.FindByID(context.Background(), linkID)
+	require.NoError(t, err)
+	require.NotNil(t, saved)
+	assert.Equal(t, "related", saved.LinkType().String())
+}
+
 func TestCreateLinkMissingFields(t *testing.T) {
 	r, _, noteRepo := setupLinkRouter()
 

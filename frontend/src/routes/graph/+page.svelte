@@ -12,10 +12,15 @@
   import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
   import EditNoteModal from "$widgets/notes/EditNoteModal.svelte";
   import CreateNoteModal from "$widgets/notes/CreateNoteModal.svelte";
+  import SmartCreateModal from "$widgets/notes/SmartCreateModal.svelte";
   import ConfirmModal from "$widgets/confirm/ConfirmModal.svelte";
   import StateIllustration from "$components/atoms/StateIllustration.svelte";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
   import { CelestialBody } from "$entities";
+  import {
+    linkDeleteConfirmKey,
+    needsLinkDeleteConfirm,
+  } from "$entities/graph-canvas/lib/link-delete";
 
   const locale = getCurrentLocale();
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -34,11 +39,14 @@
   let showEditModal = $state(false);
   let noteToEdit: string | null = $state(null);
   let showCreateModal = $state(false);
+  let showSmartCreateModal = $state(false);
+  let smartCreatePending = $state(false);
+  let smartCreateUnread = $state(false);
   let createChildParent: { id: string; title: string; type?: string } | null = $state(null);
   let showConfirmDelete = $state(false);
   let noteToDelete: string | null = $state(null);
   let showLinkDeleteConfirm = $state(false);
-  let linkToDelete: { id: string; source_type?: string } | null = $state(null);
+  let linkToDelete: { id: string; confirmKey: string } | null = $state(null);
   let canvasController:
     | {
         focusMode: boolean;
@@ -208,7 +216,13 @@
     }
   }
 
-  async function handleNoteCreate(data: { title: string; content: string; type: string }) {
+  async function handleNoteCreate(data: {
+    title: string;
+    content: string;
+    type: string;
+    due_at?: string | null;
+    remind_before_seconds?: number | null;
+  }) {
     try {
       await createNote(data);
       await loadGraphData({ nocache: true });
@@ -317,8 +331,8 @@
     // Rejecting a gamma proposal — or deleting a link the model once proposed
     // (gamma_origin survives promotion) — is a decision, not cleanup: the pair
     // is recorded as "not related" and will not be suggested again — explain it.
-    if (link.source_type === "gamma" || link.gamma_origin) {
-      linkToDelete = { id: link.id, source_type: link.source_type };
+    if (needsLinkDeleteConfirm(link)) {
+      linkToDelete = { id: link.id, confirmKey: linkDeleteConfirmKey(link) };
       showLinkDeleteConfirm = true;
       return;
     }
@@ -392,6 +406,9 @@
     else if (view === "3d") goto("/graph/3d");
   }}
   onNoteCreate={() => (showCreateModal = true)}
+  onSmartCreate={() => (showSmartCreateModal = true)}
+  {smartCreatePending}
+  {smartCreateUnread}
   onNoteDelete={handleDeleteRequest}
   onNoteEdit={handleNoteEdit}
   onNodeSelect={handleNodeSelect}
@@ -403,17 +420,7 @@
   onRegister={() => goto("/auth/register")}
 >
   <div class="graph-cockpit-content">
-    {#if loading}
-      <div class="loading-overlay" data-testid="loading-overlay">
-        <div class="spinner"></div>
-        <p>{t("graph.loading")}</p>
-      </div>
-    {:else if error}
-      <div class="error">
-        <p>{error}</p>
-        <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
-      </div>
-    {:else if graphData.nodes.length > 0}
+    {#if graphData.nodes.length > 0}
       {#key graphData.nodes.length + "-" + graphData.links.length}
         <div class="graph-view-wrapper">
           <GraphCanvas
@@ -421,6 +428,7 @@
             links={graphData.links}
             readonly={graphView.mode === "community"}
             onNodeClick={(node: { id: string }) => handleNodeSelect(node.id)}
+            onBackgroundClick={() => handleNodeSelect(null)}
             onNoteDelete={handleDeleteRequest}
             onNoteRestore={handleNoteRestore}
             onNoteCreate={handleNoteCreate}
@@ -430,11 +438,43 @@
             onLinkDelete={handleLinkDelete}
             onLinkConfirm={handleLinkConfirm}
             helpContent={knowledgeCore?.content}
-            showLinkTypeLegend={false}
+            showLinkTypeLegend={true}
             bind:controller={canvasController}
           />
         </div>
       {/key}
+      <!-- UX-1: a refresh after a mutation must not blank the canvas — a
+           corner chip, never a covering layer (same contract as the home
+           page's loading-chip). -->
+      {#if loading}
+        <div class="refresh-chip" data-testid="refresh-chip" aria-live="polite">
+          <span class="spinner"></span>
+          {t("graph.loading")}
+        </div>
+      {/if}
+      {#if error}
+        <div class="refresh-chip refresh-chip-error" role="alert" data-testid="refresh-error">
+          {error}
+          <button
+            type="button"
+            class="refresh-chip-close"
+            aria-label={t("close")}
+            onclick={() => (error = "")}
+          >
+            ×
+          </button>
+        </div>
+      {/if}
+    {:else if loading}
+      <div class="loading-overlay" data-testid="loading-overlay">
+        <div class="spinner"></div>
+        <p>{t("graph.loading")}</p>
+      </div>
+    {:else if error}
+      <div class="error">
+        <p>{error}</p>
+        <button onclick={() => goto("/")}>{t("graph.goHome")}</button>
+      </div>
     {:else}
       <div class="empty" data-testid="graph-empty-state">
         <StateIllustration type="no-links" />
@@ -468,6 +508,12 @@
   />
 {/if}
 
+<SmartCreateModal
+  bind:open={showSmartCreateModal}
+  bind:pending={smartCreatePending}
+  bind:unread={smartCreateUnread}
+/>
+
 {#if showConfirmDelete}
   <ConfirmModal
     bind:open={showConfirmDelete}
@@ -486,7 +532,7 @@
   <ConfirmModal
     bind:open={showLinkDeleteConfirm}
     title={t("confirmModal.title")}
-    message={t("link.deleteConfirmSuppress")}
+    message={t(linkToDelete?.confirmKey ?? "link.deleteConfirmSuppress")}
     danger={true}
     onConfirm={handleConfirmLinkDelete}
     onCancel={() => {
@@ -512,6 +558,44 @@
     flex: 1 1 auto;
     min-height: 0;
     width: 100%;
+  }
+
+  .refresh-chip {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(10, 15, 30, 0.9);
+    border: 1px solid rgba(45, 212, 191, 0.3);
+    border-radius: 20px;
+    color: #e0e0e0;
+    font-size: 13px;
+    z-index: 900;
+  }
+
+  .refresh-chip .spinner {
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
+  }
+
+  .refresh-chip-error {
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #ef4444;
+  }
+
+  .refresh-chip-close {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
   }
 
   .loading-overlay {

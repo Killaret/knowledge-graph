@@ -86,6 +86,31 @@ $BackupFile = $CompressedFile
 
 Write-Host "Backup completed successfully: $BackupFile"
 
+# MongoDB (BACKUP-4 item 2): nlp_artifacts and quality_log live there and
+# were not backed up by anything. Same cadence and naming as the SQL dump.
+$MongoDb = if ($env:PERSONAL_MONGO_DATABASE) { $env:PERSONAL_MONGO_DATABASE } else { "knowledge_personal" }
+$MongoFile = Join-Path $BackupDir "backup-personal-${Mode}-${Timestamp}.mongo.gz"
+Write-Host "Dumping MongoDB $MongoDb to $MongoFile..."
+if (Get-Command mongodump -ErrorAction SilentlyContinue) {
+    $MongoHost = if ($env:PERSONAL_MONGO_HOST) { $env:PERSONAL_MONGO_HOST } else { "localhost" }
+    $MongoPort = if ($env:PERSONAL_MONGO_PORT) { $env:PERSONAL_MONGO_PORT } else { "27018" }
+    & mongodump --host $MongoHost --port $MongoPort --db $MongoDb "--archive=$MongoFile" --gzip
+    if ($LASTEXITCODE -ne 0) { throw "mongodump failed (exit $LASTEXITCODE)" }
+} else {
+    # No mongo tools on the host: dump inside the running container, then
+    # docker cp - a PowerShell pipeline would corrupt the binary archive.
+    $running = @(docker ps --format "{{.Names}}" 2>$null | Where-Object { $_ -eq "kg-mongo-personal" })
+    if ($running.Count -eq 0) {
+        throw "Cannot dump MongoDB: no mongodump on PATH and kg-mongo-personal is not running"
+    }
+    & docker exec kg-mongo-personal sh -c "mongodump --db $MongoDb --archive=/tmp/kg-backup.mongo.gz --gzip"
+    if ($LASTEXITCODE -ne 0) { throw "mongodump in kg-mongo-personal failed (exit $LASTEXITCODE)" }
+    & docker cp "kg-mongo-personal:/tmp/kg-backup.mongo.gz" $MongoFile
+    if ($LASTEXITCODE -ne 0) { throw "docker cp of the mongo dump failed (exit $LASTEXITCODE)" }
+    & docker exec kg-mongo-personal rm -f /tmp/kg-backup.mongo.gz | Out-Null
+}
+Write-Host "MongoDB backup completed: $MongoFile"
+
 # Optional: Upload to Yandex.Disk via REST API
 if ($env:BACKUP_CLOUD_ENABLED -eq "true") {
     Write-Host "Uploading to Yandex.Disk..."
@@ -97,7 +122,6 @@ if ($env:BACKUP_CLOUD_ENABLED -eq "true") {
             Write-Host "Warning: BACKUP_YANDEX_OAUTH_TOKEN or BACKUP_YANDEX_TOKEN not set"
         } else {
             $BaseUrl = "https://cloud-api.yandex.net/v1/disk"
-            $RemotePath = "${BackupFolder}/$(Split-Path $BackupFile -Leaf)"
             $Headers = @{ Authorization = "OAuth $Token" }
 
             # Ensure the backup folder exists (ignore 409 - already exists)
@@ -113,18 +137,22 @@ if ($env:BACKUP_CLOUD_ENABLED -eq "true") {
                 }
             }
 
-            # Get pre-signed upload URL
-            $UploadLink = Invoke-RestMethod -Uri "${BaseUrl}/resources/upload?path=${RemotePath}&overwrite=true" `
-                -Method GET `
-                -Headers $Headers
+            foreach ($FileToUpload in @($BackupFile, $MongoFile)) {
+                $RemotePath = "${BackupFolder}/$(Split-Path $FileToUpload -Leaf)"
 
-            # Upload file to the pre-signed URL
-            Invoke-RestMethod -Uri $UploadLink.href `
-                -Method PUT `
-                -InFile $BackupFile `
-                -ContentType "application/octet-stream" | Out-Null
+                # Get pre-signed upload URL
+                $UploadLink = Invoke-RestMethod -Uri "${BaseUrl}/resources/upload?path=${RemotePath}&overwrite=true" `
+                    -Method GET `
+                    -Headers $Headers
 
-            Write-Host "Successfully uploaded to Yandex.Disk: $RemotePath"
+                # Upload file to the pre-signed URL
+                Invoke-RestMethod -Uri $UploadLink.href `
+                    -Method PUT `
+                    -InFile $FileToUpload `
+                    -ContentType "application/octet-stream" | Out-Null
+
+                Write-Host "Successfully uploaded to Yandex.Disk: $RemotePath"
+            }
         }
     } catch {
         Write-Host "Warning: Yandex.Disk upload failed: $_"
@@ -134,9 +162,11 @@ if ($env:BACKUP_CLOUD_ENABLED -eq "true") {
 # Clean up old local backups (cloud backups are never deleted)
 if ($env:CLEANUP_OLD_BACKUPS -ne "false" -and $RetentionDays -gt 0) {
     Write-Host "Cleaning up old ${Mode} local backups (keeping last ${RetentionDays} days)..."
-    Get-ChildItem -Path $BackupDir -Filter "backup-personal-${Mode}-*.sql.gz" |
-        Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$RetentionDays) } |
-        Remove-Item -Force
+    @("backup-personal-${Mode}-*.sql.gz", "backup-personal-${Mode}-*.mongo.gz") | ForEach-Object {
+        Get-ChildItem -Path $BackupDir -Filter $_ |
+            Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$RetentionDays) } |
+            Remove-Item -Force
+    }
 }
 
 Write-Host "Backup process completed."

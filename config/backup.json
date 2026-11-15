@@ -12,7 +12,6 @@
       }
     },
     "schedule": "0 2 * * *",
-    "retention_days": 7,
-    "draft_ttl_hours": 168
+    "retention_days": 7
   }
 }

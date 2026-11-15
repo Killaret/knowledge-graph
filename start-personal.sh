@@ -3,6 +3,20 @@
 # Скрипт для запуска личного экземпляра Knowledge Graph
 # Запускает параллельный набор сервисов, не мешающий разработке
 
+# BACKUP-4 item 3: the stack must start from D:\knowledge-graph only.
+# Compose derives the project name from the directory name, and named
+# volumes get the <project>_ prefix: started from another worktree the
+# stack silently runs on empty volumes and its backups overwrite the real
+# ones with fresh empties (2026-09-30 incident).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_NAME="${COMPOSE_PROJECT_NAME:-$(basename "$SCRIPT_DIR")}"
+if [ "$PROJECT_NAME" != "knowledge-graph" ]; then
+    echo "❌ Personal-стек запускается только из D:\\knowledge-graph." >&2
+    echo "   Сейчас имя проекта Compose было бы '$PROJECT_NAME' — тома получили бы префикс '${PROJECT_NAME}_'," >&2
+    echo "   и стек стартанул бы на пустых данных, а не на данных владельца." >&2
+    exit 1
+fi
+
 echo "Запуск личного экземпляра Knowledge Graph..."
 docker compose -f docker-compose.personal.yml up -d --build
 

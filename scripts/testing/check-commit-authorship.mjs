@@ -119,11 +119,24 @@ for (const record of records) {
   // that agent's "Прочитано:" marker in docs/AI_HANDOFF.md must be authored
   // by that agent. Sessions start and end with exactly such commits, so a
   // swapped identity fails on the very first one — even with no trailers.
+  const stripLinkTargets = (l) => l.replace(/\]\([^)\s]*\)/g, "]()");
+  const parents = git(["show", "-s", "--format=%P", hash])
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
   let diff;
   try {
-    diff = git(
-      ["show", "--format=", "--unified=0", hash, "--", "docs/AI_LOG.md", "docs/AI_HANDOFF.md"],
-    );
+    // Merge commits: `git show` prints a combined --cc diff whose `+ `/` +`
+    // two-column prefixes break single-char parsing below, so diff against
+    // the first parent with a normal one-column format instead.
+    diff =
+      parents.length > 1
+        ? git(
+            ["diff", "--unified=0", parents[0], hash, "--", "docs/AI_LOG.md", "docs/AI_HANDOFF.md"],
+          )
+        : git(
+            ["show", "--format=", "--unified=0", hash, "--", "docs/AI_LOG.md", "docs/AI_HANDOFF.md"],
+          );
   } catch {
     continue;
   }
@@ -133,17 +146,22 @@ for (const record of records) {
   // also produce +lines that differ from the parent only inside ](...) —
   // those are the same row, not a new claim, so parents are compared with
   // link targets stripped.
-  const stripLinkTargets = (l) => l.replace(/\]\([^)\s]*\)/g, "]()");
   const parentLines = new Set();
   const parentLinesNoLinks = new Set();
+  // Merge commits legitimately re-add the other side's lines through conflict
+  // resolution — a line that exists in ANY parent is not a new claim by the
+  // merger. A forged marker still gets caught: it must enter history in a
+  // non-merge commit inside the same pushed range.
   for (const path of ["docs/AI_LOG.md", "docs/AI_HANDOFF.md"]) {
-    try {
-      for (const l of git(["show", `${hash}^:${path}`]).split(/\r?\n/)) {
-        parentLines.add(l);
-        parentLinesNoLinks.add(stripLinkTargets(l));
+    for (const parent of parents) {
+      try {
+        for (const l of git(["show", `${parent}:${path}`]).split(/\r?\n/)) {
+          parentLines.add(l);
+          parentLinesNoLinks.add(stripLinkTargets(l));
+        }
+      } catch {
+        // No parent or file absent there — every added line counts.
       }
-    } catch {
-      // No parent or file absent there — every added line counts.
     }
   }
   const claimedAgents = new Set();

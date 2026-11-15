@@ -185,9 +185,140 @@ its own UUIDs in `import/batch`, and a foreign id that already exists is rejecte
 than overwritten. The contract for that is still being decided (see
 `docs/tasks/BATCH-1-api-design.md`), so treat it as provisional.
 
+### 10.1 Bookmark import preview (URL-HEADING-1 stage A)
+
+`POST /api/v1/import/bookmarks/preview` accepts `items` (max 50) plus
+`options.extract_content`. With extraction enabled each returned item carries the
+structured extraction result on top of the dedup fields:
+
+- `title_candidates` — up to 5 candidates in priority order: every `h1` inside the
+  content container → `og:title` → `<title>` minus the site suffix → last URL path
+  segment. The user picks one; the choice is sent back as `title`.
+- `title_source` — always `"rule"` at stage A (NLP ranking is stage B).
+- `outline` — extracted page headings `{level, text}`, normalized so the first
+  heading is level 2 and the depth is clamped to 6.
+- `noise_dropped` — number of noise elements removed from the content container.
+
+The created note's `metadata` keeps `title_candidates`, `title_source`,
+`related_links` (≤ 20 http(s) anchors collected from nav/footer/aside, never
+rendered into the body) and, when the section budget cut content,
+`import_truncated.sections_dropped`. The body budget itself is
+`IMPORT_CONTENT_MAX_RUNES` (default 20 000 runes) — see
+`docs/operations/CONFIGURATION_EN.md`.
+
 Batch creation runs the same post-processing as single creation — keywords, embeddings,
 link weights and recommendations. Mass **import** does not yet enqueue recommendations;
 that gap is tracked as IMP-4.
+
+### 10.2 Document import via the source-text-handler (SMART-CREATE-1)
+
+The Java `source-text-handler` service (contract:
+`TZ-Java-source-text-handler-2026-08-30.md` §3/§4) splits a document, a URL or a text
+into notes and creates them itself through `POST /api/v1/import/batch`. Two routes
+front that pipeline:
+
+```bash
+GET  /api/v1/import/document/availability   # {available} — listener wrote source-text-handler:alive
+POST /api/v1/import/document                # multipart: type=TEXT|URL|FILE, content, file ≤ 8 MiB
+```
+
+`availability` mirrors a Redis liveness key the Java listener is expected to write on
+every loop turn (`SET source-text-handler:alive <time> EX 15`); while no listener runs,
+the smart-create button stays disabled and `POST` answers `503` with code
+`source_text_handler_unavailable` — nothing is queued.
+
+On success `POST` validates the input (non-empty text, `IsAllowedURL` SSRF policy,
+8 MiB file cap following `client_max_body_size 10m` in nginx) and pushes the plain-JSON
+task of §3 onto `import:document:pending`. The returned `task_id` equals the task's
+`correlation_id`; its status lives in the cache for an hour and is read through the
+shared `GET /api/v1/import/{task_id}/status`, which since this change serves owned
+tasks to their owner only — a foreign task id answers `404`.
+
+The worker drains `import:responses:pending` (§4): `COMPLETED`/`PARTIAL` → `done`
+(PARTIAL also reports `raw_chunks_count`), `FAILED` → `failed` with `errors`. The
+status `notes` field carries `{id, title}` pairs resolved from `note_ids`. A document
+task with no answer after 10 minutes is swept to `failed`/`reason: "timeout"` — the
+timeout is Go-side only, the contract does not define it.
+
+## 11. Note quality and refetch (NOTE-QUALITY-1 stage 1)
+
+The stage-1 quality pipeline is read-only and indicator-only — it never edits or blocks
+a note. Two endpoints expose it:
+
+```bash
+GET  /api/v1/notes/{id}/quality          # latest assessment + quality_log entries
+POST /api/v1/notes/{id}/quality/assess   # enqueue a manual re-assessment
+```
+
+Both share the note's authorization. When `nlp.quality.enabled` is off they answer
+`{"enabled": false}` — the frontend hides the quality row entirely. `GET` returns the
+latest record (`signals`, `gates`, `verdict` ∈ `create|enrich|manual`, `reasons[]`,
+`attempt`, `needs_manual_review`, `pipeline_version`) plus the log; with no assessment
+yet, the record is absent. `POST` is not capped by the three-attempt stop rule — a
+manual trigger always writes.
+
+Refetch is a **user action**, never part of the pipeline:
+
+```bash
+POST /api/v1/notes/{id}/refetch/preview   # extraction preview, note untouched
+POST /api/v1/notes/{id}/refetch           # apply; body → metadata.previous_content
+POST /api/v1/notes/{id}/refetch/restore   # put previous_content back byte-exactly
+```
+
+Preview shows the stage-A extraction result (chosen title, outline, length) without
+mutating anything. Apply requires confirmation, accepts an optional `title` override,
+and stores the previous body in `metadata.previous_content`; restore uses that field.
+A fetch failure leaves the note unchanged. Refetch is offered for `stub`/`truncated`
+verdicts when `source_url` is present.
+
+## 12. Comets — task fields and the upcoming list (COMET-1 stage A)
+
+A comet is a task ("дело"). Three nullable fields live on the note row itself
+(migration 038) — `due_at`, `remind_before_seconds`, `done_at`:
+
+```bash
+POST /api/v1/notes        # ...,"due_at":"2026-10-05T10:00:00Z","remind_before_seconds":3600
+PUT  /api/v1/notes/{id}   # same fields; absent key keeps the value, null or "" clears it
+GET  /api/v1/notes/comets # {overdue, upcoming, undated} — the caller's non-done comets
+```
+
+Update semantics are merge-by-presence: an absent key keeps the stored value,
+explicit `null` or `""` clears it. `remind_before_seconds`
+without a resulting `due_at` is a `400`. `GET /notes/comets` orders dated comets
+ascending (most overdue on top) and keeps undated ones in a separate group; done
+comets are excluded entirely.
+
+## 12.1 Comet reminders and in-app notifications (COMET-1 stage C)
+
+When a comet has `due_at` + `remind_before_seconds`, saving it enqueues the
+asynq task `comet:remind` for `due_at − remind_before_seconds`. The task is
+self-checking at fire time — a note that was rescheduled, cleared, completed or
+deleted turns the fired task into a no-op, so rescheduling is simply
+re-enqueueing on every save. Delivery:
+
+- **In-app** — always. A row in `notifications` (`type: comet_reminder`) with a
+  `dedupe_key` (`comet:<note_id>:<remind_at>`) that makes retried/duplicated
+  tasks idempotent.
+- **Email** — only when SMTP is configured (`SMTP_HOST`); the recipient is the
+  note owner's account email. Email failures are logged, not retried into
+  duplicates.
+
+```bash
+GET  /api/v1/notifications              # {items:[], unread_count} — 50 newest
+POST /api/v1/notifications/{id}/read    # 204; 404 for missing or foreign
+```
+
+## 12.2 «Add to calendar» — .ics export (COMET-1 stage D)
+
+```bash
+GET /api/v1/notes/{id}/calendar.ics     # text/calendar download
+```
+
+A dated comet downloads as one `VEVENT`: `DTSTART`/`DTEND` are `due_at` in UTC,
+`remind_before_seconds` becomes a `VALARM` display trigger. Undated comets
+answer `400` — a point-in-time export needs a due date. The frontend fetches the
+file with the Bearer token and saves it via a blob URL; a bare `<a href>` cannot
+authenticate.
 
 ## Notes for maintainers
 

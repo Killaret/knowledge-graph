@@ -11,6 +11,7 @@
   import { graphStore } from "$shared/stores/graph.svelte";
   import { initAuth } from "$shared/stores/auth.svelte";
   import { graphView } from "$shared/stores/graph-view.svelte";
+  import { isGraph3DEnabled } from "$shared/config/config";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
 
   const runtimeConfig = toRuntimeConfig();
@@ -68,6 +69,11 @@
 
   onMount(() => {
     if (!browser) return;
+    // FREEZE-3D-1: with 3D disabled the route shows the 2D graph instead.
+    if (!isGraph3DEnabled()) {
+      void goto("/graph", { replaceState: true });
+      return;
+    }
     // Wait for session restore before loading: a refresh may be in flight,
     // and isAuthenticated() stays false until it resolves — an early call
     // would hit graph/public and render the anonymous scene.

@@ -2,6 +2,7 @@
 
 ## Status
 Accepted
+**Implementation status:** design accepted; not implemented in the current single-user codebase (verified in DOC-AUDIT-2, 2026-09-26).
 
 ## Context
 The Knowledge Graph platform is transitioning from single-user to multi-tenant SaaS. Data isolation is the highest priority security requirement. We must choose an approach that balances:

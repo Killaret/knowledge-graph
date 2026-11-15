@@ -1,8 +1,15 @@
 # Start Test Stack - Windows PowerShell
 # This script stops any existing test stack, then starts a fresh test stack
 
+param([switch]$Force)
+
 $repoDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $repoDir
+
+$guardArgs = @("scripts/testing/check-test-stack-ownership.mjs", $repoDir)
+if ($Force) { $guardArgs += "--force" }
+& node @guardArgs
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 # Use .env.test if the user has created one, otherwise fall back to a default test secret.
 $envFile = "$repoDir\.env.test"
@@ -29,8 +36,12 @@ Write-Host "Starting test stack setup..." -ForegroundColor Cyan
 # port inside a reserved range makes compose up fail with a cryptic bind error.
 # Check every host port published by docker-compose.test.yml before touching anything.
 $testPorts = Get-Content "$repoDir\docker-compose.test.yml" | ForEach-Object {
-    # matches both "127.0.0.1:29090:9090" and "127.0.0.1:${FRONTEND_PORT:-3002}:3000"
-    if ($_ -match '127\.0\.0\.1:(?:\$\{[^}:]+:-)?(\d+)\}?:') { [int]$matches[1] }
+    # matches both "127.0.0.1:29090:9090" and "127.0.0.1:${FRONTEND_PORT:-3002}:3000";
+    # an env override wins over the compose default
+    if ($_ -match '127\.0\.0\.1:\$\{([A-Za-z_][A-Za-z0-9_]*):-(\d+)\}:') {
+        $override = [Environment]::GetEnvironmentVariable($matches[1])
+        if ($override -match '^\d+$') { [int]$override } else { [int]$matches[2] }
+    } elseif ($_ -match '127\.0\.0\.1:(\d+):') { [int]$matches[1] }
 }
 $reserved = netsh interface ipv4 show excludedportrange protocol=tcp | ForEach-Object {
     if ($_ -match '^\s*(\d+)\s+(\d+)\s') {
@@ -52,8 +63,8 @@ Write-Host "Stopping previous test stack..." -ForegroundColor Yellow
 docker compose -f docker-compose.test.yml down -v
 
 # Remove any orphaned kg-test-* containers that might have been left behind
-# by a previous incomplete shutdown or a different compose project.
-$orphans = docker ps -aq --filter "name=kg-test"
+# by a previous incomplete shutdown. Foreign owners were rejected above.
+$orphans = docker ps -aq --filter "name=^/kg-test-"
 if ($orphans) {
     Write-Host "Removing orphaned test containers..." -ForegroundColor Yellow
     docker rm -f $orphans | Out-Null

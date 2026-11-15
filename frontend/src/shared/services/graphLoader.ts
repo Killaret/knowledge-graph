@@ -43,6 +43,11 @@ export interface LoadGraphOptions {
   fallbackToNotes?: boolean;
   ensureNotesInGraph?: boolean;
   fullGraphLoader?: (nocache?: boolean) => Promise<GraphData>;
+  /**
+   * UI-LOAD-1: fired as soon as the notes list resolves, without waiting for
+   * the graph — the notes list is usable before the graph finishes loading.
+   */
+  onNotesReady?: (notes: Note[]) => void;
 }
 
 function getNodeId(node: RawNode): string {
@@ -152,6 +157,7 @@ export function transformRawGraph(rawData: GraphData, knowledgeCore?: Note | nul
     weight: link.weight ?? 0.5,
     link_type: link.link_type ?? "related",
     source_type: link.source_type ?? "user",
+    gamma_origin: link.gamma_origin ?? false,
     last_weight_update: link.last_weight_update,
   }));
 
@@ -223,6 +229,7 @@ export async function loadGraph(
   const scopedOptions = { ...options, viewMode: mode };
   const notes =
     mode === "personal" ? (providedNotes ?? (await loadNotesIfAuthenticated(mode))) : [];
+  options.onNotesReady?.(notes);
 
   const [rawData, knowledgeCore] = await Promise.all([
     loadRawGraphData(scopedOptions, notes),

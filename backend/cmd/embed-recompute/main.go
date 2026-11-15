@@ -71,7 +71,7 @@ func main() {
 		return
 	}
 
-	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled)
+	taskQueue, err := queue.NewAsynqClient(cfg.RedisURL, cfg.BackupEnabled, cfg.NLPPipelineEnabled, cfg.NLPQualityEnabled)
 	if err != nil {
 		log.Fatalf("Failed to create task queue client: %v", err)
 	}

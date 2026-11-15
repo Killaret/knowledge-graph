@@ -11,6 +11,7 @@ RUN go build -ldflags="-s -w" -o /app/cli ./cmd/cli
 RUN go build -ldflags="-s -w" -o /app/embed-recompute ./cmd/embed-recompute
 RUN go build -ldflags="-s -w" -o /app/keyword-recompute ./cmd/keyword-recompute
 RUN go build -ldflags="-s -w" -o /app/gamma-links-regenerate ./cmd/gamma-links-regenerate
+RUN go build -ldflags="-s -w" -o /app/nlp-artifacts-recompute ./cmd/nlp-artifacts-recompute
 
 FROM alpine:3.19 AS base
 RUN apk --no-cache add ca-certificates curl wget postgresql16-client gzip
@@ -28,6 +29,8 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=5 --start-period=10s \
 CMD ["./server"]
 
 FROM base AS worker
+# mongodb-tools: the event-driven backup also archives MongoDB (BACKUP-4).
+RUN apk --no-cache add mongodb-tools
 COPY --from=builder /app/worker .
 COPY --from=builder /app/knowledge-graph.config.json ./knowledge-graph.config.json
 CMD ["./worker"]
@@ -42,5 +45,6 @@ COPY --from=builder /app/cli .
 COPY --from=builder /app/embed-recompute .
 COPY --from=builder /app/keyword-recompute .
 COPY --from=builder /app/gamma-links-regenerate .
+COPY --from=builder /app/nlp-artifacts-recompute .
 COPY --from=builder /app/knowledge-graph.config.json ./knowledge-graph.config.json
 CMD ["./cli"]

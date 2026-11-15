@@ -4,6 +4,10 @@
 
 set -e
 
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)
+cd "$repo_dir"
+node scripts/testing/check-test-stack-ownership.mjs "$repo_dir"
+
 # Use .env.test if the user has created one, otherwise fall back to a default test secret.
 if [ -f .env.test ]; then
     while IFS='=' read -r name value; do

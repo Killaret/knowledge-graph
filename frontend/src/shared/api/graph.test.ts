@@ -226,9 +226,9 @@ describe("graph API", () => {
       server.use(
         http.get("http://localhost:9091/api/v1/graph/full", ({ request }) => {
           const url = new URL(request.url);
-          const limit = url.searchParams.get("limit");
-          // Default limit from config is expected
-          expect(limit).toBeTruthy();
+          // 0 = the server applies its configured cap; any positive value
+          // here would silently crop the graph (CONFIG-AUDIT-1, находка 4)
+          expect(url.searchParams.get("limit")).toBe("0");
           return HttpResponse.json({ data: mockGraphData });
         })
       );

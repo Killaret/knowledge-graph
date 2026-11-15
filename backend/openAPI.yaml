@@ -838,6 +838,76 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/import/document/availability:
+    get:
+      summary: SMART-CREATE-1 — is the source-text-handler listener alive (Redis key source-text-handler:alive)
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Listener availability
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [available]
+                        properties:
+                          available:
+                            type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/import/document:
+    post:
+      summary: SMART-CREATE-1 — queue a document (text, URL or file) for the source-text-handler
+      tags: [Import]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: string
+                  enum: [TEXT, URL, FILE]
+                content:
+                  type: string
+                  description: Plain text or URL (required for TEXT and URL)
+                file:
+                  type: string
+                  format: binary
+                  description: Document file, max 8 MiB (required for FILE)
+      responses:
+        '202':
+          description: Document task queued, returns task_id (= correlation_id)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ImportBookmarksCreateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Source-text-handler listener is not alive (code source_text_handler_unavailable)
+
   /api/v1/notes/{id}:
     get:
       summary: Get note by ID
@@ -1112,6 +1182,226 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/v1/notes/{id}/calendar.ics:
+    get:
+      summary: Download a dated comet as iCalendar (.ics) — «Добавить в календарь»
+      description: |
+        COMET-1 stage D. A single VEVENT: `DTSTART`/`DTEND` are the comet due
+        date in UTC; `remind_before_seconds` becomes a `VALARM` display
+        trigger (`TRIGGER:-PT<seconds>S`). Undated comets and notes without a
+        due date answer 400 — a point-in-time export needs a due date.
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: iCalendar file download
+          content:
+            text/calendar:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/quality:
+    get:
+      summary: Latest NOTE-QUALITY-1 assessment for a note
+      description: |
+        Stage-1 quality loop: signals, gates, verdict and stop-rule state.
+        When `nlp.quality.enabled` is off the response is `{"enabled": false}`.
+        `quality` is null while the note was never assessed. `can_refetch`
+        marks truncated imports that still carry a source URL — the frontend
+        offers "Перезабрать страницу" for those (explicit user action only).
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Quality assessment or disabled marker
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/{id}/quality/assess:
+    post:
+      summary: Manually trigger a NOTE-QUALITY-1 assessment
+      description: |
+        Enqueues `quality:assess` with trigger `manual`. Manual assessments do
+        not count against the three-attempt auto cap. Disabled feature answers
+        `{"enabled": false}` with 200.
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Feature disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                    example: false
+        '202':
+          description: Assessment enqueued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                  enqueued:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          description: Quality queue unavailable
+
+  /api/v1/notes/{id}/refetch/preview:
+    post:
+      summary: Preview a re-fetch of the note's source URL (NOTE-QUALITY-1)
+      description: |
+        Runs the stage-A extraction against metadata.source_url and answers
+        with the suggested title, outline and new content length. Pure read —
+        nothing is stored. The only network access in the whole quality loop.
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Extraction preview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggested_title: { type: string }
+                  title_candidates: { type: array, items: { type: string } }
+                  title_source: { type: string }
+                  outline:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        level: { type: integer }
+                        text: { type: string }
+                  noise_dropped: { type: integer }
+                  sections_dropped: { type: integer }
+                  length_runes: { type: integer }
+                  current_runes: { type: integer }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { description: Source page could not be fetched }
+        '503': { description: Re-fetch extractor unavailable }
+
+  /api/v1/notes/{id}/refetch:
+    post:
+      summary: Apply a re-fetch — replace content with a fresh extraction
+      description: |
+        Saves the previous title and content to `metadata.previous_content`
+        before overwriting. Optional `{"title": "..."}` overrides the
+        suggested title.
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+      responses:
+        '200':
+          description: Content replaced
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title: { type: string }
+                  content_runes: { type: integer }
+                  restorable: { type: boolean }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { description: Source page could not be fetched }
+
+  /api/v1/notes/{id}/refetch/restore:
+    post:
+      summary: Restore the content saved in metadata.previous_content
+      description: Byte-for-byte restore of the version saved by refetch apply. Removes `previous_content` afterwards.
+      tags: [Notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  restored: { type: boolean }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /api/v1/notes/{id}/graph:
     get:
       summary: Graph data for note (BFS)
@@ -1175,6 +1465,100 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalError'
+
+  /api/v1/notes/comets:
+    get:
+      summary: Upcoming tasks — the caller's non-done comets (COMET-1)
+      description: |
+        Returns comets in three groups: `overdue` (due_at < now, most overdue
+        first), `upcoming` (due_at >= now, nearest first), `undated` (no due
+        date). Done comets (done_at set) and other users' comets are excluded.
+      tags: [Notes]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Grouped comets
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          overdue:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Note'
+                          upcoming:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Note'
+                          undated:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Note'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notifications:
+    get:
+      summary: In-app notifications — newest first plus unread count (COMET-1 stage C)
+      description: |
+        Returns up to 50 of the caller's notifications, newest first, and the
+        unread count. Comet reminders land here (`type: comet_reminder`).
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Notifications list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string, format: uuid }
+                        note_id: { type: string, format: uuid, nullable: true }
+                        type: { type: string }
+                        title: { type: string }
+                        body: { type: string }
+                        created_at: { type: string, format: date-time }
+                        read_at: { type: string, format: date-time, nullable: true }
+                  unread_count:
+                    type: integer
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/notifications/{id}/read:
+    post:
+      summary: Mark a notification as read (owner only)
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: Marked as read
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Notification not found or belongs to another user
 
   /api/v1/links:
     post:
@@ -2119,6 +2503,79 @@ components:
       name: access_token
 
   schemas:
+    QualitySignals:
+      type: object
+      description: Stage-1 signal set (NOTE-QUALITY-1). Model-derived fields are null when unavailable.
+      properties:
+        words: { type: integer }
+        prose_words: { type: integer }
+        ends_with_sentence: { type: boolean }
+        truncated_by_import: { type: boolean }
+        unclosed_fence: { type: boolean }
+        headings: { type: integer }
+        coherence_min: { type: number, format: double, nullable: true }
+        coherence_median: { type: number, format: double, nullable: true }
+        sentences: { type: integer }
+        prose_share: { type: number, format: double }
+        kind: { type: string, enum: [stub, collection, text] }
+        fragment_share: { type: number, format: double }
+        max_block_words: { type: integer }
+        has_source_link: { type: boolean }
+        title_words: { type: integer }
+        title_generic: { type: boolean }
+        title_text_similarity: { type: number, format: double, nullable: true }
+        origin: { type: string, enum: [import, manual] }
+        keywords: { type: integer }
+        links: { type: integer }
+        has_embedding: { type: boolean }
+        mojibake: { type: boolean }
+
+    QualityRecord:
+      type: object
+      properties:
+        signals:
+          $ref: '#/components/schemas/QualitySignals'
+        gates:
+          type: array
+          items: { type: string, enum: [stub, truncated, empty, mojibake] }
+        verdict:
+          type: string
+          enum: [create, enrich, manual]
+        reasons:
+          type: array
+          items: { type: string }
+        attempt: { type: integer }
+        needs_manual_review: { type: boolean }
+        computed_at: { type: string, format: date-time }
+        pipeline_version: { type: string, example: quality-v1 }
+        source_hash: { type: string }
+        trigger: { type: string, enum: [auto, manual] }
+        can_refetch:
+          type: boolean
+          description: Truncated import with a source URL — the UI offers the re-fetch action.
+
+    QualityResponse:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        quality:
+          allOf:
+            - $ref: '#/components/schemas/QualityRecord'
+          nullable: true
+        log:
+          type: array
+          description: Last 10 assessments (newest first)
+          items:
+            type: object
+            properties:
+              note_id: { type: string, format: uuid }
+              source_hash: { type: string }
+              trigger: { type: string, enum: [auto, manual] }
+              changed: { type: boolean }
+              record:
+                $ref: '#/components/schemas/QualityRecord'
+
     SuccessResponse:
       type: object
       properties:
@@ -2201,6 +2658,22 @@ components:
           type: object
         is_public:
           type: boolean
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Due date/time (COMET-1). Stored in UTC; the browser supplies its timezone.
+        remind_before_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          nullable: true
+          description: Reminder offset in seconds; only meaningful with due_at.
+        done_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the task was marked done.
         created_at:
           type: string
           description: ISO 8601 timestamp with timezone
@@ -2224,6 +2697,22 @@ components:
           enum: [galaxy, nebula, blackhole, star, planet, moon, comet, satellite, asteroid, dust, debris, technical, unknown, reality_rift, chromatic_maw, void_whisper, cosmic_abomination]
         metadata:
           type: object
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Due date/time (COMET-1). Stored in UTC; the browser supplies its timezone.
+        remind_before_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          nullable: true
+          description: Reminder offset in seconds; only meaningful with due_at.
+        done_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the task was marked done.
 
     BookmarkletRequest:
       type: object
@@ -2320,6 +2809,39 @@ components:
           format: uuid
         error:
           type: string
+        title_candidates:
+          type: array
+          description: >-
+            URL-HEADING-1 stage A: page title candidates in priority order
+            (h1 → og:title → <title> minus site suffix → last URL segment).
+            Present only when content extraction ran.
+          items:
+            type: string
+        title_source:
+          type: string
+          description: >-
+            How `title` was chosen. Always "rule" at stage A; NLP ranking
+            ("model") arrives with stage B.
+          enum: [rule]
+        outline:
+          type: array
+          description: >-
+            Extracted page outline; heading levels are normalized so the
+            first heading is level 2 (the `## [title](url)` first line is
+            level 1 semantics), clamped to [2, 6].
+          items:
+            type: object
+            required: [level, text]
+            properties:
+              level:
+                type: integer
+                minimum: 2
+                maximum: 6
+              text:
+                type: string
+        noise_dropped:
+          type: integer
+          description: Number of noise elements removed inside the content container
 
     ImportBookmarksPreviewResponse:
       type: object
@@ -2391,6 +2913,33 @@ components:
               type: integer
             failed:
               type: integer
+        # SMART-CREATE-1: document-import tasks (kind=document) additionally
+        # report owner, created-note refs, raw fragment count and errors.
+        user_id:
+          type: string
+        kind:
+          type: string
+          enum: [document]
+        notes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+        raw_chunks_count:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
 
     UpdateNoteRequest:
       type: object
@@ -2403,6 +2952,22 @@ components:
           maxLength: 50000
         metadata:
           type: object
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Due date/time (COMET-1). Stored in UTC; the browser supplies its timezone.
+        remind_before_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          nullable: true
+          description: Reminder offset in seconds; only meaningful with due_at.
+        done_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the task was marked done.
 
     DeleteBatchRequest:
       type: object
@@ -2514,7 +3079,6 @@ components:
       required:
         - source_note_id
         - target_note_id
-        - link_type
       properties:
         source_note_id:
           type: string
@@ -2525,6 +3089,12 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          default: related
+          description: >-
+            Link type; optional, defaults to `related` (LINK-TYPES-1).
+            `reference` and `custom` are DEPRECATED legacy values: still
+            accepted for backward compatibility, but persisted as `related`. `parent`/`child` are origin links
+            managed by the system, not selectable in the UI (ORIGIN-1).
         weight:
           type: number
           minimum: 0
@@ -2567,6 +3137,11 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          description: >-
+            Link type. `reference` and `custom` are DEPRECATED legacy values:
+            still accepted for backward compatibility, but persisted as
+            `related` (LINK-TYPES-1). `parent`/`child` are origin links
+            managed by the system, not selectable in the UI (ORIGIN-1).
         weight:
           type: number
           minimum: 0
@@ -2587,6 +3162,11 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          description: >-
+            Link type. `reference` and `custom` are DEPRECATED legacy values:
+            still accepted for backward compatibility, but persisted as
+            `related` (LINK-TYPES-1). `parent`/`child` are origin links
+            managed by the system, not selectable in the UI (ORIGIN-1).
         weight:
           type: number
           minimum: 0
@@ -2620,7 +3200,6 @@ components:
       required:
         - source_note_id
         - target_note_id
-        - link_type
       properties:
         source_note_id:
           type: string
@@ -2631,6 +3210,12 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          default: related
+          description: >-
+            Link type; optional, defaults to `related` (LINK-TYPES-1).
+            `reference` and `custom` are DEPRECATED legacy values: still
+            accepted for backward compatibility, but persisted as `related`. `parent`/`child` are origin links
+            managed by the system, not selectable in the UI (ORIGIN-1).
         weight:
           type: number
           minimum: 0
@@ -2671,6 +3256,11 @@ components:
         link_type:
           type: string
           enum: [reference, dependency, related, custom, parent, child]
+          description: >-
+            Link type. `reference` and `custom` are DEPRECATED legacy values:
+            still accepted for backward compatibility, but persisted as
+            `related` (LINK-TYPES-1). `parent`/`child` are origin links
+            managed by the system, not selectable in the UI (ORIGIN-1).
         source_type:
           type: string
           enum: [user, gamma]

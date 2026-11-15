@@ -12,7 +12,7 @@ type LinkModel struct {
 	ID               uuid.UUID      `gorm:"type:uuid;primaryKey"`
 	SourceNoteID     uuid.UUID      `gorm:"type:uuid;not null;uniqueIndex:idx_links_source_target_type;column:source_note_id"`
 	TargetNoteID     uuid.UUID      `gorm:"type:uuid;not null;uniqueIndex:idx_links_source_target_type;column:target_note_id"`
-	LinkType         string         `gorm:"default:'reference';uniqueIndex:idx_links_source_target_type;column:link_type"`
+	LinkType         string         `gorm:"default:'related';uniqueIndex:idx_links_source_target_type;column:link_type"`
 	Weight           float64        `gorm:"default:1.0;column:weight"`
 	Metadata         datatypes.JSON `gorm:"type:jsonb;column:metadata"`
 	SourceType       string         `gorm:"default:'user';column:source_type;index"`
@@ -22,6 +22,10 @@ type LinkModel struct {
 	UpdatedAt        time.Time      `gorm:"column:updated_at"`
 	LastWeightUpdate *time.Time     `gorm:"column:last_weight_update"`
 	DeletedAt        *time.Time     `gorm:"column:deleted_at;index"`
+	// DeletedViaNoteID marks a link removed together with a soft-deleted
+	// note (NOTE-DELETE-1); restore revives only these. Links deleted on
+	// their own keep this NULL.
+	DeletedViaNoteID *uuid.UUID `gorm:"type:uuid;index"`
 
 	SourceNote NoteModel `gorm:"foreignKey:SourceNoteID;references:ID;constraint:OnDelete:CASCADE"`
 	TargetNote NoteModel `gorm:"foreignKey:TargetNoteID;references:ID;constraint:OnDelete:CASCADE"`

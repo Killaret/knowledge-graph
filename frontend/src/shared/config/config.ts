@@ -23,7 +23,6 @@ export interface Config {
     };
     graph: {
       load_depth: number;
-      max_nodes: number;
     };
     embedding: {
       similarity_limit: number;
@@ -35,14 +34,18 @@ export interface Config {
     };
   };
   frontend: {
-    test: {
-      debounce_timeout_ms: number;
-      max_retry_count: number;
-      mock_goto_delay_ms: number;
-    };
     graph: {
+      /** Max number of hub (top-degree) labels drawn at low zoom — shared 2D/3D rule */
+      label_hub_count: number;
+      /** Max BFS depth of the dependency-chain highlight (LINK-TYPES-1), shared 2D/3D */
+      dependency_highlight_depth: number;
+      /** 2D graph look: "classic" icons or "light" (GRAPH-LIGHT-1, decision 83) */
+      style?: "classic" | "light";
+      /** How many recommendations the light style draws on hover (decision 81) */
+      recommendations_on_hover?: number;
+      /** Light style: background motion only up to this many notes (GRAPH-LIGHT-1) */
+      ambient_max_nodes?: number;
       "2d": {
-        max_nodes: number;
         /** Node count below which CSS drop-shadows are rendered (performance) */
         shadows_threshold: number;
         /** Link count above which animated link drawing falls back to static (performance) */
@@ -75,6 +78,8 @@ export interface Config {
         };
       };
       "3d": {
+        /** FREEZE-3D-1 (решение 82): 3D is frozen until 2D is ready. */
+        enabled: boolean;
         max_nodes: number;
         layout_provider: "d3" | "graph-service";
         fog: {
@@ -127,20 +132,11 @@ export interface Config {
         };
       };
     };
-    api: {
-      default_limit: number;
-      link_limit: number;
-    };
     achievements: {
       poll_interval_ms: number;
     };
   };
-  ci_cd: {
-    integration_test: {
-      migrate_all: boolean;
-      truncate_list: string[];
-    };
-  };
+  ci_cd: Record<string, never>;
   nlp: {
     model_name: string;
     max_text_length: number;
@@ -152,12 +148,20 @@ export const config: Config = configData as Config;
 
 // Convenience exports for common values
 export const graphConfig2D = config.frontend.graph["2d"];
+export const graphLabelHubCount = config.frontend.graph.label_hub_count;
+export const graphDependencyHighlightDepth = config.frontend.graph.dependency_highlight_depth;
+export const graphStyle: "classic" | "light" =
+  config.frontend.graph.style === "classic" ? "classic" : "light";
+export const graphRecommendationsOnHover = config.frontend.graph.recommendations_on_hover ?? 4;
+export const graphAmbientMaxNodes = config.frontend.graph.ambient_max_nodes ?? 500;
 export const graphConfig3D = config.frontend.graph["3d"];
 export const graphPerformanceConfig = config.frontend.graph["3d"].performance;
+/** FREEZE-3D-1 (решение 82): 3D view frozen until 2D is ready. Function form
+ *  so tests can stub the gate without re-mocking the whole config object. */
+export function isGraph3DEnabled(): boolean {
+  return config.frontend.graph["3d"].enabled;
+}
 export const anomalyConfig = config.frontend.graph.anomaly;
-export const apiConfig = config.frontend.api;
-export const testConfig = config.frontend.test;
-export const ciCdConfig = config.ci_cd;
 export const ACHIEVEMENT_POLL_INTERVAL_MS = config.frontend.achievements.poll_interval_ms;
 
 export default config;

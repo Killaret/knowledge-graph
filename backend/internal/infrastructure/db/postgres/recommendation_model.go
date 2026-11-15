@@ -8,8 +8,8 @@ import (
 
 // RecommendationModel represents a precomputed note recommendation in the database
 type RecommendationModel struct {
-	NoteID            uuid.UUID `gorm:"primaryKey"`
-	RecommendedNoteID uuid.UUID `gorm:"primaryKey"`
+	NoteID            uuid.UUID `gorm:"type:uuid;primaryKey"`
+	RecommendedNoteID uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Score             float64
 	CreatedAt         time.Time
 	UpdatedAt         time.Time

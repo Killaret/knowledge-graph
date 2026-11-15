@@ -25,5 +25,7 @@ type Repository interface {
 	FindAll(ctx context.Context) ([]*Note, error)
 	// FindAllPaginated возвращает все заметки с пагинацией (limit=0 для всех записей)
 	FindAllPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*Note, int64, error)
+	// FindComets — на конкретном репозитории и декораторе, не в интерфейсе
+	// (прецедент FindByIDIncludingDeleted): потребитель объявляет узкий интерфейс.
 	// FindBySpecification — позже добавим
 }

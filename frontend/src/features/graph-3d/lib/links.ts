@@ -1,5 +1,10 @@
 import * as THREE from "three";
-import { LinkType } from "$entities";
+import { LinkType, AUTO_LINK_COLOR } from "$entities";
+import {
+  chainDepthOpacity,
+  dependencyLinkKey,
+  type DependencyChain,
+} from "$entities/graph-canvas/lib/dependency-chain";
 import type { GraphLink } from "$shared/api/graph";
 import type { Graph3DConfig } from "../model/types";
 
@@ -49,15 +54,27 @@ export class LinkManager {
       const linkType = LinkType.fromString(link.link_type);
       const weight = Math.max(0, Math.min(1, link.weight ?? linkType.defaultWeight));
       const opacity = 0.6 + weight * 0.4;
+      // LINK-TYPES-1: gamma links use the dedicated auto-link colour — a hue no
+      // manual type has — with brightness still following the link's weight.
+      const isAuto = link.source_type === "gamma";
+      const color = new THREE.Color(isAuto ? AUTO_LINK_COLOR : linkType.color);
 
       const material = new THREE.LineBasicMaterial({
-        color: new THREE.Color(linkType.color),
+        color,
         transparent: true,
         opacity,
       });
 
       const line = new THREE.Line(geometry, material);
-      line.userData = { type: "link", linkId, source: sourceId, target: targetId };
+      line.userData = {
+        type: "link",
+        linkId,
+        source: sourceId,
+        target: targetId,
+        // Base styling kept for highlight restore.
+        baseColor: color.clone(),
+        baseOpacity: opacity,
+      };
       this.scene.add(line);
       this.linkObjects.set(linkId, line);
     }
@@ -85,6 +102,41 @@ export class LinkManager {
       positions[4] = targetPos.y;
       positions[5] = targetPos.z;
       line.geometry.attributes.position.needsUpdate = true;
+    }
+  }
+
+  /**
+   * LINK-TYPES-1: apply/remove the dependency-chain highlight. Chain links
+   * brighten (cycle members turn red), everything else dims; `null` restores.
+   */
+  applyChainHighlight(chain: DependencyChain | null): void {
+    for (const line of this.linkObjects.values()) {
+      const material = line.material as THREE.LineBasicMaterial;
+      const { source, target, baseColor, baseOpacity } = line.userData as {
+        source: string;
+        target: string;
+        baseColor: THREE.Color;
+        baseOpacity: number;
+      };
+      if (!chain) {
+        material.color.copy(baseColor);
+        material.opacity = baseOpacity;
+        continue;
+      }
+      const key = dependencyLinkKey(source, target);
+      const depth = chain.linkDepth.get(key);
+      if (depth === undefined) {
+        material.color.copy(baseColor);
+        material.opacity = 0.08;
+        continue;
+      }
+      if (chain.cycleLinks.has(key)) {
+        material.color.set(0xef4444);
+        material.opacity = Math.min(1, baseOpacity + 0.3);
+      } else {
+        material.color.copy(baseColor);
+        material.opacity = Math.min(1, baseOpacity * 0.5 + chainDepthOpacity(depth) * 0.7);
+      }
     }
   }
 

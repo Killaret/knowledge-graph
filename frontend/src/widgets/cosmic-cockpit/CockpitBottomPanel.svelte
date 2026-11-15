@@ -11,17 +11,11 @@
 
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
-
-  // Phase 1: decorative health; later compute from graph metrics.
-  const health = $derived(() => {
-    if (nodeCount === 0) return 100;
-    const linkRatio = linkCount / nodeCount;
-    return Math.min(100, Math.round((linkRatio / 1.5) * 100));
-  });
+  // NOTE-HEALTH-1 этап 0: decorative HEALTH is hidden; этап 2 passes a real metric.
 </script>
 
 <div class="cockpit-bottom-panel" data-testid="cockpit-bottom-panel">
-  <CockpitHUD {nodeCount} {linkCount} health={health()} cluster={t("cockpit.hud.defaultCluster")} />
+  <CockpitHUD {nodeCount} {linkCount} cluster={t("cockpit.hud.defaultCluster")} />
 </div>
 
 <style>

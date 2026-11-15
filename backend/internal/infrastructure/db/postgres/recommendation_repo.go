@@ -23,7 +23,11 @@ func NewRecommendationRepository(db *gorm.DB) *RecommendationRepository {
 // GetRecommendations retrieves recommendations for a given note, sorted by score descending
 func (r *RecommendationRepository) GetRecommendations(ctx context.Context, noteID uuid.UUID, limit int) ([]apprec.Recommendation, error) {
 	var models []RecommendationModel
+	// The join on notes drops recommendations whose target was soft-deleted:
+	// note_recommendations has no trigger on notes.deleted_at, so without it
+	// a trashed note stays suggested (NOTE-DELETE-1 review, blocker 2).
 	err := r.db.WithContext(ctx).
+		Joins("JOIN notes n ON n.id = note_recommendations.recommended_note_id AND n.deleted_at IS NULL").
 		Where("note_id = ?", noteID).
 		Order("score DESC").
 		Limit(limit).

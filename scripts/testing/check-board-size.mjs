@@ -26,8 +26,9 @@ if (size > SIZE_THRESHOLD_BYTES) {
             `threshold is ${thresholdKb} KB.`,
     );
     console.error(
-        "Remove terminal board rows and replies in 'Обмен репликами' " +
-            "older than three days. The board is not a log; keep it under " +
+        "Move terminal rows to docs/archive/board/YYYY-MM.md and keep " +
+            "'Обмен репликами' within the reply watcher rules (600 characters, " +
+            "three days). The board is not a log; keep it under " +
             `the ${thresholdKb} KB threshold.`,
     );
     process.exit(1);

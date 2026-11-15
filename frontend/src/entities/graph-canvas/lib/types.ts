@@ -14,6 +14,9 @@ export interface SimulationNode extends SimulationNodeDatum {
   color?: string;
   /** Optional custom glow color; computed from fill if omitted. */
   glowColor?: string;
+  /** COMET-1: scheduling fields for the comet metaphor on 2D canvas. */
+  due_at?: string | null;
+  done_at?: string | null;
 }
 
 export interface SimulationLink extends SimulationLinkDatum<SimulationNode> {
@@ -61,7 +64,9 @@ export interface ResizeState {
 /**
  * Resolve a link endpoint reference to the actual simulation node.
  * d3-force allows `source`/`target` to be a node id string, an array index
- * number, or the resolved node object itself.
+ * number, or the resolved node object itself. A node map, when given, wins
+ * over the object: it may hold moved copies of the nodes (GRAPH-LIGHT-1 list
+ * morph), and the link has to follow them.
  */
 export function resolveLinkEndpoint(
   ref: string | number | SimulationNode,
@@ -69,7 +74,7 @@ export function resolveLinkEndpoint(
   nodeMap?: Map<string, SimulationNode>
 ): SimulationNode | undefined {
   if (typeof ref === "object" && ref !== null) {
-    return ref;
+    return nodeMap?.get(ref.id) ?? ref;
   }
   if (typeof ref === "number") {
     return nodes[ref];

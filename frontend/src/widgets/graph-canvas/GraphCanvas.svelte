@@ -2,10 +2,11 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { formatMessage, getCurrentLocale } from "$shared/utils/i18n";
-  import { graphConfig2D } from "$shared/config";
+  import { graphConfig2D, graphDependencyHighlightDepth } from "$shared/config";
   import type { GraphDeltaData } from "$shared/api/graph";
   import { GraphCanvasOverlay, GraphCanvasModals, LinkTypeLegend } from "$features/graph-ui";
   import GraphNodeContextMenu from "$components/molecules/GraphNodeContextMenu.svelte";
+  import LinkTargetPicker from "$components/molecules/LinkTargetPicker.svelte";
   import { graphStore } from "$shared/stores/graph.svelte";
   import HelpHotkeysModal from "$components/organisms/HelpHotkeysModal.svelte";
   import { ParticleSystem } from "$entities/graph-canvas/lib/particle-system";
@@ -31,6 +32,8 @@
     updateBlackHolePulse,
     updateBlackHoleZoom,
     isPointOverBlackHole,
+    DEFAULT_LEGEND_WIDTH,
+    DEFAULT_LEGEND_MARGIN,
     type GhostNodeState,
     updateGhostNodePosition,
     updateGhostNodePulse,
@@ -39,12 +42,43 @@
     drawFog,
     getHoveredNeighborIds,
     applyDelta as applyDeltaToSimulation,
+    deltaLinkKey,
   } from "$entities/graph-canvas/lib";
+  import { addNodesToSimulation } from "$entities/graph-canvas/lib/incremental";
+  import { getLinkEndpointId } from "$entities/graph-canvas/lib/types";
+  import { computeDependencyChain } from "$entities/graph-canvas/lib/dependency-chain";
+  import { computeLabeledNodeIds } from "$entities/graph-canvas/lib/labels";
+  import {
+    isLightStyle,
+    setGraphStyle,
+    lightAmbient,
+    setLightAmbient,
+    setLightFocusMix,
+    setLightRecommendations,
+    setLightSelection,
+    setLightThreadFade,
+  } from "$entities/graph-canvas/lib/light/style";
+  import {
+    createMorph,
+    liftFog,
+    morphFinished,
+    morphFogLift,
+    morphNoteOpacity,
+    morphNodes,
+    morphThreadFade,
+    morphTowardList,
+    type GraphListMorph,
+    type ListMorphRequest,
+  } from "$entities/graph-canvas/lib/light/morph";
+  import { getSuggestions } from "$shared/api/notes";
+  import { graphAmbientMaxNodes, graphRecommendationsOnHover } from "$shared/config";
+  import { createCameraFlight, type Camera } from "$entities/graph-canvas/lib/camera";
   import { createGhostNode } from "$entities/graph-canvas/lib/ghost-node";
   import { createGravitySystem } from "$entities/graph-canvas/lib/gravity-system";
 
   const locale = getCurrentLocale();
-  const t = (key: string) => formatMessage(key, locale);
+  const t = (key: string, params?: Record<string, string | number>) =>
+    formatMessage(key, locale, params);
 
   // FSD imports
   import {
@@ -79,6 +113,7 @@
   import {
     createLinkFormState,
     createLink,
+    openLinkForm,
     closeLinkForm,
     type LinkFormState,
   } from "$features/graph-forms/link-form";
@@ -88,6 +123,7 @@
     nodes,
     links,
     onNodeClick,
+    onBackgroundClick,
     onLinkEdit,
     onLinkDelete,
     onLinkConfirm,
@@ -101,6 +137,8 @@
     disableVariation = false,
     readonly = false,
     showLinkTypeLegend = true,
+    progressiveReveal = false,
+    underList = false,
     className = "",
     controller = $bindable<
       | {
@@ -131,6 +169,8 @@
       last_weight_update?: string;
     }>;
     onNodeClick?: (node: { id: string; title: string; type?: string }) => void;
+    /** Click on empty graph space (UI-PANELS-1 — dismiss unpinned panels). */
+    onBackgroundClick?: () => void;
     onLinkEdit?: (link: {
       id?: string;
       source: string;
@@ -168,6 +208,10 @@
     disableVariation?: boolean;
     readonly?: boolean;
     showLinkTypeLegend?: boolean;
+    /** UI-LOAD-1: reveal large graphs in batches instead of all at once. */
+    progressiveReveal?: boolean;
+    /** GRAPH-LIGHT-1: the canvas waits under the list view for the way back. */
+    underList?: boolean;
     className?: string;
     controller?: {
       focusMode: boolean;
@@ -176,6 +220,8 @@
       toggleFocus: () => void;
       fogEnabled: boolean;
       toggleFog: () => void;
+      /** GRAPH-LIGHT-1: fly notes to the list cards and back; calls onDone when finished. */
+      startMorph?: (request: ListMorphRequest) => void;
     };
   } = $props();
   /* eslint-enable prefer-const */
@@ -212,6 +258,8 @@
   let resizeCleanup: { clear: () => void } | null = null;
   let observerCleanup: { disconnect: () => void } | null = null;
   let detachEvents: (() => void) | null = null;
+  let legendEl: { getContainer(): HTMLDivElement | null } | null = $state(null);
+  let legendCollapsed = $state(false);
   const angles = new Map<string, number>();
   const speeds = new Map<string, number>();
 
@@ -235,18 +283,176 @@
     fadeAnimationId: null,
   };
 
-  // Filter links based on hidden types and minimum weight
+  // Filter links based on hidden types, minimum weight and the auto-links
+  // toggle (UI-GRAPH-1): model-suggested links drop out of the simulation,
+  // the rendering and the hover picking at once.
   const visibleLinks = $derived(
     links.filter((l) => {
       const typeMatch = !graphStore.hiddenLinkTypes.includes(l.link_type ?? "related");
       const weightMatch = (l.weight ?? 0.5) >= graphStore.minLinkWeight;
-      return typeMatch && weightMatch;
+      const autoMatch = graphStore.showAutoLinks || l.source_type !== "gamma";
+      return typeMatch && weightMatch && autoMatch;
     })
   );
 
   // Для отслеживания изменений данных по содержимому (не по ссылке)
   let lastDataKey = "";
   let mounted = $state(false);
+  // SYNC-1 stage B: the delta object already consumed by the in-place
+  // applier. While a fresh delta is pending, the data effect below yields so
+  // the change lands on the live simulation instead of re-layouting it.
+  let lastAppliedDelta: GraphDeltaData | undefined;
+
+  // UI-LOAD-1 progressive reveal: large graphs appear in batches — the most
+  // linked nodes first, the rest added to the live simulation in portions
+  // without restarting the layout.
+  const PROGRESSIVE_MIN_NODES = 40;
+  const REVEAL_FIRST_BATCH = 25;
+  const REVEAL_BATCH_SIZE = 12;
+  const REVEAL_INTERVAL_MS = 120;
+  let revealTimer: ReturnType<typeof setInterval> | null = null;
+  let revealShown = $state(0);
+  let revealTotal = $state(0);
+  let revealing = $state(false);
+
+  // GRAPH-LIGHT-1: the automatic fit follows the layout until the user moves
+  // the camera — the layout keeps spreading after the first fit, and progressive
+  // reveal adds nodes after it.
+  let autoFitTransform: { x: number; y: number; k: number } | null = null;
+
+  function autoFit() {
+    const simNodes = getSimulationNodes(simState);
+    if (!ctx || simNodes.length === 0) return;
+    resetView(ctx, width, height, simNodes, transform);
+    autoFitTransform = { x: transform.x, y: transform.y, k: transform.k };
+  }
+
+  function refitIfUntouched() {
+    const fit = autoFitTransform;
+    if (fit && transform.x === fit.x && transform.y === fit.y && transform.k === fit.k) {
+      autoFit();
+      scheduleRedraw();
+    }
+  }
+
+  /** UX-3: cached legend size so the black hole can avoid it; measured by
+   * ResizeObserver instead of a forced layout read every animation frame. */
+  let legendSize: { width: number; height: number } | null = null;
+  function legendLayout(collapsed: boolean) {
+    if (!legendSize) return null;
+    return {
+      expanded: !collapsed,
+      width: legendSize.width || DEFAULT_LEGEND_WIDTH,
+      height: legendSize.height || 40,
+      margin: DEFAULT_LEGEND_MARGIN,
+    };
+  }
+
+  $effect(() => {
+    // (Re)observe the legend container when it binds or toggles collapsed.
+    void legendCollapsed;
+    const container = legendEl?.getContainer() ?? null;
+    legendSize = null;
+    if (!container) return;
+    const measure = () => {
+      const rect = container.getBoundingClientRect();
+      legendSize = { width: rect.width, height: rect.height };
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
+  });
+
+  // GRAPH-LIGHT-1: the hover focus fades in and out, and the camera flies to
+  // a clicked note and back to where it was on a click into empty space.
+  let focusMix = 0;
+  let focusNodeId: string | null = null;
+  let lastLoopTimestamp = 0;
+  function prefersReducedMotion(): boolean {
+    return (
+      typeof window !== "undefined" &&
+      !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+    );
+  }
+
+  // GRAPH-LIGHT-1: graph <-> list morph; parked at the list after "to-list".
+  // `camera` holds the view around the clicked card's note on the way back; it
+  // is re-applied every frame so a side panel opening mid-way keeps it centred.
+  let listMorph: {
+    morph: GraphListMorph;
+    onDone: () => void;
+    finished: boolean;
+    camera: Camera | null;
+  } | null = null;
+
+  // Back on the graph without the morph (a store reset, a view switch from
+  // elsewhere): drop the parked morph, or the canvas would stay blank.
+  $effect(() => {
+    if (!underList && listMorph?.finished) {
+      listMorph = null;
+      setLightThreadFade(null);
+      scheduleRedraw();
+    }
+  });
+
+  const cameraFlight = createCameraFlight(
+    transform,
+    () => ({ width, height }),
+    () => performance.now(),
+    prefersReducedMotion
+  );
+
+  // Decision 81: recommendations of the hovered note, loaded once a minute at most.
+  const RECOMMENDATIONS_TTL_MS = 60_000;
+  const recommendationCache = new Map<
+    string,
+    { at: number; items: Array<{ id: string; score: number }> }
+  >();
+  let recommendationsLoading: string | null = null;
+
+  function recommendationsFor(id: string | null): Array<{ id: string; score: number }> {
+    if (!id || readonly || !isLightStyle()) return [];
+    const hit = recommendationCache.get(id);
+    if (hit && Date.now() - hit.at < RECOMMENDATIONS_TTL_MS) return hit.items;
+    if (recommendationsLoading !== id) {
+      recommendationsLoading = id;
+      getSuggestions(id, graphRecommendationsOnHover)
+        .then((list) => {
+          const items = (list ?? []).map((s) => ({ id: s.note_id, score: s.score }));
+          recommendationCache.set(id, { at: Date.now(), items });
+          scheduleRedraw();
+        })
+        .catch(() => recommendationCache.set(id, { at: Date.now(), items: [] }))
+        .finally(() => {
+          if (recommendationsLoading === id) recommendationsLoading = null;
+        });
+    }
+    return hit?.items ?? [];
+  }
+
+  /** The view a click on a note flies to: the note in the middle, closer in. */
+  function cameraOnNode(id: string): Camera | null {
+    const node = getSimulationNodes(simState).find((n) => n.id === id);
+    if (!node || node.x == null || node.y == null) return null;
+    const baseK = autoFitTransform?.k ?? transform.k;
+    return { cx: node.x, cy: node.y, k: Math.min(Math.max(transform.k, baseK * 2.2), 4) };
+  }
+
+  function flyToNode(id: string) {
+    const camera = cameraOnNode(id);
+    if (!camera) return;
+    cameraFlight.flyTo(camera);
+    scheduleRedraw();
+  }
+
+  function stopReveal() {
+    if (revealTimer !== null) {
+      clearInterval(revealTimer);
+      revealTimer = null;
+    }
+    revealing = false;
+  }
 
   // Используем утилиты для resize
   const resizeState = { width, height };
@@ -312,6 +518,20 @@
     node: null,
   });
 
+  // UX-1: "Link to…" picker — choose an existing note as the link target,
+  // then the regular link form opens on the selected pair.
+  let linkPicker = $state<{
+    visible: boolean;
+    x: number;
+    y: number;
+    source: { id: string; title: string; type?: string } | null;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    source: null,
+  });
+
   // Hotkeys state (FSD)
   const hotkeysState: HotkeysState = $state(createHotkeysState());
 
@@ -336,16 +556,42 @@
         fogState.toggle();
         scheduleRedraw();
       },
+      startMorph: ({ rows, visible, direction, focusId, onDone }) => {
+        const camera = direction === "to-graph" && focusId ? cameraOnNode(focusId) : null;
+        if (camera) cameraFlight.jumpTo(camera);
+        if (prefersReducedMotion() || !isLightStyle()) {
+          listMorph = null;
+          setLightThreadFade(null);
+          onDone();
+          scheduleRedraw();
+          return;
+        }
+        listMorph = {
+          morph: createMorph(rows, visible, direction, performance.now()),
+          onDone,
+          finished: false,
+          camera,
+        };
+        scheduleRedraw();
+      },
     };
   });
 
   onMount(() => {
     if (!browser || !canvas) return;
 
+    // GRAPH-LIGHT-1: preview a graph style through the address,
+    // e.g. /?graphStyle=light, before it becomes the default.
+    const requestedStyle = new URLSearchParams(window.location.search).get("graphStyle");
+    if (requestedStyle === "light" || requestedStyle === "classic") {
+      setGraphStyle(requestedStyle);
+    }
+
     // Expose for debugging
     window.__graphCanvas = {
       getSimulationNodes: () => getSimulationNodes(simState),
       transform,
+      getBlackHole: () => blackHole,
     };
 
     // SSR-safe: получаем контекст canvas
@@ -360,14 +606,19 @@
     particleSystem = new ParticleSystem(nodes.length);
     blackHole = createBlackHole(width, height);
     blackHole.label = t("graph.blackHole.tooltip");
+    updateBlackHolePosition(blackHole, width, height, legendLayout(legendCollapsed));
     ghostNode = createGhostNode(width, height, nodes);
     gravitySystem = createGravitySystem();
 
-    // ResizeObserver для отслеживания размера контейнера
+    // ResizeObserver для отслеживания размера контейнера.
+    // Setting canvas.width clears the bitmap — request a frame immediately so
+    // the graph never sits blank while cockpit panels slide (UI-PANELS-1).
     observerCleanup = setupResizeObserver(canvas!, () => {
       resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
+      cameraFlight.resized();
+      scheduleRedraw();
     });
 
     // Отложенный resize для стабильных размеров
@@ -375,6 +626,8 @@
       resizeCanvas(canvas!, resizeState);
       width = resizeState.width;
       height = resizeState.height;
+      cameraFlight.resized();
+      scheduleRedraw();
     }, 100);
 
     // Start the animation loop. The loop ticks every rAF frame, but the
@@ -387,6 +640,37 @@
       // accurate for the adaptive fog system.
       fogState.tick(timestamp);
 
+      // GRAPH-LIGHT-1: parked under the list the canvas is hidden — nothing to draw.
+      if (listMorph?.finished) return;
+
+      const light = isLightStyle();
+      const dtSec = lastLoopTimestamp ? Math.min(0.1, (timestamp - lastLoopTimestamp) / 1000) : 0;
+      lastLoopTimestamp = timestamp;
+      const flying = cameraFlight.step(timestamp);
+      if (light) {
+        const hovered = canvasState.hoveredNodeId;
+        if (hovered) focusNodeId = hovered;
+        const target = hovered ? 1 : 0;
+        focusMix = prefersReducedMotion()
+          ? target
+          : focusMix + (target - focusMix) * (1 - Math.exp(-dtSec * 12));
+        if (!hovered && focusMix < 0.01) {
+          focusMix = 0;
+          focusNodeId = null;
+        }
+      } else {
+        focusMix = 0;
+        focusNodeId = null;
+      }
+      const focusFading = light && focusMix > 0 && focusMix < 0.999;
+      const morphing = listMorph !== null && !listMorph.finished;
+      const effectiveHoverId =
+        listMorph !== null
+          ? null
+          : light
+            ? (canvasState.hoveredNodeId ?? (focusMix > 0 ? focusNodeId : null))
+            : canvasState.hoveredNodeId;
+
       // Throttle drawing: render at full 60 fps while the graph is moving or
       // the user is interacting; otherwise fall back to idle_fps to save CPU.
       const isInteracting =
@@ -396,10 +680,21 @@
         !!dragDropState.linkPreviewTarget ||
         !!canvasState.focusMode ||
         dragState.dragging;
-      const busy = !graphStable || isInteracting;
+      const busy = !graphStable || isInteracting || flying || focusFading || morphing;
       const elapsed = timestamp - lastDrawTimestamp;
       const idleFrameInterval = 1000 / IDLE_FPS;
-      const shouldDraw = busy || needsRedraw || elapsed >= idleFrameInterval;
+      // GRAPH-LIGHT-1: without background motion (reduced motion, snapshot mode,
+      // a large graph) an idle light graph is drawn only when something changes.
+      const ambient =
+        light &&
+        lightAmbient({
+          reducedMotion: prefersReducedMotion(),
+          snapshot: stableRender,
+          nodeCount: nodes.length,
+          maxNodes: graphAmbientMaxNodes,
+        });
+      const idleMotion = !light || ambient || hasFadingOpacity() || simState.dyingLinks.length > 0;
+      const shouldDraw = busy || needsRedraw || (idleMotion && elapsed >= idleFrameInterval);
       if (!(shouldDraw && elapsed >= (busy ? 1000 / 60 : idleFrameInterval))) {
         return;
       }
@@ -415,7 +710,7 @@
 
       // Update interactive element positions, zoom scale, and pulses
       updateBlackHoleZoom(blackHole, transform.k);
-      updateBlackHolePosition(blackHole, width, height);
+      updateBlackHolePosition(blackHole, width, height, legendLayout(legendCollapsed));
       updateBlackHolePulse(blackHole, animationTime);
       updateGhostNodeZoom(ghostNode, transform.k);
       updateGhostNodePosition(ghostNode, width, height, nodes);
@@ -440,9 +735,14 @@
       const hoveredNode = canvasState.hoveredNodeId
         ? (nodeMap.get(canvasState.hoveredNodeId) ?? null)
         : null;
-      const hoveredNeighborIds = getHoveredNeighborIds(
-        canvasState.hoveredNodeId,
-        simState.simLinks
+      const hoveredNeighborIds = getHoveredNeighborIds(effectiveHoverId, simState.simLinks);
+      // LINK-TYPES-1: hovering a node with dependency links highlights the
+      // whole chain through it (both directions, bounded depth); when there
+      // is no chain, regular neighbour highlighting applies.
+      const depChain = computeDependencyChain(
+        effectiveHoverId,
+        simState.simLinks,
+        graphDependencyHighlightDepth
       );
       fogState.update(
         width,
@@ -465,7 +765,42 @@
       );
 
       needsRedraw = true;
-      doRedraw(simNodes, hoveredNeighborIds);
+      setLightFocusMix(light ? focusMix : 1);
+      setLightAmbient(ambient);
+      setLightSelection(light && !listMorph ? canvasState.selectedNodeId : null);
+      setLightRecommendations(effectiveHoverId, recommendationsFor(effectiveHoverId));
+      if (listMorph) {
+        const { morph, camera } = listMorph;
+        if (camera) cameraFlight.jumpTo(camera);
+        const towardList = morphTowardList(morph, timestamp);
+        const nodeOpacity = new Map(simState.nodeOpacity);
+        for (const n of simNodes) {
+          const fade = morphNoteOpacity(morph, n.id, towardList);
+          if (fade < 1) nodeOpacity.set(n.id, (simState.nodeOpacity.get(n.id) ?? 1) * fade);
+        }
+        setLightThreadFade(morphThreadFade(morph, simNodes, towardList));
+        // Only notes and threads travel: the fog opens instead of culling them on
+        // the way to the cards (decision 85), and the canvas tools are not drawn.
+        doRedraw(morphNodes(simNodes, morph, towardList, transform), new Set(), null, null, {
+          nodeOpacity,
+          labeled: new Set(),
+          fog: liftFog(fogState.snapshot, morphFogLift(towardList), width, height),
+          bare: true,
+        });
+        if (morphFinished(morph, timestamp)) {
+          const done = listMorph.onDone;
+          if (morph.direction === "to-graph") {
+            listMorph = null;
+            setLightThreadFade(null);
+          } else {
+            listMorph.finished = true;
+          }
+          done();
+        }
+      } else {
+        setLightThreadFade(null);
+        doRedraw(simNodes, hoveredNeighborIds, depChain, effectiveHoverId);
+      }
     });
 
     mounted = true; // triggers $effect re-run since it's $state
@@ -481,6 +816,7 @@
       observerCleanup?.disconnect();
       resizeCleanup?.clear();
       animationLoop?.stop();
+      stopReveal();
       clearSimulation(simState);
       particleSystem?.clear();
       clearAnimationState(angles, speeds);
@@ -498,7 +834,7 @@
     const linksCount = visibleLinks.length;
     const hiddenTypesCount = graphStore.hiddenLinkTypes.length;
     const minWeight = graphStore.minLinkWeight;
-    const dataKey = `${nodesCount}-${linksCount}-${hiddenTypesCount}-${minWeight}`;
+    const dataKey = `${nodesCount}-${linksCount}-${hiddenTypesCount}-${minWeight}-${graphStore.showAutoLinks}`;
 
     if (dataKey === lastDataKey) {
       return;
@@ -506,6 +842,16 @@
     lastDataKey = dataKey;
 
     if (!browser || !mounted) return;
+
+    // SYNC-1 stage B: a data change that arrived together with a fresh delta
+    // is applied by the delta effect below, in place — rebuilding here would
+    // throw away the layout the delta was meant to preserve.
+    if (delta && delta !== lastAppliedDelta && !delta.resync && simState.isRunning) {
+      return;
+    }
+
+    // A data change supersedes any in-flight reveal before a new sim starts.
+    stopReveal();
 
     // The particle system is created once in onMount, but the node count
     // (and therefore the performance threshold) changes as data loads/filters.
@@ -528,10 +874,38 @@
     // Pin technical nodes (e.g. Knowledge Core) to fixed screen positions
     const pinnedNodes = pinTechnicalNodes(nodes);
 
+    // UI-LOAD-1: reveal large graphs in batches — hubs first, then the rest
+    // joins the live simulation in portions (no layout restart per batch).
+    const progressive = progressiveReveal && pinnedNodes.length > PROGRESSIVE_MIN_NODES;
+    let headNodes = pinnedNodes;
+    let queuedNodes: typeof pinnedNodes = [];
+    if (progressive) {
+      const degree = new Map<string, number>();
+      for (const l of visibleLinks) {
+        const s = getLinkEndpointId(l.source);
+        const t = getLinkEndpointId(l.target);
+        degree.set(s, (degree.get(s) ?? 0) + 1);
+        degree.set(t, (degree.get(t) ?? 0) + 1);
+      }
+      const ordered = [...pinnedNodes].sort(
+        (a, b) => (degree.get(b.id) ?? 0) - (degree.get(a.id) ?? 0)
+      );
+      headNodes = ordered.slice(0, REVEAL_FIRST_BATCH);
+      queuedNodes = ordered.slice(REVEAL_FIRST_BATCH);
+    }
+    const revealedIds = new Set(headNodes.map((n) => n.id));
+    const headLinks = progressive
+      ? visibleLinks.filter(
+          (l) =>
+            revealedIds.has(getLinkEndpointId(l.source)) &&
+            revealedIds.has(getLinkEndpointId(l.target))
+        )
+      : visibleLinks;
+
     // Запускаем новую симуляцию
     startSimulation(
-      pinnedNodes,
-      visibleLinks,
+      headNodes,
+      headLinks,
       width,
       height,
       simState,
@@ -540,25 +914,78 @@
         redraw();
       },
       () => {
-        const simNodes = getSimulationNodes(simState);
-        if (ctx && simNodes.length > 0) {
-          resetView(ctx, width, height, simNodes, transform);
-        }
+        autoFit();
       },
       () => {
         graphStable = true;
+        refitIfUntouched();
       }
     );
+
+    if (queuedNodes.length > 0) {
+      revealing = true;
+      revealShown = headNodes.length;
+      revealTotal = pinnedNodes.length;
+      const pendingLinks = visibleLinks.filter(
+        (l) =>
+          !(
+            revealedIds.has(getLinkEndpointId(l.source)) &&
+            revealedIds.has(getLinkEndpointId(l.target))
+          )
+      );
+      revealTimer = setInterval(() => {
+        const batch = queuedNodes.splice(0, REVEAL_BATCH_SIZE);
+        if (batch.length === 0) {
+          stopReveal();
+          return;
+        }
+        for (const n of batch) revealedIds.add(n.id);
+        const batchLinks = pendingLinks.filter(
+          (l) =>
+            revealedIds.has(getLinkEndpointId(l.source)) &&
+            revealedIds.has(getLinkEndpointId(l.target))
+        );
+        for (const l of batchLinks) {
+          pendingLinks.splice(pendingLinks.indexOf(l), 1);
+        }
+        addNodesToSimulation(simState, batch, batchLinks, width, height, () => {
+          graphStable = true;
+          refitIfUntouched();
+        });
+        revealShown = revealedIds.size;
+        redraw();
+        if (queuedNodes.length === 0) stopReveal();
+      }, REVEAL_INTERVAL_MS);
+    }
   });
 
   // Применяем дельта-обновления инкрементально
   $effect(() => {
-    if (!delta || !browser || !mounted || !simState.isRunning) {
+    if (!delta || !browser || !mounted) {
+      return;
+    }
+    if (delta === lastAppliedDelta) {
+      return;
+    }
+    // Consume the delta even when the sim is not running: the merged props
+    // already carry the change, so the regular data path rebuilds with it.
+    lastAppliedDelta = delta;
+    if (!simState.isRunning) {
       return;
     }
 
+    // The canvas only holds what the current filters let through — additions
+    // outside the filtered view must not land in the simulation.
+    const nodeIds = new Set(nodes.map((n) => n.id));
+    const visibleLinkKeys = new Set(visibleLinks.map((l) => deltaLinkKey(l)));
+    const scopedDelta: GraphDeltaData = {
+      ...delta,
+      added_nodes: delta.added_nodes?.filter((n) => nodeIds.has(n.id)),
+      added_links: delta.added_links?.filter((l) => visibleLinkKeys.has(deltaLinkKey(l))),
+    };
+
     // Apply incremental delta updates to the simulation
-    applyDeltaToSimulation(delta, {
+    applyDeltaToSimulation(scopedDelta, {
       nodes,
       links,
       width,
@@ -597,6 +1024,7 @@
       ty: Math.round(transform.y),
       tk: transform.k.toFixed(3),
       hover: canvasState.hoveredNodeId ?? "",
+      sel: canvasState.selectedNodeId ?? "",
       focus: canvasState.focusMode,
       highlight: canvasState.highlightedLinkId ?? "",
       search: [...(hotkeysState.searchMatchIds ?? [])].sort().join(","),
@@ -615,6 +1043,9 @@
       graphStable &&
       !canvasState.focusMode &&
       !canvasState.hoveredNodeId &&
+      !cameraFlight.isFlying() &&
+      listMorph === null &&
+      focusMix === 0 &&
       !dragDropState.draggedNodeId &&
       !dragDropState.isDraggingForLink &&
       !dragDropState.linkPreviewTarget &&
@@ -641,7 +1072,19 @@
     return offscreenCtx!;
   }
 
-  function doRedraw(simNodes: SimulationNode[], hoveredNeighborIds: Set<string>) {
+  function doRedraw(
+    simNodes: SimulationNode[],
+    hoveredNeighborIds: Set<string>,
+    depChain: ReturnType<typeof computeDependencyChain> = null,
+    hoverId: string | null = canvasState.hoveredNodeId,
+    overrides: {
+      nodeOpacity?: Map<string, number>;
+      labeled?: Set<string>;
+      fog?: typeof fogState.snapshot;
+      /** Notes and threads only: no black hole, ghost node, particles or gravity. */
+      bare?: boolean;
+    } = {}
+  ) {
     if (!needsRedraw || !ctx) return;
     needsRedraw = false;
 
@@ -669,26 +1112,34 @@
       simNodes,
       angles,
       transform,
-      simState.nodeOpacity,
+      overrides.nodeOpacity ?? simState.nodeOpacity,
       simState.linkOpacity,
       simState.dyingLinks,
       simState.dyingLinkOpacity,
       stableRender,
       animationTime,
-      canvasState.hoveredNodeId,
-      particleSystem,
-      blackHole,
-      ghostNode,
-      gravitySystem,
+      hoverId,
+      overrides.bare ? undefined : particleSystem,
+      overrides.bare ? null : blackHole,
+      overrides.bare ? null : ghostNode,
+      overrides.bare ? undefined : gravitySystem,
       canvasState.focusMode,
       hotkeysState.searchMatchIds,
       canvasState.highlightedLinkId,
       dragDropState.linkPreviewTarget,
       linkMousePos,
-      fogState.snapshot,
-      hoveredNeighborIds
+      overrides.fog ?? fogState.snapshot,
+      hoveredNeighborIds,
+      overrides.labeled ??
+        computeLabeledNodeIds(simNodes, simState.simLinks, {
+          hoveredId: hoverId,
+          selectedId: canvasState.selectedNodeId,
+          searchMatchIds: hotkeysState.searchMatchIds,
+          zoomK: transform.k,
+        }),
+      depChain
     );
-    drawFog(targetCtx, width, height, fogState.snapshot);
+    drawFog(targetCtx, width, height, overrides.fog ?? fogState.snapshot);
 
     if (cacheKey) {
       lastCacheKey = cacheKey;
@@ -766,7 +1217,19 @@
       ghostNode = node;
     },
     get onNodeClick() {
-      return onNodeClick;
+      return (node: { id: string; title: string; type?: string }) => {
+        if (isLightStyle()) flyToNode(node.id);
+        onNodeClick?.(node);
+      };
+    },
+    get onBackgroundClick() {
+      return () => {
+        if (isLightStyle()) {
+          cameraFlight.flyBack();
+          scheduleRedraw();
+        }
+        onBackgroundClick?.();
+      };
     },
     get onNodeContextMenu() {
       return (node: { id: string; title: string; type?: string }, x: number, y: number) => {
@@ -812,6 +1275,19 @@
     }
     contextMenu = { ...contextMenu, visible: false };
   }}
+  onLinkTo={readonly || !onLinkCreate
+    ? undefined
+    : () => {
+        if (contextMenu.node) {
+          linkPicker = {
+            visible: true,
+            x: contextMenu.x,
+            y: contextMenu.y,
+            source: contextMenu.node,
+          };
+        }
+        contextMenu = { ...contextMenu, visible: false };
+      }}
   onViewDetails={() => {
     if (contextMenu.node && onNodeClick) {
       onNodeClick(contextMenu.node);
@@ -821,8 +1297,45 @@
   }}
 />
 
+<LinkTargetPicker
+  x={linkPicker.x}
+  y={linkPicker.y}
+  visible={linkPicker.visible}
+  sourceId={linkPicker.source?.id ?? ""}
+  {nodes}
+  onSelect={(target) => {
+    if (linkPicker.source) {
+      openLinkForm(linkFormState, linkPicker.source.id, target.id, linkPicker.x, linkPicker.y);
+      scheduleRedraw();
+    }
+  }}
+  onClose={() => (linkPicker = { ...linkPicker, visible: false })}
+/>
+
+<!-- UI-LOAD-1: unobtrusive "N of M" progress while batches still arrive -->
+{#if revealing}
+  <div class="reveal-progress" data-testid="reveal-progress" aria-live="polite">
+    {t("graph.revealProgress", { shown: revealShown, total: revealTotal })}
+  </div>
+{/if}
+
+<!-- UI-GRAPH-1: one-button show/hide for model-suggested links -->
+<button
+  type="button"
+  class="auto-links-toggle"
+  class:active={graphStore.showAutoLinks}
+  data-testid="auto-links-toggle"
+  aria-pressed={graphStore.showAutoLinks}
+  title={graphStore.showAutoLinks ? t("graph.autoLinks.hide") : t("graph.autoLinks.show")}
+  onclick={() => graphStore.toggleAutoLinks()}
+>
+  ✦ {t("graph.autoLinks.toggle")}
+</button>
+
 {#if showLinkTypeLegend}
   <LinkTypeLegend
+    bind:this={legendEl}
+    bind:collapsed={legendCollapsed}
     hiddenTypes={graphStore.hiddenLinkTypes}
     minWeight={graphStore.minLinkWeight}
     showMinWeight={true}
@@ -883,3 +1396,49 @@
     onClose={() => canvasState.closeHelpModal(hotkeysState)}
   />
 {/if}
+
+<style>
+  .auto-links-toggle {
+    position: absolute;
+    /* top-right corner at 16px belongs to the focus-mode indicator. */
+    top: 56px;
+    right: 16px;
+    z-index: 20;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--carbon-border, #2d2d3d);
+    background: rgba(18, 18, 26, 0.85);
+    color: var(--carbon-text-dim, #7a7a8e);
+    font-size: 12px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .auto-links-toggle.active {
+    color: var(--carbon-text, #f0f0f5);
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+
+  .auto-links-toggle:hover {
+    border-color: rgba(139, 92, 246, 0.7);
+    color: var(--carbon-text, #f0f0f5);
+  }
+
+  .reveal-progress {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 20;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(18, 18, 26, 0.75);
+    color: var(--carbon-text-dim, #7a7a8e);
+    font-size: 12px;
+    pointer-events: none;
+  }
+</style>

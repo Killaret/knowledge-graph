@@ -5,7 +5,7 @@ import { goto } from "$app/navigation";
 import { graphView } from "$shared/stores/graph-view.svelte";
 import { authState } from "$shared/stores/auth-session.svelte";
 import { getFullGraphData, getGraphData } from "$shared/api/graph";
-import { getNotes, getNote, createNote, updateNote } from "$shared/api/notes";
+import { getNotes, getNote, createNote, updateNote, deleteNote } from "$shared/api/notes";
 import { createLink, getNoteLinks } from "$shared/api/links";
 
 vi.mock("$shared/api/notes", () => ({
@@ -266,5 +266,31 @@ describe("Graph page - Cosmic Cockpit integration", () => {
       timeout: 2000,
     }).catch(() => {});
     expect(screen.getByTestId("graph-stats")).toHaveTextContent("1");
+  });
+
+  // UX-1: a reload after a mutation must not blank the canvas. The delete
+  // flow leaves getFullGraphData pending; the rendered graph stays mounted
+  // and a corner chip shows instead of the full overlay.
+  it("keeps the canvas mounted while the graph reloads after a mutation", async () => {
+    render(Page);
+    await waitFor(() => expect(screen.getByTestId("graph-canvas")).toBeInTheDocument(), {
+      timeout: 2000,
+    });
+
+    const [firstTreeItem] = screen.getAllByTestId("cockpit-note-tree-item");
+    await fireEvent.click(firstTreeItem);
+    await waitFor(() => expect(screen.getByTestId("cockpit-right-panel")).toBeInTheDocument());
+
+    vi.mocked(deleteNote).mockResolvedValue(undefined);
+    vi.mocked(getFullGraphData).mockImplementation(() => new Promise(() => {}));
+
+    await fireEvent.click(screen.getByLabelText("Delete note"));
+    await fireEvent.click(screen.getByTestId("confirm-modal-confirm"));
+
+    await waitFor(() => expect(screen.getByTestId("refresh-chip")).toBeInTheDocument(), {
+      timeout: 2000,
+    });
+    expect(screen.getByTestId("graph-canvas")).toBeInTheDocument();
+    expect(screen.queryByTestId("loading-overlay")).not.toBeInTheDocument();
   });
 });

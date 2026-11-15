@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"knowledge-graph/internal/interfaces/api/notificationhandler"
+
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -11,6 +13,7 @@ import (
 
 	"knowledge-graph/internal/config"
 	"knowledge-graph/internal/domain/note"
+	"knowledge-graph/internal/domain/notification"
 	"knowledge-graph/internal/interfaces/api/graphhandler"
 	achievementhandler "knowledge-graph/internal/interfaces/api/handlers/achievement"
 	authhandler "knowledge-graph/internal/interfaces/api/handlers/auth"
@@ -62,6 +65,7 @@ func setupRouter(
 	apiKeyConfig *middleware.APIKeyConfig,
 	skipAuthConfig *middleware.SkipAuthConfig,
 	noteRepo note.Repository,
+	notificationRepo notification.Repository,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -144,6 +148,9 @@ func setupRouter(
 		// indistinguishable from a missing one.
 		noteRead := middleware.RequireNoteAccess(noteRepo, middleware.NoteAccessRead)
 		noteWrite := middleware.RequireNoteAccess(noteRepo, middleware.NoteAccessWrite)
+		// Restore's target sits in the trash, so its access check must see
+		// soft-deleted notes.
+		noteWriteTrash := middleware.RequireNoteAccess(noteRepo, middleware.NoteAccessWriteIncludeDeleted)
 
 		// Share routes
 		v1.POST("/notes/:id/share", writeLimiter, noteWrite, shareHandler.ShareNote)
@@ -176,16 +183,41 @@ func setupRouter(
 		v1.POST("/import/bookmarks/preview", writeLimiter, noteHandler.ImportBookmarksPreview)
 		v1.POST("/import/bookmarks", writeLimiter, noteHandler.ImportBookmarks)
 		v1.POST("/import/batch", writeLimiter, noteHandler.ImportBatch)
+		v1.GET("/import/document/availability", noteHandler.ImportDocumentAvailability)
+		v1.POST("/import/document", writeLimiter, noteHandler.ImportDocument)
 		v1.GET("/import/:task_id/status", noteHandler.ImportBookmarksStatus)
 		v1.GET("/notes/:id", cacheControlMiddleware(60), noteRead, noteHandler.Get)
 		v1.PUT("/notes/:id", writeLimiter, noteWrite, noteHandler.Update)
 		v1.POST("/notes/:id/publish", writeLimiter, noteWrite, noteHandler.Publish)
 		v1.POST("/notes/:id/unpublish", writeLimiter, noteWrite, noteHandler.Unpublish)
 		v1.DELETE("/notes/:id", writeLimiter, noteWrite, noteHandler.Delete)
-		v1.POST("/notes/:id/restore", writeLimiter, noteWrite, noteHandler.Restore)
+		v1.POST("/notes/:id/restore", writeLimiter, noteWriteTrash, noteHandler.Restore)
 		v1.GET("/notes/:id/suggestions", cacheControlMiddleware(60), noteRead, noteHandler.GetSuggestions)
+
+		// NOTE-QUALITY-1: read answers with the same access rule as the note
+		// itself; the manual trigger is a write action.
+		v1.GET("/notes/:id/quality", noteRead, noteHandler.GetQuality)
+		v1.POST("/notes/:id/quality/assess", writeLimiter, noteWrite, noteHandler.AssessQuality)
+
+		// NOTE-QUALITY-1 part 3: re-fetch of truncated/stub imports. Preview
+		// reads (no mutation, but it does fetch the source URL — user action);
+		// apply and restore write.
+		v1.POST("/notes/:id/refetch/preview", writeLimiter, noteRead, noteHandler.RefetchPreview)
+		v1.POST("/notes/:id/refetch", writeLimiter, noteWrite, noteHandler.RefetchApply)
+		v1.POST("/notes/:id/refetch/restore", writeLimiter, noteWrite, noteHandler.RefetchRestore)
 		v1.GET("/notes", cacheControlMiddleware(60), noteHandler.List)
 		v1.GET("/notes/search", cacheControlMiddleware(30), noteHandler.Search)
+		// COMET-1: «Ближайшие дела» — overdue/upcoming/undated groups.
+		v1.GET("/notes/comets", cacheControlMiddleware(30), noteHandler.Comets)
+		// COMET-1 stage D: «Добавить в календарь» — .ics download of a dated comet.
+		v1.GET("/notes/:id/calendar.ics", noteRead, noteHandler.CalendarICS)
+
+		// COMET-1 stage C: in-app notifications (comet reminders).
+		if notificationRepo != nil {
+			notificationHandler := notificationhandler.New(notificationRepo)
+			v1.GET("/notifications", cacheControlMiddleware(30), notificationHandler.List)
+			v1.POST("/notifications/:id/read", writeLimiter, notificationHandler.MarkRead)
+		}
 
 		v1.POST("/links", writeLimiter, linkHandler.Create)
 		v1.GET("/links/:id", linkHandler.Get)

@@ -90,6 +90,12 @@ func main() {
 	httpMux := http.NewServeMux()
 	api.RegisterHTTPHandlers(httpMux, service, cfg)
 
+	// SYNC-1 stage C: SSE endpoint — pushes "graph changed" signals to the
+	// frontend; the client then fetches /api/v1/graph/delta itself.
+	eventsBroker := api.NewEventsBroker(redisClient, cfg.EventChannel)
+	eventsBroker.Start(ctx)
+	httpMux.HandleFunc("/api/v1/graph/events", eventsBroker.SSEHandler(cfg))
+
 	subscriberSvc := subscriber.NewRedisSubscriberWithConfig(redisClient, pgClient, cacheClient, cfg)
 	if err := subscriberSvc.Start(ctx); err != nil {
 		log.Fatalf("failed to start subscriber: %v", err)

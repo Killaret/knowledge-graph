@@ -252,3 +252,90 @@ Postgres notes.content (сырьё, неизменно)
    понадобится показывать качество заметки сразу (пользовательский flow,
    не конвейер).
 7. Что делает нормализатор для title-only стабов и коротких заметок — пропускать.
+
+---
+
+## Находки реализации (Devin, 2026-09-25)
+
+### Архитектура как сдано
+
+- `nlp-service/app/core/normalization.py` — чистый модуль: один
+  детерминированный проход (boilerplate-строки, голые URL, навигационные
+  пробеги >=3 коротких строк, точные дубли строк, схлопывание whitespace),
+  `iterations=1`, `stop_reason="single_pass"`. Оба предохранителя
+  (length<100 -> `too_short`, cos<min_cosine -> `low_cosine`) откатывают к
+  исходнику; `embed_fn` инжектируется — предохранитель покрыт юнит-тестами
+  без модели. Вход короче 100 символов пропускается (`skipped=true`).
+- `POST /normalize` — stateless: принимает `{text,title}`, отдаёт
+  `normalized_text`, `chunks` (чанкер CHUNK-1), `metrics`, `rolled_back`,
+  `rollback_reason`, `skipped`, `pipeline_version="norm-v1"`.
+- Backend: `NLPClient.Normalize`, `nlp_artifacts` MongoDB-репозиторий
+  (частичный уникальный индекс `(note_id, pipeline_version)` по
+  `status='current'` + индекс `note_id` для каскада), задачи asynq
+  `nlp:normalize` и `nlp:artifacts_cleanup`, воркер с Mongo-клиентом,
+  команда `cmd/nlp-artifacts-recompute` (`--dry-run`, пропуск по
+  source_hash).
+- Выключатели: `nlp.pipeline.enabled` (JSON/env, default false — backend не
+  ставит задачу, `/normalize` не вызывается), `nlp.history.enabled`
+  (default true), `nlp.normalization.min_cosine` (default 0.7, шкала
+  e5-base, перекалибровка — MODEL-2; значения вне (0,1] откатываются к
+  умолчанию). Эмбеддинги по-прежнему строятся по сырому `notes.content`;
+  переключение векторов — MODEL-2.
+- Enqueue-точки: create, update (при смене текста), batch create/update,
+  импорт; удаление (одиночное и batch) ставит cleanup-задачу.
+
+### Проверки исполнением
+
+- pytest: 108/108 (в т.ч. `test_normalization.py`: правила, оба
+  предохранителя, пропуск коротких, контракт `/normalize`, фикстура
+  `work-nlp4/fixture_boilerplate.json`).
+- go test ./...: зелёный (воркер: артефакт сохраняется, skip по
+  source_hash, чистка при удалённой заметке, no-store no-op, проброс
+  history-флага; хендлеры: каскад на delete/delete-batch, enqueue на
+  create; конфиг: дефолты и env-переопределения; recompute: план
+  dry-run, идемпотентность).
+- Integration (testcontainers, mongo:7): supersede при повторной записи,
+  `history.enabled=false` удаляет вместо superseded, каскад удаляет оба
+  документа, уникальный индекс current.
+
+### Мутации критерия 7 — все красные
+
+| Мутация | Покрасневший тест |
+|---|---|
+| Снять оба предохранителя | `test_rollback_when_result_too_short` (нормализатор вернул пустую строку без отката) |
+| Игнорировать `nlp.history.enabled` (воркер шлёт `true` всегда) | `TestWorker_HandleNormalizeNote_PropagatesHistoryFlag` |
+| Убрать каскад в `Delete` | `TestDeleteNote_Success` (cleanupCalls пуст) |
+| Записать нормализованный текст в `notes.content` | `TestWorker_HandleNormalizeNote_NeverWritesNoteContent` (content стал «cleaned text») |
+
+### Живой прогон на тест-стеке (критерий 8)
+
+`NLP_PIPELINE_ENABLED=true` на docker-compose.test.yml, сид 15 заметок:
+
+- Создание заметки через API -> `nlp:normalize` -> артефакт в Mongo:
+  3 чанка, `emb_cosine=0.442` < 0.7 -> **откат `low_cosine` вживую**
+  (стабообразный текст с boilerplate: правила вырезали ~72%, косинус
+  просел — предохранитель сработал как в худшем случае замера).
+- `nlp-artifacts-recompute`: dry-run — `create 15, skip 1`; прогон —
+  `15 enqueued`; повторный dry-run — `create 0, skip 15`
+  (идемпотентность по source_hash).
+- Правка заметки -> прежний документ `superseded`, новый `current`
+  (история включена).
+- Удаление заметки -> cleanup-задача удалила оба документа (каскад).
+- Итог: 15 заметок сида — 15 current-артефактов; медиана сжатия **1.0**
+  (сидовый корпус — чистый шаблонный текст, нормализовать нечего),
+  откатов 1 (тестовая boilerplate-заметка), пропусков 0, чанков 18.
+
+### Ограничения и расхождения
+
+- Артефакты пишутся, но не читаются никем — переход векторов на
+  нормализованную форму это MODEL-2. До него весь конвейер — «тёплый»
+  контур: пишет, не влияет.
+- Сидовый корпус слишком чистый для оценки сжатия в массе (p50=1.0);
+  реальная медиана — только на корпусе владельца после NOTE-QUALITY-1.
+- Порог 0.7 — со шкалы e5-base-замера; на MiniLM косинусы смещены вверх,
+  реальный запас меньше. Перекалибровка в MODEL-2.
+- Поле `emb_cosine` в метриках null при `too_short`-откате и при пропуске —
+  намеренно: косинус не считался.
+
+Полный `check-all.ps1` (без `-Quick`) — сводка в журнале AI_LOG при сдаче.
+

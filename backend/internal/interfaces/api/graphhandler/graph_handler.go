@@ -24,6 +24,9 @@ type GraphNode struct {
 	Type  string  `json:"type"`
 	X     float64 `json:"x,omitempty"`
 	Y     float64 `json:"y,omitempty"`
+	// COMET-1 stage E: comet scheduling fields for the 2D "approaching" metaphor.
+	DueAt  *time.Time `json:"due_at,omitempty"`
+	DoneAt *time.Time `json:"done_at,omitempty"`
 }
 
 type GraphLink struct {
@@ -170,9 +173,11 @@ func (h *Handler) loadGraphBFS(ctx context.Context, centerID uuid.UUID, maxDepth
 			}
 		}
 		nodes = append(nodes, GraphNode{
-			ID:    n.ID().String(),
-			Title: n.Title().String(),
-			Type:  nodeType,
+			ID:     n.ID().String(),
+			Title:  n.Title().String(),
+			Type:   nodeType,
+			DueAt:  n.DueAt(),
+			DoneAt: n.DoneAt(),
 		})
 	}
 
@@ -264,9 +269,11 @@ func (h *Handler) GetPublicGraph(c *gin.Context) {
 		}
 		debugTypes[nodeType]++
 		nodes = append(nodes, GraphNode{
-			ID:    n.ID().String(),
-			Title: n.Title().String(),
-			Type:  nodeType,
+			ID:     n.ID().String(),
+			Title:  n.Title().String(),
+			Type:   nodeType,
+			DueAt:  n.DueAt(),
+			DoneAt: n.DoneAt(),
 		})
 		visibleNodeIDs[n.ID().String()] = true
 	}
@@ -418,9 +425,11 @@ func (h *Handler) loadFullGraph(ctx context.Context, userID uuid.UUID) (GraphDat
 			nodeType = celestialTypes[i%len(celestialTypes)]
 		}
 		nodes = append(nodes, GraphNode{
-			ID:    n.ID().String(),
-			Title: n.Title().String(),
-			Type:  nodeType,
+			ID:     n.ID().String(),
+			Title:  n.Title().String(),
+			Type:   nodeType,
+			DueAt:  n.DueAt(),
+			DoneAt: n.DoneAt(),
 		})
 		visibleNodeIDs[n.ID().String()] = true
 	}
@@ -526,11 +535,13 @@ func convertToCacheGraphData(data GraphData) cache.GraphData {
 	cacheNodes := make([]cache.GraphNode, len(data.Nodes))
 	for i, node := range data.Nodes {
 		cacheNodes[i] = cache.GraphNode{
-			ID:    node.ID,
-			Title: node.Title,
-			Type:  node.Type,
-			X:     node.X,
-			Y:     node.Y,
+			ID:     node.ID,
+			Title:  node.Title,
+			Type:   node.Type,
+			X:      node.X,
+			Y:      node.Y,
+			DueAt:  node.DueAt,
+			DoneAt: node.DoneAt,
 		}
 	}
 
@@ -559,11 +570,13 @@ func convertFromCacheGraphData(data cache.GraphData) GraphData {
 	handlerNodes := make([]GraphNode, len(data.Nodes))
 	for i, node := range data.Nodes {
 		handlerNodes[i] = GraphNode{
-			ID:    node.ID,
-			Title: node.Title,
-			Type:  node.Type,
-			X:     node.X,
-			Y:     node.Y,
+			ID:     node.ID,
+			Title:  node.Title,
+			Type:   node.Type,
+			X:      node.X,
+			Y:      node.Y,
+			DueAt:  node.DueAt,
+			DoneAt: node.DoneAt,
 		}
 	}
 
@@ -614,11 +627,13 @@ func (h *Handler) preserveCachedPositions(fresh, cached GraphData) GraphData {
 			x, y = pos.x, pos.y
 		}
 		preservedNodes[i] = GraphNode{
-			ID:    node.ID,
-			Title: node.Title,
-			Type:  node.Type,
-			X:     x,
-			Y:     y,
+			ID:     node.ID,
+			Title:  node.Title,
+			Type:   node.Type,
+			X:      x,
+			Y:      y,
+			DueAt:  node.DueAt,
+			DoneAt: node.DoneAt,
 		}
 	}
 

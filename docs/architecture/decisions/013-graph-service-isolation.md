@@ -3,6 +3,8 @@
 ## Status
 Accepted
 
+**Implementation status:** implemented — `services/graph-service` runs both listeners (gRPC :9090, HTTP :9091). Caveat verified in DOC-AUDIT-2: the gRPC listener currently has **no in-repo consumers** (backend and frontend call the HTTP API), so the "gRPC for internal communication" half is dormant. The owner's original intent — gRPC as an on-demand fallback when HTTP is overloaded — is recorded in `docs/tasks/DOC-AUDIT-2-docs-vs-code.md` for discussion.
+
 ## Context
 Knowledge Graph is a graph-based note-taking system where relationships between notes are as important as the notes themselves. As the system evolved, several challenges emerged:
 

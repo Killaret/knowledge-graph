@@ -22,6 +22,21 @@ import {
   drawMoon,
   drawUnknown,
 } from "./node-renderers";
+import { getGraphStyle, type GraphStyle } from "./light/style";
+import { registerLightDrawers } from "./light/glyphs";
+
+/** Style the drawers were last wired for; null until the first registration. */
+let registeredStyle: GraphStyle | null = null;
+
+/**
+ * Wire the drawers once and again whenever the graph style changes
+ * (GRAPH-LIGHT-1): drawing code calls this before drawing a node.
+ */
+export function ensureCelestialBodyDrawers(): void {
+  if (registeredStyle !== getGraphStyle() || !CelestialBody.STAR.drawFunction) {
+    registerCelestialBodyDrawers();
+  }
+}
 
 export function registerCelestialBodyDrawers(): void {
   CelestialBody.STAR.drawFunction = (ctx, c) => {
@@ -37,7 +52,19 @@ export function registerCelestialBodyDrawers(): void {
   };
 
   CelestialBody.COMET.drawFunction = (ctx, c) => {
-    drawComet(ctx, c.x, c.y, c.r, c.angle, c.variation, c.nodeId, c.nodeCount, c.time);
+    drawComet(
+      ctx,
+      c.x,
+      c.y,
+      c.r,
+      c.angle,
+      c.variation,
+      c.nodeId,
+      c.nodeCount,
+      c.time,
+      c.dueAt,
+      c.doneAt
+    );
   };
 
   CelestialBody.GALAXY.drawFunction = (ctx, c) => {
@@ -111,4 +138,11 @@ export function registerCelestialBodyDrawers(): void {
   CelestialBody.COSMIC_ABOMINATION.drawFunction = (ctx, c) => {
     drawCosmicAbomination(ctx, c.x, c.y, c.r, getAnomalyParams(c.nodeId));
   };
+
+  // GRAPH-LIGHT-1: the light style replaces every drawer, anomalies included.
+  const style = getGraphStyle();
+  if (style === "light") {
+    registerLightDrawers();
+  }
+  registeredStyle = style;
 }

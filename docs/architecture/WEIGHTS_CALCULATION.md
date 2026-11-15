@@ -30,4 +30,4 @@
 ## Нормализация
 
 Косинусное сходство эмбеддингов приводится к диапазону [0,1] по формуле:  
-`similarity = (1 - distance) / 2`, где `distance` — косинусное расстояние (оператор `<=>` в pgvector).
+`similarity = clamp(1 - distance, 0, 1)`, где `distance` — косинусное расстояние (оператор `<=>` в pgvector). Реализация: `GREATEST(0.0, LEAST(1.0, 1 - (e1.embedding <=> e2.embedding)))` в `backend/internal/infrastructure/db/postgres/embedding_repo.go`.

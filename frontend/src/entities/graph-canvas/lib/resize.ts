@@ -31,9 +31,10 @@ export function resizeCanvas(canvas: HTMLCanvasElement, state: ResizeState): voi
       }
     }
   } else {
-    // Fallback: use window size if parent not available
-    state.width = window.innerWidth;
-    state.height = window.innerHeight - 80; // Account for controls
+    // Fallback: use window size if parent not available. A hidden window
+    // reports zero, so never go below zero (GRAPH-LIGHT-1, LINK-TYPES-1 review).
+    state.width = Math.max(0, window.innerWidth);
+    state.height = Math.max(0, window.innerHeight - 80); // Account for controls
     const dpr = Math.max(1, window.devicePixelRatio || 1);
     canvas.style.width = `${Math.round(state.width)}px`;
     canvas.style.height = `${Math.round(state.height)}px`;

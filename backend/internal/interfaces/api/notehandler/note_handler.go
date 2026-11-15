@@ -6,14 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"knowledge-graph/internal/application/achievement"
 	appcache "knowledge-graph/internal/application/cache"
+	"knowledge-graph/internal/application/comet"
 	"knowledge-graph/internal/application/common"
-	appevents "knowledge-graph/internal/application/events"
 	importer "knowledge-graph/internal/application/import"
 	graphQueries "knowledge-graph/internal/application/queries/graph"
 	"knowledge-graph/internal/application/recommendation"
@@ -44,7 +45,14 @@ type Handler struct {
 	graphCache         *appcache.GraphCache
 	achievementService *achievement.Service
 	importSvc          *importer.Service
-	eventPublisher     appevents.Publisher
+
+	// NOTE-QUALITY-1 — installed by SetQuality; disabled = zero deps.
+	qualityEnabled bool
+	qualityReader  QualityReader
+	qualityEnq     QualityEnqueuer
+
+	// Re-fetch (NOTE-QUALITY-1 part 3) — installed by SetRefetch.
+	refetchExtractor RefetchExtractor
 }
 
 // SuggestionsResponse represents the response for recommendations
@@ -84,11 +92,6 @@ func New(repo note.Repository, taskQueue common.TaskQueue, suggestionsHandler *g
 	}
 }
 
-// SetEventPublisher sets the optional graph event publisher for cache invalidation.
-func (h *Handler) SetEventPublisher(p appevents.Publisher) {
-	h.eventPublisher = p
-}
-
 // SetLinkRepository sets the optional link repository used by batch/import handlers.
 func (h *Handler) SetLinkRepository(repo link.Repository) {
 	h.linkRepo = repo
@@ -125,11 +128,82 @@ func (h *Handler) enqueueBackupOnNoteChange(ctx context.Context) {
 	}
 }
 
+// enqueueCometReminder schedules comet:remind when the note has a reminder
+// moment (COMET-1 stage C). Stale tasks no-op at fire time, so re-enqueueing
+// on every save is the reschedule mechanism — no cancellation needed.
+func (h *Handler) enqueueCometReminder(ctx context.Context, n *note.Note) {
+	if h.taskQueue == nil || n == nil || n.DoneAt() != nil {
+		return
+	}
+	remindAt := n.RemindAt()
+	if remindAt == nil {
+		return
+	}
+	if err := h.taskQueue.EnqueueCometRemind(ctx, n.ID(), *remindAt); err != nil {
+		log.Printf("[NoteHandler] Failed to enqueue comet reminder for %s: %v", n.ID(), err)
+	}
+}
+
+// nullableTime distinguishes "key absent" from "key null" in JSON: absent keeps
+// the stored value, null or "" clears it, an RFC 3339 string sets it.
+// COMET-1 этап A.
+type nullableTime struct {
+	present bool
+	value   *time.Time
+}
+
+func (n *nullableTime) UnmarshalJSON(b []byte) error {
+	n.present = true
+	var s string
+	if string(b) != "null" {
+		if err := json.Unmarshal(b, &s); err != nil {
+			return fmt.Errorf("must be an RFC 3339 datetime string or null")
+		}
+	}
+	if s == "" {
+		n.value = nil
+		return nil
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return fmt.Errorf("must be an RFC 3339 datetime: %w", err)
+	}
+	n.value = &t
+	return nil
+}
+
+// nullableInt64 — same presence semantics for integer fields; rejects negative
+// values (a reminder offset cannot be negative).
+type nullableInt64 struct {
+	present bool
+	value   *int64
+}
+
+func (n *nullableInt64) UnmarshalJSON(b []byte) error {
+	n.present = true
+	if string(b) == "null" {
+		n.value = nil
+		return nil
+	}
+	var v int64
+	if err := json.Unmarshal(b, &v); err != nil {
+		return fmt.Errorf("must be a non-negative integer number of seconds or null")
+	}
+	if v < 0 {
+		return fmt.Errorf("must not be negative")
+	}
+	n.value = &v
+	return nil
+}
+
 type createNoteRequest struct {
-	Title    string                 `json:"title" binding:"required,max=200"`
-	Content  string                 `json:"content" binding:"omitempty,max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
-	Metadata map[string]interface{} `json:"metadata"`
+	Title               string                 `json:"title" binding:"required,max=200"`
+	Content             string                 `json:"content" binding:"omitempty,max=50000"`
+	Type                string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Metadata            map[string]interface{} `json:"metadata"`
+	DueAt               nullableTime           `json:"due_at"`
+	RemindBeforeSeconds nullableInt64          `json:"remind_before_seconds"`
+	DoneAt              nullableTime           `json:"done_at"`
 }
 
 type deleteBatchRequest struct {
@@ -172,7 +246,7 @@ type importBatchNoteItem struct {
 type importBatchLinkItem struct {
 	SourceNoteID string                 `json:"source_note_id" binding:"required,uuid"`
 	TargetNoteID string                 `json:"target_note_id" binding:"required,uuid"`
-	LinkType     string                 `json:"link_type" binding:"required,oneof=reference dependency related custom parent child"`
+	LinkType     string                 `json:"link_type" binding:"omitempty,oneof=reference dependency related custom parent child"`
 	Weight       float64                `json:"weight" binding:"omitempty,min=0,max=1"`
 	Metadata     map[string]interface{} `json:"metadata"`
 }
@@ -201,14 +275,17 @@ type importBatchResponse struct {
 }
 
 type noteResponse struct {
-	ID        string                 `json:"id"`
-	Title     string                 `json:"title"`
-	Content   string                 `json:"content"`
-	Type      string                 `json:"type"`
-	Metadata  map[string]interface{} `json:"metadata"`
-	IsPublic  bool                   `json:"is_public"`
-	CreatedAt time.Time              `json:"created_at"`
-	UpdatedAt time.Time              `json:"updated_at"`
+	ID                  string                 `json:"id"`
+	Title               string                 `json:"title"`
+	Content             string                 `json:"content"`
+	Type                string                 `json:"type"`
+	Metadata            map[string]interface{} `json:"metadata"`
+	IsPublic            bool                   `json:"is_public"`
+	DueAt               *time.Time             `json:"due_at"`
+	RemindBeforeSeconds *int64                 `json:"remind_before_seconds"`
+	DoneAt              *time.Time             `json:"done_at"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
 }
 
 //nolint:unused
@@ -299,17 +376,21 @@ func (h *Handler) Create(c *gin.Context) {
 		newNote = note.NewNote(title, content, noteType, metadata)
 	}
 
+	// COMET-1: scheduling fields — validated even for non-comet types so a
+	// reminder can never exist without a date.
+	if err := newNote.SetCometFields(req.DueAt.value, req.RemindBeforeSeconds.value, req.DoneAt.value); err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("remind_before_seconds", apicommon.ReasonInvalidValue, err.Error(), req.RemindBeforeSeconds.value),
+		})
+		return
+	}
+
 	if err := h.repo.Save(c.Request.Context(), newNote); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedSaveNote)
 		return
 	}
 
 	// Notify graph-service cache invalidation subscribers
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteCreated(context.Background(), newNote.ID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
-		}
-	}
 
 	// Ставим задачи в очередь
 	log.Printf("taskQueue is nil? %v", h.taskQueue == nil)
@@ -322,6 +403,9 @@ func (h *Handler) Create(c *gin.Context) {
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("Failed to enqueue compute embedding: %v", err)
 		}
+		if err := h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID); err != nil {
+			log.Printf("Failed to enqueue normalize note: %v", err)
+		}
 		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), newNote.ID(), h.taskDelay); err != nil {
 			log.Printf("Failed to enqueue link weight recalculation: %v", err)
 		}
@@ -331,6 +415,9 @@ func (h *Handler) Create(c *gin.Context) {
 
 	// Enqueue recommendation refresh tasks for affected notes
 	h.enqueueRecommendationTasks(c.Request.Context(), newNote.ID())
+
+	// COMET-1 stage C: schedule the reminder when the comet has one.
+	h.enqueueCometReminder(c.Request.Context(), newNote)
 
 	// Schedule backup after note change
 	h.enqueueBackupOnNoteChange(c.Request.Context())
@@ -342,30 +429,41 @@ func (h *Handler) Create(c *gin.Context) {
 		}
 	}
 
-	responseData := gin.H{
-		"id":         newNote.ID(),
-		"title":      newNote.Title().String(),
-		"content":    newNote.Content().String(),
-		"type":       newNote.Type(),
-		"metadata":   newNote.Metadata().Value(),
-		"is_public":  newNote.IsPublic(),
-		"created_at": newNote.CreatedAt(),
-		"updated_at": newNote.UpdatedAt(),
+	apicommon.JSONWithMessage(c, 201, noteResponseData(newNote), apicommon.MsgResourceCreated)
+}
+
+// noteResponseData renders a domain note as the response payload. Used by
+// Create, Update and publish toggles so new fields land in all three.
+func noteResponseData(n *note.Note) gin.H {
+	return gin.H{
+		"id":                    n.ID(),
+		"title":                 n.Title().String(),
+		"content":               n.Content().String(),
+		"type":                  n.Type(),
+		"metadata":              n.Metadata().Value(),
+		"is_public":             n.IsPublic(),
+		"due_at":                n.DueAt(),
+		"remind_before_seconds": n.RemindBeforeSeconds(),
+		"done_at":               n.DoneAt(),
+		"created_at":            n.CreatedAt(),
+		"updated_at":            n.UpdatedAt(),
 	}
-	apicommon.JSONWithMessage(c, 201, responseData, apicommon.MsgResourceCreated)
 }
 
 // toNoteResponse converts a domain note to the handler note response.
 func toNoteResponse(n *note.Note) noteResponse {
 	return noteResponse{
-		ID:        n.ID().String(),
-		Title:     n.Title().String(),
-		Content:   n.Content().String(),
-		Type:      n.Type(),
-		Metadata:  n.Metadata().Value(),
-		IsPublic:  n.IsPublic(),
-		CreatedAt: n.CreatedAt(),
-		UpdatedAt: n.UpdatedAt(),
+		ID:                  n.ID().String(),
+		Title:               n.Title().String(),
+		Content:             n.Content().String(),
+		Type:                n.Type(),
+		Metadata:            n.Metadata().Value(),
+		IsPublic:            n.IsPublic(),
+		DueAt:               n.DueAt(),
+		RemindBeforeSeconds: n.RemindBeforeSeconds(),
+		DoneAt:              n.DoneAt(),
+		CreatedAt:           n.CreatedAt(),
+		UpdatedAt:           n.UpdatedAt(),
 	}
 }
 
@@ -464,11 +562,6 @@ func buildImportNote(item importBatchNoteItem, userID *uuid.UUID) (*note.Note, [
 
 // postprocessCreatedNote runs the standard background pipeline for a single note.
 func (h *Handler) postprocessCreatedNote(c *gin.Context, n *note.Note) {
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteCreated(context.Background(), n.ID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
-		}
-	}
 
 	if h.taskQueue != nil {
 		noteID := n.ID().String()
@@ -478,12 +571,16 @@ func (h *Handler) postprocessCreatedNote(c *gin.Context, n *note.Note) {
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("[NoteHandler] Failed to enqueue compute embedding for batch: %v", err)
 		}
+		if err := h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue normalize note for batch: %v", err)
+		}
 		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), n.ID(), h.taskDelay); err != nil {
 			log.Printf("[NoteHandler] Failed to enqueue link weight recalculation for batch: %v", err)
 		}
 	}
 
 	h.enqueueRecommendationTasks(c.Request.Context(), n.ID())
+	h.enqueueCometReminder(c.Request.Context(), n)
 }
 
 // CreateBatch creates a batch of notes synchronously.
@@ -663,7 +760,11 @@ func (h *Handler) ImportBatch(c *gin.Context) {
 				}
 			}
 
-			linkType, err := link.NewLinkType(item.LinkType)
+			rawType := item.LinkType
+			if rawType == "" {
+				rawType = "related"
+			}
+			linkType, err := link.NewLinkType(link.NormalizeLinkTypeValue(rawType))
 			if err != nil {
 				failedLinks = append(failedLinks, batchItemError{Index: i, Field: "link_type", Reason: string(apicommon.ReasonInvalidValue), Message: err.Error()})
 				continue
@@ -699,12 +800,6 @@ func (h *Handler) ImportBatch(c *gin.Context) {
 				}
 				failedLinks = append(failedLinks, batchItemError{Index: i, Message: apicommon.MsgFailedSaveLink})
 				continue
-			}
-
-			if h.eventPublisher != nil {
-				if err := h.eventPublisher.PublishLinkCreated(context.Background(), newLink.SourceNoteID().String(), newLink.TargetNoteID().String(), getUserIDString(c)); err != nil {
-					log.Printf("[NoteHandler] Failed to publish LinkCreated event for batch: %v", err)
-				}
 			}
 
 			createdLinks = append(createdLinks, importBatchLinkResponse{
@@ -831,12 +926,6 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		return
 	}
 
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteCreated(context.Background(), newNote.ID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteCreated event: %v", err)
-		}
-	}
-
 	if h.taskQueue != nil {
 		noteID := newNote.ID().String()
 		if err := h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10); err != nil {
@@ -844,6 +933,9 @@ func (h *Handler) Bookmarklet(c *gin.Context) {
 		}
 		if err := h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID); err != nil {
 			log.Printf("Failed to enqueue compute embedding: %v", err)
+		}
+		if err := h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID); err != nil {
+			log.Printf("Failed to enqueue normalize note: %v", err)
 		}
 		if err := h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), newNote.ID(), h.taskDelay); err != nil {
 			log.Printf("Failed to enqueue link weight recalculation: %v", err)
@@ -1016,11 +1108,13 @@ func (h *Handler) ImportBookmarks(c *gin.Context) {
 }
 
 // ImportBookmarksStatus returns the current status of an async import task.
+// SMART-CREATE-1: statuses that carry an owner are served to the owner only —
+// a foreign task answers 404.
 func (h *Handler) ImportBookmarksStatus(c *gin.Context) {
 	middleware.SetDBEntity(c, "notes")
 	middleware.SetDBOperation(c, "import_status")
 
-	_, exists := middleware.GetUserID(c)
+	userID, exists := middleware.GetUserID(c)
 	if !exists {
 		apicommon.Unauthorized(c)
 		return
@@ -1039,7 +1133,7 @@ func (h *Handler) ImportBookmarksStatus(c *gin.Context) {
 		return
 	}
 
-	status, err := h.importSvc.GetTaskStatus(c.Request.Context(), taskID)
+	status, err := h.importSvc.GetTaskStatusForUser(c.Request.Context(), taskID, userID)
 	if err != nil {
 		if errors.Is(err, dcache.ErrCacheMiss) {
 			apicommon.NotFound(c, "Import task")
@@ -1053,10 +1147,13 @@ func (h *Handler) ImportBookmarksStatus(c *gin.Context) {
 }
 
 type updateNoteRequest struct {
-	Title    string                 `json:"title" binding:"omitempty,max=200"`
-	Content  string                 `json:"content" binding:"omitempty,max=50000"`
-	Type     string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
-	Metadata map[string]interface{} `json:"metadata"`
+	Title               string                 `json:"title" binding:"omitempty,max=200"`
+	Content             string                 `json:"content" binding:"omitempty,max=50000"`
+	Type                string                 `json:"type" binding:"omitempty,oneof=galaxy nebula blackhole star planet moon comet satellite asteroid dust debris technical unknown reality_rift chromatic_maw void_whisper cosmic_abomination"`
+	Metadata            map[string]interface{} `json:"metadata"`
+	DueAt               nullableTime           `json:"due_at"`
+	RemindBeforeSeconds nullableInt64          `json:"remind_before_seconds"`
+	DoneAt              nullableTime           `json:"done_at"`
 }
 
 func (h *Handler) Update(c *gin.Context) {
@@ -1163,26 +1260,44 @@ func (h *Handler) Update(c *gin.Context) {
 		existing.SetType(noteType)
 	}
 
+	// COMET-1: merge semantics — an absent key keeps the stored value, null or
+	// "" clears it. remind_before merged against the resulting due_at.
+	if req.DueAt.present || req.RemindBeforeSeconds.present || req.DoneAt.present {
+		dueAt, doneAt := existing.DueAt(), existing.DoneAt()
+		remindBefore := existing.RemindBeforeSeconds()
+		if req.DueAt.present {
+			dueAt = req.DueAt.value
+		}
+		if req.RemindBeforeSeconds.present {
+			remindBefore = req.RemindBeforeSeconds.value
+		}
+		if req.DoneAt.present {
+			doneAt = req.DoneAt.value
+		}
+		if err := existing.SetCometFields(dueAt, remindBefore, doneAt); err != nil {
+			apicommon.BadRequest(c, []apicommon.FieldError{
+				apicommon.NewFieldErrorWithValue("remind_before_seconds", apicommon.ReasonInvalidValue, err.Error(), req.RemindBeforeSeconds.value),
+			})
+			return
+		}
+	}
+
 	if err := h.repo.Save(c.Request.Context(), existing); err != nil {
 		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedUpdateNote)
 		return
-	}
-
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), existing.ID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteUpdated event: %v", err)
-		}
 	}
 
 	if textChanged && h.taskQueue != nil {
 		noteID := existing.ID().String()
 		_ = h.taskQueue.EnqueueExtractKeywords(c.Request.Context(), noteID, 10)
 		_ = h.taskQueue.EnqueueComputeEmbedding(c.Request.Context(), noteID)
+		_ = h.taskQueue.EnqueueNormalizeNote(c.Request.Context(), noteID)
 		_ = h.taskQueue.EnqueueRecalculateLinkWeights(c.Request.Context(), existing.ID(), h.taskDelay)
 	}
 
 	h.enqueueRecommendationTasks(c.Request.Context(), existing.ID())
 	h.enqueueBackupOnNoteChange(c.Request.Context())
+	h.enqueueCometReminder(c.Request.Context(), existing)
 
 	// Invalidate graph cache for the user
 	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
@@ -1191,17 +1306,98 @@ func (h *Handler) Update(c *gin.Context) {
 		}
 	}
 
-	responseData := gin.H{
-		"id":         existing.ID(),
-		"title":      existing.Title().String(),
-		"content":    existing.Content().String(),
-		"type":       existing.Type(),
-		"metadata":   existing.Metadata().Value(),
-		"is_public":  existing.IsPublic(),
-		"created_at": existing.CreatedAt(),
-		"updated_at": existing.UpdatedAt(),
+	apicommon.JSONWithMessage(c, 200, noteResponseData(existing), apicommon.MsgResourceUpdated)
+}
+
+// cometRepository — the narrow capability this endpoint needs. Implemented by
+// the Postgres repository and its outbox decorator; kept out of
+// note.Repository like FindByIDIncludingDeleted.
+type cometRepository interface {
+	FindComets(ctx context.Context, userID uuid.UUID) ([]*note.Note, error)
+}
+
+// cometsResponse — «Ближайшие дела»: overdue comets first (most overdue on
+// top), then upcoming by date, then undated as a separate group.
+type cometsResponse struct {
+	Overdue  []noteResponse `json:"overdue"`
+	Upcoming []noteResponse `json:"upcoming"`
+	Undated  []noteResponse `json:"undated"`
+}
+
+// Comets lists the caller's non-done comets split into overdue/upcoming/undated.
+// COMET-1 этап A.
+func (h *Handler) Comets(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "list_comets")
+
+	repo, ok := h.repo.(cometRepository)
+	if !ok {
+		apicommon.InternalErrorWithMessage(c, "Comets listing is not supported")
+		return
 	}
-	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
+
+	userID, _ := middleware.GetUserID(c)
+	comets, err := repo.FindComets(c.Request.Context(), userID)
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNotes)
+		return
+	}
+
+	now := time.Now()
+	resp := cometsResponse{
+		Overdue:  []noteResponse{},
+		Upcoming: []noteResponse{},
+		Undated:  []noteResponse{},
+	}
+	for _, n := range comets {
+		switch {
+		case n.DueAt() == nil:
+			resp.Undated = append(resp.Undated, toNoteResponse(n))
+		case n.DueAt().Before(now):
+			resp.Overdue = append(resp.Overdue, toNoteResponse(n))
+		default:
+			resp.Upcoming = append(resp.Upcoming, toNoteResponse(n))
+		}
+	}
+	apicommon.JSON(c, 200, resp)
+}
+
+// CalendarICS serves a dated comet as an iCalendar (.ics) download
+// ("Add to calendar"). The due date becomes the VEVENT start/end and
+// remind_before_seconds becomes a VALARM display trigger. Non-comet or
+// undated comets answer 400 — a point-in-time export needs a due date.
+func (h *Handler) CalendarICS(c *gin.Context) {
+	middleware.SetDBEntity(c, "notes")
+	middleware.SetDBOperation(c, "export_ics")
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("id", apicommon.ReasonInvalidFormat, apicommon.MsgInvalidUUID, idStr),
+		})
+		return
+	}
+
+	n, err := h.repo.FindByID(c.Request.Context(), id)
+	if err != nil {
+		apicommon.InternalErrorWithMessage(c, apicommon.MsgFailedFetchNote)
+		return
+	}
+	if n == nil {
+		apicommon.NotFound(c, "Note")
+		return
+	}
+	ics := comet.BuildICS(n)
+	if ics == "" {
+		apicommon.BadRequest(c, []apicommon.FieldError{
+			apicommon.NewFieldErrorWithValue("due_at", apicommon.ReasonRequired, "ICS export requires a due date", nil),
+		})
+		return
+	}
+	c.Header("Content-Type", "text/calendar; charset=utf-8")
+	c.Header("Content-Disposition", `attachment; filename="`+n.ID().String()+`.ics"`)
+	c.String(http.StatusOK, ics)
 }
 
 // Publish makes a note publicly visible.
@@ -1259,12 +1455,6 @@ func (h *Handler) setNotePublic(c *gin.Context, isPublic bool) {
 		return
 	}
 
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), existing.ID().String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteUpdated event for publish/unpublish: %v", err)
-		}
-	}
-
 	h.invalidateGraphServiceCaches(c.Request.Context(), userID.String(), id.String())
 
 	if h.graphCache != nil {
@@ -1273,17 +1463,7 @@ func (h *Handler) setNotePublic(c *gin.Context, isPublic bool) {
 		}
 	}
 
-	responseData := gin.H{
-		"id":         existing.ID(),
-		"title":      existing.Title().String(),
-		"content":    existing.Content().String(),
-		"type":       existing.Type(),
-		"metadata":   existing.Metadata().Value(),
-		"is_public":  existing.IsPublic(),
-		"created_at": existing.CreatedAt(),
-		"updated_at": existing.UpdatedAt(),
-	}
-	apicommon.JSONWithMessage(c, 200, responseData, apicommon.MsgResourceUpdated)
+	apicommon.JSONWithMessage(c, 200, noteResponseData(existing), apicommon.MsgResourceUpdated)
 }
 
 func (h *Handler) invalidateGraphServiceCaches(ctx context.Context, userID, noteID string) {
@@ -1349,9 +1529,10 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteDeleted event: %v", err)
+	// NLP-4 cascade: drop the note's nlp_artifacts (no-op when absent).
+	if h.taskQueue != nil {
+		if err := h.taskQueue.EnqueueNlpArtifactsCleanup(c.Request.Context(), id.String()); err != nil {
+			log.Printf("[NoteHandler] Failed to enqueue artifacts cleanup: %v", err)
 		}
 	}
 
@@ -1421,11 +1602,10 @@ func (h *Handler) DeleteBatch(c *gin.Context) {
 		return
 	}
 
-	if h.eventPublisher != nil {
-		userID := getUserIDString(c)
+	if h.taskQueue != nil {
 		for _, id := range ids {
-			if err := h.eventPublisher.PublishNoteDeleted(context.Background(), id.String(), userID); err != nil {
-				log.Printf("[NoteHandler] Failed to publish NoteDeleted event for batch: %v", err)
+			if err := h.taskQueue.EnqueueNlpArtifactsCleanup(c.Request.Context(), id.String()); err != nil {
+				log.Printf("[NoteHandler] Failed to enqueue artifacts cleanup for batch: %v", err)
 			}
 		}
 	}
@@ -1464,12 +1644,6 @@ func (h *Handler) Restore(c *gin.Context) {
 		return
 	}
 
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.PublishNoteUpdated(context.Background(), id.String(), getUserIDString(c)); err != nil {
-			log.Printf("[NoteHandler] Failed to publish NoteUpdated event for restore: %v", err)
-		}
-	}
-
 	// Invalidate graph cache for the user
 	if userID, exists := middleware.GetUserID(c); exists && h.graphCache != nil {
 		if err := h.graphCache.InvalidateUserGraph(c.Request.Context(), userID.String()); err != nil {
@@ -1506,14 +1680,17 @@ func (h *Handler) Get(c *gin.Context) {
 	}
 
 	responseData := gin.H{
-		"id":         n.ID(),
-		"title":      n.Title().String(),
-		"content":    n.Content().String(),
-		"type":       n.Type(),
-		"metadata":   n.Metadata().Value(),
-		"is_public":  n.IsPublic(),
-		"created_at": n.CreatedAt(),
-		"updated_at": n.UpdatedAt(),
+		"id":                    n.ID(),
+		"title":                 n.Title().String(),
+		"content":               n.Content().String(),
+		"type":                  n.Type(),
+		"metadata":              n.Metadata().Value(),
+		"is_public":             n.IsPublic(),
+		"due_at":                n.DueAt(),
+		"remind_before_seconds": n.RemindBeforeSeconds(),
+		"done_at":               n.DoneAt(),
+		"created_at":            n.CreatedAt(),
+		"updated_at":            n.UpdatedAt(),
 	}
 	apicommon.JSON(c, 200, responseData)
 }
@@ -1565,13 +1742,14 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 				GeneratedAt: recs[0].UpdatedAt,
 			}
 			for _, rec := range recs {
-				title := ""
-				if noteEntity, err := h.repo.FindByID(ctx, rec.RecommendedNoteID); err == nil && noteEntity != nil {
-					title = noteEntity.Title().String()
+				noteEntity, err := h.repo.FindByID(ctx, rec.RecommendedNoteID)
+				if err != nil || noteEntity == nil {
+					// Deleted or gone — never suggest a trashed note.
+					continue
 				}
 				suggestionsResp.Suggestions = append(suggestionsResp.Suggestions, Suggestion{
 					NoteID: rec.RecommendedNoteID.String(),
-					Title:  title,
+					Title:  noteEntity.Title().String(),
 					Score:  rec.Score,
 				})
 			}
@@ -1611,13 +1789,13 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		if err == nil && len(neighbors) > 0 {
 			suggestions := make([]Suggestion, 0, len(neighbors))
 			for _, n := range neighbors {
-				title := ""
-				if noteEntity, err := h.repo.FindByID(ctx, n.NoteID); err == nil && noteEntity != nil {
-					title = noteEntity.Title().String()
+				noteEntity, err := h.repo.FindByID(ctx, n.NoteID)
+				if err != nil || noteEntity == nil {
+					continue
 				}
 				suggestions = append(suggestions, Suggestion{
 					NoteID: n.NoteID.String(),
-					Title:  title,
+					Title:  noteEntity.Title().String(),
 					Score:  n.Score,
 				})
 			}
@@ -1637,9 +1815,19 @@ func (h *Handler) GetSuggestions(c *gin.Context) {
 		if err == nil && cached != "" {
 			var suggestions []Suggestion
 			if err := json.Unmarshal([]byte(cached), &suggestions); err == nil {
+				// The cache predates deletions — drop entries whose note is
+				// trashed or gone rather than serve a stale suggestion.
+				live := make([]Suggestion, 0, len(suggestions))
+				for _, s := range suggestions {
+					if sid, err := uuid.Parse(s.NoteID); err == nil {
+						if n, err := h.repo.FindByID(ctx, sid); err == nil && n != nil {
+							live = append(live, s)
+						}
+					}
+				}
 				c.Header("X-Recommendations-Source", "redis")
 				c.Header("X-Recommendations-Stale", "true")
-				c.JSON(200, SuggestionsResponse{Suggestions: suggestions})
+				c.JSON(200, SuggestionsResponse{Suggestions: live})
 				h.enqueueRefreshWithDelay(noteID)
 				return
 			}

@@ -28,6 +28,7 @@ export function createMockCanvasContext() {
     ellipse: vi.fn(),
     fillRect: vi.fn(),
     strokeRect: vi.fn(),
+    drawImage: vi.fn(),
     setLineDash: vi.fn(),
     fillText: vi.fn(),
     measureText: vi.fn(() => ({ width: 50 })),

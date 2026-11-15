@@ -1,6 +1,5 @@
 import ky, { HTTPError, TimeoutError } from "ky";
 import { api, refreshAccessToken } from "./client";
-import { apiConfig } from "$shared/config";
 import { accessToken, clearAuthState, isAuthenticated } from "$shared/stores/auth-session.svelte";
 import { graphView, type GraphViewMode } from "$shared/stores/graph-view.svelte";
 import { formatMessage } from "$shared/utils/i18n";
@@ -20,6 +19,9 @@ export interface GraphNode {
   color?: string;
   /** Optional custom glow color; computed from color if omitted. */
   glowColor?: string;
+  /** COMET-1: scheduling fields riding the graph payload for comet nodes. */
+  due_at?: string | null;
+  done_at?: string | null;
 }
 
 // Ребро графа – связь между заметками
@@ -52,6 +54,8 @@ export function normalizeNode(node: Partial<GraphNode>): GraphNode {
     y: node.y,
     z: node.z,
     size: node.size,
+    due_at: node.due_at,
+    done_at: node.done_at,
   };
 }
 
@@ -243,7 +247,10 @@ export async function getGraphData(
 
 // Запросить полный граф всех заметок и связей
 export async function getFullGraphData(
-  limit: number = apiConfig.default_limit,
+  // 0 = the graph-service applies its configured cap (graph_service.full_limit /
+  // GRAPH_FULL_LIMIT); an explicit smaller limit must not be sent for the
+  // canonical full graph — it bypasses the layout cache (CONFIG-AUDIT-1).
+  limit: number = 0,
   _userId?: string,
   nocache?: boolean,
   viewMode: GraphViewMode = graphView.mode
@@ -303,6 +310,9 @@ export interface GraphDeltaData {
   removed_links?: GraphLink[];
   // Hash of the graph version this delta transitions to
   current_hash?: string;
+  // Server no longer knows our version — the graph must be reloaded
+  // wholesale instead of merging this delta.
+  resync?: boolean;
 }
 
 // Fresh graph response with optional delta

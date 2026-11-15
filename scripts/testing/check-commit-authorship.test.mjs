@@ -118,6 +118,20 @@ try {
     ];
 
     let failed = false;
+    const check = (name, res, expectExit, stderrIncludes) => {
+        const problems = [];
+        if (res.code !== expectExit) problems.push(`exit ${res.code}, expected ${expectExit}`);
+        if (stderrIncludes && !res.output.includes(stderrIncludes)) {
+            problems.push(`output missing "${stderrIncludes}"`);
+        }
+        if (problems.length) {
+            failed = true;
+            console.error(`FAIL ${name}: ${problems.join("; ")}`);
+            console.error(`  output: ${res.output.trim().slice(0, 400)}`);
+        } else {
+            console.log(`PASS ${name}`);
+        }
+    };
     for (const c of cases) {
         const files = c.files();
         for (const [path, content] of Object.entries(files)) {
@@ -135,18 +149,62 @@ try {
 
         const res = runGuard(repo);
         const problems = [];
-        if (res.code !== c.expectExit) problems.push(`exit ${res.code}, expected ${c.expectExit}`);
-        if (c.stderrIncludes && !res.output.includes(c.stderrIncludes)) {
-            problems.push(`output missing "${c.stderrIncludes}"`);
-        }
-        if (problems.length) {
-            failed = true;
-            console.error(`FAIL ${c.name}: ${problems.join("; ")}`);
-            console.error(`  output: ${res.output.trim().slice(0, 400)}`);
-        } else {
-            console.log(`PASS ${c.name}`);
-        }
+        check(c.name, res, c.expectExit, c.stderrIncludes);
     }
+
+    // Merge commits: conflict resolution legitimately re-adds the second
+    // parent's lines — those must not count as new claims by the merger,
+    // while a forged agent claim absent from BOTH parents must still fail.
+    const commitAs = (author, msg) =>
+        execFileSync("git", ["-c", "user.name=tester", "-c", "user.email=tester@test.local",
+                             "add", "-A"], { cwd: repo }) &&
+        execFileSync("git", ["-c", "user.name=tester", "-c", "user.email=tester@test.local",
+                             "commit", "-m", msg, `--author=${author}`], { cwd: repo });
+
+    // Claude's branch: his journal row and read marker.
+    const mainTip = git(repo, ["rev-parse", "HEAD"]).trim();
+    git(repo, ["checkout", "-b", "theirs"]);
+    writeFileSync(join(repo, "docs/AI_LOG.md"),
+        readFileSync(join(repo, "docs/AI_LOG.md"), "utf8") +
+            "| 2026-09-25 | Claude Code | their row |\n");
+    writeFileSync(join(repo, "docs/AI_HANDOFF.md"),
+        readFileSync(join(repo, "docs/AI_HANDOFF.md"), "utf8") +
+            "Прочитано: Claude Code — 2026-09-25 — cafe123\n");
+    commitAs(CLAUDE, "their work");
+
+    // Devin's main: his own marker.
+    git(repo, ["checkout", "main"]);
+    writeFileSync(join(repo, "docs/AI_HANDOFF.md"),
+        readFileSync(join(repo, "docs/AI_HANDOFF.md"), "utf8") +
+            "Прочитано: Devin — 2026-09-25 — beef456\n");
+    commitAs(DEVIN, "my work");
+
+    // Legit merge: resolution keeps both sides — every Claude line exists in
+    // the second parent, so the merge authored by Devin must pass.
+    spawnSync("git", ["merge", "--no-commit", "--no-ff", "theirs"], { cwd: repo });
+    writeFileSync(join(repo, "docs/AI_HANDOFF.md"),
+        "Прочитано: Claude Code — 2026-09-25 — cafe123\n" +
+        "Прочитано: Devin — 2026-09-25 — beef456\n");
+    commitAs(DEVIN, "merge theirs");
+    check("merge carrying Claude lines authored by Devin", runGuard(repo), 0);
+
+    // Forged merge: Devin merges a second Claude branch but slips in a Claude
+    // marker that exists in NEITHER parent — must be flagged.
+    const mainTip2 = git(repo, ["rev-parse", "HEAD"]).trim();
+    git(repo, ["checkout", "-b", "theirs2", mainTip]);
+    writeFileSync(join(repo, "docs/AI_LOG.md"),
+        readFileSync(join(repo, "docs/AI_LOG.md"), "utf8") +
+            "| 2026-09-26 | Claude Code | second row |\n");
+    commitAs(CLAUDE, "their second work");
+    git(repo, ["checkout", "main"]);
+    spawnSync("git", ["merge", "--no-commit", "--no-ff", "theirs2"], { cwd: repo });
+    writeFileSync(join(repo, "docs/AI_HANDOFF.md"),
+        readFileSync(join(repo, "docs/AI_HANDOFF.md"), "utf8") +
+            "Прочитано: Claude Code — 2026-09-26 — forged0\n");
+    commitAs(DEVIN, "merge theirs2 with forged marker");
+    check("forged Claude marker inside merge resolution", runGuard(repo), 1,
+        "claims agent: Claude Code");
+
     process.exit(failed ? 1 : 0);
 } finally {
     rmSync(repo, { recursive: true, force: true });

@@ -1,44 +1,36 @@
-# sv
+# Knowledge Graph Frontend
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+SvelteKit frontend for the Knowledge Graph application: 2D/3D graph visualization, note editing, achievements, drafts.
 
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.14.0 create --template minimal --types ts --install npm frontend
-```
+**Stack:** Svelte 5 (runes only), TypeScript strict, SvelteKit, ky, D3-force, Three.js. See `../.windsurfrules` for the normative architecture rules (FSD + Atomic Design layers, `$shared/*` aliases).
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+npm install
+npm run dev        # Vite dev server on :5173; proxies /api/v1 → :9000, /graph-service/api → :9091
 ```
 
-## Building
+In Docker the frontend is served by the `kg-frontend` container and reached through nginx (`:18081` on the dev stack); there is no published host port.
 
-To create a production version of your app:
+## Testing
 
 ```sh
-npm run build
+npm run test:unit      # Vitest
+npm run test           # Playwright E2E against the isolated test stack
+npm run test:bdd       # Cucumber BDD
+npm run check          # svelte-check / types
 ```
 
-You can preview the production build with `npm run preview`.
+E2E/BDD require the isolated test stack (`scripts/testing/start-test.ps1`); see `../docs/operations/TESTING.md`.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## Layout
 
-<!-- CI trigger -->
+```
+src/routes/      pages (SvelteKit / FSD pages layer)
+src/widgets/     self-contained sections (cosmic-cockpit, graph-canvas, …)
+src/features/    user scenarios (graph-ui, graph-3d, …)
+src/entities/    domain entities (note, link, user, achievement, …)
+src/components/  atoms / molecules / organisms
+src/shared/      api clients, rune stores, services, utils, config
+```

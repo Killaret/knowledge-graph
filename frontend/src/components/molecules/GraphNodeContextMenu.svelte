@@ -10,9 +10,10 @@
     onClose: () => void;
     onCreateChild: () => void;
     onViewDetails?: () => void;
+    onLinkTo?: () => void;
   }
 
-  const { x, y, visible, node, onClose, onCreateChild, onViewDetails }: Props = $props();
+  const { x, y, visible, node, onClose, onCreateChild, onViewDetails, onLinkTo }: Props = $props();
 
   const locale = getCurrentLocale();
   const t = (key: string) => formatMessage(key, locale);
@@ -89,6 +90,20 @@
     >
       {t("graph.contextMenu.createChildNote")}
     </button>
+    {#if onLinkTo}
+      <button
+        type="button"
+        class="context-item"
+        role="menuitem"
+        onclick={() => {
+          onLinkTo();
+          onClose();
+        }}
+        data-testid="context-menu-link-to"
+      >
+        {t("graph.contextMenu.linkTo")}
+      </button>
+    {/if}
     {#if onViewDetails}
       <button
         type="button"

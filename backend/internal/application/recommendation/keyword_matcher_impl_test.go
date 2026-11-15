@@ -75,6 +75,29 @@ func TestKeywordMatcherImpl_Match_WithoutWeights(t *testing.T) {
 	assert.Contains(t, result, candidateID)
 }
 
+// P11-3: две заметки без ключевых слов не должны получать полное сходство —
+// обе просто ещё не обработаны. Матчер обязан вернуть 0.0 для такого кандидата.
+func TestKeywordMatcherImpl_Match_BothEmptyKeywords(t *testing.T) {
+	sourceID := uuid.New()
+	candidateID := uuid.New()
+	repo := new(mockKeywordRepo)
+	sim, _ := NewKeywordSimilarity("jaccard", 0, 0)
+	matcher := NewKeywordMatcherImpl(repo, sim)
+
+	emptyKeywords := map[string]float64{}
+	batch := map[uuid.UUID]map[string]float64{
+		sourceID:    emptyKeywords,
+		candidateID: emptyKeywords,
+	}
+
+	repo.On("GetKeywordsWithWeights", mock.Anything, sourceID).Return(emptyKeywords, nil)
+	repo.On("GetKeywordsBatchWithWeights", mock.Anything, mock.Anything).Return(batch, nil)
+
+	result, err := matcher.Match(context.Background(), sourceID, []uuid.UUID{candidateID})
+	assert.NoError(t, err)
+	assert.Equal(t, 0.0, result[candidateID])
+}
+
 func TestKeywordMatcherImpl_Match_RepoError(t *testing.T) {
 	repo := new(mockKeywordRepo)
 	sim, _ := NewKeywordSimilarity("jaccard", 0, 0)

@@ -15,17 +15,21 @@ import (
 
 // AsynqClient implements the common.TaskQueue port using asynq.
 type AsynqClient struct {
-	client        *asynq.Client
-	backupEnabled bool
+	client             *asynq.Client
+	backupEnabled      bool
+	nlpPipelineEnabled bool
+	qualityEnabled     bool
 }
 
 // NewAsynqClient creates a new asynq client.
 // redisAddr is the Redis address, e.g. "localhost:6379".
 // backupEnabled controls whether backup tasks are enqueued.
-func NewAsynqClient(redisAddr string, backupEnabled bool) (*AsynqClient, error) {
+// nlpPipelineEnabled gates nlp:normalize tasks (NLP-4 switch, default off).
+// qualityEnabled gates quality:assess tasks (NOTE-QUALITY-1, default off).
+func NewAsynqClient(redisAddr string, backupEnabled bool, nlpPipelineEnabled bool, qualityEnabled bool) (*AsynqClient, error) {
 	redisAddr = strings.TrimPrefix(redisAddr, "redis://")
 	client := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
-	return &AsynqClient{client: client, backupEnabled: backupEnabled}, nil
+	return &AsynqClient{client: client, backupEnabled: backupEnabled, nlpPipelineEnabled: nlpPipelineEnabled, qualityEnabled: qualityEnabled}, nil
 }
 
 func (c *AsynqClient) EnqueueBackupToCloud(ctx context.Context, localPath, remoteKey, backupDate string) error {
@@ -120,9 +124,71 @@ func (c *AsynqClient) EnqueueComputeEmbeddingDelayed(ctx context.Context, noteID
 	return err
 }
 
+// EnqueueNormalizeNote schedules NLP-4 normalization for a note.
+// When the pipeline flag is off the call is a no-op — prod behaves exactly
+// as before, no task enters the queue.
+func (c *AsynqClient) EnqueueNormalizeNote(ctx context.Context, noteID string) error {
+	if !c.nlpPipelineEnabled {
+		return nil
+	}
+	payload, err := json.Marshal(NormalizeNotePayload{NoteID: noteID})
+	if err != nil {
+		return err
+	}
+	task := asynq.NewTask(TypeNormalizeNote, payload)
+	_, err = c.client.EnqueueContext(ctx, task)
+	return err
+}
+
+// EnqueueNlpArtifactsCleanup schedules removal of a note's nlp_artifacts.
+// Not gated by the pipeline flag: cleanup also removes artifacts written
+// while the flag was on, so it enqueues whenever the queue is available.
+// The worker no-ops when the artifacts store is absent.
+func (c *AsynqClient) EnqueueNlpArtifactsCleanup(ctx context.Context, noteID string) error {
+	payload, err := json.Marshal(NlpArtifactsCleanupPayload{NoteID: noteID})
+	if err != nil {
+		return err
+	}
+	task := asynq.NewTask(TypeNlpArtifactsCleanup, payload)
+	_, err = c.client.EnqueueContext(ctx, task)
+	return err
+}
+
+// EnqueueAssessQuality schedules a NOTE-QUALITY-1 assessment. Gated by
+// nlp.quality.enabled — off means no task enters the queue, and the worker
+// handler is a no-op as well (defence in depth: a task enqueued while the
+// flag was on may land after it was switched off).
+func (c *AsynqClient) EnqueueAssessQuality(ctx context.Context, noteID string, trigger string) error {
+	if !c.qualityEnabled {
+		return nil
+	}
+	payload, err := json.Marshal(AssessQualityPayload{NoteID: noteID, Trigger: trigger})
+	if err != nil {
+		return err
+	}
+	task := asynq.NewTask(TypeAssessQuality, payload)
+	_, err = c.client.EnqueueContext(ctx, task)
+	return err
+}
+
 func (c *AsynqClient) EnqueueNotification(ctx context.Context, payload []byte) error {
 	task := asynq.NewTask(TypeNotificationAchievement, payload)
 	_, err := c.client.EnqueueContext(ctx, task)
+	return err
+}
+
+// EnqueueCometRemind schedules a comet:remind task for the exact moment the
+// reminder is due (COMET-1 stage C). A remindAt in the past fires immediately.
+func (c *AsynqClient) EnqueueCometRemind(ctx context.Context, noteID uuid.UUID, remindAt time.Time) error {
+	task, err := tasks.NewCometRemindTask(noteID, remindAt)
+	if err != nil {
+		return err
+	}
+	var opts []asynq.Option
+	if delay := time.Until(remindAt); delay > 0 {
+		opts = append(opts, asynq.ProcessIn(delay))
+	}
+	_, err = c.client.EnqueueContext(ctx, task, opts...)
 	return err
 }
 

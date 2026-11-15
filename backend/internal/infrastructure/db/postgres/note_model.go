@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 // NoteModel — note model with creator binding
@@ -18,9 +19,14 @@ type NoteModel struct {
 	CreatorID    *uuid.UUID     `gorm:"type:uuid;index"`
 	Creator      *UserModel     `gorm:"foreignKey:CreatorID"`
 	IsPublic     bool           `gorm:"column:is_public;default:false;index"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	DeletedAt    *time.Time `gorm:"index"`
+	// COMET-1: scheduling fields — real columns, not metadata, so the upcoming
+	// list can index due_at (migration 038).
+	DueAt               *time.Time `gorm:"column:due_at"`
+	RemindBeforeSeconds *int64     `gorm:"column:remind_before_seconds"`
+	DoneAt              *time.Time `gorm:"column:done_at"`
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	DeletedAt           gorm.DeletedAt `gorm:"index"`
 }
 
 func (NoteModel) TableName() string {

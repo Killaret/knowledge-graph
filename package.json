@@ -2,6 +2,7 @@
   "name": "knowledge-graph",
   "version": "1.0.0",
   "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
     "prepare": "husky",
     "lint": "cd frontend && npm run lint",

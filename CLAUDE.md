@@ -10,6 +10,8 @@
 4. [`docs/DECISIONS.md`](docs/DECISIONS.md) — решения владельца: что решили, когда и где разбор.
 5. [`docs/PROJECT_REVIEW_AI_AGENTS.md`](docs/PROJECT_REVIEW_AI_AGENTS.md) — состояние проекта, недавние правки, известные риски.
 
+Пункты 2–5 живут в ветке `ai-agents` и читаются в каталоге Claude Code `D:\knowledge-graph-review` после синхронизации с `origin/ai-agents` (карта — [`docs/agents/WORKTREES.md`](docs/agents/WORKTREES.md), решение 111). Сессия открыта в `D:\knowledge-graph` (`main`) — доска там отстаёт: сказать об этом и читать из своего каталога.
+
 По теме задачи дополнительно: [`docs/architecture/ARCHITECTURE_SUMMARY.md`](docs/architecture/ARCHITECTURE_SUMMARY.md), [`docs/operations/TESTING.md`](docs/operations/TESTING.md), [`docs/operations/REGRESSION_TEST_PLAN.md`](docs/operations/REGRESSION_TEST_PLAN.md), [`docs/operations/BACKUP.md`](docs/operations/BACKUP.md), [`docs/operations/ARGOS.md`](docs/operations/ARGOS.md).
 
 Актуальный аудит обвязки и цепочки верификации — [`docs/agents/AI_PROCESS_AUDIT.md`](docs/agents/AI_PROCESS_AUDIT.md).
@@ -22,6 +24,7 @@
 
 - **Коммиты** — каждый агент под своим именем, точные подписи — в [протоколе](docs/AI_AGENT_PROTOCOL.md). Чужая работа коммитится **с подписью настоящего автора**, а не под своей с трейлером `Co-Authored-By`: трейлер говорит «участвовал», а не «написал». Подпись из этого файла подставлять нельзя — этот файл читают все агенты.
 - **Ветки** — одна ветка, один агент. Перед началом работы `git status`: правящиеся файлы чужие.
+- **Пуш** — свою работу коммитить и пушить в `ai-agents` без вопроса владельцу (решение 109); условия — [`docs/agents/WORKTREES.md`](docs/agents/WORKTREES.md), раздел «Ветки». `main`, слияния и `--force` — только владелец.
 - **Свидетельства** — при ручной проверке заполняется поле «Screenshot / Logs» в [`docs/agents/MANUAL_TEST_FEEDBACK.md`](docs/agents/MANUAL_TEST_FEEDBACK.md).
 - **Personal-стек** — не запускается без явной просьбы. Команды, способные уничтожить его тома, блокируются хуком [`scripts/devops/guard-personal-data.py`](scripts/devops/guard-personal-data.py), пока нет свежего бэкапа.
 - **Изменил норму — обнови производные.** `.windsurfrules` → `.devin/skills/knowledge-graph/SKILL.md` и оба мастер-промпта в `.devin/prompts/`.
@@ -40,6 +43,7 @@
 - `kg-regression` — [тест-стек и полный цикл](.devin/skills/kg-regression/SKILL.md)
 - `kg-backup` — [сохранность данных Personal-стека](.devin/skills/kg-backup/SKILL.md)
 - `kg-layers` — [границы слоёв](.devin/skills/kg-layers/SKILL.md)
+- `kg-new-chat` — [пора ли новая сессия и передача дел](.devin/skills/kg-new-chat/SKILL.md)
 
 Правила написания новых — в [протоколе](docs/AI_AGENT_PROTOCOL.md), раздел «Как писать скиллы». Коротко: скилл пишется задним числом, обязан ссылаться на реальные артефакты и не дублирует норму.
 

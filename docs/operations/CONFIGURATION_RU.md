@@ -29,6 +29,13 @@ npm run build-config
 
 Примечание: редактируйте файлы в `config/*.json` и пересоздавайте `knowledge-graph.config.json` командой `npm run build-config`.
 
+**У фронтенда нет runtime-переменных окружения.** Ключи `frontend.*` и `ci_cd.*` вшиваются в бандл
+при сборке (`npm run build-config` + `npm run build` / сборка Docker-образа): правка `config/*.json`
+не действует на запущенный или уже собранный фронтенд — нужна пересборка. Полная карта ключей
+(кто читает, env-переопределение, compose, мёртвые ключи) — в
+[`CONFIG_REGISTRY.md`](CONFIG_REGISTRY.md): генерируется `scripts/testing/generate-config-registry.mjs`,
+сторож — `check-config-registry.mjs`.
+
 > **Отсутствующие ключи сохраняют дефолты из Go.** Файл десериализуется
 > поверх структуры, засеянной встроенными дефолтами (`defaultJSONConfig`,
 > CONFIG-1): ключ, которого в файле нет, получает дефолт, а заданные значения —
@@ -52,19 +59,16 @@ npm run build-config
     "graph": { ... },
     "embedding": { ... },
     "asynq": { ... },
+    "outbox": { "relay_interval_ms": 500, "batch_size": 100, "sent_retention_days": 30 },
     "redis": { ... },
     "auth": { ... }
   },
   "graph_service": { ... },
   "frontend": {
-    "test": { ... },
-    "graph": { "2d": { ... }, "3d": { ... } },
-    "api": { ... },
+    "graph": { "label_hub_count": 15, "dependency_highlight_depth": 10, "style": "classic", "2d": { ... }, "3d": { ... } },
     "achievements": { ... }
   },
-  "ci_cd": {
-    "integration_test": { ... }
-  },
+  "ci_cd": {},
   "nlp": { ... },
   "backup": { ... }
 }
@@ -73,15 +77,24 @@ npm run build-config
 ### Использование во фронтенде (TypeScript)
 
 ```typescript
-import { graphConfig2D, apiConfig, testConfig, ACHIEVEMENT_POLL_INTERVAL_MS } from '$shared/config/config.ts';
+import { graphConfig2D, ACHIEVEMENT_POLL_INTERVAL_MS } from '$shared/config/config.ts';
 
 // Используем централизованный конфиг
 const enableShadows = nodes.length < graphConfig2D.shadows_threshold;
-const limit = apiConfig.default_limit;
 const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 ```
 
 ---
+
+## Общие параметры графа (`frontend.graph`)
+
+| Параметр | Тип | По умолчанию | Где используется | Описание |
+|----------|-----|--------------|------------------|----------|
+| `label_hub_count` | integer | `15` | `entities/graph-canvas/lib/labels.ts` — общий для 2D-канваса и 3D-движка | Максимум подписей хабов при отдалении: top-N узлов по связности. Отбор относительный — абсолютный порог подписывал почти все узлы на плотном графе |
+| `dependency_highlight_depth` | integer | `10` | `entities/graph-canvas/lib/dependency-chain.ts` — общий для 2D-канваса и 3D-движка | Глубина подсветки цепочки `dependency` при наведении (LINK-TYPES-1): сколько шагов от заметки под курсором покрывает обход в обе стороны |
+| `style` | string | `"light"` | `entities/graph-canvas/lib/light/style.ts` — 2D-канвас | Вид 2D-графа: `"classic"` — значки, `"light"` — заметки как источники света (GRAPH-LIGHT-1, решение 83). Другой вид можно посмотреть, добавив к адресу `?graphStyle=light` или `?graphStyle=classic` |
+| `recommendations_on_hover` | integer | `4` | `widgets/graph-canvas/GraphCanvas.svelte` — 2D-канвас, светлый вид | Сколько рекомендаций заметки под курсором светлый вид рисует бледным пунктиром (решение 81); загружаются при наведении, хранятся минуту |
+| `ambient_max_nodes` | integer | `500` | `entities/graph-canvas/lib/light/style.ts` — 2D-канвас, светлый вид | Фоновое движение — «дыхание» ореолов, мерцание звёзд, пульс вокруг выбранной заметки — идёт только до этого числа заметок; выше, а также при `prefers-reduced-motion`, кадр рисуется только при изменениях (GRAPH-LIGHT-1) |
 
 ## Параметры 2D-графа (`frontend.graph.2d`)
 
@@ -92,7 +105,6 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
   "frontend": {
     "graph": {
       "2d": {
-        "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
         "gravity_nodes_threshold": 100,
@@ -122,7 +134,6 @@ const pollInterval = ACHIEVEMENT_POLL_INTERVAL_MS;
 
 | Параметр | Тип | Умолчание | Файл | Описание |
 |----------|-----|-----------|------|----------|
-| `max_nodes` | integer | `500` | `renderer.ts` | Максимальное количество узлов в 2D-графе |
 | `shadows_threshold` | integer | `100` | `renderer.ts` | Количество узлов, **ниже** которого рисуются CSS-тени. Выше порога тени отключаются для производительности |
 | `animated_links_threshold` | integer | `50` | `renderer.ts` | Количество связей, **выше** которого анимированные линии заменяются статическими. Предотвращает лаги на плотных графах |
 | `gravity_nodes_threshold` | integer | `100` | `gravity-system.ts` | Количество узлов, **выше** которого система гравитации отключается полностью. Гравитация O(n²), поэтому пропускается на больших графах |
@@ -201,7 +212,7 @@ cfg := config.Load()
 
 | Переменная | Описание | Умолчание |
 |-----------|----------|-----------|
-| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | Интервал опроса достижений | `0` |
+| `FRONTEND_ACHIEVEMENTS_POLL_INTERVAL_MS` | ~~env~~ — только JSON-ключ `frontend.achievements.poll_interval_ms` в `knowledge-graph.config.json`; как env-переменная не читается | `0` |
 
 ### Типы условий достижений
 
@@ -255,8 +266,7 @@ cfg := config.Load()
       }
     },
     "schedule": "0 2 * * *",
-    "retention_days": 7,
-    "draft_ttl_hours": 168
+    "retention_days": 7
   }
 }
 ```
@@ -267,13 +277,12 @@ cfg := config.Load()
 |-----------|----------|-----------|
 | `BACKUP_LOCAL_PATH` | Локальная директория для бэкапов воркера. В Personal-стеке — `/backups` (том `${KG_BACKUP_DIR}` примонтирован в `worker_personal`, BACKUP-3) | `./backups` |
 | `BACKUP_CLOUD_ENABLED` | Включить облачное резервирование | `false` |
-| `BACKUP_CLOUD_PROVIDER` | Провайдер облака (`yandex`) | `yandex` |
+| `BACKUP_CLOUD_PROVIDER` | Провайдер облака (реализован `yandex`; дефолт в коде `r2`) | `r2` |
 | `BACKUP_YANDEX_OAUTH_TOKEN` | OAuth-токен Яндекс.Диска | — |
 | `BACKUP_YANDEX_FOLDER` | Папка на Яндекс.Диске | `/KnowledgeGraphBackups` |
 | `BACKUP_YANDEX_MAX_BACKUPS` | Максимальное количество хранимых бэкапов | `10` |
 | `BACKUP_SCHEDULE` | Расписание cron | `0 2 * * *` |
 | `BACKUP_RETENTION_DAYS` | Срок хранения бэкапов (дни) | `7` |
-| `BACKUP_DRAFT_TTL_HOURS` | TTL черновиков в MongoDB | `168` |
 
 ### Скрипты резервного копирования
 
@@ -319,6 +328,22 @@ MongoDB используется для хранения черновиков з
 
 ---
 
+## Удалённые заметки (срок хранения корзины)
+
+Удаление заметки мягкое: строка получает `deleted_at` и восстанавливается
+в течение окна хранения (см. ADR 004 и NOTE-DELETE-1).
+
+- **Срок хранения**: **90 дней**, фиксированный дефолт в `tasks.NewCleanupSoftDeletedTask`
+  (env/JSON-ключа пока нет).
+- **Расписание**: воркер ежедневно ставит задачу `cleanup:soft_deleted`;
+  `PurgeDeletedBefore` жёстко удаляет заметки старше горизонта вместе со связями
+  (FK-каскад).
+- **Восстановление**: `POST /api/v1/notes/{id}/restore` возвращает заметку вместе
+  со связями, удалёнными вместе с ней (`links.deleted_via_note_id`). Связи,
+  удалённые отдельно, — жёсткое удаление и не воскресают.
+
+---
+
 ## Обязательные переменные окружения
 
 Должны быть заданы исключительно через переменные окружения (не в JSON):
@@ -338,6 +363,7 @@ MongoDB используется для хранения черновиков з
 | `SERVER_PORT` | backend | Порт HTTP-сервера (Gin) | `8080` |
 | `REDIS_URL` | backend, worker | Адрес Redis для очередей asynq и кеша рекомендаций | `localhost:6379` |
 | `NLP_SERVICE_URL` | backend, worker | URL Python NLP-сервиса | `http://localhost:5000` |
+| `IMPORT_CONTENT_MAX_RUNES` | backend | URL-HEADING-1, этап A: бюджет извлечённого тела страницы в рунах — обрезка идёт по целым разделам (никогда внутри списка или кодового блока); число не вошедших разделов пишется в `metadata.import_truncated.sections_dropped` | `20000` |
 
 ### Детали компонентов
 
@@ -388,7 +414,7 @@ MongoDB используется для хранения черновиков з
 | `SERVER_RATE_LIMIT_REQUESTS` | Общий лимит запросов | `100` |
 | `SERVER_RATE_LIMIT_WINDOW_SECONDS` | Временное окно | `60` |
 | `SERVER_PORT` | Порт HTTP-сервера | `8080` |
-| `SERVER_FALLBACK_PORTS` | Резервные порты (через запятую) | `8081,8082` |
+| `SERVER_FALLBACK_PORTS` | ~~env~~ — только JSON-ключ `backend.server.rate_limit.fallback_ports` (массив, не env через запятую) | `["8081","8082"]` |
 
 ### Поведение rate limiting
 
@@ -496,7 +522,6 @@ score = α × explicit_score + β × semantic_score
   "backend": {
     "graph": {
       "load_depth": 2,
-      "max_nodes": 500,
       "default_limit": 100,
       "max_limit": 1000,
       "link_default_limit": 500,
@@ -506,7 +531,6 @@ score = α × explicit_score + β × semantic_score
   "frontend": {
     "graph": {
       "2d": {
-        "max_nodes": 500,
         "shadows_threshold": 100,
         "animated_links_threshold": 50,
         "gravity_nodes_threshold": 50,
@@ -514,18 +538,21 @@ score = α × explicit_score + β × semantic_score
         "hover_delay_ms": 150,
         "visual_fx_threshold": 100
       },
-      "3d": { "max_nodes": 500 }
+      "3d": { "enabled": false, "max_nodes": 500 }
     }
   }
 }
 ```
+
+| Параметр | Тип | Умолчание | Где используется | Описание |
+|-----------|------|-----------|------------------|----------|
+| `frontend.graph.3d.enabled` | boolean | `false` | `isGraph3DEnabled()` — `GraphTopBar`, `graphStore`, маршруты `/graph/3d` | FREEZE-3D-1 (решение 82): 3D заморожен до готовности 2D. `false` скрывает переключатель 3D, перенаправляет `/graph/3d*` на 2D и читает запомненный вид `«3d»` как `«graph»`. Код и тесты 3D остаются в репозитории |
 
 ### Переопределение через переменные окружения
 
 | Переменная | Описание | Умолчание |
 |-----------|----------|-----------|
 | `GRAPH_LOAD_DEPTH` | Глубина загрузки графа | `2` |
-| `GRAPH_MAX_NODES` | Максимальное количество узлов | `500` |
 | `GRAPH_DEFAULT_LIMIT` | Лимит узлов по умолчанию | `100` |
 | `GRAPH_MAX_LIMIT` | Максимальный лимит узлов | `1000` |
 | `GRAPH_LINK_DEFAULT_LIMIT` | Лимит связей по умолчанию | `500` |
@@ -583,7 +610,7 @@ score = α × explicit_score + β × semantic_score
 | `STATIC_API_KEY` | Статический API-ключ (если пустой — генерируется) | — |
 | `YANDEX_CLIENT_ID` | OAuth client ID для входа через Яндекс | — |
 | `YANDEX_CLIENT_SECRET` | OAuth client secret для Яндекс | — |
-| `SMTP_HOST` | SMTP-сервер для сброса пароля | — |
+| `SMTP_HOST` | SMTP-сервер для сброса пароля и напоминаний комет (COMET-1); пусто — письма в лог | — |
 | `SMTP_PORT` | SMTP-порт | `587` |
 | `SMTP_USER` | Логин SMTP | — |
 | `SMTP_PASSWORD` | Пароль SMTP | — |
@@ -604,6 +631,8 @@ score = α × explicit_score + β × semantic_score
 
 ## NLP-сервис
 
+Порядок приоритета тот же, что у backend и graph-service: **окружение > `knowledge-graph.config.json` (`nlp.*`) > дефолт в коде** (CONFIG-AUDIT-1, решение 102). При старте `app/config.py` переносит `nlp.*` в переменные окружения через `os.environ.setdefault` — выставленное окружение важнее файла. Файл ищется по `KG_CONFIG_PATH`, затем `/app/knowledge-graph.config.json` (копируется в образ, монтируется в compose), затем корень репозитория для локальных запусков.
+
 ### JSON-конфигурация (`nlp`)
 
 ```json
@@ -613,9 +642,15 @@ score = α × explicit_score + β × semantic_score
     "max_text_length": 10000,
     "hf_home": "/root/.cache/huggingface",
     "hf_hub_disable_telemetry": true,
-    "hf_hub_offline": true
+    "hf_hub_offline": true,
+    "pipeline": { "enabled": true },
+    "history": { "enabled": true },
+    "normalization": { "min_cosine": 0.7 }
   }
 }
+```
+
+Верхнеуровневые ключи `nlp.*` отображаются на env: `model_name` → `NLP_MODEL_NAME`, `max_text_length` → `NLP_MAX_TEXT_LENGTH`, `hf_home` → `HF_HOME`, `hf_hub_disable_telemetry` → `HF_HUB_DISABLE_TELEMETRY`, `hf_hub_offline` → `HF_HUB_OFFLINE`. Вложенные секции (`pipeline`, `history`, `normalization`, `quality`) читает backend, а не Python-сервис.
 ```
 
 ### Переопределение через переменные окружения
@@ -627,6 +662,17 @@ score = α × explicit_score + β × semantic_score
 | `HF_HOME` | Путь к локальному кешу HuggingFace | `/root/.cache/huggingface` |
 | `HF_HUB_OFFLINE` | Работа в оффлайн-режиме (без интернета) | `true` |
 | `HF_HUB_DISABLE_TELEMETRY` | Отключить телеметрию HuggingFace | `true` |
+| `EMBED_CHUNKING` | Структурный чанкер в `/embed` и `_doc_vector` (CHUNK-1): `0` — прежнее поведение; `1` — чанки → один пакетный encode → среднее + L2, заголовок в каждом чанке, в ответе `chunks` и `no_content`. Включён по умолчанию с MODEL-2; выключать только вместе с `NLP_PIPELINE_ENABLED=false` | `1` |
+| `NLP_PIPELINE_ENABLED` | Конвейер нормализации (NLP-4): ставит `nlp:normalize` при создании/правке/импорте заметки — воркер пишет `nlp_artifacts` в MongoDB. Включён по умолчанию с MODEL-2: векторы `compute:embedding` строятся по нормализованному тексту артефакта | `true` |
+| `NLP_HISTORY_ENABLED` | Хранить superseded-версии `nlp_artifacts`; `false` — прежний документ удаляется вместо пометки `superseded` | `true` |
+| `NLP_NORMALIZATION_MIN_COSINE` | Предохранитель отката `/normalize` по косинусу: результат откатывается к исходнику, если `cos(emb(result), emb(source))` ниже порога. Зависит от шкалы модели (замерено на e5-base); перекалибровка — в MODEL-2. Значения вне `(0, 1]` заменяются умолчанием | `0.7` |
+| `NLP_QUALITY_ENABLED` | Конвейер качества заметки (NOTE-QUALITY-1, этап 1): ставит `quality:assess` после `nlp:normalize` и после задач обогащения; включает `GET /api/v1/notes/{id}/quality` и `POST .../quality/assess`. `false` — задачи не ставятся, API отвечает `{"enabled": false}` | `false` |
+| `NLP_QUALITY_COLLECTION_PROSE_SHARE` | Граница признака: доля прозы, ниже которой заметка считается `collection` | `0.3` |
+| `NLP_QUALITY_COLLECTION_MIN_LINKS` | Граница признака: минимум строк-ссылок/пунктов для `collection` | `3` |
+| `NLP_QUALITY_SENTENCE_MIN_WORDS` | Граница признака: минимум слов в засчитываемом предложении | `4` |
+| `NLP_QUALITY_FRAGMENT_MAX_WORDS` | Граница признака: строки до этого числа слов — обрывки | `3` |
+| `NLP_QUALITY_MOJIBAKE_SHARE` | Граница признака: доля символов замены/кракозябр для флага `mojibake` | `0.01` |
+| `NLP_QUALITY_LEGACY_TRUNCATED_RUNES` | Граница признака: объём всего содержимого в рунах, по которому старый (до URL-HEADING-1) импорт считается обрезанным | `4990` |
 
 ### Lazy-loading модели (обязательный паттерн)
 
@@ -656,7 +702,7 @@ def get_embedding_model():
   "graph_service": {
     "grpc_port": "9090",
     "http_port": "9091",
-    "full_limit": 1000,
+    "full_limit": 500,
     "default_depth": 2,
     "event_channel": "graph:events",
     "cache": {
@@ -829,6 +875,26 @@ def get_embedding_model():
 | `queue_default` | Приоритет очереди по умолчанию |
 | `queue_max_len` | Максимальный размер очереди |
 
+### Транзакционный outbox (`backend.outbox`, SYNC-1 A2)
+
+```json
+{
+  "backend": {
+    "outbox": {
+      "relay_interval_ms": 500,
+      "batch_size": 100,
+      "sent_retention_days": 30
+    }
+  }
+}
+```
+
+| Параметр | Env | Описание |
+|----------|-----|----------|
+| `relay_interval_ms` | `OUTBOX_RELAY_INTERVAL_MS` | Интервал опроса таблицы `graph_outbox` ретранслятором воркера |
+| `batch_size` | `OUTBOX_BATCH_SIZE` | Сколько неотправленных строк забирается за одну транзакцию (`FOR UPDATE SKIP LOCKED`) |
+| `sent_retention_days` | `OUTBOX_SENT_RETENTION_DAYS` | Сколько дней хранятся отправленные строки до ежедневной чистки |
+
 ---
 
 ## Параметры портов по окружениям
@@ -855,23 +921,7 @@ def get_embedding_model():
 
 ## CI/CD конфигурация
 
-### JSON-конфигурация (`ci_cd`)
-
-```json
-{
-  "ci_cd": {
-    "integration_test": {
-      "migrate_all": true,
-      "truncate_list": ["notes", "links", "embeddings", "recommendations"]
-    }
-  }
-}
-```
-
-| Параметр | Описание |
-|----------|----------|
-| `migrate_all` | Применять все миграции перед интеграционными тестами |
-| `truncate_list` | Таблицы, которые очищаются перед каждым тестовым запуском |
+Раздел `ci_cd` в общем конфиге пуст — ключи `integration_test.migrate_all` и `integration_test.truncate_list` убраны как мёртвые (решение 102, CONFIG-AUDIT-1): их никто не читал.
 
 ---
 

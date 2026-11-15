@@ -66,6 +66,7 @@
 
       container.addEventListener("click", handleClick);
       container.addEventListener("dblclick", handleDoubleClick);
+      container.addEventListener("pointermove", handlePointerMove);
     } catch (e) {
       if (import.meta.env.DEV) {
         console.error("[Graph3D] Initialization failed:", e);
@@ -77,6 +78,7 @@
   onDestroy(() => {
     container?.removeEventListener("click", handleClick);
     container?.removeEventListener("dblclick", handleDoubleClick);
+    container?.removeEventListener("pointermove", handlePointerMove);
     engine?.dispose();
     engine = null;
   });
@@ -116,6 +118,10 @@
 
   function handleDoubleClick(event: MouseEvent) {
     engine?.handleDoubleClick(event);
+  }
+
+  function handlePointerMove(event: MouseEvent) {
+    engine?.handlePointerMove(event);
   }
 </script>
 

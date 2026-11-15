@@ -218,7 +218,7 @@ Anomalies (`UNKNOWN` and the four explicit anomaly bodies) are reserved for syst
 
 ### Unit Tests
 
-Anomaly rendering is tested in `frontend/src/components/organisms/GraphCanvas.node-types.spec.ts`:
+Anomaly rendering is tested in `frontend/src/widgets/graph-canvas/GraphCanvas.node-types.spec.ts`:
 
 ```typescript
 describe("Anomaly Rendering (Unknown Node Types)", () => {

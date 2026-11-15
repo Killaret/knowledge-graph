@@ -19,13 +19,15 @@ func Layout2D(notes []*db.Note, links []*db.Link, rootID string) *LayoutResponse
 			nodeType = NodeTypeNote
 		}
 		nodes = append(nodes, &LayoutNode{
-			ID:    note.ID,
-			Title: note.Title,
-			Type:  nodeType,
-			X:     math.Cos(theta) * Layout2DRadius,
-			Y:     math.Sin(theta) * Layout2DRadius,
-			Z:     0,
-			Size:  DefaultNodeSize,
+			ID:     note.ID,
+			Title:  note.Title,
+			Type:   nodeType,
+			X:      math.Cos(theta) * Layout2DRadius,
+			Y:      math.Sin(theta) * Layout2DRadius,
+			Z:      0,
+			Size:   DefaultNodeSize,
+			DueAt:  note.DueAt,
+			DoneAt: note.DoneAt,
 		})
 	}
 

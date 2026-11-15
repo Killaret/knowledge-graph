@@ -6,7 +6,7 @@ REST API backend for Knowledge Graph application with unified response format.
 
 - **Unified API Responses** — Consistent `SuccessResponse` and `ErrorResponse` formats
 - **RESTful Design** — Resource-based URLs with proper HTTP methods
-- **Detailed Error Messages** — Machine-readable codes with human-readable Russian messages
+- **Detailed Error Messages** — Machine-readable codes with English messages (`code`, `message`, `details[]`)
 - **Swagger UI** — Interactive API documentation
 - **Field-level Validation** — Detailed validation errors with `field`, `reason`, `message`, `received`, `expected`
 

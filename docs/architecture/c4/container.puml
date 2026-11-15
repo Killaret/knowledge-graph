@@ -4,29 +4,46 @@ title Диаграмма контейнеров — Knowledge Graph
 actor "Пользователь" as User
 
 package "Локальная среда (Docker Compose)" {
-    
-    component "Frontend\n(Svelte 5)" as Frontend
+
+    component "Frontend\n(Svelte 5 + nginx proxy)" as Frontend
     component "Backend\n(Go + Gin)" as Backend
+    component "Worker\n(Go + asynq)" as Worker
+    component "Graph Service\n(Go, HTTP+gRPC)" as GraphSvc
     database "PostgreSQL 16\n+ pgvector" as DB
-    database "Redis 7\n(очереди + кэш)" as Redis
+    database "Redis 7\n(очереди + кэш + pub/sub)" as Redis
+    database "MongoDB 7\n(drafts)" as Mongo
     component "NLP Service\n(Python + FastAPI)" as NLP
 }
 
-User --> Frontend : "HTTPS / WebSocket"
-Frontend --> Backend : "REST API"
+User --> Frontend : "HTTP (dev stack)"
+Frontend --> Backend : "REST /api (proxy)"
+Frontend --> GraphSvc : "REST /graph-service/api (proxy)"
 Backend --> DB : "SQL"
 Backend --> Redis : "TCP (asynq / кэш)"
+Backend --> Mongo : "drafts"
 Backend --> NLP : "HTTP (эмбеддинги)"
+Backend --> GraphSvc : "HTTP :9091 (graph client)"
+GraphSvc --> DB : "SQL (graph read)"
+GraphSvc --> Redis : "cache + graph:events"
+Worker --> Redis : "asynq consume"
+Worker --> DB : "SQL"
+Worker --> NLP : "HTTP"
 
 note right of Backend
     - Содержит DDD слои
     - CQRS (команды/запросы)
-    - Очередь задач (asynq)
+    - Публикует события в Redis graph:events
+end note
+
+note right of GraphSvc
+    - Раскладки графа, дельты, снимки
+    - gRPC :9090 поднят, но без клиентов (A-2)
+    - HTTP :9091 — рабочий путь
 end note
 
 note right of Redis
-    - Хранение задач
-    - Кэш рекомендаций
-    - Сессии (позже)
+    - Хранение задач (asynq)
+    - Кэш рекомендаций и graph-service
+    - Pub/Sub канал graph:events
 end note
 @enduml

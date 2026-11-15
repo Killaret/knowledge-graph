@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, cleanup } from "@testing-library/svelte";
 import * as renderer from "$entities/graph-canvas/lib/renderer";
 import { getAnomalyParams } from "$shared/lib/graph/renderer/anomalies/helpers";
@@ -99,6 +99,15 @@ vi.mock("d3-force", () => {
 });
 
 import GraphCanvas from "$widgets/graph-canvas/GraphCanvas.svelte";
+
+import { getGraphStyle, setGraphStyle } from "$entities/graph-canvas/lib/light/style";
+
+// Classic look: these tests describe the classic renderer and its geometry
+// (fit capped at 1:1, icon drawers). The light style (GRAPH-LIGHT-1) has its
+// own tests in entities/graph-canvas/lib/light.
+const styleBefore = getGraphStyle();
+beforeAll(() => setGraphStyle("classic"));
+afterAll(() => setGraphStyle(styleBefore));
 
 describe("GraphCanvas - Node Type Rendering", () => {
   beforeEach(() => {
@@ -253,6 +262,62 @@ describe("GraphCanvas - Node Type Rendering", () => {
         false
       );
       expect(cometCtx.getFillStyles()[0]).toMatch(/^#[0-9a-fA-F]{6}$/);
+      expect(cometCtx.quadraticCurveTo).toHaveBeenCalled(); // живой хвост
+      const baseTipX = vi.mocked(cometCtx.quadraticCurveTo).mock.calls[0][2] as number;
+
+      // приближающаяся комета (срок через час) — хвост длиннее; тот же id
+      // «3» даёт тот же sizeMultiplier, иначе сравнение нечестное
+      const soonCtx = createMockCanvasContext();
+      const soon = new Date(Date.now() + 3600_000).toISOString();
+      renderer.drawNode(
+        soonCtx,
+        { id: "3", x: 100, y: 100, title: "Soon", type: "comet", due_at: soon },
+        20,
+        0,
+        false
+      );
+      expect(soonCtx.quadraticCurveTo).toHaveBeenCalled();
+      const soonTipX = vi.mocked(soonCtx.quadraticCurveTo).mock.calls[0][2] as number;
+      expect(soonTipX).toBeGreaterThan(baseTipX);
+      expect(soonCtx.getGlobalAlphas()).not.toContain(0.35);
+
+      // COMET-1 stage E: прошедшая/сделанная комета — тусклая и без хвоста
+      const doneCtx = createMockCanvasContext();
+      renderer.drawNode(
+        doneCtx,
+        {
+          id: "3d",
+          x: 100,
+          y: 100,
+          title: "Done comet",
+          type: "comet",
+          done_at: "2020-01-01T00:00:00Z",
+        },
+        20,
+        0,
+        false
+      );
+      expect(doneCtx.quadraticCurveTo).not.toHaveBeenCalled();
+      expect(doneCtx.getGlobalAlphas()).toContain(0.35);
+
+      // комета со сроком в прошлом — тоже тусклая
+      const pastCtx = createMockCanvasContext();
+      renderer.drawNode(
+        pastCtx,
+        {
+          id: "3p",
+          x: 100,
+          y: 100,
+          title: "Past comet",
+          type: "comet",
+          due_at: "2000-01-01T00:00:00Z",
+        },
+        20,
+        0,
+        false
+      );
+      expect(pastCtx.quadraticCurveTo).not.toHaveBeenCalled();
+      expect(pastCtx.getGlobalAlphas()).toContain(0.35);
 
       // Test galaxy creates a radial gradient
       const galaxyCtx = createMockCanvasContext();

@@ -92,6 +92,24 @@ BACKUP_FILE="${BACKUP_FILE}.gz"
 
 echo "Backup completed successfully: ${BACKUP_FILE}"
 
+# MongoDB (BACKUP-4 item 2): nlp_artifacts and quality_log live there and
+# were not backed up by anything. Same cadence and naming as the SQL dump.
+MONGO_DB="${PERSONAL_MONGO_DATABASE:-knowledge_personal}"
+MONGO_FILE="${BACKUP_DIR}/backup-personal-${MODE}-${TIMESTAMP}.mongo.gz"
+echo "Dumping MongoDB ${MONGO_DB} to ${MONGO_FILE}..."
+if command -v mongodump >/dev/null 2>&1; then
+  mongodump --host "${PERSONAL_MONGO_HOST:-localhost}" --port "${PERSONAL_MONGO_PORT:-27018}" \
+      --db "${MONGO_DB}" --archive="${MONGO_FILE}" --gzip
+elif command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' 2>/dev/null | grep -qx 'kg-mongo-personal'; then
+  # Host without mongo tools: dump inside the running container to stdout.
+  docker exec kg-mongo-personal mongodump --db "${MONGO_DB}" --archive --gzip > "${MONGO_FILE}"
+else
+  echo "  [ERROR] cannot dump MongoDB: no mongodump on PATH and kg-mongo-personal is not running" >&2
+  exit 1
+fi
+
+echo "MongoDB backup completed: ${MONGO_FILE}"
+
 # Optional: Upload to Yandex.Disk via REST API
 if [ "${BACKUP_CLOUD_ENABLED:-false}" = "true" ]; then
   echo "Uploading to Yandex.Disk..."
@@ -101,49 +119,51 @@ if [ "${BACKUP_CLOUD_ENABLED:-false}" = "true" ]; then
   if [ -z "$TOKEN" ]; then
     echo "Warning: BACKUP_YANDEX_OAUTH_TOKEN or BACKUP_YANDEX_TOKEN not set"
   else
-    REMOTE_PATH="${BACKUP_FOLDER}/$(basename "${BACKUP_FILE}")"
-    BASE_URL="https://cloud-api.yandex.net/v1/disk"
+    for FILE_TO_UPLOAD in "${BACKUP_FILE}" "${MONGO_FILE}"; do
+      REMOTE_PATH="${BACKUP_FOLDER}/$(basename "${FILE_TO_UPLOAD}")"
+      BASE_URL="https://cloud-api.yandex.net/v1/disk"
 
-    # Ensure the backup folder exists (ignore 409 - already exists)
-    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-      -X PUT \
-      -H "Authorization: OAuth ${TOKEN}" \
-      "${BASE_URL}/resources?path=${BACKUP_FOLDER}")
-
-    if [ "$HTTP_STATUS" != "201" ] && [ "$HTTP_STATUS" != "409" ]; then
-      echo "Warning: failed to ensure backup folder on Yandex.Disk (HTTP ${HTTP_STATUS})"
-    fi
-
-    # Get pre-signed upload URL
-    UPLOAD_RESPONSE=$(curl -s -X GET \
-      -H "Authorization: OAuth ${TOKEN}" \
-      "${BASE_URL}/resources/upload?path=${REMOTE_PATH}&overwrite=true")
-
-    UPLOAD_URL=$(echo "$UPLOAD_RESPONSE" | sed -n 's/.*"href":"\([^"]*\)".*/\1/p')
-
-    if [ -z "$UPLOAD_URL" ]; then
-      echo "Warning: failed to get Yandex.Disk upload URL. Response: ${UPLOAD_RESPONSE}"
-    else
-      # Upload file to the pre-signed URL
-      UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+      # Ensure the backup folder exists (ignore 409 - already exists)
+      HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
         -X PUT \
-        -T "${BACKUP_FILE}" \
-        -H "Content-Type: application/octet-stream" \
-        "${UPLOAD_URL}")
+        -H "Authorization: OAuth ${TOKEN}" \
+        "${BASE_URL}/resources?path=${BACKUP_FOLDER}")
 
-      if [ "$UPLOAD_STATUS" = "201" ] || [ "$UPLOAD_STATUS" = "202" ]; then
-        echo "Successfully uploaded to Yandex.Disk: ${REMOTE_PATH}"
-      else
-        echo "Warning: Yandex.Disk upload failed with HTTP ${UPLOAD_STATUS}"
+      if [ "$HTTP_STATUS" != "201" ] && [ "$HTTP_STATUS" != "409" ]; then
+        echo "Warning: failed to ensure backup folder on Yandex.Disk (HTTP ${HTTP_STATUS})"
       fi
-    fi
+
+      # Get pre-signed upload URL
+      UPLOAD_RESPONSE=$(curl -s -X GET \
+        -H "Authorization: OAuth ${TOKEN}" \
+        "${BASE_URL}/resources/upload?path=${REMOTE_PATH}&overwrite=true")
+
+      UPLOAD_URL=$(echo "$UPLOAD_RESPONSE" | sed -n 's/.*"href":"\([^"]*\)".*/\1/p')
+
+      if [ -z "$UPLOAD_URL" ]; then
+        echo "Warning: failed to get Yandex.Disk upload URL. Response: ${UPLOAD_RESPONSE}"
+      else
+        # Upload file to the pre-signed URL
+        UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          -X PUT \
+          -T "${FILE_TO_UPLOAD}" \
+          -H "Content-Type: application/octet-stream" \
+          "${UPLOAD_URL}")
+
+        if [ "$UPLOAD_STATUS" = "201" ] || [ "$UPLOAD_STATUS" = "202" ]; then
+          echo "Successfully uploaded to Yandex.Disk: ${REMOTE_PATH}"
+        else
+          echo "Warning: Yandex.Disk upload failed with HTTP ${UPLOAD_STATUS}"
+        fi
+      fi
+    done
   fi
 fi
 
 # Clean up old local backups (cloud backups are never deleted)
 if [ "${CLEANUP_OLD_BACKUPS:-true}" = "true" ] && [ "$RETENTION_DAYS" -gt 0 ]; then
   echo "Cleaning up old ${MODE} local backups (keeping last ${RETENTION_DAYS} days)..."
-  find "${BACKUP_DIR}" -name "backup-personal-${MODE}-*.sql.gz" -mtime +"${RETENTION_DAYS}" -delete
+  find "${BACKUP_DIR}" \( -name "backup-personal-${MODE}-*.sql.gz" -o -name "backup-personal-${MODE}-*.mongo.gz" \) -mtime +"${RETENTION_DAYS}" -delete
 fi
 
 echo "Backup process completed."

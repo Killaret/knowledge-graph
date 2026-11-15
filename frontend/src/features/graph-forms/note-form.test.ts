@@ -17,6 +17,9 @@ describe("note-form", () => {
       newNoteTitle: "",
       newNoteContent: "",
       newNoteType: "star",
+      newDueAtLocal: "",
+      newRemindChoice: "none",
+      newCustomMinutes: 60,
     });
   });
 
@@ -58,6 +61,42 @@ describe("note-form", () => {
     });
     expect(callbacks.onFormClose).toHaveBeenCalled();
     expect(state.newNoteTitle).toBe("");
+  });
+
+  // COMET-1 этап B: быстрая форма на графе тоже передаёт поля кометы.
+  it("passes comet scheduling fields to onNoteCreate", () => {
+    const state = createNoteFormState();
+    state.newNoteTitle = "Dentist";
+    state.newNoteType = "comet";
+    state.newDueAtLocal = "2026-03-01T12:00";
+    state.newRemindChoice = "1h";
+
+    const callbacks: NoteFormCallbacks = { onNoteCreate: vi.fn() };
+    createNote(state, callbacks);
+
+    expect(callbacks.onNoteCreate).toHaveBeenCalledWith({
+      title: "Dentist",
+      content: "",
+      type: "comet",
+      due_at: new Date("2026-03-01T12:00").toISOString(),
+      remind_before_seconds: 3600,
+    });
+  });
+
+  it("omits scheduling fields for a non-comet quick note", () => {
+    const state = createNoteFormState();
+    state.newNoteTitle = "Star";
+    state.newNoteType = "star";
+    state.newDueAtLocal = "2026-03-01T12:00";
+
+    const callbacks: NoteFormCallbacks = { onNoteCreate: vi.fn() };
+    createNote(state, callbacks);
+
+    expect(callbacks.onNoteCreate).toHaveBeenCalledWith({
+      title: "Star",
+      content: "",
+      type: "star",
+    });
   });
 
   it("does not create a note with an empty title", () => {

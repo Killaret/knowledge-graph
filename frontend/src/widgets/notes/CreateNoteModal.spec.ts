@@ -275,4 +275,82 @@ describe("CreateNoteModal", () => {
       expect(screen.queryByText("Create New Note")).not.toBeInTheDocument();
     });
   });
+
+  // COMET-1 этап B: комета с датой и напоминанием уходит в createNote
+  // с due_at (ISO) и remind_before_seconds.
+  it("sends comet scheduling fields when type is comet", async () => {
+    vi.mocked(createNote).mockResolvedValueOnce({
+      ...mockNote,
+      type: "comet",
+    });
+
+    render(CreateNoteModal, { props: { open: true } });
+
+    const titleInput = screen.getByPlaceholderText("Enter note title...") as HTMLInputElement;
+    titleInput.value = "Doctor visit";
+    await fireEvent.input(titleInput);
+    await tick();
+
+    const cometBtn = document.querySelector('[data-type="comet"]') as HTMLElement;
+    expect(cometBtn).toBeTruthy();
+    await fireEvent.click(cometBtn);
+    await tick();
+
+    const due = document.querySelector('[data-testid="comet-due"]') as HTMLInputElement;
+    expect(due).toBeTruthy();
+    await fireEvent.input(due, { target: { value: "2026-03-01T12:00" } });
+    await tick();
+
+    const remind = document.querySelector('[data-testid="comet-remind"]') as HTMLSelectElement;
+    remind.value = "1h";
+    await fireEvent.change(remind);
+    await tick();
+
+    const submitButton = screen.getByRole("button", { name: "Create Note" });
+    await fireEvent.click(submitButton);
+
+    const expectedIso = new Date("2026-03-01T12:00").toISOString();
+    await waitFor(() => {
+      expect(createNote).toHaveBeenCalledWith({
+        title: "Doctor visit",
+        content: "",
+        type: "comet",
+        metadata: {},
+        due_at: expectedIso,
+        remind_before_seconds: 3600,
+      });
+    });
+  });
+
+  it("creates a comet without a date with null scheduling fields", async () => {
+    vi.mocked(createNote).mockResolvedValueOnce({
+      ...mockNote,
+      type: "comet",
+    });
+
+    render(CreateNoteModal, { props: { open: true } });
+
+    const titleInput = screen.getByPlaceholderText("Enter note title...") as HTMLInputElement;
+    titleInput.value = "Someday task";
+    await fireEvent.input(titleInput);
+    await tick();
+
+    const cometBtn = document.querySelector('[data-type="comet"]') as HTMLElement;
+    await fireEvent.click(cometBtn);
+    await tick();
+
+    const submitButton = screen.getByRole("button", { name: "Create Note" });
+    await fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(createNote).toHaveBeenCalledWith({
+        title: "Someday task",
+        content: "",
+        type: "comet",
+        metadata: {},
+        due_at: null,
+        remind_before_seconds: null,
+      });
+    });
+  });
 });

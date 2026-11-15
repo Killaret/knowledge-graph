@@ -43,7 +43,7 @@ func TestRecommendationRepository_GetRecommendations(t *testing.T) {
 			AddRow(noteID, uuid.MustParse("a0000000-0000-0000-0000-000000000003"), 0.8, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(
-			`SELECT * FROM "note_recommendations" WHERE note_id = $1 ORDER BY score DESC LIMIT $2`,
+			`SELECT "note_recommendations"."note_id","note_recommendations"."recommended_note_id","note_recommendations"."score","note_recommendations"."created_at","note_recommendations"."updated_at" FROM "note_recommendations" JOIN notes n ON n.id = note_recommendations.recommended_note_id AND n.deleted_at IS NULL WHERE note_id = $1 ORDER BY score DESC LIMIT $2`,
 		)).WithArgs(noteID, limit).WillReturnRows(rows)
 
 		recs, err := repo.GetRecommendations(ctx, noteID, limit)
@@ -56,7 +56,7 @@ func TestRecommendationRepository_GetRecommendations(t *testing.T) {
 
 	t.Run("empty result", func(t *testing.T) {
 		mock.ExpectQuery(regexp.QuoteMeta(
-			`SELECT * FROM "note_recommendations" WHERE note_id = $1 ORDER BY score DESC LIMIT $2`,
+			`SELECT "note_recommendations"."note_id","note_recommendations"."recommended_note_id","note_recommendations"."score","note_recommendations"."created_at","note_recommendations"."updated_at" FROM "note_recommendations" JOIN notes n ON n.id = note_recommendations.recommended_note_id AND n.deleted_at IS NULL WHERE note_id = $1 ORDER BY score DESC LIMIT $2`,
 		)).WithArgs(noteID, limit).WillReturnRows(sqlmock.NewRows([]string{"note_id", "recommended_note_id", "score", "created_at", "updated_at"}))
 
 		recs, err := repo.GetRecommendations(ctx, noteID, limit)

@@ -13,7 +13,9 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
 	"knowledge-graph-graph-service/internal/cache"
@@ -170,32 +172,74 @@ func (s *GRPCIntegrationTestSuite) TestGetDelta() {
 
 	userID := "test-user-delta"
 
-	// First, ensure we have a cached layout
+	// Canonical request (limit 0 = configured cap): caches the layout and
+	// saves the snapshot deltas are computed against (CONFIG-AUDIT-1).
 	req := &graphservice.FullLayoutRequest{
 		UserId: userID,
-		Limit:  10,
+		Limit:  0,
 	}
 	stream, err := s.client.GetFullLayout(ctx, req)
 	s.Require().NoError(err)
 
-	// Consume the stream
+	// Consume the stream and capture the served hash (final chunk "hash:<id>").
+	var servedHash string
 	for {
-		_, err := stream.Recv()
+		chunk, err := stream.Recv()
 		if err != nil {
 			break
 		}
+		if len(chunk.ChunkId) > 5 && chunk.ChunkId[:5] == "hash:" {
+			servedHash = chunk.ChunkId[5:]
+		}
 	}
+	s.NotEmpty(servedHash, "stream must end with a hash chunk")
 
-	// Now get delta
+	// Now get delta against the version the client actually holds
 	deltaReq := &graphservice.DeltaRequest{
 		UserId:   userID,
-		LastHash: "some-previous-hash",
+		LastHash: servedHash,
 	}
 
 	deltaResp, err := s.client.GetDelta(ctx, deltaReq)
 	s.Require().NoError(err)
 	s.NotNil(deltaResp)
 	s.NotEmpty(deltaResp.CurrentHash)
+}
+
+// CONFIG-AUDIT-1: a narrower explicit limit bypasses the cache and does NOT
+// save a snapshot — a truncated layout must not poison the delta base. The
+// stream still ends with a hash chunk, but GetDelta on it answers NotFound
+// (resync), never a delta computed against nothing.
+func (s *GRPCIntegrationTestSuite) TestGetDelta_NarrowLimitResync() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	userID := "test-user-delta-narrow"
+
+	stream, err := s.client.GetFullLayout(ctx, &graphservice.FullLayoutRequest{
+		UserId: userID,
+		Limit:  10,
+	})
+	s.Require().NoError(err)
+
+	var servedHash string
+	for {
+		chunk, err := stream.Recv()
+		if err != nil {
+			break
+		}
+		if len(chunk.ChunkId) > 5 && chunk.ChunkId[:5] == "hash:" {
+			servedHash = chunk.ChunkId[5:]
+		}
+	}
+	s.NotEmpty(servedHash, "narrow stream still ends with a hash chunk")
+
+	_, err = s.client.GetDelta(ctx, &graphservice.DeltaRequest{
+		UserId:   userID,
+		LastHash: servedHash,
+	})
+	s.Require().Error(err)
+	s.Equal(codes.NotFound, status.Code(err), "narrow limit saves no snapshot: delta must answer resync")
 }
 
 func (s *GRPCIntegrationTestSuite) TestInvalidRequest() {
@@ -212,6 +256,15 @@ func (s *GRPCIntegrationTestSuite) TestInvalidRequest() {
 	}
 	_, err = s.client.GetDelta(ctx, deltaReq)
 	s.Error(err)
+
+	// Unknown last_hash — no snapshot: server answers NotFound (resync)
+	unknownReq := &graphservice.DeltaRequest{
+		UserId:   "test-user-unknown-hash",
+		LastHash: "never-served-hash",
+	}
+	_, err = s.client.GetDelta(ctx, unknownReq)
+	s.Require().Error(err)
+	s.Equal(codes.NotFound, status.Code(err))
 }
 
 // stubPostgresClient is a mock implementation for testing

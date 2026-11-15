@@ -80,6 +80,19 @@ Authentication required (reserved)
 ### INTERNAL_ERROR (500)
 Internal server error
 
+### DUPLICATE_LINK (409)
+A link between these notes already exists (`link_handler` duplicate check).
+
+### INVALID_UUID (400)
+The path parameter is not a valid UUID.
+
+### INVALID_REQUEST (400)
+Malformed or inconsistent request body (beyond field validation).
+
+> 429 responses are **not** emitted with a `code` field — the rate-limit
+> middleware answers `{"error": "...", "retry_after": <seconds>}` directly
+> (see the 429 section below). There is no `RATE_LIMIT_EXCEEDED` code.
+
 ---
 
 ## Notes API Errors
@@ -764,8 +777,16 @@ API implements rate limiting via middleware. When limits are exceeded, **429 Too
 
 ```json
 {
-  "code": "RATE_LIMIT_EXCEEDED",
-  "message": "Rate limit exceeded. Please try again later."
+  "error": "Rate limit exceeded. Please try again later."
+}
+```
+
+or, from the per-endpoint limiter:
+
+```json
+{
+  "error": "Rate limit exceeded for this endpoint",
+  "retry_after": 60
 }
 ```
 
