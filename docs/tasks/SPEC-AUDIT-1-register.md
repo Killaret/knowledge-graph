@@ -309,6 +309,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | ENV-1-review-findings.md | не начат |
 | GITHUB-SECURITY-1-triage.md | не начат |
 | GORM-COMBINED-1-gorm-combined-update.md | не начат |
+| GO-TOOLCHAIN-1-go-1.26.md | не начат |
 | LOG-1-zerolog-integration.md | не начат |
 | MONGO-1-drafts-storage-discussion.md | не начат |
 | PUB-1-anonymous-read-and-search.md | не начат |
