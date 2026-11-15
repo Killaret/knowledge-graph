@@ -763,3 +763,23 @@ Create a new bullet under the right section with:
   - Через API бэкенда (18083): TEXT, URL, FILE → `done`; `PARTIAL` → `raw_chunks_count`; `FAILED` → `errors`; частный URL и файл > 8 МиБ → 400; чужой статус → 404; ключ пропал → `available=false` за 14 с, отправка → 503.
   - С `ORIGIN=http://127.0.0.1:3002` у фронтенд-контейнера (override, код не менялся): все состояния окна, сворачивание, значок «1», серая кнопка через 21 с.
 - **Screenshot / Logs:** `docs/agents/screenshots/smart-create-1/` — `1-no-java.png`, `2-text-completed.png`, `3-text-partial.png`, `3-text-failed.png`, `4-collapsed-waiting.png`, `4-badge.png`, `5-grey-again.png`; разбор — `docs/tasks/SMART-CREATE-1-review-findings.md`. Стек снесён после прогона.
+
+### UX-1 и SYNC-1 B/C — ревью, живая проверка (тест-стек)
+
+- **Scope:** UX-1, ревью №4 — «Связать с…» из правого меню, связь существующих заметок, холст при удалении. SYNC-1 B/C,
+  ревью №3 — дельта на остановленной симуляции, автосвязи воркера, переподключение SSE.
+- **Date:** 2026-11-15
+- **Agent:** Claude Code
+- **Tests executed:**
+  - `start-test.ps1` с `SKIP_AUTH=false` из `D:\kg-build-cache\rv-eab2` (`93cd426`). Скрипт вышел с кодом 1: `kg-test-mongo`
+    не успел стать healthy к ожиданию compose. Через минуту стал, стек работал.
+  - `ux1-probe.cjs` без обхода: на `/` и `/graph` окно выбора видно через 500 мс после «Link to», в списке — 4 заметки, поиск
+    оставляет одну, форма связи открывается, связь создаётся (API: по одной связи у Alpha и Charlie). Удаление: 196 и
+    171 замеров холста, пустых или перекрытых — 0, удалённая заметка — 404.
+  - `sync1-probe.cjs 12000`: добавление, переименование, связь, удаление — все узлы те же объекты; переименование видно
+    через 0,9 с; переименованный узел сдвинулся на 347 px (блокер SYNC-1, ревью №3).
+  - `c-probe.cjs`: автосвязи `gamma:related ×2` в дельте через 2 с после создания заметок; `docker restart
+    kg-test-graph-service` — новый `/graph/events` через 0,7 с.
+- **Screenshot / Logs:** `docs/agents/screenshots/ux-1-review-4/graph-after-link.png` (на `/graph` связи Alpha—Bravo и
+  Charlie—Delta, созданные из меню), `home-after-link.png`; вывод зондов — в `UX-1-review-findings.md` и
+  `SYNC-1-review-findings.md`.
