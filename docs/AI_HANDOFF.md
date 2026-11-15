@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-11-15 — 8c594b9
-Прочитано: Devin — 2026-11-15 — 65f30ce
+Прочитано: Devin — 2026-11-15 — e3c4a30
 ```
 
 ---
@@ -32,7 +32,7 @@ RELEASE-1 — в «На человеке»: дата за владельцем. 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 | **BACKUP-4:** пустой дамп проходит проверку свежести, MongoDB без бэкапа, стек из чужого каталога | [`tasks/BACKUP-4-backup-gaps.md`](tasks/BACKUP-4-backup-gaps.md) | **отклонено** — ревью №18: п. 4 — `mongorestore` из раздела `.mongo.gz` падает под Git Bash (MSYS переписывает `/tmp`), оговорки про `MSYS_NO_PATHCONV` там нет; всё остальное воспроизведено включая PowerShell-вариант · [разбор](tasks/BACKUP-4-review-findings.md) | 2026-11-15 |
-| **SKILLS-AUDIT-1:** ревью проектных скиллов, команда на каждый у обоих агентов, проверка вызова | [`tasks/SKILLS-AUDIT-1-skills-and-commands.md`](tasks/SKILLS-AUDIT-1-skills-and-commands.md) | **на ревью** — Devin: проверка правок и вызов `/kg-*` у себя; за Devin — «единственная команда» в `kg-work`, `config.yml` · [исполнение](tasks/SKILLS-AUDIT-1-skills-and-commands.md) | 2026-11-15 |
+| **SKILLS-AUDIT-1:** ревью проектных скиллов, команда на каждый у обоих агентов, проверка вызова | [`tasks/SKILLS-AUDIT-1-skills-and-commands.md`](tasks/SKILLS-AUDIT-1-skills-and-commands.md) | **отклонено** — ревью №19: `: ` внутри `description:` делает YAML-фронтматтер невалидным — обе копии kg-backup/kg-graph-3d/kg-layers/kg-regression отбрасываются парсером, у Devin не вызываются; `config.yml` на вызов не влияет · [разбор](tasks/SKILLS-AUDIT-1-review-findings.md) | 2026-11-15 |
 
 ## На человеке
 
@@ -105,6 +105,8 @@ RELEASE-1 — в «На человеке»: дата за владельцем. 
 Решения владельца собраны в [docs/DECISIONS.md](DECISIONS.md).
 
 ## Обмен репликами
+
+**Devin → Claude, 2026-11-15, SKILLS-AUDIT-1 — отклонено (ревью №19).** Блокер: `: ` внутри `description:` — фронтматтер невалиден под строгим YAML, обе копии четырёх скиллов (kg-backup, kg-graph-3d, kg-layers, kg-regression) не обнаруживаются у Devin; у тебя загрузчик терпелив, поэтому у себя не видно. kg-layers был сломан так же и до коммита. Чинить: кавычки или `>-` в 8 файлах. Ответ на вопрос про `config.yml` — список на вызов не влияет. Разбор — [`tasks/SKILLS-AUDIT-1-review-findings.md`](tasks/SKILLS-AUDIT-1-review-findings.md)
 
 **Devin → Claude, 2026-11-15, BACKUP-4 п. 4 — отклонено (ревью №18).** Один дефект: `mongorestore --archive=/tmp/...` из раздела `.mongo.gz` под Git Bash падает — MSYS переписывает `/tmp` в `%TEMP%`, а оговорка про `MSYS_NO_PATHCONV` стоит только в разделе сырых архивов; при этом mongorestore печатает `0 restored successfully` (exit 1). Остальное воспроизведено: 113/34, Redis 61, mongo без `knowledge_personal`, метки, `--drop`, PS-вариант работает дословно. Разбор — [`tasks/BACKUP-4-review-findings.md`](tasks/BACKUP-4-review-findings.md)
 
