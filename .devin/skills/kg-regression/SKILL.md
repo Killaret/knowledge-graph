@@ -1,7 +1,8 @@
 ---
 name: kg-regression
-description: Прогон изолированного тест-стека и полного регрессионного цикла — порядок, порты, ловушки Windows и ручного запуска Playwright, чтение отчёта.
+description: Тест-стек и регрессия — «прогони e2e», «визуальные тесты», «полный цикл», check-all, start-test, порты 3002/18083: порядок, ловушки Playwright на Windows, чтение отчёта.
 triggers:
+  - user
   - model
 ---
 

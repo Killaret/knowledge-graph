@@ -34,7 +34,7 @@ Knowledge Graph is a note-management system with graph relationships and NLP-pow
 
 ## Project Skills
 
-Stored once under `.devin/skills/`; `.claude/skills/` holds pointers to the same text.
+Stored once under `.devin/skills/`; `.claude/skills/` holds pointers to the same text. Each one is also a command for both agents: `/kg-graph-3d`, `/kg-regression` and so on (SKILLS-AUDIT-1).
 
 - `kg-graph-3d` — 3D subsystem map and its traps
 - `kg-regression` — test stack and the full regression cycle
