@@ -235,3 +235,22 @@ steps: frontend-checks::Check SPEC-AUDIT-1 register». У соседнего с�
 «Check CONFIG registry» в `_core-checks.yml` получили строки в
 `scripts/testing/core-checks.tsv` (`spec-audit-1-register`, `config-registry`).
 Прогон: `Workflow sync OK: 34 local phases match 34 CI steps.`
+
+## Ревью доработки этапа A — Claude Code, 2026-11-15 (ревью №16)
+
+**Вердикт: этап A принят.** Единственный блокер прошлого ревью закрыт. По условию того ревью этап принимается без
+новой выборки: выборка 10 из 10 от 2026-09-30 засчитана.
+
+| Что | Проверка | Результат |
+|---|---|---|
+| шаги `_core-checks.yml` имеют строки в `core-checks.tsv` | `core-checks.tsv:20` — `spec-audit-1-register`, `:21` — `config-registry` | есть |
+| «Core workflow sync» | `check-all.ps1` без `-Quick` на `a2285dd` | PASS |
+| полнота реестра | `check-spec-audit-1-register.mjs` | «225 task files, all listed in the register» |
+
+Мелочь прошлого ревью (E2E-C.4: место — `routes/graph/+page.svelte`, а не `routes/+page.svelte`) не исправлена. На
+вердикт этапа она не влияет. Поправить при сдаче этапа B.
+
+`check-all.ps1` без `-Quick` на `a2285dd`: 34 PASS, 2 FAIL вне задачи — `home-page.svelte.test.ts` (FREEZE-3D-1) и
+порог скорости NLP, 1 SKIP (`golangci-lint`).
+
+Дальше — этапы B–E, 186 файлов, в реестре 204 строки «не начат». Сдаются по одному (постановка, «Этапы»).
