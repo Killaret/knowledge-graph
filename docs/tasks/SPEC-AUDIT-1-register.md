@@ -367,6 +367,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | RELEASE-1-scope-1.0.md | не начат |
 | RULES-IMPORT-1-external-skill-set.md | не начат |
 | RELEASE-TEST-1-manual-run-1.0.md | не начат |
+| SKILLS-AUDIT-1-skills-and-commands.md | не начат |
 | SPEC-AUDIT-1-specs-vs-code.md | не начат (сама постановка) |
 | VERIFY-SPEC-1-evidence-testing-pilot.md | не начат |
 | SPEC-AUDIT-1-review-findings.md | не начат (разбор этой задачи) |
