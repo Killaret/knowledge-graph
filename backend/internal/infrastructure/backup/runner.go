@@ -21,13 +21,16 @@ type Uploader interface {
 
 // Runner creates a PostgreSQL dump, compresses it and optionally uploads it.
 type Runner struct {
-	dbURL        string
-	localPath    string
-	remoteFolder string
-	retention    int
-	uploader     Uploader
-	pgDumpExec   func(ctx context.Context, dsn, outFile string) error
-	clock        func() time.Time
+	dbURL         string
+	localPath     string
+	remoteFolder  string
+	retention     int
+	uploader      Uploader
+	pgDumpExec    func(ctx context.Context, dsn, outFile string) error
+	mongoURI      string
+	mongoDB       string
+	mongoDumpExec func(ctx context.Context, uri, db, outFile string) error
+	clock         func() time.Time
 }
 
 // Option configures a Runner.
@@ -48,6 +51,17 @@ func WithPgDumpExec(fn func(context.Context, string, string) error) Option {
 	return func(r *Runner) { r.pgDumpExec = fn }
 }
 
+// WithMongo enables a mongodump archive next to every SQL dump (BACKUP-4):
+// nlp_artifacts and quality_log live in MongoDB and were not backed up.
+func WithMongo(uri, db string) Option {
+	return func(r *Runner) { r.mongoURI, r.mongoDB = uri, db }
+}
+
+// WithMongoDumpExec replaces the default mongodump execution for testing.
+func WithMongoDumpExec(fn func(context.Context, string, string, string) error) Option {
+	return func(r *Runner) { r.mongoDumpExec = fn }
+}
+
 // WithClock replaces the clock for testing.
 func WithClock(fn func() time.Time) Option {
 	return func(r *Runner) { r.clock = fn }
@@ -65,6 +79,14 @@ func NewRunner(dbURL, localPath string, retention int, opts ...Option) *Runner {
 			outb, err := cmd.CombinedOutput()
 			if err != nil {
 				return fmt.Errorf("pg_dump failed: %w: %s", err, string(outb))
+			}
+			return nil
+		},
+		mongoDumpExec: func(ctx context.Context, uri, db, out string) error {
+			cmd := exec.CommandContext(ctx, "mongodump", "--uri="+uri, "--db="+db, "--archive="+out, "--gzip")
+			outb, err := cmd.CombinedOutput()
+			if err != nil {
+				return fmt.Errorf("mongodump failed: %w: %s", err, string(outb))
 			}
 			return nil
 		},
@@ -98,13 +120,29 @@ func (r *Runner) Run(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	if r.uploader != nil {
-		remoteKey := filepath.Base(gzFile)
-		if r.remoteFolder != "" {
-			remoteKey = path.Join(r.remoteFolder, remoteKey)
+	// MongoDB archive beside the SQL dump (BACKUP-4 item 2). A failed mongo
+	// dump fails the run: a backup that silently skips a datastore is the
+	// bug this change exists to remove.
+	if r.mongoURI != "" {
+		mongoFile := filepath.Join(r.localPath, baseName+".mongo.gz")
+		if err := r.mongoDumpExec(ctx, r.mongoURI, r.mongoDB, mongoFile); err != nil {
+			return "", err
 		}
-		if err := r.uploader.UploadBackup(ctx, gzFile, remoteKey); err != nil {
-			return "", fmt.Errorf("upload failed: %w", err)
+	}
+
+	if r.uploader != nil {
+		uploads := []string{gzFile}
+		if r.mongoURI != "" {
+			uploads = append(uploads, filepath.Join(r.localPath, baseName+".mongo.gz"))
+		}
+		for _, local := range uploads {
+			remoteKey := filepath.Base(local)
+			if r.remoteFolder != "" {
+				remoteKey = path.Join(r.remoteFolder, remoteKey)
+			}
+			if err := r.uploader.UploadBackup(ctx, local, remoteKey); err != nil {
+				return "", fmt.Errorf("upload failed: %w", err)
+			}
 		}
 	}
 
@@ -150,7 +188,8 @@ func (r *Runner) cleanupOldBackups() error {
 	}
 	cutoff := r.clock().Add(-time.Duration(r.retention) * 24 * time.Hour)
 	for _, e := range entries {
-		if e.IsDir() || !strings.HasPrefix(e.Name(), "backup-personal-auto-") || !strings.HasSuffix(e.Name(), ".sql.gz") {
+		if e.IsDir() || !strings.HasPrefix(e.Name(), "backup-personal-auto-") ||
+			(!strings.HasSuffix(e.Name(), ".sql.gz") && !strings.HasSuffix(e.Name(), ".mongo.gz")) {
 			continue
 		}
 		info, err := e.Info()

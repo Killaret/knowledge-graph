@@ -29,6 +29,8 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=5 --start-period=10s \
 CMD ["./server"]
 
 FROM base AS worker
+# mongodb-tools: the event-driven backup also archives MongoDB (BACKUP-4).
+RUN apk --no-cache add mongodb-tools
 COPY --from=builder /app/worker .
 COPY --from=builder /app/knowledge-graph.config.json ./knowledge-graph.config.json
 CMD ["./worker"]

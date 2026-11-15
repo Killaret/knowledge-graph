@@ -373,6 +373,7 @@ func buildBackupRunner(cfg *config.Config, uploader backup.Uploader) *backup.Run
 		cfg.BackupRetentionDays,
 		backup.WithUploader(uploader),
 		backup.WithRemoteFolder(cfg.BackupYandexFolder),
+		backup.WithMongo(cfg.MongoDBURL, cfg.MongoDBDatabase),
 	)
 }
 

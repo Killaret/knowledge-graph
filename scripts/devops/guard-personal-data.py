@@ -12,10 +12,12 @@ affected.
 
 from __future__ import annotations
 
+import gzip
 import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -23,7 +25,19 @@ from pathlib import Path
 
 PERSONAL_VOLUMES = ("pgdata_personal", "redisdata_personal", "mongodbdata_personal")
 
-BACKUP_GLOBS = ("backup-personal-*", "personal-volumes-raw-*")
+# A usable backup exists per datastore: Postgres AND MongoDB. A single fresh
+# file must not cover the other store (BACKUP-4 item 2). Raw volume archives
+# are named per volume, so they count only for the datastore they hold.
+PG_PATTERNS = ("backup-personal-*", "personal-volumes-raw-*pgdata*")
+MONGO_PATTERNS = ("backup-personal-*.mongo.gz", "personal-volumes-raw-*mongodbdata*")
+MONGO_DUMP_SUFFIX = ".mongo.gz"
+
+# Content proof, not just non-zero size (BACKUP-4 item 1): a 913-byte pg
+# envelope with zero tables used to pass the freshness check.
+GZIP_MAGIC = b"\x1f\x8b"
+NOTES_SQL = re.compile(rb"\bnotes\b")
+DUMP_TABLE_RE = re.compile(rb"\bTABLE\s+\S+\s+notes\b")
+MONGO_NS = b"knowledge_personal."
 
 # Commands that sweep every unused volume, personal ones included.
 PRUNE_PATTERNS = (
@@ -192,13 +206,84 @@ def targets_personal_data(command: str, depth: int = 0) -> bool:
     return False
 
 
-def newest_backup(backup_dir: Path) -> tuple[Path | None, float, int]:
+def _is_gzip(path: Path) -> bool:
+    try:
+        with path.open("rb") as fh:
+            return fh.read(2) == GZIP_MAGIC
+    except OSError:
+        return False
+
+
+def _sql_dump_has_notes(path: Path) -> bool:
+    """Plain pg_dump output (gzipped or not) counts only when it carries a
+    COPY or INSERT for the notes table — an envelope alone is not a backup."""
+    try:
+        opener = gzip.open if _is_gzip(path) else open
+        with opener(path, "rb") as fh:  # type: ignore[arg-type]
+            for line in fh:
+                if (line.startswith(b"COPY ") or line.startswith(b"INSERT INTO ")) and NOTES_SQL.search(line):
+                    return True
+    except (OSError, EOFError, gzip.BadGzipFile):
+        return False
+    return False
+
+
+def _custom_dump_has_tables(path: Path) -> bool:
+    """pg custom-format dumps are listed by pg_restore. No pg_restore (or a
+    failed listing) means the file cannot be verified — refuse, not guess."""
+    pg_restore = shutil.which("pg_restore")
+    if pg_restore is None:
+        return False
+    try:
+        out = subprocess.run([pg_restore, "--list", str(path)], capture_output=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return out.returncode == 0 and DUMP_TABLE_RE.search(out.stdout) is not None
+
+
+def _mongo_dump_has_namespace(path: Path) -> bool:
+    """A mongodump archive must mention the personal DB namespace, either in
+    plaintext archive headers or inside a whole-file gzip stream."""
+    try:
+        if MONGO_NS in path.read_bytes():
+            return True
+        if _is_gzip(path):
+            with gzip.open(path, "rb") as fh:
+                return MONGO_NS in fh.read(8 * 1024 * 1024)
+    except (OSError, EOFError, gzip.BadGzipFile):
+        return False
+    return False
+
+
+def backup_has_data(candidate: Path) -> bool:
+    """A backup counts only if it provably holds data, not just bytes."""
+    if not candidate.is_file() or candidate.stat().st_size == 0:
+        return False
+    name = candidate.name
+    if name.endswith((".sql", ".sql.gz")):
+        return _sql_dump_has_notes(candidate)
+    if name.endswith(".dump"):
+        return _custom_dump_has_tables(candidate)
+    if name.endswith(MONGO_DUMP_SUFFIX):
+        return _mongo_dump_has_namespace(candidate)
+    # Raw per-volume archives are emergency copies; non-empty is all they
+    # can prove without being mounted.
+    if name.startswith("personal-volumes-raw-"):
+        return True
+    return False
+
+
+def newest_usable_backup(backup_dir: Path, kind: str) -> tuple[Path | None, float, int]:
+    """Newest file that passes backup_has_data for kind 'pg' or 'mongo'."""
+    patterns = MONGO_PATTERNS if kind == "mongo" else PG_PATTERNS
     newest: Path | None = None
     newest_mtime = 0.0
     if backup_dir.is_dir():
-        for pattern in BACKUP_GLOBS:
+        for pattern in patterns:
             for candidate in backup_dir.glob(pattern):
-                if not candidate.is_file() or candidate.stat().st_size == 0:
+                if kind == "pg" and candidate.name.endswith(MONGO_DUMP_SUFFIX):
+                    continue
+                if not backup_has_data(candidate):
                     continue
                 mtime = candidate.stat().st_mtime
                 if mtime > newest_mtime:
@@ -238,29 +323,42 @@ def main() -> None:
              f"определить каталог бэкапа: {exc}. Проверьте "
              "scripts/devops/backup-policy.env.")
 
-    backup, mtime, size = newest_backup(backup_dir)
+    missing = []
+    stale = []
+    seen = []
+    for kind, label in (("pg", "Postgres"), ("mongo", "MongoDB")):
+        backup, mtime, size = newest_usable_backup(backup_dir, kind)
+        if backup is None:
+            missing.append(label)
+            continue
+        age_hours = (time.time() - mtime) / 3600
+        if age_hours > MAX_AGE_HOURS:
+            stale.append(f"{backup.name} ({age_hours:.1f} ч)")
+            continue
+        seen.append(f"{backup.name} ({size / 1024:.0f} КБ, {age_hours:.1f} ч)")
 
-    if backup is None:
+    if missing:
         deny(
-            "Команда может уничтожить данные Personal-стека, а непустого бэкапа "
-            f"в {backup_dir} нет. Сначала выполните "
-            "scripts/devops/backup-personal.ps1 и убедитесь, что файл создан."
+            "Команда может уничтожить данные Personal-стека, а пригодного "
+            f"бэкапа нет: {', '.join(missing)} — в {backup_dir} нужен дамп "
+            "с реальным содержимым (таблица notes / пространство имён "
+            "knowledge_personal) или сырой архив тома. Выполните "
+            "scripts/devops/backup-personal.ps1 и убедитесь, что файлы созданы."
         )
 
-    age_hours = (time.time() - mtime) / 3600
-    if age_hours > MAX_AGE_HOURS:
+    if stale:
         deny(
-            f"Последний бэкап Personal-стека — {backup.name}, ему "
-            f"{age_hours:.1f} ч при допустимых {MAX_AGE_HOURS:.0f}. "
-            "Сделайте свежий бэкап через scripts/devops/backup-personal.ps1, "
-            "либо поднимите порог переменной KG_BACKUP_MAX_AGE_HOURS."
+            f"Последний бэкап устарел: {', '.join(stale)} при допустимых "
+            f"{MAX_AGE_HOURS:.0f} ч. Сделайте свежий бэкап через "
+            "scripts/devops/backup-personal.ps1, либо поднимите порог "
+            "переменной KG_BACKUP_MAX_AGE_HOURS."
         )
 
     json.dump(
         {
             "systemMessage": (
-                f"Деструктивная команда разрешена: бэкап {backup.name} "
-                f"({size / 1024:.0f} КБ, возраст {age_hours:.1f} ч) на месте."
+                f"Деструктивная команда разрешена: бэкапы на месте — "
+                f"{'; '.join(seen)}."
             )
         },
         sys.stdout,

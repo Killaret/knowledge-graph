@@ -287,7 +287,7 @@ services:
       PERSONAL_POSTGRES_DB: ${PERSONAL_POSTGRES_DB:-knowledge_personal}
     command: >
       sh -c "
-        apk add --no-cache curl gzip &&
+        apk add --no-cache curl gzip mongodb-tools &&
         mkdir -p /var/spool/cron/crontabs /backups &&
         {
           echo 'SHELL=/bin/sh';
@@ -303,6 +303,9 @@ services:
           echo 'PERSONAL_POSTGRES_USER=${PERSONAL_POSTGRES_USER:-personal}';
           echo 'PERSONAL_POSTGRES_PASSWORD=${PERSONAL_POSTGRES_PASSWORD:-personal_password}';
           echo 'PERSONAL_POSTGRES_DB=${PERSONAL_POSTGRES_DB:-knowledge_personal}';
+          echo 'PERSONAL_MONGO_HOST=mongo_personal';
+          echo 'PERSONAL_MONGO_PORT=27017';
+          echo 'PERSONAL_MONGO_DATABASE=${PERSONAL_MONGO_DATABASE:-knowledge_personal}';
           echo '0 2 * * * /scripts/devops/backup-personal.sh daily';
           echo '0 23 * * 0 /scripts/devops/backup-personal.sh weekly';
         } > /var/spool/cron/crontabs/root &&

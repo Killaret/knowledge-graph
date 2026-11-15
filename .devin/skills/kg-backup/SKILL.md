@@ -46,7 +46,7 @@ Linux и Mac: `scripts/devops/backup-personal.sh`.
 - `down -v` и `down --volumes` для personal-стека;
 - `rm -r` по путям, где встречается `personal`.
 
-Свежесть по умолчанию — **24 часа**, порог меняется переменной `KG_BACKUP_MAX_AGE_HOURS`. Годными считаются файлы по маскам `backup-personal-*` и `personal-volumes-raw-*`, непустые.
+Свежесть по умолчанию — **24 часа**, порог меняется переменной `KG_BACKUP_MAX_AGE_HOURS`. Годным считается не просто непустой файл, а файл **с доказуемым содержимым** (BACKUP-4): `.sql[.gz]` — `COPY`/`INSERT` таблицы `notes`, `.dump` — таблицы по `pg_restore --list` (нет `pg_restore` — не считается), `.mongo.gz` — пространство `knowledge_personal.`, `personal-volumes-raw-*pgdata*`/`…mongodbdata*` — по имени тома. Нужны свежие файлы **для обоих** хранилищ — Postgres и MongoDB; один свежий дамп второе хранилище не покрывает. Каждый производитель пишет пару: `backup-personal-<mode>-<ts>.sql.gz` и `….mongo.gz` (mongodump). Personal-стек стартует только из каталога `knowledge-graph` — `start-personal.{ps1,sh}` отказывают при другом имени проекта Compose (инцидент 2026-09-30: стек из чужого каталога работал на пустых томах).
 
 Изолированный тест-стек под ограничение не попадает: `docker compose -f docker-compose.test.yml down -v` проходит свободно. Обёртки не спасают — `bash -c "docker volume prune"` разворачивается и проверяется.
 

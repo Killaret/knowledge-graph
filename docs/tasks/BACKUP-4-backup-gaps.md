@@ -41,3 +41,15 @@ MongoDB не упоминается. При этом в ней живут `nlp_a
 После 2026-10-01 в `Desktop\my items` нет новых бэкапов. Это не дыра. Бэкап пишет воркер при изменении
 заметки, а по `README.txt` переноса данные после 2026-09-21 не менялись. Personal-стек с тех пор не
 поднимался (`restart: no`, `d92ba43`).
+
+## Исполнение Devin (2026-11-15)
+
+**П. 1 — бэкап только с данными.** `backup_has_data()` в `guard-personal-data.py` и зеркала в `check-personal-backup.{ps1,sh}`: `.sql[.gz]` — строка `COPY`/`INSERT` таблицы `notes`; `.dump` — `pg_restore --list` с `TABLE ... notes`, отсутствие `pg_restore` → файл непроверяем → не бэкап; `.mongo.gz` — пространство `knowledge_personal.` в сырых байтах или gzip-потоке; `personal-volumes-raw-*` — непустой, по имени тома (`pgdata`/`mongodbdata`). Фикстура — копия 913-байтного файла: `scripts/devops/testdata/backup-personal-empty-envelope.dump`, отвергается.
+
+**П. 2 — MongoDB.** `mongodump --archive --gzip` → `backup-personal-<mode>-<ts>.mongo.gz` рядом с SQL у всех производителей: Go Runner (`WithMongo`, `mongodb-tools` в образе worker), `backup-personal.{ps1,sh}` (локальный mongodump или `docker exec kg-mongo-personal`), cron `backup_scheduler` (`mongodb-tools` + `PERSONAL_MONGO_*` в env). Свежесть — по обоим хранилищам: нет свежего mongo-файла → отказ, даже при свежем pg. Облако и ретенция — на оба файла.
+
+**П. 3 — отказ старта.** `start-personal.{ps1,sh}` вычисляют имя проекта Compose (`COMPOSE_PROJECT_NAME`, иначе имя каталога) и отказывают, если ≠ `knowledge-graph`, с объяснением про префикс томов.
+
+**Проверки:** python-сьют сторожа 50/50 (фикстура-конверт, `notes_archive`, mongo без пространства, pg-only → deny); `go test ./internal/infrastructure/backup` — 5 новых кейсов mongo; ручной прогон `.sh`/`.ps1` на фикстурах — свежая пара pass, конверт и «только pg» → отказ; `start-personal.*` из `knowledge-graph-ai-agents` → отказ до docker. Мутация `backup_has_data → True` — 4 красных включая конверт. Реальный каталог `Desktop\my items`: .ps1 отверг .dump и нашёл устаревший сырой архив → отказ.
+
+**Не трогал:** п. 4 (восстановление из сырых архивов в `docs/operations/BACKUP.md`) — за Claude Code.

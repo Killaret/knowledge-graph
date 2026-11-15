@@ -331,7 +331,7 @@ npm run clean:test-artifacts:dry   # предпросмотр без удале�
 - `-RemoveVolumes` — удаляет только анонимные (64-hex) dangling-тома; именованные, `*personal*` и помеченные `protected` сохраняются всегда;
 - `-WslOptimize` — сжатие `docker_data.vhdx` через diskpart. **Требует запуск от администратора** — без повышения шаг помечается `[SKIP]` с причиной; процессы WSL/Docker при этом не убиваются: скрипт ждёт освобождения файла и отказывается с сообщением, если он остался заблокированным.
 
-**Защита томов.** Шаги, способные тронуть тома (`-RemoveVolumes`, `-Full`), отказываются без свежего непустого бэкапа Personal-стека (`backups/backup-personal-*`, порог — `scripts/devops/backup-policy.env`). Политика та же, что у хука `guard-personal-data.py`.
+**Защита томов.** Шаги, способные тронуть тома (`-RemoveVolumes`, `-Full`), отказываются без свежего бэкапа Personal-стека с реальным содержимым — дамп Postgres с таблицей `notes` и дамп MongoDB с пространством `knowledge_personal.` (`backups/backup-personal-*`, порог — `scripts/devops/backup-policy.env`). Политика та же, что у хука `guard-personal-data.py`.
 
 **Порядок и периодичность:**
 
