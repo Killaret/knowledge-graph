@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-11-14 — 6569299
-Прочитано: Devin — 2026-11-14 — 5907fca
+Прочитано: Devin — 2026-11-14 — c3042fe
 ```
 
 ---
@@ -93,7 +93,7 @@
 | **DEPLOY-2:** публиковать проверенные образы из CI | [`tasks/DEPLOY-2-review-findings.md`](tasks/DEPLOY-2-review-findings.md) | **бэклог** — заблокировано: токен Docker Hub, владелец сделает, когда будет время (решение 45) | 2026-09-21 |
 | **VERIFY-SPEC-1:** пилот доказательного тестирования на одной задаче Devin | [`tasks/VERIFY-SPEC-1-evidence-testing-pilot.md`](tasks/VERIFY-SPEC-1-evidence-testing-pilot.md) | **бэклог** — вводится (решение 108); ждёт выбора первой задачи владельцем | 2026-11-14 |
 
-| **BACKUP-4:** пустой дамп проходит проверку свежести, MongoDB без бэкапа, стек из чужого каталога | [`tasks/BACKUP-4-backup-gaps.md`](tasks/BACKUP-4-backup-gaps.md) | **бэклог** — Devin: пп. 1–3; Claude Code: п. 4, восстановление из архивов томов | 2026-11-14 |
+| **BACKUP-4:** пустой дамп проходит проверку свежести, MongoDB без бэкапа, стек из чужого каталога | [`tasks/BACKUP-4-backup-gaps.md`](tasks/BACKUP-4-backup-gaps.md) | **в работе** — Devin: пп. 1–3; Claude Code: п. 4, восстановление из архивов томов | 2026-11-14 |
 | **GRAPH-LIGHT-1-TAIL:** спецэлементы графа в одном лёгком стиле (решение 104) | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **бэклог** — ждёт Claude Code: живой макет владельцу, затем постановка Devin | 2026-11-14 |
 
 ---
