@@ -644,7 +644,7 @@ h2{font:500 12px/1.3 var(--display);letter-spacing:.05em;margin:0}
   function noteTip(n) {
     let what = TYPE_RU[n.type];
     if (n.type === "unknown") what += " · " + (pick.anom === "A" ? "вид «" + VARIETY_RU[n.variety] + "»" : "все неизвестные одинаковы");
-    if (n.type === "technical") what += " · не удаляется и не связывается";
+    if (n.type === "technical") what += " · не перетаскивается";
     if (n.type === "blackhole") what += " · это заметка, а не зона удаления";
     return "<b>" + esc(n.title) + "</b><span>" + esc(what) + "</span>";
   }
@@ -653,6 +653,7 @@ h2{font:500 12px/1.3 var(--display);letter-spacing:.05em;margin:0}
     const tool = hitTool(mx, my, p);
     if (tool && tool.kind === "ghost") { st.press = { tool, mx, my }; return; }
     const n = hitNode(mx, my, p);
+    if (n && n.type === "technical") { st.selected = st.selected === n ? null : n; return; }
     if (n) { const [wx, wy] = toWorld(mx, my, p); st.drag = { n, p, ox: n.x - wx, oy: n.y - wy, mx, my, moved: false, over: false }; tip.hidden = true; return; }
     st.pan = { mx, my, cx: cam.x, cy: cam.y, p, moved: false }; cv.style.cursor = "grabbing";
   });
@@ -664,7 +665,7 @@ h2{font:500 12px/1.3 var(--display);letter-spacing:.05em;margin:0}
         const [wx, wy] = toWorld(mx, my, d.p); d.n.x = wx + d.ox; d.n.y = wy + d.oy;
         const [zx, zy] = zonePos(d.p); d.over = d.n.type !== "technical" && near(mx, my, zx, zy, ZONE_R * 1.5);
         d.lx = mx; d.ly = my;
-        if (d.n.type === "technical" && near(mx, my, zx, zy, ZONE_R * 1.5)) showTip(mx, my, "<b>Ядро знаний не удаляется</b><span>служебная заметка приложения</span>"); else tip.hidden = true;
+        tip.hidden = true;
       }
       return;
     }

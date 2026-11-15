@@ -40,7 +40,6 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **GRAPH-LIGHT-1-TAIL:** спецэлементы графа в одном лёгком стиле (решение 104) | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **решает владелец** — живой макет `docs/product/mockups/graph-special.html`: ядро знаний, неизвестный тип, зона удаления, «+» — по два варианта; после выбора Claude Code пишет постановку Devin | 2026-11-15 |
 | **RULES-IMPORT-1:** что взять из переданного набора скиллов — доска из `origin/ai-agents`, сторож давности строк, `в работе` в бэклоге мимо лимита (14 строк), мнение до работы | [`tasks/RULES-IMPORT-1-external-skill-set.md`](tasks/RULES-IMPORT-1-external-skill-set.md) | **решает владелец** — вехи 1–3 и 5 сделаны; веха 4 поставлена Devin — KG-BOARD-1 (решение 112: сроки из набора; N=3 и «предупреждение» — умолчания постановки); открыт п. 6 | 2026-11-15 |
 
 ---
@@ -51,6 +50,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
+| **GRAPH-LIGHT-1-TAIL:** спецэлементы графа в светлом стиле (решения 104, 113) | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **бэклог** — постановка готова (варианты А макета), ждёт Devin после очереди «На Devin»; ревью — Claude Code | 2026-11-15 |
 | **LINK-TYPES-1-TAIL:** миграция 037: фикстуры A′ и D′ (правила выбора выжившей), вес как в `SaveUserLink`, умолчание в пакетном импорте, E′ | [`tasks/LINK-TYPES-1-review-findings.md`](tasks/LINK-TYPES-1-review-findings.md) | **бэклог** — готово у Devin 01.10, ревью №7: 4 пункта и UNIQUE-кейс, мутации красные | 2026-11-14 |
 | **FREEZE-3D-1:** 3D заморожен до готовности 2D: переключатель 3D выключен настройкой, код и тесты остаются | [`tasks/FREEZE-3D-1-hide-3d-view.md`](tasks/FREEZE-3D-1-hide-3d-view.md) | **бэклог** — готово у Devin 01.10, ревью №8: `3d.enabled=false`, `/graph/3d` → 2D | 2026-11-14 |
 | **I18N-1:** три ключа есть только в ru — `field.password`, `graphOverlay.fogWarning`, `graphOverlay.fogRecovery`: в английском интерфейсе виден сырой ключ; нужен тест «ключи en и ru совпадают» | `frontend/src/shared/utils/i18n/messages/` | **бэклог** — готово у Devin 01.10, ревью №9: en-ключи, тест паритета en/ru (решение 105) | 2026-11-14 |
