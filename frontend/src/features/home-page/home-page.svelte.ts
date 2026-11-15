@@ -580,7 +580,7 @@ export function createHomePageState() {
       await refreshAfterMutation();
     } catch {
       if (browser) {
-        alert(t("note.createChildLinkError"));
+        alert(t("linkCreator.createFailed"));
       }
     }
   }

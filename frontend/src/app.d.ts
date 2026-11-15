@@ -12,7 +12,13 @@ declare global {
   interface Window {
     __SKIP_AUTH__?: boolean;
     __graphCanvas?: {
-      getSimulationNodes: () => { id: string; title: string; type?: string }[];
+      getSimulationNodes: () => {
+        id: string;
+        title: string;
+        type?: string;
+        x?: number;
+        y?: number;
+      }[];
       transform: { x: number; y: number; k: number };
       getBlackHole?: () => { x: number; y: number; radius: number } | undefined;
       stopSimulation?: () => void;

@@ -52,10 +52,13 @@
   }
 
   onMount(() => {
-    window.addEventListener("click", handleClickOutside);
+    // mousedown, not click: the click that opens the picker bubbles to window
+    // right after mounting and would count as an outside click, closing the
+    // picker in the same tick (UX-1 review). mousedown outside still closes.
+    window.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener("click", handleClickOutside);
+      window.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("keydown", handleKeyDown);
     };
   });
