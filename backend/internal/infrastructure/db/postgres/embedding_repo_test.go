@@ -259,6 +259,72 @@ func TestEmbeddingRepository_FindSimilarNotes_SkipsDeleted(t *testing.T) {
 	}
 }
 
+// NOTE-DELETE-1-TAIL: the batch path feeds the gamma-link generator and the
+// graph embedding loader — a trashed note there becomes an auto-link proposal.
+// Mutation "drop n2.deleted_at IS NULL" turns this test red.
+func TestEmbeddingRepository_FindSimilarNotesBatch_SkipsDeleted(t *testing.T) {
+	db, cleanup := testutil.SetupTestVectorDB(t)
+	defer cleanup()
+
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&UserModel{}, &NoteModel{}, &NoteEmbeddingModel{}); err != nil {
+		t.Fatalf("failed to migrate models: %v", err)
+	}
+
+	repo := NewEmbeddingRepository(db, "all-MiniLM-L6-v2")
+	noteRepo := NewNoteRepository(db, nil)
+	ctx := context.Background()
+
+	createNote := func(title string) *note.Note {
+		titleV, _ := note.NewTitle(title)
+		content, _ := note.NewContent("content")
+		metadata, _ := note.NewMetadata(nil)
+		n := note.NewNote(titleV, content, note.MustType("star"), metadata)
+		if err := noteRepo.Save(ctx, n); err != nil {
+			t.Fatalf("Save note failed: %v", err)
+		}
+		return n
+	}
+
+	source := createNote("Source")
+	neighbour := createNote("Neighbour to be trashed")
+	vec := func() pgvector.Vector {
+		v := make([]float32, 384)
+		for i := range v {
+			v[i] = float32(i) / 100.0
+		}
+		return pgvector.NewVector(v)
+	}
+	if err := repo.Upsert(ctx, source.ID(), vec()); err != nil {
+		t.Fatalf("Upsert source failed: %v", err)
+	}
+	if err := repo.Upsert(ctx, neighbour.ID(), vec()); err != nil {
+		t.Fatalf("Upsert neighbour failed: %v", err)
+	}
+
+	batch, err := repo.FindSimilarNotesBatch(ctx, []uuid.UUID{source.ID()}, 10)
+	if err != nil {
+		t.Fatalf("FindSimilarNotesBatch failed: %v", err)
+	}
+	if len(batch[source.ID()]) != 1 || batch[source.ID()][0].NoteID != neighbour.ID() {
+		t.Fatalf("expected the live neighbour before deletion, got %v", batch[source.ID()])
+	}
+
+	if err := db.Exec("UPDATE notes SET deleted_at = NOW() WHERE id = ?", neighbour.ID()).Error; err != nil {
+		t.Fatalf("soft-delete neighbour failed: %v", err)
+	}
+
+	batch, err = repo.FindSimilarNotesBatch(ctx, []uuid.UUID{source.ID()}, 10)
+	if err != nil {
+		t.Fatalf("FindSimilarNotesBatch after delete failed: %v", err)
+	}
+	for _, s := range batch[source.ID()] {
+		if s.NoteID == neighbour.ID() {
+			t.Errorf("trashed note %v must not be returned as a similar neighbour", neighbour.ID())
+		}
+	}
+}
+
 func TestEmbeddingRepository_FindSimilarNotesBatch(t *testing.T) {
 	db, cleanup := testutil.SetupTestVectorDB(t)
 	defer cleanup()

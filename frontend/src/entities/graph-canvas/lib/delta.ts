@@ -351,8 +351,6 @@ function applyIncremental(delta: GraphDelta, options: DeltaUpdateOptions): boole
       if (simNode) {
         simNode.title = updated.title;
         simNode.type = updated.type;
-        if (updated.x !== undefined) simNode.x = updated.x;
-        if (updated.y !== undefined) simNode.y = updated.y;
         touched = true;
       }
     });

@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/svelte";
+import { render, screen, fireEvent } from "@testing-library/svelte";
 
 const mockState = {
   simulationNodes: [] as any[],
@@ -253,5 +253,47 @@ describe("GraphCanvas - Interactions", () => {
     }
 
     expect(onLinkCreate).toBeDefined();
+  });
+
+  it("keeps the link-target picker open after 'Link to…' (UX-1 blocker)", async () => {
+    const onLinkCreate = vi.fn();
+    const { container } = render(GraphCanvas, {
+      props: { nodes: mockNodes, links: mockLinks, onLinkCreate },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const node = window.__graphCanvas!.getSimulationNodes()[0];
+    const tr = window.__graphCanvas!.transform;
+    const canvas = container.querySelector("canvas")!;
+
+    // Real right-click at the node's screen position opens the context menu.
+    canvas.dispatchEvent(
+      new MouseEvent("contextmenu", {
+        bubbles: true,
+        clientX: node.x! * tr.k + tr.x,
+        clientY: node.y! * tr.k + tr.y,
+      })
+    );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // The click that opens the picker bubbles to window — the picker's own
+    // outside-click listener must not treat it as a close gesture.
+    await fireEvent.click(screen.getByTestId("context-menu-link-to"));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(screen.getByTestId("link-target-picker")).toBeInTheDocument();
+
+    // A bare click outside is not a close gesture either: on a real browser
+    // the opening click reaches window after the picker DOM is already
+    // mounted, so a `click` listener would close it instantly (UX-1 review).
+    await fireEvent.click(document.body);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByTestId("link-target-picker")).toBeInTheDocument();
+
+    // A real outside press still closes it.
+    await fireEvent.mouseDown(document.body);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByTestId("link-target-picker")).not.toBeInTheDocument();
   });
 });

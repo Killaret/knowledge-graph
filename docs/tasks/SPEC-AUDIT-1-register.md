@@ -309,6 +309,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | ENV-1-review-findings.md | не начат |
 | GITHUB-SECURITY-1-triage.md | не начат |
 | GORM-COMBINED-1-gorm-combined-update.md | не начат |
+| GO-TOOLCHAIN-1-go-1.26.md | не начат |
 | LOG-1-zerolog-integration.md | не начат |
 | MONGO-1-drafts-storage-discussion.md | не начат |
 | PUB-1-anonymous-read-and-search.md | не начат |
@@ -355,10 +356,16 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | DOC-REORG-1-implementation-notes.md | не начат |
 | DOC-REORG-1-review-findings.md | не начат |
 | DOCS-LINKS-1-review-findings.md | не начат |
+| COMET-1-review-findings.md | не начат |
 | FACE-1-project-face-from-interview.md | не начат |
+| I18N-1-review-findings.md | не начат |
+| P11-3-review-findings.md | не начат |
+| PROMISES-1-review-findings.md | не начат |
+| FREEZE-3D-1-review-findings.md | не начат |
 | GORDON-1-gordon-documents-review.md | не начат |
 | GORDON-2-deployment-package-analysis.md | не начат |
 | HOUSEKEEPING-1-review-findings.md | не начат |
+| KG-BOARD-1-board-summary-and-staleness.md | не начат |
 | KG-WORK-REVIEW-1-review-findings.md | не начат |
 | LICENSE-1-repository-license.md | не начат |
 | PROJECT-SKILLS-1-review-findings.md | не начат |
@@ -366,8 +373,10 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | RELEASE-1-scope-1.0.md | не начат |
 | RULES-IMPORT-1-external-skill-set.md | не начат |
 | RELEASE-TEST-1-manual-run-1.0.md | не начат |
+| SKILLS-AUDIT-1-skills-and-commands.md | не начат |
 | SPEC-AUDIT-1-specs-vs-code.md | не начат (сама постановка) |
 | VERIFY-SPEC-1-evidence-testing-pilot.md | не начат |
+| VERIFY-ANCHORS-1-requirements-anchors.md | не начат |
 | SPEC-AUDIT-1-review-findings.md | не начат (разбор этой задачи) |
 | SPECS-1-review-findings.md | не начат |
 | TASKS-INDEX-1-review-findings.md | не начат |

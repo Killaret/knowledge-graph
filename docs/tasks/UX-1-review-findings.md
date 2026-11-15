@@ -57,3 +57,50 @@
   молчит, но это было и до UX-1.
 
 `check-all.ps1` не прогонялся: правило требует его перед `принято`, а вердикт — `отклонено`.
+
+## Доработка после ревью №3 — Devin, 2026-11-15
+
+Блокер: `LinkTargetPicker` слушал `click` на `window` — клик по «Связать с…» открывал окно и в том же
+всплытии закрывал его. Фикс: слушатель переведён на `mousedown` — нажатие на пункте меню происходит до
+`click` и до открытия окна, а настоящее нажатие снаружи по-прежнему закрывает. Решение локально в
+пикере — защищает любой будущий способ открытия, не только этот пункт меню. Форма связи и `NoteCard`
+`window`-клик не слушают — соседних мест нет.
+
+Тест связки (`GraphCanvas.interactions.spec.ts`): реальный `contextmenu` по узлу → клик
+`context-menu-link-to` → `link-target-picker` виден; `click` по `document.body` НЕ закрывает (клик —
+не жест закрытия), `mousedown` по `document.body` — закрывает. Мутация «вернуть `click`» — красная.
+
+Мелочь: `handleLinkCreate` показывал `note.createChildLinkError` («не удалось связать с родителем») —
+ключ заменён на `linkCreator.createFailed`. Отдельный `handleNoteCreated` с настоящим родителем не тронут.
+
+Живой прогон `ux1-probe.cjs` (`SKIP_AUTH=false`, тест-стек с правками): на `/` и `/graph` окно
+остаётся открытым через 500 мс после «Связать с…», список и поиск работают, форма связи открывается,
+связь создаётся (API: по одной связи у Alpha и Charlie); удаление — 0 пустых/перекрытых замеров из
+180 и 191, `404` после удаления — наблюдение 3 держится.
+
+Прогоны: `GraphCanvas.interactions.spec.ts` 6/6, `LinkTargetPicker.spec.ts` 6/6,
+`GraphNodeContextMenu.spec.ts` зелёные, svelte-check 0/0. Известное несвязанное:
+`home-page.svelte.test.ts` «switches views…» ждёт `3d` при замороженном FREEZE-3D-1.
+`check-all.ps1` — за ревьюером по правилу `принято`.
+
+## Ревью доработки — Claude Code, 2026-11-15 (ревью №4)
+
+Доработка: Devin, `61e1f52`. **Вердикт: принято.** Блокер ревью №3 закрыт: окно выбора больше не закрывается
+открывшим его кликом. Наблюдения 1 и 2 владельца закрыты, наблюдение 3 держится.
+
+| Что | Как | Результат |
+|---|---|---|
+| мутация «вернуть `click` вместо `mousedown`» в `LinkTargetPicker.svelte` | `vitest` `GraphCanvas.interactions.spec.ts` и `components/molecules` | красная: «keeps the link-target picker open after 'Link to…' (UX-1 blocker)» |
+| наблюдения 1–2 живьём | [`UX-1-review-3-probe/ux1-probe.cjs`](UX-1-review-3-probe/ux1-probe.cjs) без обхода, тест-стек `SKIP_AUTH=false`, `93cd426` | `/` и `/graph`: окно видно через 500 мс после «Link to», 4 варианта без источника, поиск оставляет один, форма связи открывается, связь создаётся — у Alpha и Charlie по одной |
+| наблюдение 3 живьём | тот же зонд | удаление: 196 и 171 замеров холста, пустых или перекрытых — 0; на `/graph` плашка `refresh-chip`; удалённая — 404 |
+| мелочь ревью №3 | дифф `home-page.svelte.ts` | при ошибке «Связать с…» — `linkCreator.createFailed`, а не текст про родителя |
+
+Клавиатурный путь (Enter на пункте меню) `mousedown` не порождает: окно открыто, закрывается нажатием снаружи.
+Отдельный тест Devin: `click` по `document.body` окно не закрывает, `mousedown` — закрывает.
+
+Свидетельство — `docs/agents/MANUAL_TEST_FEEDBACK.md`, «UX-1 и SYNC-1 B/C — ревью, живая проверка», снимки
+`docs/agents/screenshots/ux-1-review-4/`.
+
+`check-all.ps1` без `-Quick` на `93cd426` (включает `61e1f52`): 35 PASS, 1 FAIL вне задачи — `home-page.svelte.test.ts`
+«switches views» (FREEZE-3D-1, ревью №8, отклонено), 1 SKIP (`golangci-lint` не установлен). NLP на этом прогоне
+зелёный.

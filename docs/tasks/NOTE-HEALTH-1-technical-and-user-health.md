@@ -90,3 +90,29 @@
 `tests/note-health-1.spec.ts`, результат в `docs/agents/screenshots/note-health-1/`.
 
 Этапы 1–2 не тронуты — после этапа 2 NOTE-QUALITY-1.
+
+## Ревью этапа 0 — Claude Code, 2026-11-15 (ревью №12)
+
+Работа: Devin, `eeb01e3`. **Вердикт: этап 0 принят, одна мелочь.** Этапы 1–2 остаются в бэклоге после этапа 2
+NOTE-QUALITY-1.
+
+| Мутация — на `e9d6b2a` | Результат |
+|---|---|
+| `CockpitHUD`: блок `hud-health` всегда (`{#if true}`) | красная: «hides the health block when no health prop is given» |
+| `CockpitNoteDetails`: строка при любом вердикте (`showQualityRow` снят) | красная: «hides the row for a clean verdict» |
+| `CockpitBottomPanel` снова передаёт `health={42}` | **зелёная** в юнит-тестах — мелочь ниже |
+
+Критерии:
+
+1. При «в порядке» строки нет — проверено мутацией. При проблеме — «Processing/Обработка» с причиной, «link only»
+   и «truncated» — проверено тестами компонента.
+2. Нижняя панель без «HEALTH» — проверено снимком `docs/agents/screenshots/note-health-1/bottom-panel.png`: CLUSTER,
+   NOTES, LINKS, FPS, SYNC, без HEALTH.
+3. Снимок — запись в `MANUAL_TEST_FEEDBACK.md` есть.
+
+Мелочь: что нижняя панель не передаёт значение в HUD, держит только живой спек `tests/note-health-1.spec.ts`, а юнит —
+нет. Спек к тому же при каждом прогоне перезаписывает снимки в `docs/agents/screenshots/`. Чинить сейчас не нужно:
+этап 2 вернёт проп с настоящей метрикой, и проверка изменится.
+
+`check-all.ps1` без `-Quick` на `a2285dd` (включает `eeb01e3`): 34 PASS, 2 FAIL вне задачи — `home-page.svelte.test.ts`
+(FREEZE-3D-1) и порог скорости NLP, 1 SKIP (`golangci-lint`).

@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"knowledge-graph-graph-service/internal/cache"
+	"knowledge-graph-graph-service/internal/config"
 	"knowledge-graph-graph-service/internal/db"
 )
 
@@ -230,6 +231,58 @@ func TestEventAcknowledgment(t *testing.T) {
 		assert.True(t, updatedTracking.IsAcknowledged)
 		assert.False(t, updatedTracking.TimestampProcessed.IsZero())
 	}
+}
+
+// SYNC-1 rework: under SKIP_AUTH the test stack caches layouts under the
+// literal "skip-auth" key while events carry the seeded user's id — user-keyed
+// invalidation alone leaves the deleted note on the canvas until TTL.
+// Mutation "skip the skipAuth branch" turns the first half red; "always
+// invalidate" turns the second.
+func TestSkipAuthCacheInvalidation(t *testing.T) {
+	mr := miniredis.RunT(t)
+	redisClient := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer redisClient.Close()
+	defer mr.Close()
+
+	postgres := &mockPostgresClient{}
+	cacheClient := cache.NewRedisCache(redisClient)
+
+	ctx := context.Background()
+
+	seed := func() (string, string) {
+		fullKey := config.CacheKey("full", "skip-auth")
+		deltaKey := config.CacheKey("delta", "skip-auth", "snap")
+		require.NoError(t, redisClient.Set(ctx, fullKey, "{}", time.Minute).Err())
+		require.NoError(t, redisClient.Set(ctx, deltaKey, "{}", time.Minute).Err())
+		return fullKey, deltaKey
+	}
+	exists := func(key string) int64 {
+		n, _ := redisClient.Exists(ctx, key).Result()
+		return n
+	}
+	deletedPayload, err := json.Marshal(NoteEventPayload{
+		NoteID: "note-1",
+		UserID: "00000000-0000-0000-0000-000000000000",
+	})
+	require.NoError(t, err)
+	event := Event{EventID: "evt-skip", Event: "NoteDeleted", Payload: deletedPayload}
+
+	t.Run("skip-auth keys are dropped in test mode", func(t *testing.T) {
+		fullKey, deltaKey := seed()
+		subscriber := NewRedisSubscriber(redisClient, postgres, cacheClient, "test-channel", 100)
+		subscriber.skipAuth = true
+		require.NoError(t, subscriber.processEvent(ctx, event))
+		assert.Equal(t, int64(0), exists(fullKey), "skip-auth full cache must be invalidated")
+		assert.Equal(t, int64(0), exists(deltaKey), "skip-auth delta cache must be invalidated")
+	})
+
+	t.Run("skip-auth keys stay when the flag is off", func(t *testing.T) {
+		fullKey, deltaKey := seed()
+		subscriber := NewRedisSubscriber(redisClient, postgres, cacheClient, "test-channel", 100)
+		require.NoError(t, subscriber.processEvent(ctx, event))
+		assert.Equal(t, int64(1), exists(fullKey), "production mode must not touch the test key")
+		assert.Equal(t, int64(1), exists(deltaKey))
+	})
 }
 
 func TestCacheInvalidation(t *testing.T) {

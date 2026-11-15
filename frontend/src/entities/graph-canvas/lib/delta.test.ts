@@ -202,7 +202,7 @@ describe("delta", () => {
     ]);
   });
 
-  it("updates existing simulation nodes during an incremental update", () => {
+  it("updates fields of existing simulation nodes but keeps their position", () => {
     const state = createState();
     const fakeNode = { id: "n1", title: "One", x: 10, y: 20 } as SimulationNode;
     state.simulation = {
@@ -224,8 +224,8 @@ describe("delta", () => {
 
     expect(restarted).toBe(true);
     expect(fakeNode.title).toBe("Renamed");
-    expect(fakeNode.x).toBe(30);
-    expect(fakeNode.y).toBe(40);
+    expect(fakeNode.x).toBe(10);
+    expect(fakeNode.y).toBe(20);
   });
 
   it("does not crash when no simulation exists and only nodes are updated", () => {

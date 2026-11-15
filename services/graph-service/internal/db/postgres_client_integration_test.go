@@ -232,4 +232,41 @@ func TestPostgresClient_Integration(t *testing.T) {
 		assert.Empty(t, notes)
 		assert.Empty(t, links)
 	})
+
+	// SYNC-1 rework: system-generated (gamma) links carry creator_id NULL.
+	// They belong on the graph of whoever owns BOTH endpoint notes — and on
+	// nobody else's. Mutation "drop the creator_id IS NULL branch" turns the
+	// first assertion red; "drop the endpoint constraint" turns the last two.
+	t.Run("GetNotes_UserSeesOwnGammaLinks", func(t *testing.T) {
+		userA := "aa0e8400-e29b-41d4-a716-446655440000"
+		userB := "bb0e8400-e29b-41d4-a716-446655440000"
+		_, err := pool.Exec(ctx, `
+			INSERT INTO notes (id, title, creator_id, is_public) VALUES
+				('aa0e8400-e29b-41d4-a716-446655440001', 'A1', $1, false),
+				('aa0e8400-e29b-41d4-a716-446655440002', 'A2', $1, false),
+				('bb0e8400-e29b-41d4-a716-446655440001', 'B1', $2, false),
+				('bb0e8400-e29b-41d4-a716-446655440002', 'B2', $2, false);
+		`, userA, userB)
+		require.NoError(t, err)
+		_, err = pool.Exec(ctx, `
+			INSERT INTO links (id, source_note_id, target_note_id, link_type, weight, source_type, creator_id) VALUES
+				('cc0e8400-e29b-41d4-a716-446655440001', 'aa0e8400-e29b-41d4-a716-446655440001', 'aa0e8400-e29b-41d4-a716-446655440002', 'related', 0.9, 'gamma', NULL),
+				('cc0e8400-e29b-41d4-a716-446655440002', 'bb0e8400-e29b-41d4-a716-446655440001', 'bb0e8400-e29b-41d4-a716-446655440002', 'related', 0.9, 'gamma', NULL),
+				('cc0e8400-e29b-41d4-a716-446655440003', 'aa0e8400-e29b-41d4-a716-446655440001', 'bb0e8400-e29b-41d4-a716-446655440001', 'related', 0.9, 'gamma', NULL),
+				('cc0e8400-e29b-41d4-a716-446655440004', 'aa0e8400-e29b-41d4-a716-446655440002', 'aa0e8400-e29b-41d4-a716-446655440001', 'manual', 1.0, 'user', $1);
+		`, userA)
+		require.NoError(t, err)
+
+		notes, links, err := client.GetNotes(ctx, NotesFilter{UserID: userA})
+		require.NoError(t, err)
+		assert.Equal(t, 2, len(notes), "only A's own notes")
+		ids := make(map[string]bool, len(links))
+		for _, l := range links {
+			ids[l.ID] = true
+		}
+		assert.True(t, ids["cc0e8400-e29b-41d4-a716-446655440001"], "own gamma link must be on the graph")
+		assert.True(t, ids["cc0e8400-e29b-41d4-a716-446655440004"], "own user link stays visible")
+		assert.False(t, ids["cc0e8400-e29b-41d4-a716-446655440002"], "another user's gamma link stays hidden")
+		assert.False(t, ids["cc0e8400-e29b-41d4-a716-446655440003"], "cross-owner auto-link stays hidden")
+	})
 }

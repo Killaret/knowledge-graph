@@ -58,6 +58,10 @@ type RedisSubscriber struct {
 	// closureDebounce is the quiet window waited before refreshing, so a
 	// batch of events triggers one REFRESH instead of one per event.
 	closureDebounce time.Duration
+	// skipAuth mirrors the server's SKIP_AUTH mode: the test stack caches
+	// layouts under the literal "skip-auth" user key while events carry the
+	// seeded user's id, so that key needs its own invalidation.
+	skipAuth bool
 }
 
 func NewRedisSubscriber(redisClient *redis.Client, postgres db.PostgresClient, cache *cache.RedisCache, channel string, limit int) *RedisSubscriber {
@@ -88,6 +92,7 @@ func NewRedisSubscriberWithConfig(redisClient *redis.Client, postgres db.Postgre
 		retryThreshold:   cfg.UnprocessedEventRetryThreshold,
 		refreshRequests:  make(chan struct{}, 1),
 		closureDebounce:  2 * time.Second,
+		skipAuth:         cfg.SkipAuth,
 	}
 }
 
@@ -209,6 +214,8 @@ func (s *RedisSubscriber) handleNoteEvent(ctx context.Context, event Event) erro
 	deltaPattern := config.CacheKey("delta", userID, "*")
 	s.invalidatePattern(ctx, deltaPattern)
 
+	s.invalidateSkipAuthCache(ctx)
+
 	// Publish/unpublish affects the public graph, so invalidate public caches too.
 	publicFullLayoutKey := config.CacheKey("full", "public")
 	s.redisClient.Del(ctx, publicFullLayoutKey)
@@ -246,6 +253,8 @@ func (s *RedisSubscriber) handleLinkEvent(ctx context.Context, event Event) erro
 	deltaPattern := config.CacheKey("delta", userID, "*")
 	s.invalidatePattern(ctx, deltaPattern)
 
+	s.invalidateSkipAuthCache(ctx)
+
 	// Invalidate note-specific caches for both source and target
 	if payload.SourceNoteID != "" {
 		noteCachePattern1 := config.CacheKey("note", "*", payload.SourceNoteID, "*")
@@ -263,6 +272,17 @@ func (s *RedisSubscriber) handleLinkEvent(ctx context.Context, event Event) erro
 
 	log.Printf("[GraphService] Cache invalidated for link event %s", event.Event)
 	return nil
+}
+
+// invalidateSkipAuthCache drops the test-mode layout caches. Under SKIP_AUTH
+// every request shares the literal "skip-auth" cache user while events carry
+// the seeded user's id, so user-keyed invalidation alone never reaches them.
+func (s *RedisSubscriber) invalidateSkipAuthCache(ctx context.Context) {
+	if !s.skipAuth {
+		return
+	}
+	s.redisClient.Del(ctx, config.CacheKey("full", "skip-auth"))
+	s.invalidatePattern(ctx, config.CacheKey("delta", "skip-auth", "*"))
 }
 
 // requestClosureRefresh schedules a closure-view refresh without blocking the

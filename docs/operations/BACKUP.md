@@ -449,6 +449,116 @@ SELECT COUNT(*) FROM links;
 \q
 ```
 
+### Restoring MongoDB from a `.mongo.gz` dump
+
+Since BACKUP-4 every producer writes `backup-personal-<mode>-<ts>.mongo.gz` next to the SQL file.
+Restore it into the running `kg-mongo-personal`. The archive is first copied into the container,
+because PowerShell has no `<` redirection, and piping binary data through it is not safe:
+
+```bash
+docker cp backup-personal-daily-2026-11-15-020000.mongo.gz kg-mongo-personal:/tmp/restore.mongo.gz
+docker exec kg-mongo-personal mongorestore --archive=/tmp/restore.mongo.gz --gzip --drop --nsInclude 'knowledge_personal.*'
+docker exec kg-mongo-personal mongosh --quiet knowledge_personal --eval 'db.getCollectionNames().forEach(c => print(c, db.getCollection(c).countDocuments()))'
+```
+
+`--drop` replaces every collection that is in the dump. A collection that is not in the dump stays
+as it was.
+
+### Restoring from raw volume archives
+
+`personal-volumes-raw-<ts>-{pgdata,mongodbdata,redisdata}_personal.tar.gz` are tar copies of the three
+Personal-stack volumes. Each file is the volume root, with entries starting at `./`. They are the only
+copy that holds all three stores, Redis included. Use them to move the stack to another machine, or
+when no SQL and Mongo dump is fresh enough. If you only need Postgres, Steps 1–4 above are simpler.
+
+No script produces these archives; they are made by hand (see the end of this section). The
+2026-10-01 set was taken before the move to another laptop. Until now the procedure lived only in
+`README.txt` of the transfer folder.
+
+**Before you start — all four must hold:**
+
+1. **The clone folder is named `knowledge-graph`.** Compose takes the project name from it, and the
+   volumes are named `knowledge-graph_<volume>`. Under any other name the stack starts on empty
+   volumes. Since BACKUP-4, `start-personal.{ps1,sh}` refuses to start in that case.
+2. **The volumes do not exist yet,** that is, the Personal stack has never started on this machine.
+   Check:
+
+   ```bash
+   docker volume ls --filter name=knowledge-graph_
+   ```
+
+   If `knowledge-graph_pgdata_personal` or its siblings are listed, **stop and ask** — do not delete
+   them. They may hold data newer than the archive. `guard-personal-data.py` blocks `docker volume rm`
+   on them anyway until a fresh backup exists.
+3. **Major versions match.** The archives come from `pgvector/pgvector:pg16` (the archive's
+   `PG_VERSION` says `16`), `mongo:7` and `redis:7-alpine`, as in `docker-compose.personal.yml`. A
+   Postgres data directory does not open on another major version. In that case use the SQL dump.
+4. **The archives are in the backup folder,** `%USERPROFILE%\Desktop\my items` by default
+   (`KG_BACKUP_DIR`).
+
+**Restore.** Run this from the backup folder. Set `$ts` to the archive's timestamp. Each volume is
+created with Compose labels: without them, `docker compose up` warns that the volume "already exists
+but was not created by Docker Compose".
+
+PowerShell:
+
+```powershell
+cd "$HOME\Desktop\my items"
+$ts = '2026-10-01-085733'
+'pgdata_personal','mongodbdata_personal','redisdata_personal' | ForEach-Object {
+  docker volume create --label com.docker.compose.project=knowledge-graph --label "com.docker.compose.volume=$_" "knowledge-graph_$_"
+  docker run --rm -v "knowledge-graph_$($_):/data" -v "$($PWD.Path):/backup:ro" alpine:3.19 tar xzf "/backup/personal-volumes-raw-$ts-$($_).tar.gz" -C /data
+}
+```
+
+Bash (Git Bash on Windows needs `MSYS_NO_PATHCONV=1`, or it rewrites `/data` and `/backup`):
+
+```bash
+cd ~/Desktop/my\ items
+ts=2026-10-01-085733
+for v in pgdata_personal mongodbdata_personal redisdata_personal; do
+  docker volume create --label com.docker.compose.project=knowledge-graph --label com.docker.compose.volume=$v knowledge-graph_$v
+  docker run --rm -v knowledge-graph_$v:/data -v "$PWD:/backup:ro" alpine:3.19 tar xzf /backup/personal-volumes-raw-$ts-$v.tar.gz -C /data
+done
+```
+
+`tar` runs as root inside the container and keeps the archived owners (uid 999 for Postgres and
+Mongo). The database images need exactly that, so no `chown` follows.
+
+**Start and verify.** From the clone root, run `.\start-personal.ps1`, then:
+
+```bash
+docker exec kg-postgres-personal psql -U personal -d knowledge_personal -Atc "SELECT count(*) FROM notes" -c "SELECT count(*) FROM links"
+docker exec kg-mongo-personal mongosh --quiet --eval 'db.getMongo().getDBNames()'
+docker exec kg-redis-personal redis-cli DBSIZE
+```
+
+**Checked 2026-11-15** with the Bash form on throwaway volumes (names without `_personal`) and the
+2026-10-01 archives:
+
+- Postgres opened without recovery errors: 113 notes and 34 links, the same 113 notes as
+  `backup-personal-auto-2026-09-21-214357.sql.gz`.
+- Redis: 61 keys.
+- MongoDB holds only `admin`, `config` and `local`. When the archive was made there was no
+  `knowledge_personal` database at all, so the raw Mongo archive carries no project data.
+- A volume without labels triggered the Compose warning; a labelled one did not.
+- `mongorestore` through `docker cp` restored a test dump and dropped a stale document.
+
+The PowerShell form is the one from the transfer folder's `README.txt` and was not run on 2026-11-15.
+
+**Making a raw archive.** Stop the stack first, because a copy of a running database is not
+consistent. Then, from the backup folder:
+
+```bash
+ts=$(date +%Y-%m-%d-%H%M%S)
+for v in pgdata_personal mongodbdata_personal redisdata_personal; do
+  docker run --rm -v knowledge-graph_$v:/data:ro -v "$PWD:/backup" alpine:3.19 tar czf /backup/personal-volumes-raw-$ts-$v.tar.gz -C /data .
+done
+```
+
+The guard and `check-personal-backup.*` count such a file as a backup only for its own store
+(`pgdata` → Postgres, `mongodbdata` → MongoDB), and only when it is non-empty.
+
 ## 📊 Backup Management
 
 ### View Backup List
