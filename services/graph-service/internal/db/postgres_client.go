@@ -244,7 +244,15 @@ func linkVisibilitySQL(filter NotesFilter, paramOffset int) (string, []interface
 		return vis, nil
 	}
 	if filter.UserID != "" {
-		return fmt.Sprintf("creator_id = $%d", paramOffset+1), []interface{}{filter.UserID}
+		// User-made links are visible to their creator. System-generated
+		// (gamma) links carry creator_id NULL, so they are visible only when
+		// both endpoint notes belong to the viewer — same isolation, no leak
+		// of other users' auto-links.
+		vis := fmt.Sprintf(
+			`(creator_id = $%[1]d OR (creator_id IS NULL AND source_note_id IN (SELECT id FROM notes WHERE deleted_at IS NULL AND creator_id = $%[1]d) AND target_note_id IN (SELECT id FROM notes WHERE deleted_at IS NULL AND creator_id = $%[1]d)))`,
+			paramOffset+1,
+		)
+		return vis, []interface{}{filter.UserID}
 	}
 	return "TRUE", nil
 }

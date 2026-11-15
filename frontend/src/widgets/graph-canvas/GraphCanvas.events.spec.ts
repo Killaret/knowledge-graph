@@ -30,11 +30,19 @@ vi.mock("d3-force", () => {
     const sim: any = {
       nodes: vi.fn((n?: any[]) => {
         if (n) {
-          mockState.simulationNodes = n.map((node, i) => ({
-            ...node,
-            x: node.x ?? 400 + i * 50,
-            y: node.y ?? 300 + i * 30,
-          }));
+          // Real d3 keeps the passed node objects in place — preserve the
+          // same references for nodes the simulation already holds so tests
+          // can tell an in-place update from a rebuild.
+          const existing = new Set(mockState.simulationNodes);
+          mockState.simulationNodes = n.map((node, i) =>
+            existing.has(node)
+              ? node
+              : {
+                  ...node,
+                  x: node.x ?? 400 + i * 50,
+                  y: node.y ?? 300 + i * 30,
+                }
+          );
         }
         return mockState.simulationNodes;
       }),
@@ -630,6 +638,42 @@ describe("GraphCanvas events", () => {
     await flushMicrotasks();
 
     expect(window.__graphCanvas!.getSimulationNodes().length).toBe(5);
+  });
+
+  it("applies delta in place after the simulation settled (SYNC-1 B.1)", async () => {
+    const { rerender } = renderResult;
+    const before = window.__graphCanvas!.getSimulationNodes();
+    expect(before.length).toBe(4);
+
+    // The idle state of an open graph: fade finished, isRunning is false, but
+    // the simulation object still holds the laid-out nodes. A delta must land
+    // on these same objects — a rebuild would replace them all.
+    window.__graphCanvas!.stopSimulation!();
+
+    const delta: GraphDeltaData = {
+      added_nodes: [{ id: "5", title: "Delta Node", type: "star" }],
+      updated_nodes: [{ id: "1", title: "Node 1 renamed", type: "star" }],
+    };
+
+    rerender({
+      nodes: [
+        { ...mockNodes[0], title: "Node 1 renamed" },
+        ...mockNodes.slice(1),
+        { id: "5", title: "Delta Node", type: "star" },
+      ] as GraphNode[],
+      links: mockLinks as GraphLink[],
+      delta,
+    });
+    await flushMicrotasks();
+
+    const after = window.__graphCanvas!.getSimulationNodes();
+    expect(after.length).toBe(5);
+    const before1 = before.find((n: any) => n.id === "1");
+    const after1 = after.find((n: any) => n.id === "1");
+    // Same object → in-place update, not a rebuild of the simulation.
+    expect(after1).toBe(before1);
+    // The rename reaches the canvas even though the sim was stopped.
+    expect(after1!.title).toBe("Node 1 renamed");
   });
 
   it("does not inject delta nodes outside the filtered view", async () => {

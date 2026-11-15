@@ -15,6 +15,7 @@
     setupResizeObserver,
     scheduleDelayedResize,
     startSimulation,
+    stopSimulation,
     clearSimulation,
     getSimulationNodes,
     type SimulationState,
@@ -592,6 +593,9 @@
       getSimulationNodes: () => getSimulationNodes(simState),
       transform,
       getBlackHole: () => blackHole,
+      // Test hook: park the sim into the settled/idle state (isRunning=false)
+      // without a rebuild — the state SYNC-1 stage B deltas must land on.
+      stopSimulation: () => stopSimulation(simState),
     };
 
     // SSR-safe: получаем контекст canvas
@@ -845,8 +849,10 @@
 
     // SYNC-1 stage B: a data change that arrived together with a fresh delta
     // is applied by the delta effect below, in place — rebuilding here would
-    // throw away the layout the delta was meant to preserve.
-    if (delta && delta !== lastAppliedDelta && !delta.resync && simState.isRunning) {
+    // throw away the layout the delta was meant to preserve. The gate is the
+    // simulation object, not isRunning: a settled (stopped) sim still accepts
+    // incremental updates — applyIncremental reheats it.
+    if (delta && delta !== lastAppliedDelta && !delta.resync && simState.simulation) {
       return;
     }
 
@@ -967,10 +973,12 @@
     if (delta === lastAppliedDelta) {
       return;
     }
-    // Consume the delta even when the sim is not running: the merged props
-    // already carry the change, so the regular data path rebuilds with it.
+    // Consume the delta even when there is no simulation to update: the
+    // merged props already carry the change, so the regular data path builds
+    // with it. A stopped-but-present sim takes the delta in place below —
+    // that is the settled state of an idle graph, not a reason to rebuild.
     lastAppliedDelta = delta;
-    if (!simState.isRunning) {
+    if (!simState.simulation) {
       return;
     }
 

@@ -87,6 +87,9 @@ export function createHomePageState() {
   // GraphCanvas so it lands in place on the live simulation instead of
   // rebuilding the layout. Null on resync/full reloads.
   let graphDelta = $state<GraphDeltaData | null>(null);
+  // Timestamp of the last delta refresh — the SSE echo of our own write
+  // arrives within ~400 ms and must not trigger a second identical request.
+  let lastRefreshAt = 0;
   let layoutProvider = $state<"d3" | "graph-service">(toRuntimeConfig().layoutProvider);
   let searchQuery = $state("");
 
@@ -245,7 +248,11 @@ export function createHomePageState() {
       // remains the fallback while the stream is down.
       graphEventsHandle = subscribeGraphEvents({
         onGraphChanged: () => {
-          void refreshAfterMutation();
+          // Own mutations refresh directly — the SSE echo of that same write
+          // would only repeat the request a few hundred ms later.
+          if (Date.now() - lastRefreshAt > 1000) {
+            void refreshAfterMutation();
+          }
         },
       });
 
@@ -371,6 +378,7 @@ export function createHomePageState() {
    */
   async function refreshAfterMutation() {
     if (!isAuthenticated() || loading) return;
+    lastRefreshAt = Date.now();
     const requestId = ++requestVersion;
     const scopeKey = graphView.scopeKey;
     const isCurrent = () => requestId === requestVersion && scopeKey === graphView.scopeKey;

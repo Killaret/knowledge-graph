@@ -15,6 +15,7 @@ declare global {
       getSimulationNodes: () => { id: string; title: string; type?: string }[];
       transform: { x: number; y: number; k: number };
       getBlackHole?: () => { x: number; y: number; radius: number } | undefined;
+      stopSimulation?: () => void;
     };
   }
 
