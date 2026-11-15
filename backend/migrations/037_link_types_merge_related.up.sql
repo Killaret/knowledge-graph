@@ -26,14 +26,14 @@
 -- type or double the pair.
 --
 -- The second pass covers deleted legacy rows the main loop never reached —
--- pairs with nothing live. A row deleted together with a note converts to
--- `related` and KEEPS deleted_via_note_id so "Restore" brings the pair's
--- only link back as the generic type (E′); when the (src,dst,'related') key
--- is already taken the row falls through to the final pass, which detaches
--- the marker — restoring the note then revives nothing extra — or when
--- another `related` row already sits on the unordered pair, so a restore
--- cannot double the edge. Rows deleted on their own (rejected) also get the
--- stamp and stay deleted.
+-- pairs with nothing live. The best row per unordered pair deleted together
+-- with a note converts to `related` and KEEPS deleted_via_note_id so
+-- "Restore" brings the pair's only link back as the generic type (E′); a
+-- losing same-pair row — either direction — falls through to the final
+-- pass, which detaches the marker (one edge per pair; UNIQUE also covers
+-- soft-deleted rows). The retype is likewise skipped when another `related`
+-- row already sits on the unordered pair. Rows deleted on their own
+-- (rejected) also get the stamp and stay deleted.
 --
 -- "Pairs merged" is printed via RAISE NOTICE.
 
@@ -135,9 +135,11 @@ BEGIN
     -- restoring the note brings the pair's only link back as the generic
     -- type. The retype is skipped when another `related` row already exists
     -- on the unordered pair — a restore would double the edge — and only the
-    -- best candidate per directed key converts: two same-direction legacy
-    -- rows (reference + custom) retyped together would hit UNIQUE
-    -- (source,target,link_type), which covers soft-deleted rows.
+    -- best candidate per UNORDERED pair converts: two opposite-direction
+    -- legacy rows retyped together would both come back on restore (decision
+    -- 53: one edge per pair), and two same-direction rows (reference +
+    -- custom) would hit UNIQUE (source,target,link_type), which covers
+    -- soft-deleted rows.
     UPDATE links l
     SET link_type = 'related',
         metadata = COALESCE(l.metadata, '{}'::jsonb)
@@ -161,8 +163,8 @@ BEGIN
             AND p.link_type IN ('reference', 'custom')
             AND p.deleted_at IS NOT NULL
             AND p.deleted_via_note_id IS NOT NULL
-            AND p.source_note_id = l.source_note_id
-            AND p.target_note_id = l.target_note_id
+            AND LEAST(p.source_note_id, p.target_note_id) = LEAST(l.source_note_id, l.target_note_id)
+            AND GREATEST(p.source_note_id, p.target_note_id) = GREATEST(l.source_note_id, l.target_note_id)
             AND COALESCE(p.metadata->>'merged_by', '') <> '037_link_types_merge'
             AND (p.weight, p.id) > (l.weight, l.id)
       );

@@ -570,6 +570,31 @@ func (s *Migration037TestSuite) TestE2SameDirectionDeletedLegacyNoKeyClash() {
 	s.InDelta(0.8, convertedWeight, 0.0001, "the heaviest candidate converts")
 }
 
+// E′ review no. 7: opposite-direction legacy rows, both deleted via the same
+// note, nothing live. Candidate selection must pick one row per UNORDERED
+// pair — per-direction selection lets both convert and a restore revives two
+// edges on the pair (decision 53: one edge per pair).
+func (s *Migration037TestSuite) TestE2OppositeDirectionDeletedLegacy() {
+	a := s.makeNote("A18")
+	b := s.makeNote("B18")
+
+	s.insertLinkFull(a, b, "reference", "user", 0.8, true, b)
+	s.insertLinkFull(b, a, "custom", "user", 0.4, true, b)
+
+	s.runMigrationFile("037_link_types_merge_related.up.sql")
+
+	// Simulate note restore.
+	s.Require().NoError(s.db.Exec(
+		`UPDATE links SET deleted_at = NULL, deleted_via_note_id = NULL
+		 WHERE deleted_via_note_id = ?`, b,
+	).Error)
+
+	live := liveLinks(s.pairLinksUnordered(a, b))
+	s.Require().Len(live, 1, "one edge per pair after restore (decision 53)")
+	s.Equal("related", live[0].LinkType)
+	s.InDelta(0.8, live[0].Weight, 0.0001, "the heaviest candidate converts")
+}
+
 func TestMigration037Suite(t *testing.T) {
 	suite.Run(t, new(Migration037TestSuite))
 }
