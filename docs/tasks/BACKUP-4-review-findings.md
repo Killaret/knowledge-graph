@@ -94,8 +94,14 @@ and `/backup`)» — предупреждение стоит перед блок
 поднял бы Personal-стек, что без явной просьбы запрещено. Механика меток
 подтверждена `docker volume inspect`.
 
-`check-all.ps1` (без `-Quick`) на `93cd426` в worktree ревью — сводка прилагается
-к статусу на доске.
+`check-all.ps1` (без `-Quick`) на `93cd426` в worktree ревью, полный прогон после
+`npm ci` (root + frontend) и `npm run prepare`: **PASS** — workflow sync, guard-сьют
+50/50, backend unit (coverage 70.12%) + integration, graph-service, config, все
+сторожа (board, tasks-index, decisions, authorship, hooks), NLP 136/136, license
+inventory, frontend circular/lint/format/types/BDD-tsc. **FAIL одна:**
+`frontend-unit` — 1683/1684, `home-page.svelte.test.ts` («3d»→'graph') — известный
+хвост FREEZE-3D-1 (ревью №8), на доске у Devin; к проверяемому коммиту отношения
+не имеет — в нём менялись только документы. SKIP: golangci-lint не установлен.
 
 ---
 
