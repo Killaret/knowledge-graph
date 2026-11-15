@@ -40,6 +40,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | UI-DESIGN-1-app-design-review.md | разобран — хвост UI-LOAD-1 3D (бэклог, решение 69) |
 | UI-DESIGN-1-review-findings.md | разобран — тот же хвост |
 | UX-1-link-creation-and-canvas-refresh.md | разобран — не сделано, ждёт обсуждения UX (решение 67) |
+| UX-1-review-findings.md | не начат |
 | UX-2-500-error-page.md | разобран — принято; новая находка F-2 |
 | UX-2-review-findings.md | разобран — хвостов нет |
 | UX-3-canvas-hover-and-black-hole.md | не начат |
@@ -358,6 +359,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | GORDON-1-gordon-documents-review.md | не начат |
 | GORDON-2-deployment-package-analysis.md | не начат |
 | HOUSEKEEPING-1-review-findings.md | не начат |
+| KG-WORK-REVIEW-1-review-findings.md | не начат |
 | LICENSE-1-repository-license.md | не начат |
 | PROJECT-SKILLS-1-review-findings.md | не начат |
 | PROTO-CRITERIA-1-review-findings.md | не начат |
