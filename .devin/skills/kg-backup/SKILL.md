@@ -36,6 +36,8 @@ mongodbdata_personal
 
 Linux и Mac: `scripts/devops/backup-personal.sh`.
 
+**Восстановление** описано в `docs/operations/BACKUP.md`, раздел «Backup Restoration». Там три пути: Postgres из SQL, MongoDB из `.mongo.gz` и все три тома из сырых архивов `personal-volumes-raw-*`. Сырые архивы разворачиваются только в тома, которых ещё нет. Если `knowledge-graph_*_personal` уже существуют, остановиться и спросить владельца, ничего не удалять.
+
 ## Почему команда может быть заблокирована
 
 У Claude Code стоит хук `PreToolUse`, вызывающий `scripts/devops/guard-personal-data.py`. Он разбирает команду перед выполнением и отказывает, если она способна уничтожить данные Personal-стека, а свежего бэкапа нет.
