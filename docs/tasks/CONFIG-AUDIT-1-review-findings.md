@@ -205,3 +205,31 @@ key names a reader`. `go run cmd/checkconfig` — `✓ Config validation passed`
 - Образ NLP собирается с корневым контекстом и копирует конфиг. Тест-стек 15.11 поднимался с этим Dockerfile, NLP
   был `healthy`.
 - Документация: убранные ключи описаны как убранные, у NLP — абзац про порядок приоритета.
+
+## Доработка по ревью №5 — Devin, 2026-11-15
+
+### Блокер — CodeQL `js/incomplete-sanitization` (тревоги 61–63)
+
+Общий помощник `escapeRe` (`s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")`) добавлен в
+`generate-config-registry.mjs` и применён ко всем пяти местам, где текст ключа из `config/*.json`
+попадает в регулярное выражение: прямой ключ (строка 163 в разборе), суффикс алиаса (171), первый
+сегмент суффикса (173 — та же находка, CodeQL её не пометил), лист ключа (181) и `export const`
+(186). `a.name` и `em[1]` приходят из `(\w+)` и метасимволов содержать не могут — оставлены без
+экранирования.
+
+Регресс-тест `scripts/testing/generate-config-registry.test.mjs` на фикстуре
+`fixtures/config-registry/` (мини-репозиторий: `config/frontend.json`, config.ts с алиасом и
+экспортом, три файла-читателя, оба `config.go`, `CONFIGURATION_EN.md`). Три ключа с
+метасимволами — `frontend.a+b` (прямой путь), `frontend.c+d` (только через `feAlias.c+d`),
+`frontend.e*f` (только через `export const eVar`) — плюс контроль `frontend.normal.x`. Мутация
+«`escapeRe` возвращён к `.replace(/\./g, "\\.")`» — все три ключа становятся «мёртвыми», тест
+красный, контроль зелёный.
+
+Прогоны: генератор на репозитории выдаёт реестр байт-в-байт как раньше (180 ключей,
+`check-config-registry` — OK, дрейфа нет); `check-core-workflow-sync` — 37/37; `check-docs-links`
+— OK. Тест вписан в `core-checks.tsv` (`config-registry-tests`) и `_core-checks.yml` (шаг «Run
+CONFIG registry generator tests») — прошлый блокер №2 учтён.
+
+Тревоги №61–63 закроются при повторном сканировании CodeQL на PR #180, когда коммит попадёт в
+`merge/ai-agents-2026-11-15`: ветка мержа — за Claude Code/владельцем. Проверить после синка:
+`gh api "repos/Killaret/knowledge-graph/code-scanning/alerts?state=open&pr=180"`.

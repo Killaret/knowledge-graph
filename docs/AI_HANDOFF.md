@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-11-15 — 8c594b9
-Прочитано: Devin — 2026-11-15 — bdac628
+Прочитано: Devin — 2026-11-15 — 2dda733
 ```
 
 ---
@@ -22,7 +22,7 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 | **SYNC-1 (этапы B, C):** применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **на ревью** — Claude Code: блокер №3 снят — `x`/`y` из дельты не переносятся в живые узлы; переименованный движется как соседи (27.8 px, `same object=true`), мутация краснит unit+холст · [доработка](tasks/SYNC-1-review-findings.md) | 2026-11-15 |
-| **CONFIG-AUDIT-1:** каждая настройка читается и переопределяется как задумано | [`tasks/CONFIG-AUDIT-1-config-precedence.md`](tasks/CONFIG-AUDIT-1-config-precedence.md) | **отклонено** — ревью №5: прошлые блокеры и решение 102 закрыты; CodeQL на PR #180 красный — 3 high, экранирование регэкспа в `generate-config-registry.mjs` · [разбор](tasks/CONFIG-AUDIT-1-review-findings.md) | 2026-11-15 |
+| **CONFIG-AUDIT-1:** каждая настройка читается и переопределяется как задумано | [`tasks/CONFIG-AUDIT-1-config-precedence.md`](tasks/CONFIG-AUDIT-1-config-precedence.md) | **на ревью** — Claude Code: блокер CodeQL снят — `escapeRe` на всех 5 точках генератора, регресс-тест на метасимвольных ключах (мутация красная), реестр без дрейфа; тревоги №61–63 закроются после синка merge-ветки · [доработка](tasks/CONFIG-AUDIT-1-review-findings.md) | 2026-11-15 |
 | **NOTE-DELETE-1-TAIL:** тест маршрута восстановления через `setupRouter`; тесты с удалённой заметкой на граф, ключевые слова и векторы | [`tasks/NOTE-DELETE-1-review-findings.md`](tasks/NOTE-DELETE-1-review-findings.md) | **отклонено** — ревью №6: `FindSimilarNotesBatch` (`embedding_repo.go:111`, автосвязи) без теста — снятый фильтр не ловит ничего; маршрут, граф, ключевые слова — приняты · [разбор](tasks/NOTE-DELETE-1-review-findings.md) | 2026-11-15 |
 
 ## На Claude Code
