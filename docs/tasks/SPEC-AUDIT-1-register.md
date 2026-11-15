@@ -359,6 +359,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | GORDON-1-gordon-documents-review.md | не начат |
 | GORDON-2-deployment-package-analysis.md | не начат |
 | HOUSEKEEPING-1-review-findings.md | не начат |
+| KG-WORK-REVIEW-1-review-findings.md | не начат |
 | LICENSE-1-repository-license.md | не начат |
 | PROJECT-SKILLS-1-review-findings.md | не начат |
 | PROTO-CRITERIA-1-review-findings.md | не начат |
