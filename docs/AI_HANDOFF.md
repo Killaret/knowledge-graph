@@ -17,18 +17,18 @@
 
 ## На Devin
 
-Порядок 2026-11-14 (разбор доски, RULES-IMPORT-1); SMART-CREATE-1 ушла в «Бэклог» 15.11 (решение 115). Строки «на ревью» — очередь ревью Claude Code №2–6 (№1 UX-3 принята 14.11); №7–16 — в начале «Бэклога».
+Порядок 2026-11-14 (разбор доски, RULES-IMPORT-1); SMART-CREATE-1 ушла в «Бэклог» 15.11 (решение 115). Строки «на ревью» — очередь ревью Claude Code; №7–17 — строки бэклога с держателем «Claude Code: ревью №N».
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 | **SYNC-1 (этапы B, C):** применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **на ревью** — ревью №3 · Devin 15.11: три блокера закрыты; живой прогон — gamma-связи в дельте ~2,5 с, реконнект после рестарта · [разбор](tasks/SYNC-1-review-findings.md) | 2026-11-15 |
 | **UX-1:** связи из правого меню, связь существующих заметок, пропадание канваса | [`tasks/UX-1-link-creation-and-canvas-refresh.md`](tasks/UX-1-link-creation-and-canvas-refresh.md) | **отклонено** — ревью №3: окно «Связать с…» закрывается тем же кликом (`handleClickOutside` на `window`); холст при удалении не гаснет — принято · [разбор](tasks/UX-1-review-findings.md) | 2026-11-15 |
 | **CONFIG-AUDIT-1:** каждая настройка читается и переопределяется как задумано | [`tasks/CONFIG-AUDIT-1-config-precedence.md`](tasks/CONFIG-AUDIT-1-config-precedence.md) | **отклонено** — ревью №5: прошлые блокеры и решение 102 закрыты; CodeQL на PR #180 красный — 3 high, экранирование регэкспа в `generate-config-registry.mjs` · [разбор](tasks/CONFIG-AUDIT-1-review-findings.md) | 2026-11-15 |
-| **NOTE-DELETE-1-TAIL:** тест маршрута восстановления через `setupRouter`; тесты с удалённой заметкой на граф, ключевые слова и векторы | [`tasks/NOTE-DELETE-1-review-findings.md`](tasks/NOTE-DELETE-1-review-findings.md) | **на ревью** — ревью №6 · Devin 01.10: 4 теста, мутации красные | 2026-11-14 |
+| **NOTE-DELETE-1-TAIL:** тест маршрута восстановления через `setupRouter`; тесты с удалённой заметкой на граф, ключевые слова и векторы | [`tasks/NOTE-DELETE-1-review-findings.md`](tasks/NOTE-DELETE-1-review-findings.md) | **отклонено** — ревью №6: `FindSimilarNotesBatch` (`embedding_repo.go:111`, автосвязи) без теста — снятый фильтр не ловит ничего; маршрут, граф, ключевые слова — приняты · [разбор](tasks/NOTE-DELETE-1-review-findings.md) | 2026-11-15 |
 
 ## На Claude Code
 
-Сейчас в работе — RELEASE-1. Очередь Claude Code с 2026-11-14 — ревью готовой работы Devin по номерам: №2–6 — строки «на ревью» в разделе «На Devin», №7–16 — в начале «Бэклога»; затем строки «Бэклога» с пометкой «ждёт Claude Code».
+Сейчас в работе — RELEASE-1. Очередь Claude Code — по держателю (решение 116): строки «на ревью» в разделе «На Devin», затем строки бэклога «Claude Code: ревью №N» и прочие с держателем «Claude Code», сверху вниз.
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
@@ -48,8 +48,8 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
+| **LINK-TYPES-1-TAIL:** миграция 037: фикстуры A′ и D′ (правила выбора выжившей), вес как в `SaveUserLink`, умолчание в пакетном импорте, E′ | [`tasks/LINK-TYPES-1-review-findings.md`](tasks/LINK-TYPES-1-review-findings.md) | **бэклог** — Devin: доработка по ревью №7 — E′: два ребра · [разбор](tasks/LINK-TYPES-1-review-findings.md) | 2026-11-15 |
 | **GRAPH-LIGHT-1-TAIL:** спецэлементы графа в светлом стиле (решения 104, 113) | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **бэклог** — Devin: после очереди «На Devin»; постановка готова (варианты А макета), ревью — Claude Code | 2026-11-15 |
-| **LINK-TYPES-1-TAIL:** миграция 037: фикстуры A′ и D′ (правила выбора выжившей), вес как в `SaveUserLink`, умолчание в пакетном импорте, E′ | [`tasks/LINK-TYPES-1-review-findings.md`](tasks/LINK-TYPES-1-review-findings.md) | **бэклог** — Claude Code: ревью №7 · готово у Devin 01.10: 4 пункта и UNIQUE-кейс, мутации красные | 2026-11-14 |
 | **FREEZE-3D-1:** 3D заморожен до готовности 2D: переключатель 3D выключен настройкой, код и тесты остаются | [`tasks/FREEZE-3D-1-hide-3d-view.md`](tasks/FREEZE-3D-1-hide-3d-view.md) | **бэклог** — Claude Code: ревью №8 · готово у Devin 01.10: `3d.enabled=false`, `/graph/3d` → 2D | 2026-11-14 |
 | **I18N-1:** три ключа есть только в ru — `field.password`, `graphOverlay.fogWarning`, `graphOverlay.fogRecovery`: в английском интерфейсе виден сырой ключ; нужен тест «ключи en и ru совпадают» | `frontend/src/shared/utils/i18n/messages/` | **бэклог** — Claude Code: ревью №9 · готово у Devin 01.10: en-ключи, тест паритета en/ru (решение 105) | 2026-11-14 |
 | **P11-3:** два пустых набора ключевых слов дают полное сходство | [`tasks/P11-3-keyword-normalization.md`](tasks/P11-3-keyword-normalization.md) | **бэклог** — Claude Code: ревью №10 · готово у Devin 01.10: пять метрик, пустые наборы → 0.0 | 2026-11-14 |

@@ -251,3 +251,68 @@ UNIQUE `(source,target,link_type)` покрывает и удалённые ст
   бы дубликат ключа и обрыв миграции. Часть 1 выбирает одного (тяжелейшего,
   тай-брейк по id) кандидата на направленный ключ — тест
   `TestE2SameDirectionDeletedLegacyNoKeyClash`.
+
+## Ревью хвоста LINK-TYPES-1-TAIL — Claude Code, 2026-11-15 (ревью №7)
+
+Доработка: Devin, `d2b875a`. **Вердикт: отклонено, один блокер.** Пункты 1–3 хвоста закрыты и подтверждены
+мутациями. Пункт 4 (E′) закрыт для одной строки и для двух строк одного направления. Две строки встречных
+направлений после «Восстановить» дают два ребра на пару.
+
+### Блокер: E′ при встречных направлениях — два ребра после восстановления
+
+Пара без живых связей: `A→B reference 0,8` и `B→A custom 0,4`, обе удалены вместе с заметкой B. Ч. 1 второго
+прохода выбирает одного кандидата на **направленный** ключ (`p.source_note_id = l.source_note_id AND
+p.target_note_id = l.target_note_id`). Проверка «на паре уже есть `related`» смотрит на снимок до `UPDATE`.
+Поэтому обе строки проходят и обе становятся `related` с маркером `deleted_via_note_id`. Восстановление
+заметки оживляет обе, а решение 53 требует одно ребро на пару. На данных владельца случая не будет (довод
+п. 4), но п. 4 и писался ради стендов и копий. Это тот же класс, что найденный Devin UNIQUE-случай, только
+неупорядоченный.
+
+Воспроизведение — тест в `migration_037_integration_test.go`, `-tags integration`:
+
+```go
+func (s *Migration037TestSuite) TestProbeOppositeDirectionViaNote() {
+	a := s.makeNote("AP")
+	b := s.makeNote("BP")
+	s.insertLinkFull(a, b, "reference", "user", 0.8, true, b)
+	s.insertLinkFull(b, a, "custom", "user", 0.4, true, b)
+	s.runMigrationFile("037_link_types_merge_related.up.sql")
+	s.Require().NoError(s.db.Exec(
+		`UPDATE links SET deleted_at = NULL, deleted_via_note_id = NULL
+		 WHERE deleted_via_note_id = ?`, b,
+	).Error)
+	live := liveLinks(s.pairLinksUnordered(a, b))
+	s.Len(live, 1, "one edge per pair after restore (decision 53)")
+}
+```
+
+На `origin/ai-agents` (`a2285dd`) — красный: `should have 1 item(s), but has 2`, живые `related 0.80` и
+`related 0.40`.
+
+Что нужно: кандидат выбирается один на **неупорядоченную** пару (`LEAST/GREATEST` в подзапросе `p`, как в
+подзапросе `o`). Проигравший уходит в ч. 2 и отцепляет маркер. Тест выше — в набор. Мутация «кандидат по
+направленному ключу» должна его красить. `TestE2SameDirectionDeletedLegacyNoKeyClash` остаётся зелёным.
+
+### Мутации — на `a2285dd`, во временном worktree
+
+| Мутация | Результат |
+|---|---|
+| вес выжившей `user` = `max_w` (A′) | красная: `TestA2UserWeightSurvivesOverHeavierGamma` |
+| «живая важнее удалённой» убрано из `ORDER BY` (D′) | красная: `TestD2LiveRowBeatsHeavierDeleted` |
+| «user важнее gamma» убрано из `ORDER BY` | красная: `TestA2UserWeightSurvivesOverHeavierGamma` (в прошлом раунде была зелёной) |
+| ч. 1 второго прохода выключена (`WHERE false`) | красная: `TestE2ViaNoteDeletedLegacyReturnsOnRestore`, `TestE2SameDirectionDeletedLegacyNoKeyClash` |
+| умолчание `related` в пакетном импорте снято (`note_handler.go:765`) | красная: `TestImportBatch_LinkWithoutTypeDefaultsToRelated` |
+
+Набор 037 без пробы — 18/18 зелёный.
+
+### Критерии хвоста
+
+1. A′ — проверен тестом и двумя мутациями: вес пользователя, модельный — в `metadata.gamma`.
+2. D′ — проверен тестом и мутацией.
+3. Умолчание в импорте — проверено тестом и мутацией.
+4. E′ — одна строка и одно направление проверены. Встречные направления — **блокер** выше.
+
+### Принято без замечаний
+
+- Замечание Devin про UNIQUE на удалённых строках одного направления верное, тест на него есть.
+- Комментарий в шапке миграции описывает новое правило веса и E′ без расхождения с кодом.

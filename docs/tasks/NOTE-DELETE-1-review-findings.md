@@ -138,3 +138,52 @@ M1: тесты доступа собирают свой маршрутизато
    (контейнер с pgvector). Каждый краснеет, если снять его фильтр `deleted_at`.
 
 `check-all.ps1` на `a53571a`: 32 из 33 зелёные, упавших нет; пропущен `golangci-lint` — локально не установлен (в CI он есть).
+
+## Ревью хвоста NOTE-DELETE-1-TAIL — Claude Code, 2026-11-15 (ревью №6)
+
+Доработка: Devin, `f52f34a`. **Вердикт: отклонено, один блокер — на один тест.** Маршрут восстановления, граф и
+ключевые слова закрыты, мутации красные. Векторных соседей в репозитории два пути, тест есть на один.
+
+### Блокер: `FindSimilarNotesBatch` без теста — снятый фильтр не ловит ничего
+
+`embedding_repo.go:111` — фильтр `n2.deleted_at IS NULL` в `FindSimilarNotesBatch`. Им пользуются генератор
+автосвязей (`gamma_link_generator.go:83, 119`) и загрузчик эмбеддингов графа (`embedding_loader.go:79`). Без
+фильтра генератор предлагает автосвязи к заметкам из корзины. Мутация «снять фильтр в строке 111» на `a2285dd`:
+`go test -tags integration ./internal/infrastructure/db/postgres/ ./internal/application/...` — всё зелёное.
+Хвост требовал: «каждый краснеет, если снять его фильтр `deleted_at`». Новый
+`TestEmbeddingRepository_FindSimilarNotes_SkipsDeleted` покрывает только одиночный `FindSimilarNotes`
+(строка 60).
+
+Что нужно: тот же сценарий для `FindSimilarNotesBatch` — источник и сосед с одинаковым вектором, сосед в
+корзине, в выдаче по источнику его нет. Мутация строки 111 — красная.
+
+### Мутации — на `a2285dd`, во временном worktree
+
+| Мутация | Результат |
+|---|---|
+| `POST /notes/:id/restore` за `noteWrite` вместо `noteWriteTrash` | красная: `TestRestoreRouteSeesTrashedNote`, 404 |
+| маршрут без проверки доступа | зелёная для нового теста, красная для `TestNoteIDRoutesRequireAccessGuard` — покрыто |
+| `FindSimilarNotes`: снят `n2.deleted_at IS NULL` (строка 60) | красная: `TestEmbeddingRepository_FindSimilarNotes_SkipsDeleted` |
+| `FindSimilarNotesBatch`: снят фильтр (строка 111) | **зелёная** — блокер выше |
+| ключевые слова: снят `n.deleted_at IS NULL` (`keyword_repo.go:65`) | красная: `TestKeywordRepository_SkipsDeletedNotes_Integration` |
+| graph-service: снят фильтр запроса заметок (`postgres_client.go:151`) | красная: `GetNotes_ExcludesDeleted` |
+| graph-service: снят фильтр корня обхода (`postgres_client.go:102`) | красная: `GetNotes_ExcludesDeleted` |
+
+### Критерии хвоста
+
+1. Восстановление через `setupRouter` — проверено тестом и мутацией.
+2. Граф — проверено, две мутации. Ключевые слова — проверено: в `keyword_repo.go` фильтр один, он и покрыт.
+   Векторные соседи — один путь из двух, **блокер**.
+
+### Мелочь
+
+- `TestRestoreRouteSeesTrashedNote` засчитывает «не 404», и в нём нулевой обработчик даёт 500 через recovery.
+  Хвост просил именно это, менять не нужно.
+- `GetNotes_ExcludesDeleted` удаляет заметку общей фикстуры, и следующий подтест `GetNotes_UserSeesOwnGammaLinks`
+  идёт уже по изменённым данным. Сейчас он зелёный, но порядок подтестов стал значимым.
+
+### Принято без замечаний
+
+- Тест маршрута собирает настоящий `setupRouter` с репозиторием, который делит `FindByID` и
+  `FindByIDIncludingDeleted`, как настоящий.
+- Тесты graph-service проверяют и узел, и каскад связей, и корень обхода в одном сценарии.
