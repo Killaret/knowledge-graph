@@ -252,6 +252,10 @@ jobs:
         working-directory: .
         run: node scripts/testing/check-config-registry.mjs .
 
+      - name: Run CONFIG registry generator tests
+        working-directory: .
+        run: node scripts/testing/generate-config-registry.test.mjs
+
       - name: Check board size
         working-directory: .
         run: node scripts/testing/check-board-size.mjs .

@@ -157,10 +157,14 @@ function rgFiles(pattern, dir) {
   return out.sort();
 }
 
+// Key and suffix text comes from config/*.json — escape every regex
+// metachar before it lands in a pattern (CodeQL js/incomplete-sanitization).
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 function frontendReaders(key) {
   const readers = new Set();
   const skip = (f) => f.endsWith("shared/config/config.ts");
-  for (const f of rgFiles(key.replace(/\./g, "\\."), "frontend/src")) if (!skip(f)) readers.add(f);
+  for (const f of rgFiles(escapeRe(key), "frontend/src")) if (!skip(f)) readers.add(f);
   for (const a of aliases) {
     if (!key.startsWith(a.prefix + ".") && key !== a.prefix) continue;
     const suffix = key === a.prefix ? "" : key.slice(a.prefix.length + 1);
@@ -168,9 +172,9 @@ function frontendReaders(key) {
       for (const f of rgFiles(`\\b${a.name}\\b`, "frontend/src")) if (!skip(f)) readers.add(f);
       continue;
     }
-    for (const f of rgFiles(`${a.name}\\.${suffix.replace(/\./g, "\\.")}`, "frontend/src")) if (!skip(f)) readers.add(f);
+    for (const f of rgFiles(`${a.name}\\.${escapeRe(suffix)}`, "frontend/src")) if (!skip(f)) readers.add(f);
     // first suffix segment — the intermediate object may be passed whole
-    for (const f of rgFiles(`${a.name}\\.${suffix.split(".")[0]}\\b`, "frontend/src")) if (!skip(f)) readers.add(f);
+    for (const f of rgFiles(`${a.name}\\.${escapeRe(suffix.split(".")[0])}\\b`, "frontend/src")) if (!skip(f)) readers.add(f);
     // the alias object may be rebound (this.performanceConfig.x): count a file
     // only if it mentions the alias AND the leaf token — otherwise a dead leaf
     // would be marked read just because its siblings are.
@@ -178,12 +182,12 @@ function frontendReaders(key) {
     for (const f of rgFiles(`\\b${a.name}\\b`, "frontend/src")) {
       if (skip(f)) continue;
       try {
-        if (new RegExp(`\\b${leaf}\\b`).test(readFileSync(join(repoRoot, f), "utf8"))) readers.add(`${f} (через ${a.name})`);
+        if (new RegExp(`\\b${escapeRe(leaf)}\\b`).test(readFileSync(join(repoRoot, f), "utf8"))) readers.add(`${f} (через ${a.name})`);
       } catch { /* unreadable */ }
     }
   }
   // direct export of exactly this key: `export const X = config.<key>`
-  const exportRe = new RegExp(`export const (\\w+)\\s*=\\s*config\\.${key.replace(/\./g, "\\.")}\\b`);
+  const exportRe = new RegExp(`export const (\\w+)\\s*=\\s*config\\.${escapeRe(key)}\\b`);
   const em = feConfigSrc.match(exportRe);
   if (em) for (const f of rgFiles(`\\b${em[1]}\\b`, "frontend/src")) if (!skip(f)) readers.add(f);
   return [...readers].sort();
