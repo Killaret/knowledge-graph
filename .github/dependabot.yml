@@ -3,6 +3,7 @@ updates:
   # Frontend dependencies
   - package-ecosystem: "npm"
     directory: "/frontend"
+    target-branch: "ai-agents"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -26,6 +27,7 @@ updates:
   # Backend dependencies (Go)
   - package-ecosystem: "gomod"
     directory: "/backend"
+    target-branch: "ai-agents"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -42,6 +44,7 @@ updates:
   # NLP Service dependencies (Python)
   - package-ecosystem: "pip"
     directory: "/nlp-service"
+    target-branch: "ai-agents"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -58,6 +61,7 @@ updates:
   # Graph Service dependencies (Go)
   - package-ecosystem: "gomod"
     directory: "/services/graph-service"
+    target-branch: "ai-agents"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -77,6 +81,7 @@ updates:
   # Root package.json / package-lock.json
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "ai-agents"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -100,6 +105,7 @@ updates:
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "ai-agents"
     schedule:
       interval: "weekly"
       day: "monday"
