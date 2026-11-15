@@ -33,6 +33,7 @@
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
 | **RELEASE-1:** рамки версии 1.0 — что входит в выпуск, что откладываем, критерии готовности; бэклог разросся, без рамки 1.0 не выпустить | — | **в работе** — срок 31.10 прошёл; новая дата — за владельцем после очереди ревью (16 задач Devin). Дальше — ревью и RELEASE-TEST-1 | 2026-11-14 |
+| **BACKUP-4:** пустой дамп проходит проверку свежести, MongoDB без бэкапа, стек из чужого каталога | [`tasks/BACKUP-4-backup-gaps.md`](tasks/BACKUP-4-backup-gaps.md) | **на ревью** — Devin: п. 4 (Claude Code, `441a3ef`); пп. 1–3 приняты 15.11 (ревью №17) · [разбор](tasks/BACKUP-4-backup-gaps.md) | 2026-11-15 |
 
 ## На человеке
 
@@ -55,7 +56,6 @@
 | **DOC-AUDIT-2:** документация против кода: утверждения сверить с кодом, «нет в коде» — владельцу | [`tasks/DOC-AUDIT-2-docs-vs-code.md`](tasks/DOC-AUDIT-2-docs-vs-code.md) | **бэклог** — Devin: доработка по ревью №15 — промах A.9 #2: ключ читается, но не действует · [разбор](tasks/DOC-AUDIT-2-review-findings.md) | 2026-11-15 |
 | **GRAPH-LIGHT-1-TAIL:** спецэлементы графа в светлом стиле (решения 104, 113) | [`tasks/GRAPH-LIGHT-1-light-graph-and-list.md`](tasks/GRAPH-LIGHT-1-light-graph-and-list.md) | **бэклог** — Devin: после очереди «На Devin»; постановка готова (варианты А макета), ревью — Claude Code | 2026-11-15 |
 | **SPEC-AUDIT-1:** все постановки против кода: вердикт с доказательством на каждое требование | [`tasks/SPEC-AUDIT-1-specs-vs-code.md`](tasks/SPEC-AUDIT-1-specs-vs-code.md) | **бэклог** — 1.0 · Devin: этапы B–E по одному; этап A принят 15.11 (ревью №16) · [разбор](tasks/SPEC-AUDIT-1-review-findings.md) | 2026-11-15 |
-| **BACKUP-4:** пустой дамп проходит проверку свежести, MongoDB без бэкапа, стек из чужого каталога | [`tasks/BACKUP-4-backup-gaps.md`](tasks/BACKUP-4-backup-gaps.md) | **бэклог** — Claude Code: ревью №17 · готово у Devin 15.11: пп. 1–3; п. 4 сделан Claude Code 15.11 — ревью Devin | 2026-11-15 |
 | **SKILLS-AUDIT-1:** ревью проектных скиллов, команда на каждый у обоих агентов, проверка вызова | [`tasks/SKILLS-AUDIT-1-skills-and-commands.md`](tasks/SKILLS-AUDIT-1-skills-and-commands.md) | **бэклог** — Claude Code; проверка — Devin | 2026-11-15 |
 | **KG-BOARD-1:** сводка доски из `origin/ai-agents` и сторож давности (решение 112), правило 2 во всех разделах, скилл `kg-board` | [`tasks/KG-BOARD-1-board-summary-and-staleness.md`](tasks/KG-BOARD-1-board-summary-and-staleness.md) | **бэклог** — Devin: после доработок «отклонено»; веха 4 RULES-IMPORT-1; дополнена 15.11 (решение 116) | 2026-11-15 |
 | **MODEL-2:** включить конвейер на текущей модели, один пересчёт, разметка владельца | [`tasks/MODEL-2-e5-base-migration.md`](tasks/MODEL-2-e5-base-migration.md) | **бэклог** — владелец: пересчёт; on по умолчанию, config-sync починен — [`tasks/MODEL-2-final-findings.md`](tasks/MODEL-2-final-findings.md) | 2026-11-14 |

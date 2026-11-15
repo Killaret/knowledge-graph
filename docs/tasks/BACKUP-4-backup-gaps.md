@@ -86,3 +86,43 @@ PowerShell-вариант взят из `README.txt` папки переноса
 Базы `knowledge_personal` на момент снятия не было. Значит, `nlp_artifacts` и `quality_log` в
 Personal-стеке тогда не писались, и на 2026-10-01 терять в MongoDB было нечего. Выводы п. 2 это не
 отменяет: после включения конвейера (MODEL-2) данные там появятся.
+
+## Ревью пп. 1–3 — Claude Code, 2026-11-15 (ревью №17)
+
+Работа: Devin, `1509c13`. **Вердикт: пп. 1–3 приняты, три мелочи.** П. 4 сделал Claude Code (`441a3ef`), его проверяет
+Devin.
+
+### Мутации `guard-personal-data.py` — `python scripts/devops/test_guard_personal_data.py`, 50 проверок
+
+| Мутация | Результат |
+|---|---|
+| `backup_has_data` всегда `True` | красная: конверт 913 байт, `notes_archive`, не-gzip `.sql.gz` |
+| свежесть только по Postgres, MongoDB не требуется | красная: «fresh pg without mongo: expected deny, got allow» |
+| нет `pg_restore` — `.dump` засчитывается | красная: «the 913-byte envelope dump was counted as a backup» |
+| `.sql.gz` засчитывается без `COPY`/`INSERT` в `notes` | красная: `notes_archive`, не-gzip `.sql.gz` |
+
+### Исполнением
+
+| Что | Как | Результат |
+|---|---|---|
+| п. 1–2, `check-personal-backup.ps1` и `.sh` | `KG_BACKUP_DIR` на три папки во временном каталоге: конверт + mongo; только `.sql.gz` с `COPY public.notes`; пара `.sql.gz` + `.mongo.gz` с `knowledge_personal.` | оба скрипта: конверт — отказ «Postgres», только pg — отказ «MongoDB», пара — PASS |
+| п. 2, производители | `backup-personal.{ps1,sh}`, `runner.go:78` | пишут `.sql.gz` (`--format=plain`) и `.mongo.gz`; ретенция — на оба |
+| п. 3, `start-personal.ps1` | подставной `docker.cmd` первым в `PATH`, запуск из `D:\kg-build-cache\rv-eab2` | отказ с объяснением про префикс `rv-eab2_`, `docker` не вызван, код 1. С `COMPOSE_PROJECT_NAME=knowledge-graph` проверка пропускает и доходит до `docker compose … up` |
+| раннер Go | `go test ./internal/infrastructure/backup/` | зелёный |
+
+### Мелочь
+
+- **Сырые архивы томов засчитываются по непустоте** (`backup_has_data`, ветка `personal-volumes-raw-`). Архив пустого
+  тома `pgdata` — ровно случай находки 3 — весит десятки мегабайт файлов кластера и проходит. Постановка про сырые
+  архивы не говорила, и комментарий в коде это ограничение честно называет. Если когда-нибудь их будет снимать
+  автоматика, а не владелец руками, — проверять содержимое.
+- `_mongo_dump_has_namespace` сначала читает файл целиком (`read_bytes()`). На больших дампах сторож, который
+  срабатывает перед каждой подходящей командой, будет тратить память. Достаточно первых мегабайт, как в ветке gzip.
+- Образ `worker` с `apk add mongodb-tools` здесь не собирался. Если пакета нет в `alpine:3.19`, сборка упадёт на
+  первом деплое.
+
+Последствие для владельца — так и задумано: пока в каталоге бэкапов нет ни одного `.mongo.gz` или сырого архива
+`mongodbdata`, сторож отказывает любой деструктивной команде по Personal-стеку и пишет, что сделать.
+
+`check-all.ps1` без `-Quick` на `a2285dd` (включает `1509c13`): фаза «Personal data guard tests» — PASS; всего 34 PASS,
+2 FAIL вне задачи (`home-page.svelte.test.ts` — FREEZE-3D-1, порог скорости NLP), 1 SKIP (`golangci-lint`).
