@@ -11,7 +11,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/hibiken/asynq v0.26.0
-	github.com/jackc/pgx/v5 v5.10.0
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.12.3
 	github.com/pgvector/pgvector-go v0.4.1
@@ -21,7 +21,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/testcontainers/testcontainers-go v0.44.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.44.0
-	go.mongodb.org/mongo-driver v1.17.9
+	go.mongodb.org/mongo-driver v1.17.10
 	golang.org/x/crypto v0.55.0
 	golang.org/x/net v0.58.0
 	golang.org/x/text v0.41.0
