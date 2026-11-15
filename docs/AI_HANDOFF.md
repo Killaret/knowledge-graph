@@ -10,7 +10,7 @@
 
 ```
 Прочитано: Claude Code — 2026-11-15 — 8c594b9
-Прочитано: Devin — 2026-11-15 — e3c4a30
+Прочитано: Devin — 2026-11-15 — bdac628
 ```
 
 ---
@@ -21,7 +21,7 @@
 
 | Что | Где | Статус | Обновлено |
 |---|---|---|---|
-| **SYNC-1 (этапы B, C):** применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **отклонено** — ревью №3: блокеры №2 закрыты, C.1 живьём за 2 с; обновлённый узел прыгает в координаты граф-сервиса (`delta.ts:353-354`), переименованный — на 347 px · [разбор](tasks/SYNC-1-review-findings.md) | 2026-11-15 |
+| **SYNC-1 (этапы B, C):** применение по месту, SSE | [`tasks/SYNC-1-graph-loading-and-sync-review.md`](tasks/SYNC-1-graph-loading-and-sync-review.md) | **в работе** — Devin: блокер ревью №3 снят — `delta.ts` больше не переносит `x`/`y` из дельты в существующие узлы, оба теста красные на мутации (unit + холст B.1, снимок позиции до ререндера); осталось — живой `sync1-probe.cjs` на тест-стеке | 2026-11-15 |
 | **CONFIG-AUDIT-1:** каждая настройка читается и переопределяется как задумано | [`tasks/CONFIG-AUDIT-1-config-precedence.md`](tasks/CONFIG-AUDIT-1-config-precedence.md) | **отклонено** — ревью №5: прошлые блокеры и решение 102 закрыты; CodeQL на PR #180 красный — 3 high, экранирование регэкспа в `generate-config-registry.mjs` · [разбор](tasks/CONFIG-AUDIT-1-review-findings.md) | 2026-11-15 |
 | **NOTE-DELETE-1-TAIL:** тест маршрута восстановления через `setupRouter`; тесты с удалённой заметкой на граф, ключевые слова и векторы | [`tasks/NOTE-DELETE-1-review-findings.md`](tasks/NOTE-DELETE-1-review-findings.md) | **отклонено** — ревью №6: `FindSimilarNotesBatch` (`embedding_repo.go:111`, автосвязи) без теста — снятый фильтр не ловит ничего; маршрут, граф, ключевые слова — приняты · [разбор](tasks/NOTE-DELETE-1-review-findings.md) | 2026-11-15 |
 

@@ -644,6 +644,10 @@ describe("GraphCanvas events", () => {
     const { rerender } = renderResult;
     const before = window.__graphCanvas!.getSimulationNodes();
     expect(before.length).toBe(4);
+    const pos1 = (() => {
+      const n = before.find((n: any) => n.id === "1");
+      return { x: n!.x, y: n!.y };
+    })();
 
     // The idle state of an open graph: fade finished, isRunning is false, but
     // the simulation object still holds the laid-out nodes. A delta must land
@@ -652,7 +656,7 @@ describe("GraphCanvas events", () => {
 
     const delta: GraphDeltaData = {
       added_nodes: [{ id: "5", title: "Delta Node", type: "star" }],
-      updated_nodes: [{ id: "1", title: "Node 1 renamed", type: "star" }],
+      updated_nodes: [{ id: "1", title: "Node 1 renamed", type: "star", x: 9999, y: 9999 }],
     };
 
     rerender({
@@ -674,6 +678,10 @@ describe("GraphCanvas events", () => {
     expect(after1).toBe(before1);
     // The rename reaches the canvas even though the sim was stopped.
     expect(after1!.title).toBe("Node 1 renamed");
+    // SYNC-1 review no. 3: delta x/y are server-layout coords — the live
+    // simulation position must not be overwritten by them.
+    expect(after1!.x).toBe(pos1.x);
+    expect(after1!.y).toBe(pos1.y);
   });
 
   it("does not inject delta nodes outside the filtered view", async () => {
