@@ -359,6 +359,7 @@ node scripts/testing/check-spec-audit-1-register.mjs .
 | FACE-1-project-face-from-interview.md | не начат |
 | I18N-1-review-findings.md | не начат |
 | P11-3-review-findings.md | не начат |
+| PROMISES-1-review-findings.md | не начат |
 | FREEZE-3D-1-review-findings.md | не начат |
 | GORDON-1-gordon-documents-review.md | не начат |
 | GORDON-2-deployment-package-analysis.md | не начат |
