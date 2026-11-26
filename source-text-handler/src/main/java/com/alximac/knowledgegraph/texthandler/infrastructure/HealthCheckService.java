@@ -1,5 +1,6 @@
 package com.alximac.knowledgegraph.texthandler.infrastructure;
 
+import com.alximac.knowledgegraph.texthandler.infrastructure.queue.AsynqInboundAdapter;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import io.lettuce.core.RedisClient;
@@ -10,10 +11,13 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HealthCheckService {
 
     private final HttpServer httpServer;
+    private static final Logger log = LoggerFactory.getLogger(HealthCheckService.class);
 
     public HealthCheckService(int port, RedisClient redisClient) throws IOException {
         httpServer = HttpServer.create(new InetSocketAddress(port), 0);
@@ -23,7 +27,7 @@ public class HealthCheckService {
             try {
                 sendResponse(exchange, 200, "{\"status\":\"UP\"}");
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Health check error", e);
             }
         });
 
@@ -34,7 +38,7 @@ public class HealthCheckService {
                 String body = redisOk ? "{\"status\":\"UP\"}" : "{\"status\":\"DOWN\",\"reason\":\"Redis unavailable\"}";
                 sendResponse(exchange, code, body);
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Health check error", e);
             }
         });
 
@@ -42,12 +46,12 @@ public class HealthCheckService {
             try {
                 sendResponse(exchange, 200, "{\"status\":\"UP\"}");
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Health check error", e);
             }
         });
 
         httpServer.setExecutor(Executors.newSingleThreadExecutor());
-        System.out.println("HealthCheckService created on port " + port);
+        log.info("HealthCheckService created on port " + port);
     }
 
     private boolean checkRedis(RedisClient redisClient) {
@@ -70,7 +74,7 @@ public class HealthCheckService {
 
     public void start() {
         httpServer.start();
-        System.out.println("HealthCheckService started and listening");
+        log.info("HealthCheckService started and listening");
     }
 
     public void stop() {

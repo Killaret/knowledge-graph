@@ -13,7 +13,10 @@ import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,15 +30,45 @@ public class TikaDocumentParser implements DocumentParser {
     public ParsedDocument parseFromUrl(String url) throws DocumentParserException {
         UrlValidator.validate(url);
 
-        try (InputStream stream = URI.create(url).toURL().openStream()) {
-            return parseFromStream(stream, Map.of());
+        URL parsedUrl;
+        try {
+            parsedUrl = URI.create(url).toURL();
+        } catch (Exception e) {
+            throw new DocumentParserException("Incorrect URL: " + url, e);
+        }
+
+        HttpURLConnection connection = null;
+
+        try {
+            connection = (HttpURLConnection) parsedUrl.openConnection();
+
+            connection.setInstanceFollowRedirects(false);
+            connection.setConnectTimeout(ParserConfigs.CONNECT_TIMEOUT);
+            connection.setReadTimeout(ParserConfigs.READ_TIMEOUT);
+
+            int statusCode = connection.getResponseCode();
+
+            if (statusCode >= 300 && statusCode < 400) {
+                throw new DocumentParserException("Redirects are not allowed. Status code: " + statusCode);
+            }
+
+            if (statusCode < 200 || statusCode >= 300) {
+                throw new DocumentParserException("Failed to fetch URL. Status: " + statusCode);
+            }
+            try (InputStream stream = connection.getInputStream()) {
+                return parseFromStream(stream, Map.of());
+            }
         } catch (IOException | IllegalArgumentException e) {
-            throw new DocumentParserException("Failed to open URL: " + url, e);
+            throw new DocumentParserException("Failed to read text from URL: " + url, e);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 
     private ParsedDocument parseFromStream(InputStream inputStream, Map<String, Object> sourceMetadata)
-            throws DocumentParserException {
+        throws DocumentParserException {
 
         final Map<String, Object> meta = sourceMetadata != null ? sourceMetadata : Map.of();
 
@@ -67,3 +100,6 @@ public class TikaDocumentParser implements DocumentParser {
         return new ParsedDocument(text, combinedMetadata);
     }
 }
+
+
+

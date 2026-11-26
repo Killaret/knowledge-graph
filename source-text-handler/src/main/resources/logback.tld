@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Оставляем только предупреждения от Netty и Lettuce, чтобы не засорять консоль -->
+    <logger name="io.netty" level="WARN"/>
+    <logger name="io.lettuce" level="INFO"/>
+    <logger name="org.apache.tika" level="WARN"/>
+    <logger name="org.apache.pdfbox" level="WARN"/>
+
+    <!-- Наши бизнес-логи будут на уровне INFO -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

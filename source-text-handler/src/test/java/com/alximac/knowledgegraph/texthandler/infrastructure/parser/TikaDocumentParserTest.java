@@ -62,17 +62,11 @@ class TikaDocumentParserTest {
     }
 
     @Test
-    @DisplayName("Must parse from file URL")
-    void mustParseFromFileUrl() throws Exception {
-        URL resource = getClass().getClassLoader().getResource("sample.pdf");
-        assertThat(resource).isNotNull();
-        String fileUrl = resource.toExternalForm();
-
-        ParsedDocument doc = parser.parseFromUrl(fileUrl);
-
-        assertThat(doc.text()).isNotBlank();
-        assertThat(doc.metaData()).isNotNull();
-        System.out.println(doc.text());
+    @DisplayName("Must reject file:// URLs for security")
+    void mustRejectFileUrl() {
+        assertThatThrownBy(() -> parser.parseFromUrl("file:///etc/passwd"))
+            .isInstanceOf(DocumentParserException.class)
+            .hasMessageContaining("Only http and https schemes are allowed");
     }
 
     @Test
@@ -80,7 +74,7 @@ class TikaDocumentParserTest {
     void mustThrowExceptionForInvalidUrl() {
         assertThatThrownBy(() -> parser.parseFromUrl("not-a-valid-url"))
                 .isInstanceOf(DocumentParserException.class)
-                .hasMessageContaining("Failed to open URL");
+                .hasMessageContaining("URL scheme must not be null");
     }
 
 

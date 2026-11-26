@@ -23,7 +23,7 @@ class RedisImportStateRepositoryTest {
     private static ObjectMapper objectMapper;
     private RedisImportStateRepository repository;
 
-    private static final String REDIS_URI = "redis://localhost:6379/0";
+    private static final String REDIS_URI = "redis://localhost:16379/0";
     private static final String KEY_PREFIX = "test:event:";
 
     @BeforeAll

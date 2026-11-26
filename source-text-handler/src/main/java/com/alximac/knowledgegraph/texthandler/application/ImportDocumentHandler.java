@@ -14,7 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import static java.util.Base64.getDecoder;
 
 public class ImportDocumentHandler {//бизнес процесс(парсинг, нарезка, заметка, связи и т.д. . Узнаем про задачу и выполнена ли она.
@@ -24,6 +25,7 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
     private final NoteCreatorPort noteCreatorPort;
     private final OutboundQueuePort outboundQueuePort;
     private final ImportStateRepository stateRepository;
+    private static final Logger log = LoggerFactory.getLogger(ImportDocumentHandler.class);
 
     public ImportDocumentHandler(
         ChunkingStrategy chunkingStrategy,
@@ -40,6 +42,9 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
     }
 
     public void handle(ImportTask task) {
+
+        log.info("Starting import task: eventId={}, correlationId={}, type={}",
+            task.eventId(), task.correlationId(), task.type());
 
         if (!stateRepository.tryClaim(task.eventId())) {
             return; // задача уже обрабатывается или обработана
@@ -124,6 +129,10 @@ public class ImportDocumentHandler {//бизнес процесс(парсинг
         }
 
         if (result != null) {
+
+            log.info("Task finished: eventId={}, status={}, notes={}, errors={}",
+                task.eventId(), result.status(), result.noteIds().size(), result.errors().size());
+
             try {
                 outboundQueuePort.publish(result);
             } catch (RuntimeException e) {

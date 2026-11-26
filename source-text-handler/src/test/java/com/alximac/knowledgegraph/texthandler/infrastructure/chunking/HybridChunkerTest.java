@@ -201,13 +201,14 @@ class HybridChunkerTest {
     }
 
     @Test
-    @DisplayName("Multiple short paragraphs in a row are all lost (normal behaviour)")
-    void multipleShortParagraphsLost() {
-        String text = "Tiny.\n\nSmall.\n\nShort."; // все <50 символов
+    @DisplayName("Must preserve first short paragraph instead of losing it")
+    void mustPreserveFirstShortParagraph() {
+        String text = "Tiny.\n\nSmall.\n\nShort.";
         ImportOptions options = opts(100, 10, 50);
         List<DocumentChunk> chunks = chunker.chunk(text, options);
 
-        assertThat(chunks).isEmpty();
+        assertThat(chunks).hasSize(1);
+        assertThat(chunks.get(0).text()).contains("Tiny.").contains("Small.").contains("Short.");
     }
 
     @Test

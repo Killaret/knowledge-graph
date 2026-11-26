@@ -252,6 +252,20 @@
       retries: 3
       start_period: 15s
     restart: on-failure
+    
+  text-handler:
+    build: ./source-text-handler
+    container_name: text-handler
+    environment:
+      - REDIS_URI=redis://redis:6379/0
+      - BACKEND_URL=http://backend:8080/api/v1
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 60s
 
 volumes:
   postgres_data:

@@ -12,6 +12,10 @@ public class HybridChunker implements ChunkingStrategy {
 
     @Override
     public List<DocumentChunk> chunk(String text, ImportOptions options) {
+        if (text == null || text.isBlank()) {
+            return List.of();
+        }
+
         AtomicInteger chunkIndex = new AtomicInteger(0);
         List<DocumentChunk> result = new ArrayList<>();
         List<String> paragraphs = splitIntoParagraphs(text);

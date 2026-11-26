@@ -52,7 +52,7 @@ class NoteCreatorHttpClientTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\":\"note-123\"}")));
+                        .withBody("{\"data\":{\"id\":\"note-123\"},\"message\":\"ok\"}")));
 
         DocumentChunk chunk = new DocumentChunk("test text", 0, Map.of(), null, null);
         String noteId = client.createNote(chunk, "jwt-token");
@@ -79,7 +79,7 @@ class NoteCreatorHttpClientTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\":\"note-456\"}")));
+                        .withBody("{\"data\":{\"id\":\"note-123\"},\"message\":\"ok\"}")));
 
         DocumentChunk chunk = new DocumentChunk("hello world", 2, Map.of("key", "value"), null, null);
         client.createNote(chunk, "jwt-token");
@@ -112,10 +112,10 @@ class NoteCreatorHttpClientTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\":\"my-id\"}")));
+                        .withBody("{\"data\":{\"id\":\"note-123\"},\"message\":\"ok\"}")));
 
         String id = client.createNote(new DocumentChunk("txt", 0, Map.of(), null, null), "jwt-token");
-        assertThat(id).isEqualTo("my-id");
+        assertThat(id).isEqualTo("note-123");
     }
 
 

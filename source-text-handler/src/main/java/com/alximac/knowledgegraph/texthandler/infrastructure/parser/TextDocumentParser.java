@@ -7,11 +7,16 @@ import com.alximac.knowledgegraph.texthandler.infrastructure.validation.UrlValid
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class TextDocumentParser implements DocumentParser {
+
+
     @Override
     public ParsedDocument parse(byte[] data, Map<String, Object> sourceMetadata) throws DocumentParserException {
         String text = new String(data, StandardCharsets.UTF_8);
@@ -22,11 +27,43 @@ public class TextDocumentParser implements DocumentParser {
     @Override
     public ParsedDocument parseFromUrl(String url) throws DocumentParserException {
         UrlValidator.validate(url);
-        try (InputStream stream = URI.create(url).toURL().openStream()) {
-            String text = new String(stream.readAllBytes(),StandardCharsets.UTF_8);
-            return  new ParsedDocument(text,Map.of());
-        }catch (IOException|IllegalArgumentException e){
+
+        URL parsedUrl;
+        try {
+            parsedUrl = URI.create(url).toURL();
+        } catch (Exception e) {
+            throw new DocumentParserException("Incorrect URL: " + url, e);
+        }
+
+
+        HttpURLConnection connection = null;
+
+        try {
+            connection = (HttpURLConnection) parsedUrl.openConnection();
+
+            connection.setInstanceFollowRedirects(false);
+            connection.setConnectTimeout(ParserConfigs.CONNECT_TIMEOUT);
+            connection.setReadTimeout(ParserConfigs.READ_TIMEOUT);
+
+            int statusCode = connection.getResponseCode();
+
+            if (statusCode >= 300 && statusCode < 400) {
+                throw new DocumentParserException("Redirects are not allowed. Status code: " + statusCode);
+            }
+
+            if (statusCode < 200 || statusCode >= 300) {
+                throw new DocumentParserException("Failed to fetch URL. Status: " + statusCode);
+            }
+            try (InputStream stream = connection.getInputStream()) {
+                String text = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+                return new ParsedDocument(text, Map.of());
+            }
+        } catch (IOException | IllegalArgumentException e) {
             throw new DocumentParserException("Failed to read text from URL: " + url, e);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 }

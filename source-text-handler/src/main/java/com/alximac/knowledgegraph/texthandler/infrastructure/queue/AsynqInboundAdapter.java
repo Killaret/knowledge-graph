@@ -10,6 +10,8 @@ import io.lettuce.core.api.sync.RedisCommands;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AsynqInboundAdapter implements InboundQueuePort {
 
@@ -18,6 +20,7 @@ public class AsynqInboundAdapter implements InboundQueuePort {
     private final ObjectMapper objectMapper;
     private final AtomicBoolean running = new AtomicBoolean(true);
     private StatefulRedisConnection<String, String> connection;
+    private static final Logger log = LoggerFactory.getLogger(AsynqInboundAdapter.class);
 
     public AsynqInboundAdapter(RedisClient redisClient, String queueKey, ObjectMapper objectMapper) {
         this.redisClient = redisClient;
@@ -41,7 +44,7 @@ public class AsynqInboundAdapter implements InboundQueuePort {
                     if (!running.get() || Thread.currentThread().isInterrupted()) {
                         break;
                     }
-                    System.err.println("Redis error, retrying: " + e.getMessage());
+                    log.error("Redis error, retrying", e);
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException ie) {
@@ -63,7 +66,7 @@ public class AsynqInboundAdapter implements InboundQueuePort {
             handler.accept(task);
         } catch (Exception e) {
             //момент с утечкой jwt - jackson кладет первые 500 символов
-            System.err.println("Error while processing message: " + e.getClass().getSimpleName());
+            log.warn("Failed to parse incoming JSON task: {}. Skipped.", e.getClass().getSimpleName());
         }
     }
 

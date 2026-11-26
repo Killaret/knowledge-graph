@@ -33,8 +33,12 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.time.Duration;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AppConfig {
     private static final long TIMEOUT_DURATION = 5;
+    private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
 
     private ObjectMapper buildObjectMapper() {
         return JsonMapper.builder()
@@ -118,7 +122,7 @@ public class AppConfig {
         worker.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Graceful shutdown initiated...");
+            log.info("Graceful shutdown initiated...");
             asynqInboundAdapter.shutdown();   //  флаг + закрытие сокета
 
             // 30 секунд на завершение текущей задачи и выход из BLPOP
@@ -130,7 +134,7 @@ public class AppConfig {
 
             // Если поток всё ещё жив — что-то зависло, принудительно прерываем
             if (worker.isAlive()) {
-                System.err.println("Worker stuck, interrupting...");
+                log.error("Worker stuck, interrupting...");
                 worker.interrupt();
                 try {
                     worker.join(5_000);
@@ -142,7 +146,7 @@ public class AppConfig {
             if (healthService != null) {
                 healthService.stop();
             }
-            System.out.println("Shutdown complete.");
+            log.info("Shutdown complete.");
         }));
         // Главный поток ждёт завершения воркера, а не висит бесконечно
         try {
